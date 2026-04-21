@@ -6,6 +6,10 @@ describe('events catalog', () => {
     const cats = new Set(EVENTS.map((e) => e.category));
     expect(cats.has('weather')).toBe(true);
     expect(cats.has('wagon')).toBe(true);
+    expect(cats.has('health')).toBe(true);
+    expect(cats.has('finds')).toBe(true);
+    expect(cats.has('encounter')).toBe(true);
+    expect(cats.has('personal')).toBe(true);
   });
 
   it('every event has id, title, body, >=1 choice', () => {

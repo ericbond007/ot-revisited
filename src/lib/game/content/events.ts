@@ -251,3 +251,225 @@ const ox_wanders: GameEvent = {
 };
 
 EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, ox_wanders);
+
+// --- Health ---
+const cholera_scare: GameEvent = {
+  id: 'health_cholera',
+  category: 'health',
+  title: 'Water tastes foul downstream',
+  body: 'The river here smells off. Someone got sick at the last wagon train.',
+  weight: 3,
+  choices: [
+    {
+      id: 'risk_drink',
+      label: 'Drink anyway',
+      isDefault: true,
+      apply: (s, rng) => {
+        // Boiling knowledge cuts risk dramatically
+        const baseChance = 0.25;
+        const chance = s.flags.hasBoilingKnowledge || s.party.some(m => !m.dead && m.profession === 'doctor') ? baseChance * 0.3 : baseChance;
+        if (rng.chance(chance)) {
+          const alive = s.party.filter(m => !m.dead);
+          if (alive.length > 0) {
+            const victim = alive[rng.int(0, alive.length - 1)];
+            return {
+              ...s,
+              party: s.party.map(m => m.id === victim.id ? { ...m, conditions: [...m.conditions, { id: 'cholera', daysSinceOnset: 0 }] } : m)
+            };
+          }
+        }
+        return s;
+      }
+    },
+    {
+      id: 'wait',
+      label: 'Travel upstream before drinking',
+      apply: (s) => ({ ...s, day: s.day })
+    }
+  ]
+};
+
+const snakebite: GameEvent = {
+  id: 'health_snake',
+  category: 'health',
+  title: 'Rattlesnake strike',
+  body: 'A camp-gatherer reaches into the brush and recoils, clutching their hand.',
+  weight: 1,
+  gate: inTerrain('prairie', 'desert'),
+  choices: [
+    {
+      id: 'treat',
+      label: 'Treat with bandages & laudanum',
+      isDefault: true,
+      apply: (s, rng) => {
+        const alive = s.party.filter(m => !m.dead);
+        if (alive.length === 0) return s;
+        const victim = alive[rng.int(0, alive.length - 1)];
+        const bandages = s.inventory.bandages ?? 0;
+        const hp = bandages > 0 ? 10 : 20;
+        return {
+          ...s,
+          inventory: bandages > 0 ? { ...s.inventory, bandages: bandages - 1 } : s.inventory,
+          party: s.party.map(m =>
+            m.id === victim.id
+              ? { ...m, health: Math.max(0, m.health - hp), conditions: [...m.conditions, { id: 'snakebite', daysSinceOnset: 0 }] }
+              : m
+          )
+        };
+      }
+    }
+  ]
+};
+
+// --- Finds ---
+const berry_patch: GameEvent = {
+  id: 'find_berries',
+  category: 'finds',
+  title: 'A patch of wild berries',
+  body: 'Dark-purple berries hang heavy on the bushes.',
+  weight: 3,
+  gate: monthIs(6, 7, 8),
+  choices: [
+    {
+      id: 'harvest',
+      label: 'Harvest them',
+      isDefault: true,
+      apply: (s, rng) => {
+        const amount = rng.int(10, 25);
+        return {
+          ...s,
+          inventory: { ...s.inventory, dried_fruit: (s.inventory.dried_fruit ?? 0) + amount },
+          morale: Math.min(100, s.morale + 2)
+        };
+      }
+    }
+  ]
+};
+
+const abandoned_cache: GameEvent = {
+  id: 'find_cache',
+  category: 'finds',
+  title: 'An abandoned cache',
+  body: 'A sealed barrel and a small wooden chest, left by a party that moved on quickly.',
+  weight: 1,
+  choices: [
+    {
+      id: 'take',
+      label: 'Take everything',
+      isDefault: true,
+      apply: (s, rng) => ({
+        ...s,
+        inventory: {
+          ...s.inventory,
+          flour: (s.inventory.flour ?? 0) + rng.int(20, 60),
+          bullets: (s.inventory.bullets ?? 0) + rng.int(5, 15)
+        }
+      })
+    }
+  ]
+};
+
+const fresh_spring: GameEvent = {
+  id: 'find_spring',
+  category: 'finds',
+  title: 'A cold clear spring',
+  body: 'Water bubbles up from between the rocks.',
+  weight: 3,
+  choices: [
+    {
+      id: 'fill',
+      label: 'Fill every water skin',
+      isDefault: true,
+      apply: (s) => ({ ...s, resources: { ...s.resources, water: s.resources.waterCap } })
+    }
+  ]
+};
+
+// --- Chance encounters ---
+const emigrant_party: GameEvent = {
+  id: 'encounter_emigrants',
+  category: 'encounter',
+  title: 'A passing wagon train',
+  body: 'Fellow travelers bound the same direction. They stop to swap news.',
+  weight: 3,
+  choices: [
+    {
+      id: 'talk',
+      label: 'Trade news',
+      isDefault: true,
+      apply: (s) => ({ ...s, morale: Math.min(100, s.morale + 2) })
+    }
+  ]
+};
+
+const abandoned_wagon: GameEvent = {
+  id: 'encounter_abandoned',
+  category: 'encounter',
+  title: 'An abandoned wagon',
+  body: 'Tipped over, split at the tongue. Scattered possessions lie in the grass.',
+  weight: 2,
+  choices: [
+    {
+      id: 'scavenge',
+      label: 'Scavenge what you can',
+      isDefault: true,
+      apply: (s, rng) => {
+        const parts = ['wheel', 'axle', 'tongue', 'canvas'];
+        const gift = parts[rng.int(0, parts.length - 1)];
+        return { ...s, inventory: { ...s.inventory, [gift]: (s.inventory[gift] ?? 0) + 1 } };
+      }
+    },
+    { id: 'pass', label: 'Pass it by', apply: (s) => s }
+  ]
+};
+
+const lost_child: GameEvent = {
+  id: 'encounter_child',
+  category: 'encounter',
+  title: 'A lost child',
+  body: 'A small figure sits crying beside the trail. Separated from another party.',
+  weight: 1,
+  choices: [
+    {
+      id: 'help',
+      label: 'Take them to the next post',
+      isDefault: true,
+      apply: (s) => ({ ...s, morale: Math.min(100, s.morale + 3), inventory: { ...s.inventory, flour: Math.max(0, (s.inventory.flour ?? 0) - 5) } })
+    }
+  ]
+};
+
+// --- Personal ---
+const personal_quarrel: GameEvent = {
+  id: 'personal_quarrel',
+  category: 'personal',
+  title: 'A quarrel breaks out',
+  body: 'Tensions boil over. Harsh words pass between party members.',
+  weight: 2,
+  choices: [
+    {
+      id: 'mediate',
+      label: 'Mediate',
+      isDefault: true,
+      apply: (s) => ({ ...s, morale: Math.max(0, s.morale - 1) })
+    }
+  ]
+};
+
+const personal_prayer: GameEvent = {
+  id: 'personal_prayer',
+  category: 'personal',
+  title: 'A quiet evening prayer',
+  body: 'Someone leads a short prayer at the campfire.',
+  weight: 2,
+  choices: [
+    {
+      id: 'join',
+      label: 'Join',
+      isDefault: true,
+      apply: (s) => ({ ...s, morale: Math.min(100, s.morale + 1) })
+    }
+  ]
+};
+
+EVENTS.push(cholera_scare, snakebite, berry_patch, abandoned_cache, fresh_spring, emigrant_party, abandoned_wagon, lost_child, personal_quarrel, personal_prayer);
