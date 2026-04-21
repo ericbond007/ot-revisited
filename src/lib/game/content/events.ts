@@ -1,6 +1,6 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
-import { inTerrain, monthIs } from './event-gating';
+import { inTerrain, monthIs, yearAtLeast, yearBetween } from './event-gating';
 
 export type EventCategory =
   | 'weather'
@@ -473,3 +473,125 @@ const personal_prayer: GameEvent = {
 };
 
 EVENTS.push(cholera_scare, snakebite, berry_patch, abandoned_cache, fresh_spring, emigrant_party, abandoned_wagon, lost_child, personal_quarrel, personal_prayer);
+
+// --- Historical year/month-gated events ---
+const donner_rumor: GameEvent = {
+  id: 'historical_donner',
+  category: 'historical',
+  title: 'News of the Donner Party',
+  body: 'A returning traveler tells a chilling story of a party caught in the mountains last winter.',
+  weight: 2,
+  gate: yearAtLeast(1847),
+  choices: [
+    {
+      id: 'heed',
+      label: 'Heed the warning',
+      isDefault: true,
+      apply: (s) => ({ ...s, morale: Math.max(0, s.morale - 2), flags: { ...s.flags, donner_warning_heard: true } })
+    }
+  ]
+};
+
+const gold_rush_news: GameEvent = {
+  id: 'historical_gold',
+  category: 'historical',
+  title: 'Word of gold in California',
+  body: 'Travelers speak excitedly of nuggets as big as walnuts picked straight out of the streams.',
+  weight: 3,
+  gate: yearAtLeast(1849),
+  choices: [
+    {
+      id: 'stay_course',
+      label: 'Stay on the Oregon Trail',
+      isDefault: true,
+      apply: (s) => ({ ...s, morale: Math.min(100, s.morale + 1) })
+    }
+  ]
+};
+
+const cholera_peak_1852: GameEvent = {
+  id: 'historical_cholera_1852',
+  category: 'health',
+  title: 'Cholera sweeps the trail',
+  body: '1852 is a cruel year. Graves line the way.',
+  weight: 6,  // extra high weight for 1852
+  gate: yearBetween(1852, 1852),
+  choices: [
+    {
+      id: 'keep_moving',
+      label: 'Keep moving',
+      isDefault: true,
+      apply: (s, rng) => {
+        // 50% chance of cholera onset on a random alive member
+        if (rng.chance(0.5)) {
+          const alive = s.party.filter(m => !m.dead);
+          if (alive.length > 0) {
+            const victim = alive[rng.int(0, alive.length - 1)];
+            return {
+              ...s,
+              party: s.party.map(m => m.id === victim.id ? { ...m, conditions: [...m.conditions, { id: 'cholera', daysSinceOnset: 0 }] } : m)
+            };
+          }
+        }
+        return s;
+      }
+    }
+  ]
+};
+
+const mormon_handcart: GameEvent = {
+  id: 'historical_mormon',
+  category: 'encounter',
+  title: 'A Mormon handcart company',
+  body: 'A line of men, women, and children pushing and pulling handcarts westward.',
+  weight: 2,
+  gate: yearBetween(1856, 1860),
+  choices: [
+    {
+      id: 'share',
+      label: 'Share a meal',
+      isDefault: true,
+      apply: (s) => ({
+        ...s,
+        morale: Math.min(100, s.morale + 2),
+        inventory: { ...s.inventory, flour: Math.max(0, (s.inventory.flour ?? 0) - 5) }
+      })
+    }
+  ]
+};
+
+const pony_express: GameEvent = {
+  id: 'historical_pony',
+  category: 'encounter',
+  title: 'A Pony Express rider',
+  body: 'A rider thunders past, bags bulging with mail. He shouts news of the east.',
+  weight: 2,
+  gate: yearBetween(1860, 1861),
+  choices: [
+    {
+      id: 'cheer',
+      label: 'Cheer him on',
+      isDefault: true,
+      apply: (s) => ({ ...s, morale: Math.min(100, s.morale + 2) })
+    }
+  ]
+};
+
+const spring_flood: GameEvent = {
+  id: 'weather_flood',
+  category: 'weather',
+  title: 'Spring flooding',
+  body: 'Swollen creeks overflow into the trail.',
+  weight: 3,
+  gate: monthIs(3, 4, 5),
+  choices: [
+    {
+      id: 'detour',
+      label: 'Detour around the flood',
+      isDefault: true,
+      apply: (s) => ({ ...s, location: { ...s.location, milesTraveled: Math.max(0, s.location.milesTraveled - 8) } })
+    }
+  ]
+};
+
+EVENTS.push(donner_rumor, gold_rush_news, cholera_peak_1852, mormon_handcart, pony_express, spring_flood);

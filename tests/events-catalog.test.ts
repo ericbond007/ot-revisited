@@ -10,6 +10,7 @@ describe('events catalog', () => {
     expect(cats.has('finds')).toBe(true);
     expect(cats.has('encounter')).toBe(true);
     expect(cats.has('personal')).toBe(true);
+    expect(cats.has('historical')).toBe(true);
   });
 
   it('every event has id, title, body, >=1 choice', () => {
