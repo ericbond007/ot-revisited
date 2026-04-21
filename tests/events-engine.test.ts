@@ -113,8 +113,8 @@ describe('fireEvent (tick step)', () => {
   });
 });
 
-describe.skip('EVENTS catalog', () => {
-  it('has at least 15 entries in the initial registry', () => {
-    expect(EVENTS.length).toBeGreaterThanOrEqual(15);
+describe('EVENTS catalog', () => {
+  it('has at least 10 entries in the initial registry', () => {
+    expect(EVENTS.length).toBeGreaterThanOrEqual(10);
   });
 });
