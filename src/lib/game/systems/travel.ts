@@ -36,18 +36,31 @@ export function milesPerDay(state: GameState): number {
   return Math.round(base * terrain * oxen);
 }
 
+// Landmark kinds that halt travel when reached so the player can make a choice.
+// Scenic landmarks just flavor-log and keep rolling.
+const STOP_WORTHY_KINDS = new Set<string>(['trading_post', 'river', 'end']);
+
 export function applyTravel(state: GameState, _rng: Rng): GameState {
   if (state.completed) return state;
 
-  const miles = milesPerDay(state);
-  const milesTraveled = state.location.milesTraveled + miles;
+  // If we were parked at a landmark from a previous day, "depart" before moving.
+  let startState = state;
+  if (state.location.atLandmarkId) {
+    startState = {
+      ...state,
+      location: { ...state.location, atLandmarkId: null }
+    };
+  }
 
-  let next = {
-    ...state,
-    location: { ...state.location, milesTraveled }
+  const miles = milesPerDay(startState);
+  const milesTraveled = startState.location.milesTraveled + miles;
+
+  let next: GameState = {
+    ...startState,
+    location: { ...startState.location, milesTraveled }
   };
 
-  const nextLandmark = getLandmark(state.location.nextLandmarkId);
+  const nextLandmark = getLandmark(startState.location.nextLandmarkId);
   const targetMiles = runningMilesTo(nextLandmark.id);
 
   if (milesTraveled >= targetMiles) {
@@ -55,17 +68,20 @@ export function applyTravel(state: GameState, _rng: Rng): GameState {
     // Adopt the next leg's terrain — but river landmarks are decision waypoints,
     // not travel legs. Keep the current terrain instead when the next landmark is a river.
     const newTerrain = after?.kind === 'river' ? next.location.terrain : (after?.terrain ?? next.location.terrain);
+    const stopHere = STOP_WORTHY_KINDS.has(nextLandmark.kind);
+
     next = {
       ...next,
       location: {
         ...next.location,
         previousLandmarkId: nextLandmark.id,
         nextLandmarkId: after?.id ?? nextLandmark.id,
-        terrain: newTerrain
+        terrain: newTerrain,
+        atLandmarkId: stopHere ? nextLandmark.id : null
       },
       eventLog: [
         ...next.eventLog,
-        { day: state.day, text: `Reached ${nextLandmark.name}.` }
+        { day: state.day, text: stopHere ? `Arrived at ${nextLandmark.name}.` : `Passed ${nextLandmark.name}.` }
       ],
       completed: after === null ? true : next.completed,
       outcome: after === null ? 'arrived' : next.outcome

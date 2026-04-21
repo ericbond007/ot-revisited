@@ -93,4 +93,44 @@ describe('applyTravel', () => {
     const next = applyTravel(atEnd, makeRng('t:1'));
     expect(next.completed).toBe(true);
   });
+
+  it('sets atLandmarkId when reaching a trading post (stop-worthy)', () => {
+    const s = newGame();
+    // Fort Kearny is at cumulative mile 300 and is a trading_post.
+    const nearKearny = {
+      ...s,
+      location: { ...s.location, nextLandmarkId: 'ft_kearny', milesTraveled: 289 }
+    };
+    const next = applyTravel(nearKearny, makeRng('t:1'));
+    expect(next.location.atLandmarkId).toBe('ft_kearny');
+  });
+
+  it('does not set atLandmarkId for scenic (non-stop) landmarks', () => {
+    const s = newGame();
+    // Chimney Rock is a scenic landmark (kind: 'landmark'), not a trading post.
+    const nearChimney = {
+      ...s,
+      location: { ...s.location, nextLandmarkId: 'chimney_rock', milesTraveled: 814 }
+    };
+    const next = applyTravel(nearChimney, makeRng('t:1'));
+    expect(next.location.atLandmarkId).toBeFalsy();
+  });
+
+  it('clears atLandmarkId on the next travel day (departure)', () => {
+    const s = newGame();
+    // Simulate having just arrived at Fort Kearny.
+    const atKearny = {
+      ...s,
+      location: {
+        ...s.location,
+        previousLandmarkId: 'ft_kearny',
+        nextLandmarkId: 'ash_hollow',
+        milesTraveled: 300,
+        atLandmarkId: 'ft_kearny'
+      }
+    };
+    const next = applyTravel(atKearny, makeRng('t:1'));
+    expect(next.location.atLandmarkId).toBeFalsy();
+    expect(next.location.milesTraveled).toBeGreaterThan(300);
+  });
 });
