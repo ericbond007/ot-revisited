@@ -27,3 +27,4 @@ vite.config.ts.timestamp-*
 .superpowers/
 dev.db
 *.log
+drizzle/meta
