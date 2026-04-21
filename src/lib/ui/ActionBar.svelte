@@ -2,6 +2,7 @@
   import type { GameState } from '$lib/game/types';
   import { getLandmark } from '$lib/game/content/landmarks';
   import { enhance } from '$app/forms';
+  import NumberStepper from './NumberStepper.svelte';
 
   let { state: gameState, slot, onrest, onhunt, onford, ontrade }: {
     state: GameState;
@@ -35,9 +36,9 @@
         setTimeout(() => { traveling = false; }, 2500);
       };
     }}
-    style="display: flex; gap: 0.3em; align-items: center;"
+    style="display: flex; gap: 0.4em; align-items: center;"
   >
-    <input type="number" name="days" bind:value={travelDays} min="1" max="10" style="width: 4em;" disabled={traveling} />
+    <NumberStepper name="days" bind:value={travelDays} min={1} max={10} disabled={traveling} ariaLabel="Travel days" />
     <button type="submit" disabled={traveling}>
       {traveling ? 'Traveling…' : `Travel ${travelDays} day${travelDays === 1 ? '' : 's'}`}
     </button>
