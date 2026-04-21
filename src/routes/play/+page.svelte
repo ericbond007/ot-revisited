@@ -19,28 +19,30 @@
   let showTrade = $state(false);
 </script>
 
-<div style="display: grid; grid-template-columns: 1fr 240px; grid-template-rows: auto auto auto auto; gap: 0.8em; padding: 0.8em; min-height: calc(100vh - 60px);">
+<div class="play-wrap">
   <!-- Header -->
-  <div class="panel" style="grid-column: 1 / 3; display: flex; justify-content: space-between; align-items: center;">
+  <header class="panel top-bar">
     <h2 style="margin: 0;">{gs.party[0].name}'s Journey</h2>
     <div style="color: var(--c-wood);">
       Day {gs.day} · {gs.date.year}-{String(gs.date.month).padStart(2, '0')}-{String(gs.date.day).padStart(2, '0')} · {gs.pace} · {gs.rations}
     </div>
-  </div>
+  </header>
 
-  <!-- Map -->
-  <div style="grid-column: 1; grid-row: 2;">
-    <TrailMap state={gs} />
-  </div>
+  <div class="main-row">
+    <!-- Map -->
+    <div class="map-col">
+      <TrailMap state={gs} />
+    </div>
 
-  <!-- Right rail -->
-  <div style="grid-column: 2; grid-row: 2 / 4; display: flex; flex-direction: column; gap: 0.8em;">
-    <PartyPanel state={gs} />
-    <InventoryPanel state={gs} />
+    <!-- Right rail -->
+    <div class="side-rail">
+      <PartyPanel state={gs} />
+      <InventoryPanel state={gs} />
+    </div>
   </div>
 
   <!-- Actions / End screen -->
-  <div style="grid-column: 1; grid-row: 3;">
+  <div class="actions-row">
     {#if gs.completed}
       <EndScreen state={gs} />
     {:else}
@@ -53,7 +55,7 @@
   </div>
 
   <!-- Event log (full width bottom) -->
-  <div style="grid-column: 1 / 3; grid-row: 4;">
+  <div class="log-row">
     <EventLog state={gs} />
   </div>
 </div>
@@ -73,3 +75,14 @@
 {#if showTrade && !gs.completed}
   <TradeModal state={gs} slot={data.slot} onclose={() => (showTrade = false)} />
 {/if}
+
+<style>
+  .play-wrap { display: flex; flex-direction: column; gap: 0.8em; padding: 0.8em; min-height: calc(100vh - 60px); }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; }
+  .main-row { display: grid; grid-template-columns: 1fr 240px; gap: 0.8em; }
+  .side-rail { display: flex; flex-direction: column; gap: 0.8em; }
+
+  @media (max-width: 900px) {
+    .main-row { grid-template-columns: 1fr; }
+  }
+</style>

@@ -31,6 +31,8 @@ node build/index.js   # starts the self-hosted server (default port 3000)
 
 Open http://localhost:3000/ in a browser.
 
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for self-hosting instructions.
+
 Plan 4a UI screens:
 - `/` — landing; lists existing saves
 - `/new` — party-setup wizard; creates a new journey
