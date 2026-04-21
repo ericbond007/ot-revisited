@@ -1,4 +1,6 @@
 <script lang="ts">
+  import NumberStepper from './NumberStepper.svelte';
+
   let { slot, onclose }: { slot: string; onclose: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
@@ -21,14 +23,17 @@
       <label style="display: block; margin: 0.8em 0;">
         <input type="radio" name="method" value="ferry" bind:group={method} /> Hire ferry ($5)
       </label>
-      <label style="display: block; margin: 0.8em 0;">
-        <input type="radio" name="method" value="wait" bind:group={method} /> Wait
+      <div style="display: flex; align-items: center; gap: 0.6em; flex-wrap: wrap; margin: 0.8em 0;">
+        <label>
+          <input type="radio" name="method" value="wait" bind:group={method} /> Wait
+        </label>
         {#if method === 'wait'}
-          <input type="number" name="waitDays" bind:value={waitDays} min="1" max="7" style="width: 4em;" /> days
+          <NumberStepper name="waitDays" bind:value={waitDays} min={1} max={7} ariaLabel="Wait days" />
+          <span style="color: var(--c-wood);">days</span>
         {:else}
           <input type="hidden" name="waitDays" value={waitDays} />
         {/if}
-      </label>
+      </div>
 
       <div style="display: flex; gap: 0.5em; margin-top: 1em;">
         <button type="submit">Go</button>

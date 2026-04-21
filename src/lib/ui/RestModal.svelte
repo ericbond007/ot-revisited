@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
+  import NumberStepper from './NumberStepper.svelte';
 
   let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
@@ -20,10 +21,10 @@
     </p>
 
     <form method="POST" action="?/rest&slot={qp}">
-      <label style="display: block; margin: 0.8em 0;">
-        Days (1 = overnight camp, more = extended rest)
-        <input type="number" name="days" bind:value={days} min="1" max="7" style="width: 5em; margin-left: 0.5em;" />
-      </label>
+      <div style="margin: 0.8em 0; display: flex; align-items: center; gap: 0.8em; flex-wrap: wrap;">
+        <span>Days <span style="color: var(--c-wood); font-size: 0.85em;">(1 = overnight camp, more = extended rest)</span></span>
+        <NumberStepper name="days" bind:value={days} min={1} max={7} ariaLabel="Rest days" />
+      </div>
 
       {#if hasShovel}
         <div style="margin: 0.8em 0;">
