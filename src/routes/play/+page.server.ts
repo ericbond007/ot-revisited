@@ -1,7 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error } from '@sveltejs/kit';
-import { rest } from '$lib/game/actions/rest';
-import { camp } from '$lib/game/actions/camp';
+import { rest, type ShovelAction } from '$lib/game/actions/rest';
 import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
 import { EVENTS } from '$lib/game/content/events';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
@@ -74,17 +73,9 @@ export const actions: Actions = {
     if (!slot) throw error(400, 'slot required');
     const fd = await request.formData();
     const days = Math.max(1, Math.min(7, parseInt(fd.get('days')?.toString() ?? '1', 10)));
+    const shovelActions = fd.getAll('shovelAction').map((v) => v.toString() as ShovelAction);
     let state = await loadState(locals, slot);
-    state = rest(state, days);
-    await locals.repo.save(locals.deviceId, slot, state);
-    return { state };
-  },
-
-  camp: async ({ url, locals }) => {
-    const slot = url.searchParams.get('slot');
-    if (!slot) throw error(400, 'slot required');
-    let state = await loadState(locals, slot);
-    state = camp(state, {});
+    state = rest(state, days, shovelActions.length > 0 ? { shovelActions } : {});
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },

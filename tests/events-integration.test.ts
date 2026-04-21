@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, tickDay } from '../src/lib/game/engine';
-import { camp } from '../src/lib/game/actions/camp';
 import { rest } from '../src/lib/game/actions/rest';
 
 function newGame(seed = 'events-integration') {
@@ -21,7 +20,7 @@ describe('100-day run with events', () => {
     let s = newGame();
     for (let cycle = 0; cycle < 20 && !s.completed; cycle++) {
       for (let d = 0; d < 4; d++) s = tickDay(s);
-      s = camp(s, {});
+      s = rest(s, 1);
       s = rest(s, 1);
     }
     const eventLines = s.eventLog.filter((e) =>
@@ -35,7 +34,7 @@ describe('100-day run with events', () => {
       let s = newGame();
       for (let cycle = 0; cycle < 10; cycle++) {
         for (let d = 0; d < 4; d++) s = tickDay(s);
-        s = camp(s, {});
+        s = rest(s, 1);
         s = rest(s, 1);
       }
       return s;

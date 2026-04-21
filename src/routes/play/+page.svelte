@@ -9,11 +9,13 @@
   import HuntModal from '$lib/ui/HuntModal.svelte';
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
+  import RestModal from '$lib/ui/RestModal.svelte';
 
   let { data, form } = $props();
   const gs = $derived(form?.state ?? data.state);
   const pendingEventId = $derived((gs.flags._pendingEventId as string | undefined));
 
+  let showRest = $state(false);
   let showHunt = $state(false);
   let showFord = $state(false);
   let showTrade = $state(false);
@@ -38,6 +40,7 @@
           <EndScreen state={gs} />
         {:else}
           <ActionBar state={gs} slot={data.slot}
+            onrest={() => (showRest = true)}
             onhunt={() => (showHunt = true)}
             onford={() => (showFord = true)}
             ontrade={() => (showTrade = true)}
@@ -57,6 +60,10 @@
 
 {#if pendingEventId}
   <EventModal eventId={pendingEventId} slot={data.slot} />
+{/if}
+
+{#if showRest && !gs.completed}
+  <RestModal state={gs} slot={data.slot} onclose={() => (showRest = false)} />
 {/if}
 
 {#if showHunt && !gs.completed}
