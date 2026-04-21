@@ -1,42 +1,35 @@
-# sv
+# Hoosier Trail
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Browser-based replica of the original Oregon Trail. Single-player, choice-driven, self-hostable.
 
-## Creating a project
+## Status
 
-If you're seeing this, you've probably already done this step. Congrats!
+v1 in progress. Foundation (Plan 1) complete: game engine types, seeded RNG, day-tick turn loop, SQLite saves. Core mechanics (Plan 2) next.
 
-```sh
-# create a new project
-npx sv create my-app
+## Stack
+
+- SvelteKit + TypeScript
+- Vitest for tests
+- Drizzle ORM + better-sqlite3 for persistence
+
+## Development
+
+```bash
+npm install
+npm run db:generate   # regenerate migrations after schema changes
+npm test              # run the suite
+npm run test:watch    # watch mode
+npm run dev           # dev server (UI arrives in Plan 4)
 ```
 
-To recreate this project with the same configuration:
+## Project layout
 
-```sh
-# recreate this project
-npx sv@0.15.1 create --template minimal --types ts --install npm .
-```
+- `src/lib/game/` — pure game engine (no DB, no DOM). `types.ts`, `rng.ts`, `engine.ts`, `saves.ts`, `systems/`.
+- `src/lib/db/` — SQLite persistence. `schema.ts`, `client.ts`, `saves-repo.ts`.
+- `tests/` — Vitest tests mirroring the source layout.
+- `docs/superpowers/specs/` — design spec.
+- `docs/superpowers/plans/` — implementation plans.
 
-## Developing
+## Design spec
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+See `docs/superpowers/specs/2026-04-20-hoosier-trail-design.md`.
