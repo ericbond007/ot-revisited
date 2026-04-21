@@ -8,6 +8,7 @@ import { makeRng, type Rng } from './rng';
 import { upgradeState } from './upgrade';
 import { applyTravel } from './systems/travel';
 import { attemptFire } from './systems/fire';
+import { reapDead } from './systems/death';
 
 export interface PartyPick {
   name: string;
@@ -107,9 +108,6 @@ export function createInitialState(opts: NewGameOptions): GameState {
 
 // --- system step signature ---
 export type TickStep = (state: GameState, rng: Rng) => GameState;
-
-// --- stubs for systems that arrive in later tasks ---
-const reapDead: TickStep = (s) => s;
 
 // --- composition ---
 const DAILY_STEPS: TickStep[] = [
