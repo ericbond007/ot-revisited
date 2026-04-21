@@ -32,14 +32,14 @@ describe('SavesRepo', () => {
   });
 
   it('creates a device and lists no saves', async () => {
-    const deviceId = await repo.ensureDevice();
+    const deviceId = await repo.createDevice();
     expect(deviceId).toMatch(/^[0-9a-f-]{36}$/);
     const list = await repo.list(deviceId);
     expect(list).toEqual([]);
   });
 
   it('saves and loads an exact round-trip', async () => {
-    const deviceId = await repo.ensureDevice();
+    const deviceId = await repo.createDevice();
     const state = fresh();
     await repo.save(deviceId, 'slot-1', state);
     const loaded = await repo.load(deviceId, 'slot-1');
@@ -47,7 +47,7 @@ describe('SavesRepo', () => {
   });
 
   it('overwrites when saving the same slot twice', async () => {
-    const deviceId = await repo.ensureDevice();
+    const deviceId = await repo.createDevice();
     let state = fresh();
     await repo.save(deviceId, 'slot-1', state);
     state = tickDay(state);
@@ -60,7 +60,7 @@ describe('SavesRepo', () => {
   });
 
   it('keeps multiple slots separate', async () => {
-    const deviceId = await repo.ensureDevice();
+    const deviceId = await repo.createDevice();
     const a = fresh();
     const b = tickDay(tickDay(fresh()));
     await repo.save(deviceId, 'slot-a', a);
@@ -74,21 +74,21 @@ describe('SavesRepo', () => {
   });
 
   it('isolates saves per device', async () => {
-    const d1 = await repo.ensureDevice();
-    const d2 = await repo.ensureDevice();
+    const d1 = await repo.createDevice();
+    const d2 = await repo.createDevice();
     await repo.save(d1, 'slot-1', fresh());
     const list2 = await repo.list(d2);
     expect(list2).toEqual([]);
   });
 
   it('load returns null for missing slot', async () => {
-    const deviceId = await repo.ensureDevice();
+    const deviceId = await repo.createDevice();
     const loaded = await repo.load(deviceId, 'does-not-exist');
     expect(loaded).toBeNull();
   });
 
   it('delete removes a save', async () => {
-    const deviceId = await repo.ensureDevice();
+    const deviceId = await repo.createDevice();
     await repo.save(deviceId, 'slot-1', fresh());
     await repo.delete(deviceId, 'slot-1');
     const loaded = await repo.load(deviceId, 'slot-1');
@@ -96,7 +96,7 @@ describe('SavesRepo', () => {
   });
 
   it('list returns summaries that include the leader name', async () => {
-    const deviceId = await repo.ensureDevice();
+    const deviceId = await repo.createDevice();
     await repo.save(deviceId, 'slot-1', fresh());
     const list = await repo.list(deviceId);
     expect(list[0].summary).toContain('Ezra');

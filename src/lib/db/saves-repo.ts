@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { devices, saves } from './schema';
 import type { AppDb } from './client';
@@ -15,7 +15,7 @@ export interface SaveRow {
 export class SavesRepo {
   constructor(private db: AppDb) {}
 
-  async ensureDevice(): Promise<string> {
+  async createDevice(): Promise<string> {
     const id = randomUUID();
     await this.db.insert(devices).values({ id }).run();
     return id;
@@ -31,6 +31,7 @@ export class SavesRepo {
       })
       .from(saves)
       .where(eq(saves.deviceId, deviceId))
+      .orderBy(desc(saves.updatedAt))
       .all();
     return rows;
   }
