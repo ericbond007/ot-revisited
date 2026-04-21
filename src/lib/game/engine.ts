@@ -8,6 +8,7 @@ import { makeRng, type Rng } from './rng';
 import { upgradeState } from './upgrade';
 import { applyTravel } from './systems/travel';
 import { attemptFire } from './systems/fire';
+import { fireEvent } from './systems/events';
 import { reapDead } from './systems/death';
 import { buildStarterKit } from './content/starter-kit';
 
@@ -122,6 +123,7 @@ const DAILY_STEPS: TickStep[] = [
   tickWagon,
   adjustMorale,
   applyTravel,
+  fireEvent,        // <-- new step between travel and fire
   attemptFire,
   reapDead
 ];
