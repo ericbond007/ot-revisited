@@ -1,5 +1,7 @@
 import type { GameDate, GameState, PartyMember, ProfessionId } from './types';
 import { applyDailyConsumption } from './systems/consumption';
+import { makeRng, type Rng } from './rng';
+import { upgradeState } from './upgrade';
 
 export interface PartyPick {
   name: string;
@@ -91,17 +93,46 @@ export function createInitialState(opts: NewGameOptions): GameState {
     pace: 'moderate',
     rations: 'normal',
     eventLog: [],
-    flags: {},
+    flags: { hasBoilingKnowledge: false, hadFireLastNight: false },
     completed: false,
     outcome: 'in-progress'
   };
 }
 
+// --- system step signature ---
+type TickStep = (state: GameState, rng: Rng) => GameState;
+
+// --- stubs for systems that arrive in later tasks ---
+const progressConditions: TickStep = (s) => s;
+const tickOxen: TickStep = (s) => s;
+const tickWagon: TickStep = (s) => s;
+const adjustMorale: TickStep = (s) => s;
+const applyTravel: TickStep = (s) => s;
+const attemptFire: TickStep = (s) => s;
+const reapDead: TickStep = (s) => s;
+
+// --- composition ---
+const DAILY_STEPS: TickStep[] = [
+  progressConditions,
+  (s) => applyDailyConsumption(s), // consumption has no Rng param; wrap it
+  tickOxen,
+  tickWagon,
+  adjustMorale,
+  applyTravel,
+  attemptFire,
+  reapDead
+];
+
 export function tickDay(state: GameState): GameState {
-  const consumed = applyDailyConsumption(state);
+  const normalized = upgradeState(state);
+  const rng = makeRng(`${normalized.seed}:${normalized.day}`);
+  let s = normalized;
+  for (const step of DAILY_STEPS) {
+    s = step(s, rng);
+  }
   return {
-    ...consumed,
-    day: state.day + 1,
-    date: advanceDate(state.date)
+    ...s,
+    day: s.day + 1,
+    date: advanceDate(s.date)
   };
 }

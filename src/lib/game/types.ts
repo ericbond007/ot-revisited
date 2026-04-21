@@ -107,3 +107,7 @@ export interface GameState {
   completed: boolean;
   outcome: Outcome;
 }
+
+export type GameStateFlag =
+  | 'hasBoilingKnowledge'
+  | 'hadFireLastNight';
