@@ -512,7 +512,7 @@ const gold_rush_news: GameEvent = {
 const cholera_peak_1852: GameEvent = {
   id: 'historical_cholera_1852',
   category: 'health',
-  title: 'Cholera sweeps the trail',
+  title: 'Cholera sweeps the trail (1852)',
   body: '1852 is a cruel year. Graves line the way.',
   weight: 6,  // extra high weight for 1852
   gate: yearBetween(1852, 1852),
