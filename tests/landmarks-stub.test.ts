@@ -14,7 +14,7 @@ describe('landmark stub (Plan 2a)', () => {
 
   it('nextLandmarkAfter finds the next one in order', () => {
     const next = nextLandmarkAfter('independence');
-    expect(next?.id).toBe('ft_kearny');
+    expect(next?.id).toBe('kansas_river');
   });
 
   it('nextLandmarkAfter returns null at the end', () => {

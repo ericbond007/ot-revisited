@@ -90,7 +90,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
     date: { ...opts.startDate },
     location: {
       trailPosition: 0,
-      nextLandmarkId: 'ft_kearny',
+      nextLandmarkId: 'kansas_river',
       previousLandmarkId: null,
       milesTraveled: 0,
       terrain: 'prairie'
