@@ -1,8 +1,29 @@
-.superpowers/
-node_modules/
-dist/
-build/
-.env
-.env.local
-*.log
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+/dist
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Project-specific
+.superpowers/
+dev.db
+*.log
