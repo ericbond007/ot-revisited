@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ITEMS, getItem, foodItemIds } from '../src/lib/game/content/items';
+import { PRICES } from '../src/lib/game/content/prices';
 
 const REQUIRED_FOOD_IDS = ['flour', 'bacon', 'beans', 'hardtack', 'sugar', 'coffee', 'tea', 'dried_fruit', 'pemmican'];
 
@@ -32,6 +33,17 @@ describe('item catalog', () => {
   it('foodItemIds returns only items flagged as food', () => {
     for (const id of foodItemIds()) {
       expect(ITEMS[id].category).toBe('food');
+    }
+  });
+});
+
+describe('prices cover the catalog', () => {
+  it('every non-abstract item has a price entry', () => {
+    const skipped = new Set(['wagon']);
+    for (const [id, item] of Object.entries(ITEMS)) {
+      if (skipped.has(id)) continue;
+      if (item.category === 'livestock' && id !== 'yoke') continue; // ox is sold via a dedicated flow
+      expect(PRICES[id], `missing price for ${id}`).toBeDefined();
     }
   });
 });
