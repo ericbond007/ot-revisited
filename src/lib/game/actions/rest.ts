@@ -1,5 +1,6 @@
 import type { GameState } from '../types';
 import { makeRng } from '../rng';
+import { hasLiveFarmer } from '../professions/predicates';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
@@ -52,8 +53,7 @@ export function rest(state: GameState, days: number): GameState {
 
     s = attemptFire(s, rng);
 
-    const hasLiveFarmer = s.party.some((m) => !m.dead && m.profession === 'farmer');
-    if (hasLiveFarmer) {
+    if (hasLiveFarmer(s)) {
       const currentFlour = s.inventory.flour ?? 0;
       s = { ...s, inventory: { ...s.inventory, flour: currentFlour + FARMER_FORAGE_AT_REST } };
     }

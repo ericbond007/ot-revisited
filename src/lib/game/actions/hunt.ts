@@ -1,5 +1,6 @@
 import type { GameState } from '../types';
 import { makeRng } from '../rng';
+import { hasLiveHunter, hasLiveGunsmith } from '../professions/predicates';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
@@ -63,11 +64,9 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   const availableBullets = s.inventory.bullets ?? 0;
   const spentBullets = Math.min(bullets, availableBullets);
 
-  const hasLiveHunter = s.party.some((m) => !m.dead && m.profession === 'hunter');
-  const hasLiveGunsmith = s.party.some((m) => !m.dead && m.profession === 'gunsmith');
   let yieldMultiplier = 1;
-  if (hasLiveHunter) yieldMultiplier += 0.2;
-  if (hasLiveGunsmith) yieldMultiplier += 0.2;
+  if (hasLiveHunter(s)) yieldMultiplier += 0.2;
+  if (hasLiveGunsmith(s)) yieldMultiplier += 0.2;
 
   let carryMultiplier = 1;
   if (opts.hunters === 2) {

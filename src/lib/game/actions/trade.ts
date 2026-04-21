@@ -1,5 +1,6 @@
 import type { GameState } from '../types';
 import { getPrice } from '../content/prices';
+import { hasLiveMerchant, hasLiveBanker } from '../professions/predicates';
 
 export interface TradeEntry {
   item: string;
@@ -12,11 +13,10 @@ export interface TradeOptions {
 }
 
 function professionDiscount(state: GameState): { buyMult: number; sellMult: number } {
-  const alive = (p: string) => state.party.some((m) => !m.dead && m.profession === p);
   let buyMult = 1;
   let sellMult = 1;
-  if (alive('merchant')) { buyMult *= 0.85; sellMult *= 1.20; }
-  if (alive('banker')) { buyMult *= 0.90; sellMult *= 1.10; }
+  if (hasLiveMerchant(state)) { buyMult *= 0.85; sellMult *= 1.20; }
+  if (hasLiveBanker(state)) { buyMult *= 0.90; sellMult *= 1.10; }
   return { buyMult, sellMult };
 }
 
