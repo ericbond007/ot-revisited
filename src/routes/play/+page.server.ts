@@ -4,6 +4,7 @@ import { rest } from '$lib/game/actions/rest';
 import { camp } from '$lib/game/actions/camp';
 import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
 import { EVENTS } from '$lib/game/content/events';
+import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
   const slot = url.searchParams.get('slot');
@@ -82,6 +83,20 @@ export const actions: Actions = {
     if (!slot) throw error(400, 'slot required');
     let state = await loadState(locals, slot);
     state = camp(state, {});
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  hunt: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const target = fd.get('target')?.toString() as HuntTarget;
+    const ammo = fd.get('ammo')?.toString() as AmmoBand;
+    const hunters = parseInt(fd.get('hunters')?.toString() ?? '1', 10);
+    if (!target || !ammo) throw error(400, 'target and ammo required');
+    let state = await loadState(locals, slot);
+    state = hunt(state, { target, ammo, hunters });
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   }

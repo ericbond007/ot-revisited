@@ -1,7 +1,6 @@
 <script lang="ts">
-  let { slot }: { slot: string } = $props();
+  let { slot, onhunt }: { slot: string; onhunt?: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
-
   let travelDays = $state(3);
   let restDays = $state(2);
 </script>
@@ -21,7 +20,7 @@
     <button type="submit">Camp</button>
   </form>
 
-  <button type="button" disabled title="Plan 4c">Hunt</button>
+  <button type="button" onclick={onhunt}>Hunt</button>
   <button type="button" disabled title="Plan 4c">Trade</button>
   <button type="button" disabled title="Plan 4c">Ford</button>
 </div>
