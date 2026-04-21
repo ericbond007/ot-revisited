@@ -29,34 +29,29 @@
   </header>
 
   <div class="main-row">
-    <!-- Map -->
-    <div class="map-col">
+    <!-- Left: map + actions stacked -->
+    <div class="left-col">
       <TrailMap state={gs} />
+
+      <div class="actions-row">
+        {#if gs.completed}
+          <EndScreen state={gs} />
+        {:else}
+          <ActionBar state={gs} slot={data.slot}
+            onhunt={() => (showHunt = true)}
+            onford={() => (showFord = true)}
+            ontrade={() => (showTrade = true)}
+          />
+        {/if}
+      </div>
     </div>
 
-    <!-- Right rail -->
+    <!-- Right rail: party, inventory, log — each with internal scroll -->
     <div class="side-rail">
       <PartyPanel state={gs} />
       <InventoryPanel state={gs} />
+      <EventLog state={gs} />
     </div>
-  </div>
-
-  <!-- Actions / End screen -->
-  <div class="actions-row">
-    {#if gs.completed}
-      <EndScreen state={gs} />
-    {:else}
-      <ActionBar state={gs} slot={data.slot}
-        onhunt={() => (showHunt = true)}
-        onford={() => (showFord = true)}
-        ontrade={() => (showTrade = true)}
-      />
-    {/if}
-  </div>
-
-  <!-- Event log (full width bottom) -->
-  <div class="log-row">
-    <EventLog state={gs} />
   </div>
 </div>
 
@@ -79,8 +74,9 @@
 <style>
   .play-wrap { display: flex; flex-direction: column; gap: 0.8em; padding: 0.8em; min-height: calc(100vh - 60px); }
   .top-bar { display: flex; justify-content: space-between; align-items: center; }
-  .main-row { display: grid; grid-template-columns: 1fr 240px; gap: 0.8em; }
-  .side-rail { display: flex; flex-direction: column; gap: 0.8em; }
+  .main-row { display: grid; grid-template-columns: 1fr 280px; gap: 0.8em; }
+  .left-col { display: flex; flex-direction: column; gap: 0.8em; min-width: 0; }
+  .side-rail { display: flex; flex-direction: column; gap: 0.8em; min-width: 0; }
 
   @media (max-width: 900px) {
     .main-row { grid-template-columns: 1fr; }
