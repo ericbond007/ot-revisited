@@ -100,7 +100,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
 }
 
 // --- system step signature ---
-type TickStep = (state: GameState, rng: Rng) => GameState;
+export type TickStep = (state: GameState, rng: Rng) => GameState;
 
 // --- stubs for systems that arrive in later tasks ---
 const progressConditions: TickStep = (s) => s;

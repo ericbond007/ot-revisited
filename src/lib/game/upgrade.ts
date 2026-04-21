@@ -1,6 +1,6 @@
-import type { GameState } from './types';
+import type { GameState, GameStateFlag } from './types';
 
-const DEFAULT_FLAGS: Record<string, boolean> = {
+const DEFAULT_FLAGS: Record<GameStateFlag, boolean> = {
   hasBoilingKnowledge: false,
   hadFireLastNight: false
 };
