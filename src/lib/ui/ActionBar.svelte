@@ -1,6 +1,19 @@
 <script lang="ts">
-  let { slot }: { slot: string } = $props();
+  import type { GameState } from '$lib/game/types';
+  import { getLandmark } from '$lib/game/content/landmarks';
+
+  let { state: gameState, slot, onhunt, onford, ontrade }: {
+    state: GameState;
+    slot: string;
+    onhunt?: () => void;
+    onford?: () => void;
+    ontrade?: () => void;
+  } = $props();
   const qp = $derived(encodeURIComponent(slot));
+
+  const nextLandmark = $derived(getLandmark(gameState.location.nextLandmarkId));
+  const atRiver = $derived(nextLandmark.kind === 'river');
+  const nearTradingPost = $derived(nextLandmark.kind === 'trading_post' || nextLandmark.kind === 'start' || nextLandmark.kind === 'end');
 
   let travelDays = $state(3);
   let restDays = $state(2);
@@ -21,7 +34,7 @@
     <button type="submit">Camp</button>
   </form>
 
-  <button type="button" disabled title="Plan 4c">Hunt</button>
-  <button type="button" disabled title="Plan 4c">Trade</button>
-  <button type="button" disabled title="Plan 4c">Ford</button>
+  <button type="button" onclick={onhunt}>Hunt</button>
+  <button type="button" onclick={ontrade} disabled={!nearTradingPost} title={nearTradingPost ? '' : 'Only at trading posts'}>Trade</button>
+  <button type="button" onclick={onford} disabled={!atRiver} title={atRiver ? '' : 'Only at river crossings'}>Ford</button>
 </div>

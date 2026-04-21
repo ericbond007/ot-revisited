@@ -1,8 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error } from '@sveltejs/kit';
-import { tickDay } from '$lib/game/engine';
 import { rest } from '$lib/game/actions/rest';
 import { camp } from '$lib/game/actions/camp';
+import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
+import { EVENTS } from '$lib/game/content/events';
+import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
+import { ford, type FordMethod } from '$lib/game/actions/ford';
+import { trade } from '$lib/game/actions/trade';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
   const slot = url.searchParams.get('slot');
@@ -28,8 +32,39 @@ export const actions: Actions = {
     const days = Math.max(1, Math.min(10, parseInt(fd.get('days')?.toString() ?? '1', 10)));
     let state = await loadState(locals, slot);
     for (let i = 0; i < days && !state.completed; i++) {
-      state = tickDay(state);
+      const result = tickDayPausable(state);
+      if (result.pendingEvent) {
+        await locals.repo.save(locals.deviceId, slot, result.state);
+        // Persist pending event in a side-channel flag on state:
+        state = {
+          ...result.state,
+          flags: { ...result.state.flags, _pendingEventId: result.pendingEvent.id }
+        };
+        await locals.repo.save(locals.deviceId, slot, state);
+        return { state, pendingEventId: result.pendingEvent.id };
+      }
+      state = result.state;
     }
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  resolveEvent: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const eventId = fd.get('eventId')?.toString();
+    const choiceId = fd.get('choiceId')?.toString();
+    if (!eventId || !choiceId) throw error(400, 'eventId and choiceId required');
+
+    let state = await loadState(locals, slot);
+    const event = EVENTS.find((e) => e.id === eventId);
+    if (!event) throw error(400, `Unknown event ${eventId}`);
+    state = applyPendingChoice(state, event, choiceId);
+    // Clear the side-channel flag
+    const flags = { ...state.flags };
+    delete (flags as Record<string, unknown>)._pendingEventId;
+    state = { ...state, flags };
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },
@@ -50,6 +85,59 @@ export const actions: Actions = {
     if (!slot) throw error(400, 'slot required');
     let state = await loadState(locals, slot);
     state = camp(state, {});
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  hunt: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const target = fd.get('target')?.toString() as HuntTarget;
+    const ammo = fd.get('ammo')?.toString() as AmmoBand;
+    const hunters = parseInt(fd.get('hunters')?.toString() ?? '1', 10);
+    if (!target || !ammo) throw error(400, 'target and ammo required');
+    let state = await loadState(locals, slot);
+    state = hunt(state, { target, ammo, hunters });
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  ford: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const method = fd.get('method')?.toString() as FordMethod;
+    const waitDays = parseInt(fd.get('waitDays')?.toString() ?? '1', 10);
+    if (!method) throw error(400, 'method required');
+
+    let state = await loadState(locals, slot);
+    // Use a hardcoded RiverState for now; Plan 5 can make rivers contextual per-landmark.
+    const river = { depthFt: 3, currentMph: 3, ferryPrice: 5 };
+    state = ford(state, { method, river, waitDays });
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  trade: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const buys: Array<{ item: string; qty: number }> = [];
+    const sells: Array<{ item: string; qty: number }> = [];
+    for (const [key, value] of fd.entries()) {
+      if (key.startsWith('buy_')) {
+        const item = key.slice(4);
+        const qty = parseInt(value.toString(), 10);
+        if (qty > 0) buys.push({ item, qty });
+      } else if (key.startsWith('sell_')) {
+        const item = key.slice(5);
+        const qty = parseInt(value.toString(), 10);
+        if (qty > 0) sells.push({ item, qty });
+      }
+    }
+    let state = await loadState(locals, slot);
+    state = trade(state, { buys, sells });
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   }
