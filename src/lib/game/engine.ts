@@ -1,5 +1,6 @@
 import type { GameDate, GameState, PartyMember, ProfessionId } from './types';
 import { applyDailyConsumption } from './systems/consumption';
+import { progressConditions } from './systems/conditions';
 import { makeRng, type Rng } from './rng';
 import { upgradeState } from './upgrade';
 
@@ -103,7 +104,6 @@ export function createInitialState(opts: NewGameOptions): GameState {
 export type TickStep = (state: GameState, rng: Rng) => GameState;
 
 // --- stubs for systems that arrive in later tasks ---
-const progressConditions: TickStep = (s) => s;
 const tickOxen: TickStep = (s) => s;
 const tickWagon: TickStep = (s) => s;
 const adjustMorale: TickStep = (s) => s;
