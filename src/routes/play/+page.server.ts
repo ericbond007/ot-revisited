@@ -23,6 +23,36 @@ async function loadState(locals: App.Locals, slot: string) {
   return s;
 }
 
+// Runs up to `days` day-ticks. If an event fires mid-loop, persists the remaining
+// days as `_travelRemaining` so the resolveEvent action can pick up where we left off.
+async function runTravelLoop(
+  initialState: Awaited<ReturnType<typeof loadState>>,
+  days: number,
+  locals: App.Locals,
+  slot: string
+) {
+  let state = initialState;
+  for (let i = 0; i < days && !state.completed; i++) {
+    const result = tickDayPausable(state);
+    if (result.pendingEvent) {
+      const newRemaining = days - (i + 1);
+      state = {
+        ...result.state,
+        flags: {
+          ...result.state.flags,
+          _pendingEventId: result.pendingEvent.id,
+          ...(newRemaining > 0 ? { _travelRemaining: newRemaining } : {})
+        }
+      };
+      await locals.repo.save(locals.deviceId, slot, state);
+      return state;
+    }
+    state = result.state;
+  }
+  await locals.repo.save(locals.deviceId, slot, state);
+  return state;
+}
+
 export const actions: Actions = {
   travel: async ({ url, request, locals }) => {
     const slot = url.searchParams.get('slot');
@@ -30,22 +60,8 @@ export const actions: Actions = {
     const fd = await request.formData();
     const days = Math.max(1, Math.min(10, parseInt(fd.get('days')?.toString() ?? '1', 10)));
     let state = await loadState(locals, slot);
-    for (let i = 0; i < days && !state.completed; i++) {
-      const result = tickDayPausable(state);
-      if (result.pendingEvent) {
-        await locals.repo.save(locals.deviceId, slot, result.state);
-        // Persist pending event in a side-channel flag on state:
-        state = {
-          ...result.state,
-          flags: { ...result.state.flags, _pendingEventId: result.pendingEvent.id }
-        };
-        await locals.repo.save(locals.deviceId, slot, state);
-        return { state, pendingEventId: result.pendingEvent.id };
-      }
-      state = result.state;
-    }
-    await locals.repo.save(locals.deviceId, slot, state);
-    return { state };
+    state = await runTravelLoop(state, days, locals, slot);
+    return { state, pendingEventId: (state.flags._pendingEventId as string | undefined) };
   },
 
   resolveEvent: async ({ url, request, locals }) => {
@@ -60,12 +76,23 @@ export const actions: Actions = {
     const event = EVENTS.find((e) => e.id === eventId);
     if (!event) throw error(400, `Unknown event ${eventId}`);
     state = applyPendingChoice(state, event, choiceId);
-    // Clear the side-channel flag
+
+    // Extract how many travel days were queued before the event paused us.
+    const remaining = typeof state.flags._travelRemaining === 'number' ? state.flags._travelRemaining : 0;
+
+    // Clear both pause-related flags; if the loop below re-pauses it'll set them again.
     const flags = { ...state.flags };
     delete (flags as Record<string, unknown>)._pendingEventId;
+    delete (flags as Record<string, unknown>)._travelRemaining;
     state = { ...state, flags };
-    await locals.repo.save(locals.deviceId, slot, state);
-    return { state };
+
+    if (remaining > 0) {
+      state = await runTravelLoop(state, remaining, locals, slot);
+    } else {
+      await locals.repo.save(locals.deviceId, slot, state);
+    }
+
+    return { state, pendingEventId: (state.flags._pendingEventId as string | undefined) };
   },
 
   rest: async ({ url, request, locals }) => {
