@@ -33,3 +33,13 @@ export function oxenSpeedFactor(oxen: Ox[]): number {
   const teamFactor = Math.min(1.2, alive.length / 2);
   return teamFactor * avgFitness;
 }
+
+// Recovery applied when the party rests or camps.
+// Dead oxen unaffected. Returns a new array.
+export function recoverOxenFatigue(oxen: Ox[], amount: number): Ox[] {
+  return oxen.map((o) => {
+    if (o.health === 0) return o;
+    const fatigue = Math.max(0, o.fatigue - amount);
+    return { ...o, fatigue };
+  });
+}
