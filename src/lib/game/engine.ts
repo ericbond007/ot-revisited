@@ -6,6 +6,7 @@ import { tickOxen } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
 import { makeRng, type Rng } from './rng';
 import { upgradeState } from './upgrade';
+import { applyTravel } from './systems/travel';
 
 export interface PartyPick {
   name: string;
@@ -107,7 +108,6 @@ export function createInitialState(opts: NewGameOptions): GameState {
 export type TickStep = (state: GameState, rng: Rng) => GameState;
 
 // --- stubs for systems that arrive in later tasks ---
-const applyTravel: TickStep = (s) => s;
 const attemptFire: TickStep = (s) => s;
 const reapDead: TickStep = (s) => s;
 
