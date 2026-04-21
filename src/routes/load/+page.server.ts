@@ -20,7 +20,7 @@ export const actions: Actions = {
     if (!slotName) throw error(400, 'slotName required');
     const state = await locals.repo.load(locals.deviceId, slotName);
     if (!state) throw error(404, `No save in slot "${slotName}"`);
-    throw redirect(303, `/?loaded=${encodeURIComponent(slotName)}`);
+    throw redirect(303, `/play?slot=${encodeURIComponent(slotName)}`);
   },
   delete: async ({ request, locals }) => {
     const fd = await request.formData();
