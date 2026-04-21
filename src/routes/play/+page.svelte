@@ -5,12 +5,14 @@
   import EventLog from '$lib/ui/EventLog.svelte';
   import ActionBar from '$lib/ui/ActionBar.svelte';
   import EndScreen from '$lib/ui/EndScreen.svelte';
+  import EventModal from '$lib/ui/EventModal.svelte';
 
   let { data, form } = $props();
   const state = $derived(form?.state ?? data.state);
+  const pendingEventId = $derived(state.flags._pendingEventId as string | undefined);
 </script>
 
-<div style="display: grid; grid-template-columns: 1fr 240px; grid-template-rows: auto auto auto; gap: 0.8em; padding: 0.8em; min-height: calc(100vh - 60px);">
+<div style="display: grid; grid-template-columns: 1fr 240px; grid-template-rows: auto auto auto auto; gap: 0.8em; padding: 0.8em; min-height: calc(100vh - 60px);">
   <!-- Header -->
   <div class="panel" style="grid-column: 1 / 3; display: flex; justify-content: space-between; align-items: center;">
     <h2 style="margin: 0;">{state.party[0].name}'s Journey</h2>
@@ -44,3 +46,7 @@
     <EventLog {state} />
   </div>
 </div>
+
+{#if pendingEventId}
+  <EventModal eventId={pendingEventId} slot={data.slot} />
+{/if}
