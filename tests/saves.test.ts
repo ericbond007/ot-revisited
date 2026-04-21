@@ -45,3 +45,20 @@ describe('buildSummary', () => {
     expect(sum).toMatch(/1848/);
   });
 });
+
+describe('save format versioning', () => {
+  it('serialized JSON contains a version field', () => {
+    const s = fresh();
+    const json = serialize(s);
+    const parsed = JSON.parse(json);
+    expect(parsed.version).toBe(1);
+    expect(parsed.state).toBeDefined();
+  });
+
+  it('deserialize reads legacy unversioned saves', () => {
+    const s = fresh();
+    const legacy = JSON.stringify(s);
+    const restored = deserialize(legacy);
+    expect(restored).toEqual(s);
+  });
+});

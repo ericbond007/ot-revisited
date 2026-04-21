@@ -22,6 +22,22 @@ npm run test:watch    # watch mode
 npm run dev           # dev server (UI arrives in Plan 4)
 ```
 
+## Running the UI
+
+```bash
+npm run build         # produces build/
+node build/index.js   # starts the self-hosted server (default port 3000)
+```
+
+Open http://localhost:3000/ in a browser.
+
+Plan 4a UI screens:
+- `/` — landing; lists existing saves
+- `/new` — party-setup wizard; creates a new journey
+- `/load` — load or delete saved games
+
+Main play screen lands in Plan 4b.
+
 ## Project layout
 
 - `src/lib/game/` — pure game engine (no DB, no DOM). `types.ts`, `rng.ts`, `engine.ts`, `saves.ts`, `systems/`.

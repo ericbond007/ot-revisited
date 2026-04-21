@@ -50,31 +50,22 @@ export class SavesRepo {
     const now = new Date();
     const gameState = serialize(state);
     const summary = buildSummary(state);
-    const existing = await this.db
-      .select({ id: saves.id })
-      .from(saves)
-      .where(and(eq(saves.deviceId, deviceId), eq(saves.slotName, slotName)))
-      .get();
-    if (existing) {
-      await this.db
-        .update(saves)
-        .set({ gameState, summary, updatedAt: now })
-        .where(eq(saves.id, existing.id))
-        .run();
-    } else {
-      await this.db
-        .insert(saves)
-        .values({
-          id: randomUUID(),
-          deviceId,
-          slotName,
-          gameState,
-          summary,
-          createdAt: now,
-          updatedAt: now
-        })
-        .run();
-    }
+    await this.db
+      .insert(saves)
+      .values({
+        id: randomUUID(),
+        deviceId,
+        slotName,
+        gameState,
+        summary,
+        createdAt: now,
+        updatedAt: now
+      })
+      .onConflictDoUpdate({
+        target: [saves.deviceId, saves.slotName],
+        set: { gameState, summary, updatedAt: now }
+      })
+      .run();
   }
 
   async delete(deviceId: string, slotName: string): Promise<void> {
