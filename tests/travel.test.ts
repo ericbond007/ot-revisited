@@ -62,7 +62,7 @@ describe('applyTravel', () => {
     const s = newGame();
     const nearly = { ...s, location: { ...s.location, milesTraveled: 299 } };
     const next = applyTravel(nearly, makeRng('t:1'));
-    expect(next.location.previousLandmarkId).toBe('independence');
+    expect(next.location.previousLandmarkId).toBe('kansas_river');
     expect(next.location.nextLandmarkId).not.toBe('ft_kearny');
   });
 
