@@ -7,12 +7,16 @@
   import EndScreen from '$lib/ui/EndScreen.svelte';
   import EventModal from '$lib/ui/EventModal.svelte';
   import HuntModal from '$lib/ui/HuntModal.svelte';
+  import FordModal from '$lib/ui/FordModal.svelte';
+  import TradeModal from '$lib/ui/TradeModal.svelte';
 
   let { data, form } = $props();
   const gs = $derived(form?.state ?? data.state);
   const pendingEventId = $derived((gs.flags._pendingEventId as string | undefined));
 
   let showHunt = $state(false);
+  let showFord = $state(false);
+  let showTrade = $state(false);
 </script>
 
 <div style="display: grid; grid-template-columns: 1fr 240px; grid-template-rows: auto auto auto auto; gap: 0.8em; padding: 0.8em; min-height: calc(100vh - 60px);">
@@ -40,7 +44,11 @@
     {#if gs.completed}
       <EndScreen state={gs} />
     {:else}
-      <ActionBar slot={data.slot} onhunt={() => (showHunt = true)} />
+      <ActionBar state={gs} slot={data.slot}
+        onhunt={() => (showHunt = true)}
+        onford={() => (showFord = true)}
+        ontrade={() => (showTrade = true)}
+      />
     {/if}
   </div>
 
@@ -56,4 +64,12 @@
 
 {#if showHunt && !gs.completed}
   <HuntModal state={gs} slot={data.slot} onclose={() => (showHunt = false)} />
+{/if}
+
+{#if showFord && !gs.completed}
+  <FordModal slot={data.slot} onclose={() => (showFord = false)} />
+{/if}
+
+{#if showTrade && !gs.completed}
+  <TradeModal state={gs} slot={data.slot} onclose={() => (showTrade = false)} />
 {/if}
