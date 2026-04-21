@@ -42,16 +42,20 @@
 
   <h4 style="color: var(--c-ink); margin: 0 0 0.5em 0; letter-spacing: 0.15em;">THE TRAIL — {Math.round(gameState.location.milesTraveled)} / {totalMiles} mi</h4>
 
-  <!-- Dashed trail -->
+  <!-- Dashed trail. Independence on the RIGHT (east), Oregon City on the LEFT (west) — geographically correct + classic OT. -->
   <div style="position: relative; height: 200px; margin-top: 1em;">
     <div style="position: absolute; top: 50%; left: 4%; right: 4%; height: 2px; background: repeating-linear-gradient(to right, var(--c-rust) 0 6px, transparent 6px 12px);"></div>
+
+    <!-- Compass labels on the edges -->
+    <div style="position: absolute; top: 0; right: 0; font-size: 0.7em; font-weight: 700; letter-spacing: 0.1em; color: var(--c-ink);">← EAST</div>
+    <div style="position: absolute; top: 0; left: 0; font-size: 0.7em; font-weight: 700; letter-spacing: 0.1em; color: var(--c-ink);">WEST →</div>
 
     {#each markers as m}
       {@const reached = previousId && markers.findIndex((x) => x.id === previousId) >= markers.indexOf(m)}
       <div
         style="
           position: absolute;
-          left: calc({Math.max(4, Math.min(96, m.pct))}% - 6px);
+          right: calc({Math.max(4, Math.min(96, m.pct))}% - 6px);
           top: 50%;
           transform: translateY(-50%);
           width: 12px;
@@ -64,10 +68,10 @@
       ></div>
     {/each}
 
-    <!-- Wagon -->
+    <!-- Wagon — starts at right (Independence), moves leftward (west) -->
     <div style="
       position: absolute;
-      left: calc({Math.max(2, Math.min(98, wagonPct))}% - 12px);
+      right: calc({Math.max(2, Math.min(98, wagonPct))}% - 12px);
       top: 38%;
       transform: translateY(-50%);
       font-size: 1.5em;

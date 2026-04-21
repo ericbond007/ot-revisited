@@ -6,7 +6,6 @@ import { createClient } from '../../src/lib/db/client';
 import { SavesRepo } from '../../src/lib/db/saves-repo';
 import { createInitialState, tickDay } from '../../src/lib/game/engine';
 import { rest } from '../../src/lib/game/actions/rest';
-import { camp } from '../../src/lib/game/actions/camp';
 
 function fresh() {
   return createInitialState({
@@ -59,7 +58,7 @@ describe('play action persistence', () => {
 
   it('camp action advances one day and saves', async () => {
     let state = (await repo.load(deviceId, 'slot-1'))!;
-    state = camp(state, {});
+    state = rest(state, 1);
     await repo.save(deviceId, 'slot-1', state);
 
     const reloaded = await repo.load(deviceId, 'slot-1');

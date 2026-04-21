@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, tickDay } from '../../src/lib/game/engine';
-import { camp } from '../../src/lib/game/actions/camp';
 import { rest } from '../../src/lib/game/actions/rest';
 
 function newGame() {
@@ -21,7 +20,7 @@ describe('full-trail smoke', () => {
     let s = newGame();
     for (let cycle = 0; cycle < 30 && !s.completed; cycle++) {
       for (let d = 0; d < 4; d++) s = tickDay(s);
-      s = camp(s, {});
+      s = rest(s, 1);
       s = rest(s, 1);
     }
     expect(s.location.milesTraveled).toBeGreaterThan(500);
@@ -33,7 +32,7 @@ describe('full-trail smoke', () => {
       let s = newGame();
       for (let cycle = 0; cycle < 15; cycle++) {
         for (let d = 0; d < 4; d++) s = tickDay(s);
-        s = camp(s, {});
+        s = rest(s, 1);
         s = rest(s, 1);
       }
       return s;

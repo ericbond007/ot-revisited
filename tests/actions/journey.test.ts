@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, tickDay } from '../../src/lib/game/engine';
-import { camp } from '../../src/lib/game/actions/camp';
 import { rest } from '../../src/lib/game/actions/rest';
 import type { GameState, Ox } from '../../src/lib/game/types';
 
@@ -28,7 +27,7 @@ describe('full journey: Independence → Fort Kearny', () => {
     let s = freshParty();
     for (let cycle = 0; cycle < 8 && !s.completed; cycle++) {
       for (let d = 0; d < 4; d++) s = tickDay(s);
-      s = camp(s, {});
+      s = rest(s, 1);
       s = rest(s, 1);
     }
     expect(s.location.milesTraveled).toBeGreaterThanOrEqual(300);
@@ -38,7 +37,7 @@ describe('full journey: Independence → Fort Kearny', () => {
     let s = freshParty();
     for (let cycle = 0; cycle < 8 && !s.completed; cycle++) {
       for (let d = 0; d < 4; d++) s = tickDay(s);
-      s = camp(s, {});
+      s = rest(s, 1);
       s = rest(s, 1);
     }
     expect(s.party.every((m) => !m.dead)).toBe(true);
@@ -49,7 +48,7 @@ describe('full journey: Independence → Fort Kearny', () => {
       let s = freshParty();
       for (let cycle = 0; cycle < 8; cycle++) {
         for (let d = 0; d < 4; d++) s = tickDay(s);
-        s = camp(s, {});
+        s = rest(s, 1);
         s = rest(s, 1);
       }
       return s;
