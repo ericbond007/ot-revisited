@@ -74,6 +74,10 @@ export interface Location {
   previousLandmarkId: string | null;
   milesTraveled: number;
   terrain: Terrain;
+  // When the wagon has just reached a stop-worthy landmark (trading post / river /
+  // end), this is that landmark's id. Travel halts until the player continues,
+  // which clears this flag.
+  atLandmarkId?: string | null;
 }
 
 export interface Resources {

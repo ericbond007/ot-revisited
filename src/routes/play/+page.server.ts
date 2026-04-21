@@ -23,8 +23,9 @@ async function loadState(locals: App.Locals, slot: string) {
   return s;
 }
 
-// Runs up to `days` day-ticks. If an event fires mid-loop, persists the remaining
-// days as `_travelRemaining` so the resolveEvent action can pick up where we left off.
+// Runs up to `days` day-ticks. Halts early on:
+//   - event fire (persists remaining for resume after resolution)
+//   - reaching a stop-worthy landmark (user must decide whether to trade/ford/etc)
 async function runTravelLoop(
   initialState: Awaited<ReturnType<typeof loadState>>,
   days: number,
@@ -48,6 +49,11 @@ async function runTravelLoop(
       return state;
     }
     state = result.state;
+    // Halt at stop-worthy landmarks (trading post, river, end). Remaining days
+    // are discarded — landmarks are decision points, not drive-throughs.
+    if (state.location.atLandmarkId) {
+      break;
+    }
   }
   await locals.repo.save(locals.deviceId, slot, state);
   return state;

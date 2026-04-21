@@ -14,15 +14,24 @@
   } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
-  const nextLandmark = $derived(getLandmark(gameState.location.nextLandmarkId));
-  const atRiver = $derived(nextLandmark.kind === 'river');
-  const nearTradingPost = $derived(nextLandmark.kind === 'trading_post' || nextLandmark.kind === 'start' || nextLandmark.kind === 'end');
+  // You can only interact with a landmark (trade, ford) when you've physically arrived.
+  const atLandmark = $derived(
+    gameState.location.atLandmarkId ? getLandmark(gameState.location.atLandmarkId) : null
+  );
+  const atTradingPost = $derived(atLandmark?.kind === 'trading_post');
+  const atRiver = $derived(atLandmark?.kind === 'river');
 
   let travelDays = $state(1);
   let traveling = $state(false);
 </script>
 
 <div class="panel" style="display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;">
+  {#if atLandmark}
+    <div class="at-landmark-badge">
+      At <strong>{atLandmark.name}</strong>
+    </div>
+  {/if}
+
   <form
     method="POST"
     action="?/travel&slot={qp}"
@@ -40,12 +49,34 @@
   >
     <NumberStepper name="days" bind:value={travelDays} min={1} max={10} disabled={traveling} ariaLabel="Travel days" />
     <button type="submit" disabled={traveling}>
-      {traveling ? 'Traveling…' : `Travel ${travelDays} day${travelDays === 1 ? '' : 's'}`}
+      {#if traveling}
+        Traveling…
+      {:else if atLandmark}
+        Continue ({travelDays} day{travelDays === 1 ? '' : 's'})
+      {:else}
+        Travel {travelDays} day{travelDays === 1 ? '' : 's'}
+      {/if}
     </button>
   </form>
 
   <button type="button" onclick={onrest} disabled={traveling}>Rest / Camp</button>
   <button type="button" onclick={onhunt} disabled={traveling}>Hunt</button>
-  <button type="button" onclick={ontrade} disabled={traveling || !nearTradingPost} title={nearTradingPost ? '' : 'Only at trading posts'}>Trade</button>
-  <button type="button" onclick={onford} disabled={traveling || !atRiver} title={atRiver ? '' : 'Only at river crossings'}>Ford</button>
+  <button type="button" onclick={ontrade} disabled={traveling || !atTradingPost} title={atTradingPost ? '' : 'Only when stopped at a trading post'}>Trade</button>
+  <button type="button" onclick={onford} disabled={traveling || !atRiver} title={atRiver ? '' : 'Only when stopped at a river crossing'}>Ford</button>
 </div>
+
+<style>
+  .at-landmark-badge {
+    background: var(--c-parchment);
+    color: var(--c-ink);
+    border: 2px solid var(--c-rust);
+    padding: 0.3em 0.8em;
+    border-radius: 3px;
+    font-size: 0.9em;
+    letter-spacing: 0.05em;
+  }
+  .at-landmark-badge strong {
+    color: var(--c-rust-dark);
+    font-weight: 700;
+  }
+</style>
