@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test *)",
+      "Bash(npm run *)",
+      "Bash(git -C /home/eric/projects/hoosierTrail add src/lib/game/rng.ts tests/rng.test.ts)",
+      "Bash(git -C /home/eric/projects/hoosierTrail commit -m ' *)",
+      "Bash(git -C /home/eric/projects/hoosierTrail add src/lib/game/systems/consumption.ts tests/consumption.test.ts)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git -C /home/eric/projects/hoosierTrail add src/lib/game/saves.ts tests/saves.test.ts)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "Bash(git -c user.email=\"claude@anthropic.com\" -c user.name=\"Claude\" commit -q -m \"docs: Plan 2a — passive tick systems + travel\")",
+      "Bash(npx vitest *)",
+      "Bash(git -C /home/eric/projects/hoosierTrail add src/lib/game/engine.ts src/lib/game/upgrade.ts)",
+      "Bash(git -C /home/eric/projects/hoosierTrail add tests/morale.test.ts src/lib/game/systems/morale.ts src/lib/game/engine.ts)",
+      "Bash(git *)"
+    ]
+  }
+}

@@ -103,7 +103,7 @@ export interface GameState {
   pace: Pace;
   rations: Rations;
   eventLog: LogEntry[];
-  flags: Record<string, boolean>;
+  flags: Record<string, boolean | number>;
   completed: boolean;
   outcome: Outcome;
 }
