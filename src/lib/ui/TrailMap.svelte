@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { LANDMARKS } from '$lib/game/content/landmarks';
-  let { state }: { state: GameState } = $props();
+  let { state: gameState }: { state: GameState } = $props();
 
   // Total trail miles (sum of milesFromPrevious).
   const totalMiles = LANDMARKS.reduce((s, l) => s + l.milesFromPrevious, 0);
@@ -19,12 +19,28 @@
     });
   })();
 
-  const wagonPct = $derived(Math.min(100, (state.location.milesTraveled / totalMiles) * 100));
-  const previousId = $derived(state.location.previousLandmarkId);
+  const wagonPct = $derived(Math.min(100, (gameState.location.milesTraveled / totalMiles) * 100));
+  const previousId = $derived(gameState.location.previousLandmarkId);
+
+  let fullscreen = $state(false);
 </script>
 
-<div class="map panel" style="background: var(--c-parchment); color: var(--c-ink); position: relative; min-height: 320px; padding: 1em 1em 4em 1em;">
-  <h4 style="color: var(--c-ink); margin: 0 0 0.5em 0; letter-spacing: 0.15em;">THE TRAIL — {Math.round(state.location.milesTraveled)} / {totalMiles} mi</h4>
+<div class="map panel"
+  style="
+    background: var(--c-parchment);
+    color: var(--c-ink);
+    position: {fullscreen ? 'fixed' : 'relative'};
+    {fullscreen ? 'inset: 0; z-index: 50;' : ''}
+    min-height: 320px;
+    padding: 1em 1em 4em 1em;
+  "
+>
+  <button type="button" onclick={() => (fullscreen = !fullscreen)}
+    style="position: absolute; top: 0.5em; right: 0.5em; padding: 0.3em 0.6em; font-size: 0.8em; background: var(--c-ink); color: var(--c-parchment);">
+    {fullscreen ? '✕ Close' : '⛶ Expand'}
+  </button>
+
+  <h4 style="color: var(--c-ink); margin: 0 0 0.5em 0; letter-spacing: 0.15em;">THE TRAIL — {Math.round(gameState.location.milesTraveled)} / {totalMiles} mi</h4>
 
   <!-- Dashed trail -->
   <div style="position: relative; height: 200px; margin-top: 1em;">
@@ -60,6 +76,6 @@
 
   <!-- Next landmark flavor -->
   <div style="font-size: 0.85em; font-style: italic; position: absolute; bottom: 1em; left: 1em; right: 1em; text-align: center;">
-    Heading for {markers.find((m) => m.id === state.location.nextLandmarkId)?.name ?? '—'}
+    Heading for {markers.find((m) => m.id === gameState.location.nextLandmarkId)?.name ?? '—'}
   </div>
 </div>
