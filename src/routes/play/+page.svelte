@@ -31,7 +31,7 @@
   </header>
 
   <div class="main-row">
-    <!-- Left: map + actions stacked -->
+    <!-- Left column (wide): map + actions + event log -->
     <div class="left-col">
       <TrailMap state={gs} />
 
@@ -47,13 +47,14 @@
           />
         {/if}
       </div>
+
+      <EventLog state={gs} />
     </div>
 
-    <!-- Right rail: party, inventory, log — each with internal scroll -->
+    <!-- Right rail: party + inventory -->
     <div class="side-rail">
       <PartyPanel state={gs} />
       <InventoryPanel state={gs} />
-      <EventLog state={gs} />
     </div>
   </div>
 </div>
@@ -79,13 +80,39 @@
 {/if}
 
 <style>
-  .play-wrap { display: flex; flex-direction: column; gap: 0.8em; padding: 0.8em; min-height: calc(100vh - 60px); }
+  .play-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+    padding: 0.8em;
+    min-height: calc(100vh - 60px);
+  }
   .top-bar { display: flex; justify-content: space-between; align-items: center; }
-  .main-row { display: grid; grid-template-columns: 1fr 280px; gap: 0.8em; }
-  .left-col { display: flex; flex-direction: column; gap: 0.8em; min-width: 0; }
-  .side-rail { display: flex; flex-direction: column; gap: 0.8em; min-width: 0; }
+  .main-row {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 0.8em;
+    flex: 1;
+    min-height: 0;
+  }
+  .left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+    min-width: 0;
+    min-height: 0;
+  }
+  .side-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+  }
 
   @media (max-width: 900px) {
     .main-row { grid-template-columns: 1fr; }
+    .side-rail { overflow-y: visible; }
   }
 </style>
