@@ -69,13 +69,10 @@
     {/each}
 
     <!-- Wagon — starts at right (Independence), moves leftward (west) -->
-    <div style="
-      position: absolute;
-      right: calc({Math.max(2, Math.min(98, wagonPct))}% - 12px);
-      top: 38%;
-      transform: translateY(-50%);
-      font-size: 1.5em;
-    ">🐂🛖</div>
+    <div
+      class="wagon"
+      style="right: calc({Math.max(2, Math.min(98, wagonPct))}% - 12px);"
+    >🐂🛖</div>
   </div>
 
   <!-- Next landmark flavor -->
@@ -83,3 +80,21 @@
     Heading for {markers.find((m) => m.id === gameState.location.nextLandmarkId)?.name ?? '—'}
   </div>
 </div>
+
+<style>
+  .wagon {
+    position: absolute;
+    top: 38%;
+    transform: translateY(-50%);
+    font-size: 1.5em;
+    /* Slide smoothly when position changes — makes travel visible */
+    transition: right 1.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    /* Subtle idle bob so it always feels alive */
+    animation: wagon-bob 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.2));
+  }
+  @keyframes wagon-bob {
+    0%, 100% { transform: translateY(-50%) rotate(-0.8deg); }
+    50%      { transform: translateY(calc(-50% - 3px)) rotate(0.8deg); }
+  }
+</style>

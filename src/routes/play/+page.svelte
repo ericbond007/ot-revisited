@@ -19,14 +19,36 @@
   let showHunt = $state(false);
   let showFord = $state(false);
   let showTrade = $state(false);
+
+  // Day-change pulse: briefly flash the header when the day number changes
+  let dayFlash = $state(false);
+  let lastSeenDay = -1;
+  $effect(() => {
+    const currentDay = gs.day;
+    if (lastSeenDay === -1) {
+      lastSeenDay = currentDay;
+      return;
+    }
+    if (currentDay !== lastSeenDay) {
+      dayFlash = true;
+      lastSeenDay = currentDay;
+      setTimeout(() => { dayFlash = false; }, 800);
+    }
+  });
 </script>
 
 <div class="play-wrap">
   <!-- Header -->
   <header class="panel top-bar">
     <h2 style="margin: 0;">{gs.party[0].name}'s Journey</h2>
-    <div style="color: var(--c-wood);">
-      Day {gs.day} · {gs.date.year}-{String(gs.date.month).padStart(2, '0')}-{String(gs.date.day).padStart(2, '0')} · {gs.pace} · {gs.rations}
+    <div class="date-readout {dayFlash ? 'pulse' : ''}">
+      <span class="day-num">Day {gs.day}</span>
+      <span class="separator">·</span>
+      <span>{gs.date.year}-{String(gs.date.month).padStart(2, '0')}-{String(gs.date.day).padStart(2, '0')}</span>
+      <span class="separator">·</span>
+      <span>{gs.pace}</span>
+      <span class="separator">·</span>
+      <span>{gs.rations}</span>
     </div>
   </header>
 
@@ -114,5 +136,23 @@
   @media (max-width: 900px) {
     .main-row { grid-template-columns: 1fr; }
     .side-rail { overflow-y: visible; }
+  }
+
+  .date-readout {
+    color: var(--c-wood);
+    transition: color 0.25s, text-shadow 0.25s;
+  }
+  .date-readout .day-num {
+    color: var(--c-tan-bright);
+    font-weight: 700;
+    transition: color 0.25s, text-shadow 0.25s;
+  }
+  .date-readout .separator {
+    margin: 0 0.4em;
+    color: var(--c-border);
+  }
+  .date-readout.pulse .day-num {
+    color: var(--c-rust);
+    text-shadow: 0 0 10px var(--c-rust);
   }
 </style>
