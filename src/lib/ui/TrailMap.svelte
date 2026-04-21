@@ -88,7 +88,7 @@
     transform: translateY(-50%);
     font-size: 1.5em;
     /* Slide smoothly when position changes — makes travel visible */
-    transition: right 1.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transition: right 2.5s cubic-bezier(0.4, 0.0, 0.2, 1);
     /* Subtle idle bob so it always feels alive */
     animation: wagon-bob 1.8s ease-in-out infinite;
     filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.2));

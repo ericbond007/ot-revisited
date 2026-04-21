@@ -29,9 +29,10 @@
       traveling = true;
       return async ({ update }) => {
         await update();
-        // Hold the "traveling" indicator just long enough for the wagon
-        // slide to finish (CSS transition is 1.4s).
-        setTimeout(() => { traveling = false; }, 1400);
+        // Hold the "traveling" indicator for the full wagon-slide duration
+        // (CSS transition is 2.5s) so all other actions stay locked out
+        // while the wagon is visibly in motion.
+        setTimeout(() => { traveling = false; }, 2500);
       };
     }}
     style="display: flex; gap: 0.3em; align-items: center;"
