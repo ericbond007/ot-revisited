@@ -3,6 +3,7 @@ import { applyDailyConsumption } from './systems/consumption';
 import { progressConditions } from './systems/conditions';
 import { adjustMorale } from './systems/morale';
 import { tickOxen } from './systems/oxen';
+import { tickWagon } from './systems/wagon';
 import { makeRng, type Rng } from './rng';
 import { upgradeState } from './upgrade';
 
@@ -106,7 +107,6 @@ export function createInitialState(opts: NewGameOptions): GameState {
 export type TickStep = (state: GameState, rng: Rng) => GameState;
 
 // --- stubs for systems that arrive in later tasks ---
-const tickWagon: TickStep = (s) => s;
 const applyTravel: TickStep = (s) => s;
 const attemptFire: TickStep = (s) => s;
 const reapDead: TickStep = (s) => s;
