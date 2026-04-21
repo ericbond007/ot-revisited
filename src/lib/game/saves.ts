@@ -1,42 +1,26 @@
 import type { GameState } from './types';
 
+const SAVE_VERSION = 1;
+
 const REQUIRED_KEYS: readonly (keyof GameState)[] = [
-  'seed',
-  'day',
-  'date',
-  'location',
-  'party',
-  'wagon',
-  'oxen',
-  'inventory',
-  'cash',
-  'resources',
-  'morale',
-  'pace',
-  'rations',
-  'eventLog',
-  'flags',
-  'completed',
-  'outcome'
+  'seed', 'day', 'date', 'location', 'party', 'wagon', 'oxen',
+  'inventory', 'cash', 'resources', 'morale', 'pace', 'rations',
+  'eventLog', 'flags', 'completed', 'outcome'
 ];
 
 const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
+interface VersionedSave {
+  version: number;
+  state: GameState;
+}
+
 export function serialize(state: GameState): string {
-  return JSON.stringify(state);
+  const wrapped: VersionedSave = { version: SAVE_VERSION, state };
+  return JSON.stringify(wrapped);
 }
 
 export function deserialize(json: string): GameState {
@@ -49,12 +33,18 @@ export function deserialize(json: string): GameState {
   if (typeof parsed !== 'object' || parsed === null) {
     throw new Error('Invalid save: not an object');
   }
+
+  const obj = parsed as Record<string, unknown>;
+  const stateObj = 'version' in obj && 'state' in obj
+    ? (obj.state as Record<string, unknown>)
+    : obj;
+
   for (const key of REQUIRED_KEYS) {
-    if (!(key in (parsed as Record<string, unknown>))) {
+    if (!(key in stateObj)) {
       throw new Error(`Invalid save: missing field "${key}"`);
     }
   }
-  return parsed as GameState;
+  return stateObj as unknown as GameState;
 }
 
 export function buildSummary(state: GameState): string {
