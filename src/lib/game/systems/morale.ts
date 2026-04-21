@@ -1,5 +1,6 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
+import { foodItemIds } from '../content/items';
 
 export function healingMultiplier(morale: number): number {
   if (morale >= 80) return 1.25;
@@ -9,9 +10,8 @@ export function healingMultiplier(morale: number): number {
   return 0.75;
 }
 
-const FOOD_KEYS = ['flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'pemmican'];
 function totalFood(state: GameState): number {
-  return FOOD_KEYS.reduce((sum, k) => sum + (state.inventory[k] ?? 0), 0);
+  return foodItemIds().reduce((sum, k) => sum + (state.inventory[k] ?? 0), 0);
 }
 
 export function adjustMorale(state: GameState, _rng: Rng): GameState {

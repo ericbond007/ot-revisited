@@ -62,14 +62,18 @@ describe('applyTravel', () => {
     const s = newGame();
     const nearly = { ...s, location: { ...s.location, milesTraveled: 299 } };
     const next = applyTravel(nearly, makeRng('t:1'));
-    expect(next.location.previousLandmarkId).toBe('independence');
+    expect(next.location.previousLandmarkId).toBe('kansas_river');
     expect(next.location.nextLandmarkId).not.toBe('ft_kearny');
   });
 
   it('appends a log entry when a landmark is reached', () => {
     const s = newGame();
-    const nearly = { ...s, location: { ...s.location, milesTraveled: 299 } };
-    const next = applyTravel(nearly, makeRng('t:1'));
+    // Position party just before Fort Kearny (cumulative mile 300) with nextLandmarkId set directly.
+    const nearKearny = {
+      ...s,
+      location: { ...s.location, nextLandmarkId: 'ft_kearny', milesTraveled: 289 }
+    };
+    const next = applyTravel(nearKearny, makeRng('t:1'));
     expect(next.eventLog.length).toBeGreaterThan(s.eventLog.length);
     const last = next.eventLog[next.eventLog.length - 1];
     expect(last.text).toMatch(/Kearny/i);
@@ -81,8 +85,8 @@ describe('applyTravel', () => {
       ...s,
       location: {
         ...s.location,
-        nextLandmarkId: 'chimney_rock',
-        previousLandmarkId: 'ft_kearny',
+        nextLandmarkId: 'oregon_city',
+        previousLandmarkId: 'laurel_hill',
         milesTraveled: 9999
       }
     };

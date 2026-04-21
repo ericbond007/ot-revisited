@@ -9,6 +9,7 @@ import { upgradeState } from './upgrade';
 import { applyTravel } from './systems/travel';
 import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
+import { buildStarterKit } from './content/starter-kit';
 
 export interface PartyPick {
   name: string;
@@ -74,27 +75,31 @@ export function createInitialState(opts: NewGameOptions): GameState {
     ...opts.companions.map((c, i) => makeMember(c, false, i + 1))
   ];
 
+  const professions = party.map((m) => m.profession);
+  const kit = buildStarterKit(professions);
+  const oxen = Array.from({ length: kit.oxen }, (_, i) => ({
+    id: `ox-${i}`,
+    health: 100,
+    fatigue: 0,
+    shod: true
+  }));
+
   return {
     seed: opts.seed,
     day: 1,
     date: { ...opts.startDate },
     location: {
       trailPosition: 0,
-      nextLandmarkId: 'ft_kearny',
+      nextLandmarkId: 'kansas_river',
       previousLandmarkId: null,
       milesTraveled: 0,
       terrain: 'prairie'
     },
     party,
     wagon: { condition: 100, carryCapacity: 2500 },
-    oxen: [],
-    inventory: {
-      flour: 500,
-      bullets: 20,
-      shovel: 1,
-      yoke: 1
-    },
-    cash: 300,
+    oxen,
+    inventory: kit.inventory,
+    cash: kit.cash,
     resources: { water: 20, waterCap: 20 },
     morale: 70,
     pace: 'moderate',

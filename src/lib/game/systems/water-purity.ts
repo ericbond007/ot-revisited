@@ -1,12 +1,12 @@
 import type { GameState } from '../types';
+import { hasLiveDoctor } from '../professions/predicates';
 
 const GERM_THEORY_YEAR = 1854;
 
 export function canBoilWater(state: GameState): boolean {
   if (state.flags.hasBoilingKnowledge) return true;
   if (state.date.year >= GERM_THEORY_YEAR) return true;
-  const hasLiveDoctor = state.party.some((m) => !m.dead && m.profession === 'doctor');
-  return hasLiveDoctor;
+  return hasLiveDoctor(state);
 }
 
 export function waterborneDiseaseModifier(state: GameState): number {

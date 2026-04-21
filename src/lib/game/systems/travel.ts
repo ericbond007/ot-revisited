@@ -52,14 +52,16 @@ export function applyTravel(state: GameState, _rng: Rng): GameState {
 
   if (milesTraveled >= targetMiles) {
     const after = nextLandmarkAfter(nextLandmark.id);
-    const prevId = state.location.previousLandmarkId ?? 'independence';
+    // Adopt the next leg's terrain — but river landmarks are decision waypoints,
+    // not travel legs. Keep the current terrain instead when the next landmark is a river.
+    const newTerrain = after?.kind === 'river' ? next.location.terrain : (after?.terrain ?? next.location.terrain);
     next = {
       ...next,
       location: {
         ...next.location,
-        previousLandmarkId: prevId,
+        previousLandmarkId: nextLandmark.id,
         nextLandmarkId: after?.id ?? nextLandmark.id,
-        terrain: after?.terrain ?? next.location.terrain
+        terrain: newTerrain
       },
       eventLog: [
         ...next.eventLog,

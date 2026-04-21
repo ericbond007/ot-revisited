@@ -1,6 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { makeRng } from '../rng';
+import { hasLiveFarmer } from '../professions/predicates';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
@@ -89,8 +90,7 @@ export function camp(state: GameState, opts: CampOptions = {}): GameState {
   s = { ...s, oxen: recoverOxenFatigue(s.oxen, CAMP_FATIGUE_RECOVERY) };
   s = attemptFire(s, rng);
 
-  const hasLiveFarmer = s.party.some((m) => !m.dead && m.profession === 'farmer');
-  if (hasLiveFarmer) {
+  if (hasLiveFarmer(s)) {
     const currentFlour = s.inventory.flour ?? 0;
     s = { ...s, inventory: { ...s.inventory, flour: currentFlour + FARMER_CAMP_FORAGE } };
   }
