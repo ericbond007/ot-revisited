@@ -8,8 +8,6 @@
 
   let days = $state(1);
   let digWell = $state(false);
-  let digGrave = $state(false);
-  let digOut = $state(false);
 </script>
 
 <div style="position: fixed; inset: 0; background: rgba(26, 15, 8, 0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1em;">
@@ -33,14 +31,9 @@
             <input type="checkbox" name="shovelAction" value="dig_well" bind:checked={digWell} disabled={!hasShovel} />
             Dig a well (5 hrs) — chance to find water
           </label>
-          <label style="display: block; margin: 0.3em 0;">
-            <input type="checkbox" name="shovelAction" value="dig_grave" bind:checked={digGrave} disabled={!hasShovel} />
-            Dig a grave (2 hrs) — softens future death
-          </label>
-          <label style="display: block; margin: 0.3em 0;">
-            <input type="checkbox" name="shovelAction" value="dig_out" bind:checked={digOut} disabled={!hasShovel} />
-            Dig wagon out of mud / snow (4 hrs)
-          </label>
+          <p style="color: var(--c-wood); font-size: 0.8em; font-style: italic; margin: 0.5em 0 0 0;">
+            (Burying the dead and digging the wagon out of mud or snow happen when the situation calls for it, not here.)
+          </p>
         </div>
       {:else}
         <p style="color: var(--c-wood); font-size: 0.85em; font-style: italic;">
