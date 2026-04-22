@@ -33,13 +33,25 @@ async function runTravelLoop(
   locals: App.Locals,
   slot: string
 ) {
+  const startDay = initialState.day;
+  const startMiles = initialState.location.milesTraveled;
   let state = initialState;
   for (let i = 0; i < days && !state.completed; i++) {
     const result = tickDayPausable(state);
     if (result.pendingEvent) {
+      const daysTraveled = result.state.day - startDay;
+      const milesTraveled = Math.round(result.state.location.milesTraveled - startMiles);
+      const summary =
+        daysTraveled > 0
+          ? `Traveled ${daysTraveled} day${daysTraveled === 1 ? '' : 's'} (${milesTraveled} mi) before being stopped.`
+          : `Barely started out before being stopped.`;
       state = {
         ...result.state,
-        flags: { ...result.state.flags, _pendingEventId: result.pendingEvent.id }
+        flags: { ...result.state.flags, _pendingEventId: result.pendingEvent.id },
+        eventLog: [
+          ...result.state.eventLog,
+          { day: result.state.day, text: summary }
+        ]
       };
       await locals.repo.save(locals.deviceId, slot, state);
       return state;
@@ -141,6 +153,40 @@ export const actions: Actions = {
     state = ford(state, { method, river, waitDays });
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
+  },
+
+  setPace: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const raw = fd.get('pace')?.toString();
+    const ALLOWED_PACES = ['slow', 'moderate', 'fast', 'grueling'] as const;
+    type Pace = typeof ALLOWED_PACES[number];
+    if (!raw || !ALLOWED_PACES.includes(raw as Pace)) {
+      throw error(400, 'invalid pace');
+    }
+    const pace: Pace = raw as Pace;
+    const state = await loadState(locals, slot);
+    const next = { ...state, pace };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
+  setRations: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const raw = fd.get('rations')?.toString();
+    const ALLOWED_RATIONS = ['meager', 'normal', 'filling'] as const;
+    type Rations = typeof ALLOWED_RATIONS[number];
+    if (!raw || !ALLOWED_RATIONS.includes(raw as Rations)) {
+      throw error(400, 'invalid rations');
+    }
+    const rations: Rations = raw as Rations;
+    const state = await loadState(locals, slot);
+    const next = { ...state, rations };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
   },
 
   trade: async ({ url, request, locals }) => {

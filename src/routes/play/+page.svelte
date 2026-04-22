@@ -10,6 +10,7 @@
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
   import RestModal from '$lib/ui/RestModal.svelte';
+  import SettingsPanel from '$lib/ui/SettingsPanel.svelte';
 
   let { data, form } = $props();
   const gs = $derived(form?.state ?? data.state);
@@ -19,6 +20,19 @@
   let showHunt = $state(false);
   let showFord = $state(false);
   let showTrade = $state(false);
+
+  // Delay the event modal's appearance so the wagon has time to slide +
+  // the travel-summary log entry is visible before the modal covers things.
+  const MODAL_DELAY_MS = 1600;
+  let modalReady = $state(false);
+  $effect(() => {
+    const id = pendingEventId;
+    if (id) {
+      const t = setTimeout(() => { modalReady = true; }, MODAL_DELAY_MS);
+      return () => clearTimeout(t);
+    }
+    modalReady = false;
+  });
 
   // Day-change pulse: briefly flash the header when the day number changes
   let dayFlash = $state(false);
@@ -94,7 +108,7 @@
   </div>
 </div>
 
-{#if pendingEventId}
+{#if pendingEventId && modalReady}
   <EventModal eventId={pendingEventId} slot={data.slot} />
 {/if}
 
