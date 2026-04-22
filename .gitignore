@@ -26,5 +26,6 @@ vite.config.ts.timestamp-*
 # Project-specific
 .superpowers/
 dev.db
+dev.db-*
 *.log
 drizzle/meta
