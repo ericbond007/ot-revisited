@@ -29,9 +29,22 @@
   function inc() {
     value = clamp(value + step);
   }
-  function onInputChange(e: Event) {
-    const n = parseFloat((e.target as HTMLInputElement).value);
+  function onInputInput(e: Event) {
+    // Keep the bound value within [min, max] on every keystroke so it can
+    // never go blank / NaN / out-of-range mid-edit. Empty input → min.
+    const raw = (e.target as HTMLInputElement).value;
+    if (raw === '') {
+      value = min;
+      (e.target as HTMLInputElement).value = String(min);
+      return;
+    }
+    const n = parseFloat(raw);
     value = clamp(n);
+  }
+  function onInputBlur(e: Event) {
+    // Final sweep on blur in case reactivity got confused.
+    value = clamp(value);
+    (e.target as HTMLInputElement).value = String(value);
   }
 </script>
 
@@ -53,7 +66,8 @@
     {step}
     {disabled}
     aria-label={ariaLabel}
-    onchange={onInputChange}
+    oninput={onInputInput}
+    onblur={onInputBlur}
   />
 
   <button
