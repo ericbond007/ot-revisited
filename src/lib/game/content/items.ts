@@ -16,63 +16,65 @@ export interface ItemMeta {
   category: ItemCategory;
   weightLbPerUnit: number;
   foodDrawOrder?: number;
+  // Short hover-tooltip description — what the item is / does / provides.
+  description?: string;
 }
 
 export const ITEMS: Record<string, ItemMeta> = {
-  flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1 },
-  beans:       { id: 'beans',       name: 'Beans',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 2 },
-  bacon:       { id: 'bacon',       name: 'Bacon',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3 },
-  hardtack:    { id: 'hardtack',    name: 'Hardtack',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 4 },
-  dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5 },
-  pemmican:    { id: 'pemmican',    name: 'Pemmican',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6 },
-  sugar:       { id: 'sugar',       name: 'Sugar',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 7 },
-  coffee:      { id: 'coffee',      name: 'Coffee',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 8 },
-  tea:         { id: 'tea',         name: 'Tea',          category: 'food', weightLbPerUnit: 1, foodDrawOrder: 9 },
+  flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten first each day.' },
+  beans:       { id: 'beans',       name: 'Beans',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 2, description: 'Shelf-stable protein. Keeps indefinitely.' },
+  bacon:       { id: 'bacon',       name: 'Bacon',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: 'Salted pork. High-calorie, slow to spoil.' },
+  hardtack:    { id: 'hardtack',    name: 'Hardtack',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 4, description: 'Indestructible biscuit. Fills bellies, drags morale.' },
+  dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Cures scurvy. Small morale boost when eaten.' },
+  pemmican:    { id: 'pemmican',    name: 'Pemmican',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6, description: 'Native-prepared dried meat + fat. Never spoils.' },
+  sugar:       { id: 'sugar',       name: 'Sugar',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 7, description: 'Small morale bump when eaten; preserves foraged berries.' },
+  coffee:      { id: 'coffee',      name: 'Coffee',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 8, description: 'Boiled daily — accidentally purifies water (−40% waterborne disease odds).' },
+  tea:         { id: 'tea',         name: 'Tea',          category: 'food', weightLbPerUnit: 1, foodDrawOrder: 9, description: 'Boiled daily — accidentally purifies water (−40% waterborne disease odds).' },
 
-  ox: { id: 'ox', name: 'Ox', category: 'livestock', weightLbPerUnit: 0 },
-  yoke: { id: 'yoke', name: 'Yoke', category: 'livestock', weightLbPerUnit: 15 },
+  ox: { id: 'ox', name: 'Ox', category: 'livestock', weightLbPerUnit: 0, description: 'Draft animal. Pulls the wagon. More oxen = faster travel and higher carry cap.' },
+  yoke: { id: 'yoke', name: 'Yoke', category: 'livestock', weightLbPerUnit: 15, description: 'Harnesses the oxen to the wagon. Replaces broken yokes.' },
 
-  wagon:       { id: 'wagon',       name: 'Wagon',          category: 'wagon_part', weightLbPerUnit: 0 },
-  wheel:       { id: 'wheel',       name: 'Spare wheel',    category: 'wagon_part', weightLbPerUnit: 50 },
-  axle:        { id: 'axle',        name: 'Spare axle',     category: 'wagon_part', weightLbPerUnit: 60 },
-  tongue:      { id: 'tongue',      name: 'Spare tongue',   category: 'wagon_part', weightLbPerUnit: 40 },
-  canvas:      { id: 'canvas',      name: 'Canvas cover',   category: 'wagon_part', weightLbPerUnit: 30 },
-  spare_plank: { id: 'spare_plank', name: 'Spare plank',    category: 'wagon_part', weightLbPerUnit: 8 },
-  iron_scrap:  { id: 'iron_scrap',  name: 'Iron scrap',     category: 'wagon_part', weightLbPerUnit: 5 },
+  wagon:       { id: 'wagon',       name: 'Wagon',          category: 'wagon_part', weightLbPerUnit: 0, description: 'Your home on wheels.' },
+  wheel:       { id: 'wheel',       name: 'Spare wheel',    category: 'wagon_part', weightLbPerUnit: 50, description: 'Replace a broken wheel. Fully restores some wagon condition.' },
+  axle:        { id: 'axle',        name: 'Spare axle',     category: 'wagon_part', weightLbPerUnit: 60, description: 'Rare but catastrophic failure. A spare saves the day.' },
+  tongue:      { id: 'tongue',      name: 'Spare tongue',   category: 'wagon_part', weightLbPerUnit: 40, description: 'Connects wagon to the oxen. Breaks more often than you\'d think.' },
+  canvas:      { id: 'canvas',      name: 'Canvas cover',   category: 'wagon_part', weightLbPerUnit: 30, description: 'Replace a torn cover. Otherwise weather damages supplies.' },
+  spare_plank: { id: 'spare_plank', name: 'Spare plank',    category: 'wagon_part', weightLbPerUnit: 8, description: 'Patches minor wagon damage. Cheaper than a full replacement.' },
+  iron_scrap:  { id: 'iron_scrap',  name: 'Iron scrap',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Salvaged metal. A Blacksmith can forge it into repairs.' },
 
-  rifle: { id: 'rifle', name: 'Rifle', category: 'weapon', weightLbPerUnit: 10 },
-  bullets: { id: 'bullets', name: 'Bullets', category: 'ammo', weightLbPerUnit: 0.1 },
-  rifle_cleaning_kit: { id: 'rifle_cleaning_kit', name: 'Rifle cleaning kit', category: 'tool', weightLbPerUnit: 2 },
+  rifle: { id: 'rifle', name: 'Rifle', category: 'weapon', weightLbPerUnit: 10, description: 'Required for hunting. A second rifle lets two hunters work in parallel.' },
+  bullets: { id: 'bullets', name: 'Bullets', category: 'ammo', weightLbPerUnit: 0.1, description: 'Consumed on every hunt. Runs out faster than you expect.' },
+  rifle_cleaning_kit: { id: 'rifle_cleaning_kit', name: 'Rifle cleaning kit', category: 'tool', weightLbPerUnit: 2, description: 'Keeps rifles firing in rain / wet weather.' },
 
-  coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4 },
-  boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3 },
-  blanket: { id: 'blanket', name: 'Blanket', category: 'clothing', weightLbPerUnit: 5 },
+  coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Reduces cold-weather health loss.' },
+  boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3, description: 'Reduces party fatigue on rough terrain.' },
+  blanket: { id: 'blanket', name: 'Blanket', category: 'clothing', weightLbPerUnit: 5, description: 'Wards off night chill during winter camps.' },
 
-  iron_toolkit: { id: 'iron_toolkit', name: 'Iron toolkit', category: 'tool', weightLbPerUnit: 20 },
-  cookware: { id: 'cookware', name: 'Cookware', category: 'tool', weightLbPerUnit: 15 },
-  rope: { id: 'rope', name: 'Rope', category: 'tool', weightLbPerUnit: 8 },
-  shovel: { id: 'shovel', name: 'Shovel', category: 'tool', weightLbPerUnit: 5 },
-  compass: { id: 'compass', name: 'Compass', category: 'tool', weightLbPerUnit: 0.5 },
-  water_skin: { id: 'water_skin', name: 'Water skin', category: 'tool', weightLbPerUnit: 2 },
-  ox_shoes: { id: 'ox_shoes', name: 'Ox shoes', category: 'tool', weightLbPerUnit: 2 },
-  spyglass: { id: 'spyglass', name: 'Spyglass', category: 'tool', weightLbPerUnit: 2 },
+  iron_toolkit: { id: 'iron_toolkit', name: 'Iron toolkit', category: 'tool', weightLbPerUnit: 20, description: 'Unlocks proper wagon repairs. Without it, repairs cost 2× the spare parts.' },
+  cookware: { id: 'cookware', name: 'Cookware', category: 'tool', weightLbPerUnit: 15, description: 'Required to boil water (post-1854). Meals taste better, small morale bump.' },
+  rope: { id: 'rope', name: 'Rope', category: 'tool', weightLbPerUnit: 8, description: 'Lower wagons down steep grades, secure loads, rescue fallen oxen.' },
+  shovel: { id: 'shovel', name: 'Shovel', category: 'tool', weightLbPerUnit: 5, description: 'Enables well-digging, grave-digging, wagon extraction. Auto-digs firepit + latrine each camp.' },
+  compass: { id: 'compass', name: 'Compass', category: 'tool', weightLbPerUnit: 0.5, description: 'Reduces the chance of being lost in storms or fog.' },
+  water_skin: { id: 'water_skin', name: 'Water skin', category: 'tool', weightLbPerUnit: 2, description: 'Increases water carry capacity. A buffer for dry stretches.' },
+  ox_shoes: { id: 'ox_shoes', name: 'Ox shoes', category: 'tool', weightLbPerUnit: 2, description: 'Replace shoes oxen throw on rocky terrain. A Blacksmith or Teamster re-shoes them.' },
+  spyglass: { id: 'spyglass', name: 'Spyglass', category: 'tool', weightLbPerUnit: 2, description: 'Reveals landmarks further ahead on the map. Helps with spotting game on hunts.' },
 
-  quinine: { id: 'quinine', name: 'Quinine', category: 'medicine', weightLbPerUnit: 0.2 },
-  laudanum: { id: 'laudanum', name: 'Laudanum', category: 'medicine', weightLbPerUnit: 0.2 },
-  calomel: { id: 'calomel', name: 'Calomel', category: 'medicine', weightLbPerUnit: 0.2 },
-  bandages: { id: 'bandages', name: 'Bandages', category: 'medicine', weightLbPerUnit: 1 },
-  herbal_poultice: { id: 'herbal_poultice', name: 'Herbal poultice', category: 'medicine', weightLbPerUnit: 0.5 },
-  patent_medicine: { id: 'patent_medicine', name: 'Patent medicine', category: 'medicine', weightLbPerUnit: 0.5 },
+  quinine: { id: 'quinine', name: 'Quinine', category: 'medicine', weightLbPerUnit: 0.2, description: 'Treats fever, malaria, typhoid, cholera.' },
+  laudanum: { id: 'laudanum', name: 'Laudanum', category: 'medicine', weightLbPerUnit: 0.2, description: 'Opium tincture. Treats pain, broken bones. Risk of dependency with heavy use.' },
+  calomel: { id: 'calomel', name: 'Calomel', category: 'medicine', weightLbPerUnit: 0.2, description: 'Treats dysentery effectively — but mercury poisoning permanently lowers max health.' },
+  bandages: { id: 'bandages', name: 'Bandages', category: 'medicine', weightLbPerUnit: 1, description: 'Treats wounds, snakebite, broken bones.' },
+  herbal_poultice: { id: 'herbal_poultice', name: 'Herbal poultice', category: 'medicine', weightLbPerUnit: 0.5, description: 'Weaker than modern medicine. Foraged or Preacher-made.' },
+  patent_medicine: { id: 'patent_medicine', name: 'Patent medicine', category: 'medicine', weightLbPerUnit: 0.5, description: 'Gamble: 50% heal / 35% nothing / 15% mild harm. Era-accurate snake oil.' },
 
-  tobacco: { id: 'tobacco', name: 'Tobacco', category: 'comfort', weightLbPerUnit: 1 },
-  whiskey: { id: 'whiskey', name: 'Whiskey', category: 'comfort', weightLbPerUnit: 4 },
-  harmonica: { id: 'harmonica', name: 'Harmonica', category: 'comfort', weightLbPerUnit: 0.2 },
-  fiddle: { id: 'fiddle', name: 'Fiddle', category: 'comfort', weightLbPerUnit: 3 },
-  bible: { id: 'bible', name: 'Bible', category: 'comfort', weightLbPerUnit: 2 },
+  tobacco: { id: 'tobacco', name: 'Tobacco', category: 'comfort', weightLbPerUnit: 1, description: 'Morale consumable. Also Native American trade currency.' },
+  whiskey: { id: 'whiskey', name: 'Whiskey', category: 'comfort', weightLbPerUnit: 4, description: 'Morale bump. Small cold-exposure heal. Rare dependency risk.' },
+  harmonica: { id: 'harmonica', name: 'Harmonica', category: 'comfort', weightLbPerUnit: 0.2, description: 'Unlocks the Entertain camp action — boosts morale.' },
+  fiddle: { id: 'fiddle', name: 'Fiddle', category: 'comfort', weightLbPerUnit: 3, description: 'Larger morale bump than a harmonica. Keeps spirits up on long nights.' },
+  bible: { id: 'bible', name: 'Bible', category: 'comfort', weightLbPerUnit: 2, description: '+2 passive morale while owned. Enables Preacher\'s camp service.' },
 
-  moccasins: { id: 'moccasins', name: 'Moccasins', category: 'native_trade', weightLbPerUnit: 1 },
-  buffalo_robe: { id: 'buffalo_robe', name: 'Buffalo robe', category: 'native_trade', weightLbPerUnit: 8 },
-  beads: { id: 'beads', name: 'Trade beads / calico', category: 'native_trade', weightLbPerUnit: 2 }
+  moccasins: { id: 'moccasins', name: 'Moccasins', category: 'native_trade', weightLbPerUnit: 1, description: 'Quieter travel — reduces bandit-alert rolls. +cold protection.' },
+  buffalo_robe: { id: 'buffalo_robe', name: 'Buffalo robe', category: 'native_trade', weightLbPerUnit: 8, description: 'Best cold protection. Warm, heavy, indispensable in winter.' },
+  beads: { id: 'beads', name: 'Trade beads / calico', category: 'native_trade', weightLbPerUnit: 2, description: 'Currency for trading with Native tribes.' }
 };
 
 export function getItem(id: string): ItemMeta {
