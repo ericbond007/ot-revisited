@@ -12,6 +12,8 @@
   import RestModal from '$lib/ui/RestModal.svelte';
   import WagonModal from '$lib/ui/WagonModal.svelte';
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
+  import PartyModal from '$lib/ui/PartyModal.svelte';
+  import InventoryModal from '$lib/ui/InventoryModal.svelte';
   import SettingsPanel from '$lib/ui/SettingsPanel.svelte';
 
   let { data, form } = $props();
@@ -23,6 +25,8 @@
   let showFord = $state(false);
   let showTrade = $state(false);
   let showWagon = $state(false);
+  let showParty = $state(false);
+  let showInventory = $state(false);
 
   // Delay the event modal's appearance so the wagon has time to slide +
   // the travel-summary log entry is visible before the modal covers things.
@@ -107,9 +111,9 @@
 
     <!-- Right rail: party + wagon + inventory -->
     <div class="side-rail">
-      <PartyPanel state={gs} />
+      <PartyPanel state={gs} onopen={() => (showParty = true)} />
       <WagonPanel state={gs} onopen={() => (showWagon = true)} />
-      <InventoryPanel state={gs} />
+      <InventoryPanel state={gs} onopen={() => (showInventory = true)} />
     </div>
   </div>
 </div>
@@ -124,6 +128,14 @@
 
 {#if showWagon}
   <WagonModal state={gs} onclose={() => (showWagon = false)} />
+{/if}
+
+{#if showParty}
+  <PartyModal state={gs} onclose={() => (showParty = false)} />
+{/if}
+
+{#if showInventory}
+  <InventoryModal state={gs} onclose={() => (showInventory = false)} />
 {/if}
 
 {#if showHunt && !gs.completed}
