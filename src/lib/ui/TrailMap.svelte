@@ -73,6 +73,52 @@
     return out;
   });
 
+  // Per-landmark glyph — kind alone isn't specific enough (different rivers
+  // and forts want different vibe). Fallbacks by kind if unlisted.
+  const LANDMARK_GLYPH: Record<string, string> = {
+    independence:       '🏠',
+    kansas_river:       '🌊',
+    alcove_spring:      '💧',
+    big_blue_river:     '🌊',
+    ft_kearny:          '🏰',
+    ash_hollow:         '🌳',
+    north_platte_1:     '🌊',
+    courthouse_rock:    '🏛️',
+    chimney_rock:       '🗼',
+    scotts_bluff:       '🏔️',
+    ft_laramie:         '🏰',
+    register_cliff:     '📜',
+    guernsey_ruts:      '〰️',
+    north_platte_2:     '🌊',
+    independence_rock:  '🗿',
+    devils_gate:        '⛰️',
+    sweetwater_1:       '🌊',
+    south_pass:         '⛰️',
+    pacific_springs:    '💧',
+    green_river:        '🌊',
+    ft_bridger:         '🏰',
+    bear_river:         '🌊',
+    soda_springs:       '💧',
+    ft_hall:            '🏰',
+    snake_three_island: '🌊',
+    ft_boise:           '🏰',
+    farewell_bend:      '🏞️',
+    blue_mountains:     '🏔️',
+    ft_walla_walla:     '🏰',
+    the_dalles:         '🏞️',
+    laurel_hill:        '🏔️',
+    oregon_city:        '🏁'
+  };
+  function glyphFor(id: string, kind: string): string {
+    return LANDMARK_GLYPH[id] ?? (
+      kind === 'trading_post' ? '🏰'
+      : kind === 'river'       ? '🌊'
+      : kind === 'end'         ? '🏁'
+      : kind === 'start'       ? '🏠'
+      : '📍'
+    );
+  }
+
   let fullscreen = $state(false);
 
   // Classic OT orientation: Independence on the RIGHT (east), destination on
@@ -114,14 +160,16 @@
       {@const dotRight = dotRightPctForLeg(m.mile)}
       {@const reached = gameState.location.milesTraveled >= m.mile}
       <div
-        class="dot kind-{m.kind}"
+        class="lm kind-{m.kind}"
         class:reached
-        style="right: calc({dotRight}% - 7px);"
+        style="right: calc({dotRight}% - 14px);"
         title="{m.name} ({m.mile} mi)"
-      ></div>
+      >
+        <span class="lm-glyph">{glyphFor(m.id, m.kind)}</span>
+      </div>
       <!-- Alternate labels above/below the line so names don't collide on tight legs. -->
       <div
-        class="dot-label"
+        class="lm-label"
         class:above={i % 2 === 0}
         class:below={i % 2 === 1}
         style="right: calc({dotRight}% - 60px);"
@@ -141,7 +189,7 @@
       <span class="ahead-sep">·</span>
       {#each upcoming as u, i}
         <span class="ahead-item">
-          <span class="ahead-icon kind-{u.kind}"></span>
+          <span class="ahead-glyph">{glyphFor(u.id, u.kind)}</span>
           {u.name}
         </span>
         {#if i < upcoming.length - 1}
@@ -229,23 +277,38 @@
   .compass-east { right: 0; }
   .compass-west { left: 0; }
 
-  .dot {
+  .lm {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 14px;
-    height: 14px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: 2px solid var(--c-ink);
-    background: var(--c-wood);
+    background: var(--c-parchment);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    /* Ring-color cue by kind, keeps icon legible on parchment */
   }
-  .dot.reached { background: var(--c-ink); }
-  .dot.kind-river    { background: #6a8aa8; }
-  .dot.kind-trading_post { background: var(--c-rust); }
-  .dot.kind-end      { background: #f5c96a; border-color: #7a5a10; }
-  .dot.kind-start    { background: var(--c-rust-dark); }
+  .lm-glyph {
+    font-size: 0.95em;
+    line-height: 1;
+    filter: saturate(0.85);
+  }
+  .lm.reached {
+    background: #f0e2c2; /* slightly darker parchment — "visited" */
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.25);
+  }
 
-  .dot-label {
+  .lm.kind-river         { border-color: #2f5a8a; background: #d6e2ec; }
+  .lm.kind-trading_post  { border-color: var(--c-rust); background: #f3dbb8; }
+  .lm.kind-end           { border-color: #7a5a10; background: #f5e0a8; }
+  .lm.kind-start         { border-color: var(--c-rust-dark); background: #f3dbb8; }
+  /* Scenic landmarks keep the default parchment + ink border */
+
+  .lm-label {
     position: absolute;
     width: 120px;
     text-align: center;
@@ -256,8 +319,8 @@
     line-height: 1.2;
     pointer-events: none;
   }
-  .dot-label.above { top: calc(50% - 28px); }
-  .dot-label.below { top: calc(50% + 14px); }
+  .lm-label.above { top: calc(50% - 34px); }
+  .lm-label.below { top: calc(50% + 22px); }
 
   .wagon {
     position: absolute;
@@ -301,16 +364,11 @@
     font-weight: 700;
     letter-spacing: 0.02em;
   }
-  .ahead-icon {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    border: 1.5px solid var(--c-ink);
-    display: inline-block;
+  .ahead-glyph {
+    font-size: 1em;
+    line-height: 1;
+    filter: saturate(0.85);
   }
-  .ahead-icon.kind-river { background: #6a8aa8; }
-  .ahead-icon.kind-trading_post { background: var(--c-rust); }
-  .ahead-icon.kind-end { background: #f5c96a; }
   .ahead-sep { color: var(--c-wood); opacity: 0.5; }
 
   /* Overall journey mini-strip at the bottom */
