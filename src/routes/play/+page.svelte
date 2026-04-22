@@ -42,13 +42,26 @@
   <header class="panel top-bar">
     <h2 style="margin: 0;">{gs.party[0].name}'s Journey</h2>
     <div class="date-readout {dayFlash ? 'pulse' : ''}">
-      <span class="day-num">Day {gs.day}</span>
-      <span class="separator">·</span>
-      <span>{gs.date.year}-{String(gs.date.month).padStart(2, '0')}-{String(gs.date.day).padStart(2, '0')}</span>
-      <span class="separator">·</span>
-      <span>{gs.pace}</span>
-      <span class="separator">·</span>
-      <span>{gs.rations}</span>
+      <span class="stat" title="Current day of the journey">
+        <span class="stat-icon">📅</span>
+        <span class="stat-label">DAY</span>
+        <span class="day-num">{gs.day}</span>
+      </span>
+      <span class="stat" title="In-game calendar date">
+        <span class="stat-icon">🗓️</span>
+        <span class="stat-label">DATE</span>
+        <span>{['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][gs.date.month - 1]} {gs.date.day}, {gs.date.year}</span>
+      </span>
+      <span class="stat" title="Travel speed">
+        <span class="stat-icon">🐂</span>
+        <span class="stat-label">PACE</span>
+        <span class="capitalize">{gs.pace}</span>
+      </span>
+      <span class="stat" title="Food rations per person per day">
+        <span class="stat-icon">🍖</span>
+        <span class="stat-label">RATIONS</span>
+        <span class="capitalize">{gs.rations}</span>
+      </span>
     </div>
   </header>
 
@@ -139,20 +152,38 @@
   }
 
   .date-readout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3em 1.2em;
+    align-items: center;
+    color: var(--c-tan);
+  }
+  .date-readout .stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35em;
+    font-size: 0.95em;
+  }
+  .date-readout .stat-icon {
+    font-size: 1.1em;
+    line-height: 1;
+  }
+  .date-readout .stat-label {
+    font-size: 0.7em;
+    letter-spacing: 0.12em;
     color: var(--c-wood);
-    transition: color 0.25s, text-shadow 0.25s;
+    font-weight: 700;
   }
   .date-readout .day-num {
     color: var(--c-tan-bright);
     font-weight: 700;
     transition: color 0.25s, text-shadow 0.25s;
   }
-  .date-readout .separator {
-    margin: 0 0.4em;
-    color: var(--c-border);
-  }
   .date-readout.pulse .day-num {
     color: var(--c-rust);
     text-shadow: 0 0 10px var(--c-rust);
+  }
+  .date-readout .capitalize {
+    text-transform: capitalize;
   }
 </style>

@@ -46,6 +46,43 @@ input, select, textarea {
   color: var(--c-tan);
   border: 2px solid var(--c-wood);
   padding: 0.4em 0.6em;
+  border-radius: 3px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 0;
+  border-color: var(--c-rust);
+  box-shadow: 0 0 0 2px rgba(201, 106, 42, 0.25);
+}
+
+/* Custom select chrome: rust arrow, themed surface */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding: 0.5em 2em 0.5em 0.8em;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--c-rust) 50%),
+    linear-gradient(135deg, var(--c-rust) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 55%,
+    calc(100% - 8px) 55%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+select:hover:not(:disabled) {
+  border-color: var(--c-rust);
+}
+select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+select option {
+  background: var(--c-bg-raised);
+  color: var(--c-tan);
 }
 
 .panel { background: var(--c-panel); border: 2px solid var(--c-wood); padding: 1em; border-radius: 3px; }
