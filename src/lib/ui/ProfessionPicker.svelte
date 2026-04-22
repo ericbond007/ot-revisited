@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ProfessionId } from '$lib/game/types';
+  import Tooltip from './Tooltip.svelte';
 
   interface Profession {
     id: string;
@@ -41,19 +42,26 @@
 <div class="grid">
   {#each professions as p}
     {@const selected = value === p.id}
-    <button
-      type="button"
-      class="card"
-      class:selected
-      onclick={() => (value = p.id as ProfessionId)}
-      title={p.bonusSummary}
+    <Tooltip
+      title={p.name}
+      subtitle={p.femaleOnly ? 'PROFESSION · FEMALE-ONLY' : 'PROFESSION'}
+      description={p.bonusSummary}
     >
-      <span class="icon">{ICONS[p.id] ?? '•'}</span>
-      <span class="label">
-        {p.name}
-        {#if p.femaleOnly}<span class="fem" title="Female-only">♀</span>{/if}
-      </span>
-    </button>
+      {#snippet children()}
+        <button
+          type="button"
+          class="card"
+          class:selected
+          onclick={() => (value = p.id as ProfessionId)}
+        >
+          <span class="icon">{ICONS[p.id] ?? '•'}</span>
+          <span class="label">
+            {p.name}
+            {#if p.femaleOnly}<span class="fem">♀</span>{/if}
+          </span>
+        </button>
+      {/snippet}
+    </Tooltip>
   {/each}
 </div>
 
@@ -65,7 +73,6 @@
   }
 
   .card {
-    /* Override default button chrome */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -84,6 +91,8 @@
     font-size: 0.78em;
     transition: background 0.12s, border-color 0.12s, color 0.12s;
     min-height: 3.2em;
+    /* Let the card fill the tooltip trigger span so hover area matches the card. */
+    width: 100%;
   }
   .card:hover:not(:disabled):not(.selected) {
     background: var(--c-panel);
@@ -111,5 +120,11 @@
   }
   .card.selected .fem {
     color: var(--c-tan-bright);
+  }
+
+  /* The Tooltip wrapper spans inline by default — make it a grid item so the
+     card fills its cell in the picker grid. */
+  .grid > :global(.tt-wrap) {
+    display: block;
   }
 </style>
