@@ -1,5 +1,6 @@
 <script lang="ts">
   import { MALE_NAMES, FEMALE_NAMES } from '$lib/game/content/historical-names';
+  import NumberStepper from '$lib/ui/NumberStepper.svelte';
 
   let { data, form } = $props();
 
@@ -12,6 +13,32 @@
   let year = $state(1848);
   let month = $state(4);
   let day = $state(15);
+
+  // Three historically-common Oregon Trail departures. Each was a peak-travel
+  // moment with distinct flavor; Plan 3b's year-gated events key off these years.
+  const presets = [
+    {
+      label: 'The Classic Trail',
+      year: 1848, month: 4, day: 15,
+      tagline: 'April 15, 1848 — pre-Gold Rush, grass is up, trail not yet crowded.'
+    },
+    {
+      label: 'Gold Rush Spring',
+      year: 1849, month: 4, day: 20,
+      tagline: 'April 20, 1849 — wagons thick with forty-niners; trail chaos, high prices.'
+    },
+    {
+      label: 'Peak Migration',
+      year: 1852, month: 5, day: 1,
+      tagline: 'May 1, 1852 — the heaviest travel year. Cholera stalks the wagons.'
+    }
+  ];
+
+  function applyPreset(p: typeof presets[number]) {
+    year = p.year;
+    month = p.month;
+    day = p.day;
+  }
 
   function addMember() {
     if (members.length >= 6) return;
@@ -56,21 +83,40 @@
     {/if}
 
     <h2>When do we set out?</h2>
-    <div style="display: flex; gap: 1em; margin-bottom: 2em;">
-      <label>Year
-        <input type="number" name="year" bind:value={year} min="1841" max="1869" />
-      </label>
-      <label>Month
+
+    <div class="presets">
+      {#each presets as p}
+        {@const selected = year === p.year && month === p.month && day === p.day}
+        <button
+          type="button"
+          class="preset"
+          class:selected
+          onclick={() => applyPreset(p)}
+        >
+          <div class="preset-label">{p.label}</div>
+          <div class="preset-tagline">{p.tagline}</div>
+        </button>
+      {/each}
+    </div>
+
+    <div class="date-pickers">
+      <div class="field">
+        <span class="field-label">Year</span>
+        <NumberStepper name="year" bind:value={year} min={1841} max={1869} ariaLabel="Year" />
+      </div>
+      <div class="field">
+        <span class="field-label">Month</span>
         <select name="month" bind:value={month}>
           <option value={3}>March</option>
           <option value={4}>April</option>
           <option value={5}>May</option>
           <option value={6}>June</option>
         </select>
-      </label>
-      <label>Day
-        <input type="number" name="day" bind:value={day} min="1" max="30" />
-      </label>
+      </div>
+      <div class="field">
+        <span class="field-label">Day</span>
+        <NumberStepper name="day" bind:value={day} min={1} max={30} ariaLabel="Day" />
+      </div>
     </div>
 
     <button type="submit" style="font-size: 1.1em; padding: 0.8em 1.5em;">Depart</button>
@@ -87,3 +133,78 @@
     {/each}
   </div>
 </div>
+
+<style>
+  .presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6em;
+    margin-bottom: 1.2em;
+  }
+  @media (max-width: 700px) {
+    .presets { grid-template-columns: 1fr; }
+  }
+
+  .preset {
+    /* Override default button chrome for these larger cards */
+    text-align: left;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: normal;
+    padding: 0.8em 1em;
+    background: var(--c-panel);
+    color: var(--c-tan);
+    border: 2px solid var(--c-wood);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .preset:hover {
+    border-color: var(--c-rust);
+    background: var(--c-bg-raised);
+  }
+  .preset.selected {
+    border-color: var(--c-rust);
+    background: var(--c-rust-dark);
+    color: var(--c-tan-bright);
+  }
+  .preset-label {
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--c-rust);
+    margin-bottom: 0.3em;
+  }
+  .preset.selected .preset-label {
+    color: var(--c-tan-bright);
+  }
+  .preset-tagline {
+    font-size: 0.85em;
+    line-height: 1.4;
+    color: var(--c-wood);
+  }
+  .preset.selected .preset-tagline {
+    color: var(--c-tan);
+  }
+
+  .date-pickers {
+    display: flex;
+    gap: 1.2em;
+    margin-bottom: 2em;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+  }
+  .field-label {
+    font-size: 0.8em;
+    color: var(--c-wood);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .date-pickers select {
+    min-height: 2.4em;
+    padding: 0 0.6em;
+  }
+</style>
