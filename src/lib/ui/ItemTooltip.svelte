@@ -10,12 +10,39 @@
   } = $props();
 
   const item = $derived(ITEMS[id]);
+
+  // Hover-intent: require a short pause before showing so casual mouse travel
+  // across rows doesn't flash tooltips everywhere.
+  const HOVER_DELAY_MS = 500;
+  let shown = $state(false);
+  let showTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function onEnter() {
+    if (showTimer) clearTimeout(showTimer);
+    showTimer = setTimeout(() => { shown = true; }, HOVER_DELAY_MS);
+  }
+  function onLeave() {
+    if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+    shown = false;
+  }
+  function onFocusIn() {
+    // Keyboard focus shows the tooltip immediately (accessibility).
+    shown = true;
+  }
 </script>
 
-<span class="tt-wrap">
+<span
+  class="tt-wrap"
+  role="button"
+  tabindex="0"
+  onpointerenter={onEnter}
+  onpointerleave={onLeave}
+  onfocusin={onFocusIn}
+  onfocusout={onLeave}
+>
   {@render children()}
 
-  {#if item}
+  {#if item && shown}
     <span class="tt-card" role="tooltip">
       <span class="tt-name">{item.name}</span>
       <span class="tt-category">{item.category.replace(/_/g, ' ')}</span>
@@ -56,14 +83,15 @@
     text-transform: none;
     font-weight: normal;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(4px);
-    transition: opacity 0.15s, visibility 0.15s, transform 0.15s;
     pointer-events: none;
     display: flex;
     flex-direction: column;
     gap: 0.3em;
+    animation: tt-fade-in 0.18s ease-out;
+  }
+  @keyframes tt-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
   .tt-card::after {
     /* Little triangle pointer */
@@ -75,13 +103,6 @@
     height: 0;
     border: 6px solid transparent;
     border-top-color: var(--c-rust);
-  }
-
-  .tt-wrap:hover .tt-card,
-  .tt-wrap:focus-within .tt-card {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
   }
 
   .tt-name {
