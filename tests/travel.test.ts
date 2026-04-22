@@ -66,17 +66,31 @@ describe('applyTravel', () => {
     expect(next.location.nextLandmarkId).not.toBe('ft_kearny');
   });
 
-  it('appends a log entry when a landmark is reached', () => {
+  it('appends a "passed" log entry when a scenic landmark is reached', () => {
     const s = newGame();
-    // Position party just before Fort Kearny (cumulative mile 300) with nextLandmarkId set directly.
+    // Position just before Alcove Spring (scenic, non-stopping) via nextLandmarkId.
+    const near = {
+      ...s,
+      location: { ...s.location, nextLandmarkId: 'alcove_spring', milesTraveled: 999 }
+    };
+    const next = applyTravel(near, makeRng('t:1'));
+    expect(next.eventLog.length).toBeGreaterThan(s.eventLog.length);
+    const last = next.eventLog[next.eventLog.length - 1];
+    expect(last.text).toMatch(/passed/i);
+    expect(last.text).toMatch(/alcove/i);
+  });
+
+  it('sets atLandmarkId without logging when a stop-worthy landmark is reached', () => {
+    // The combined "traveled N days (M mi) to arrive at X" log is appended
+    // by the server-side travel loop, not by applyTravel itself.
+    const s = newGame();
     const nearKearny = {
       ...s,
       location: { ...s.location, nextLandmarkId: 'ft_kearny', milesTraveled: 289 }
     };
     const next = applyTravel(nearKearny, makeRng('t:1'));
-    expect(next.eventLog.length).toBeGreaterThan(s.eventLog.length);
-    const last = next.eventLog[next.eventLog.length - 1];
-    expect(last.text).toMatch(/Kearny/i);
+    expect(next.location.atLandmarkId).toBe('ft_kearny');
+    expect(next.eventLog.length).toBe(s.eventLog.length);
   });
 
   it('does not advance past the final landmark', () => {

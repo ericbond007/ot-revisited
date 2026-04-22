@@ -1,8 +1,10 @@
 <script lang="ts">
+  import type { GameState } from '$lib/game/types';
+  import { getLandmark } from '$lib/game/content/landmarks';
   import CardRadio from './CardRadio.svelte';
   import NumberStepper from './NumberStepper.svelte';
 
-  let { slot, onclose }: { slot: string; onclose: () => void } = $props();
+  let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
   type Method = 'ford' | 'caulk' | 'ferry' | 'wait';
@@ -10,7 +12,13 @@
   let method = $state<Method>('ford');
   let waitDays = $state(1);
 
-  const methodOptions = [
+  const hereId = $derived(gameState.location.atLandmarkId);
+  const here = $derived(hereId ? getLandmark(hereId) : null);
+  // Safe defaults mirror what the server uses if the landmark has no river stats.
+  const river = $derived(here?.river ?? { depthFt: 3, currentMph: 3, ferryPrice: 5 });
+  const riverName = $derived(here?.name ?? 'River');
+
+  const methodOptions = $derived([
     {
       value: 'ford' as const,
       label: 'Ford',
@@ -26,7 +34,7 @@
     {
       value: 'ferry' as const,
       label: 'Hire Ferry',
-      sublabel: '$5 — the safe (if expensive) way',
+      sublabel: `$${river.ferryPrice} — the safe (if expensive) way`,
       icon: '⛵'
     },
     {
@@ -35,13 +43,15 @@
       sublabel: 'Camp nearby, hope the river drops',
       icon: '⏳'
     }
-  ];
+  ]);
 </script>
 
 <div class="modal-backdrop">
   <div class="panel modal-body">
-    <h2 style="color: #4a8bc9;">River Crossing</h2>
-    <p style="color: var(--c-wood);">Depth 3 ft · Current 3 mph · Ferry $5</p>
+    <h2 style="color: #4a8bc9;">{riverName}</h2>
+    <p style="color: var(--c-wood);">
+      Depth {river.depthFt.toFixed(1)} ft · Current {river.currentMph} mph · Ferry ${river.ferryPrice}
+    </p>
 
     <form method="POST" action="?/ford&slot={qp}">
       <CardRadio label="Method" name="method" bind:value={method} options={methodOptions} />

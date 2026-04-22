@@ -58,8 +58,21 @@ async function runTravelLoop(
     }
     state = result.state;
     // Halt at stop-worthy landmarks (trading post, river, end). Remaining days
-    // are discarded — landmarks are decision points, not drive-throughs.
+    // are discarded — landmarks are decision points, not drive-throughs. The
+    // arrival log is deferred from travel.ts so we can combine it with the
+    // travel summary into a single entry here.
     if (state.location.atLandmarkId) {
+      const here = getLandmark(state.location.atLandmarkId);
+      const daysTraveled = state.day - startDay;
+      const milesTraveled = Math.round(state.location.milesTraveled - startMiles);
+      const summary =
+        daysTraveled > 0
+          ? `Traveled ${daysTraveled} day${daysTraveled === 1 ? '' : 's'} (${milesTraveled} mi) to arrive at ${here.name}.`
+          : `Arrived at ${here.name}.`;
+      state = {
+        ...state,
+        eventLog: [...state.eventLog, { day: state.day, text: summary }]
+      };
       break;
     }
   }
@@ -148,8 +161,12 @@ export const actions: Actions = {
     if (!method) throw error(400, 'method required');
 
     let state = await loadState(locals, slot);
-    // Use a hardcoded RiverState for now; Plan 5 can make rivers contextual per-landmark.
-    const river = { depthFt: 3, currentMph: 3, ferryPrice: 5 };
+    // Pull per-river stats from the landmark we're parked at. Falls back to
+    // a modest default if somehow invoked away from a river (shouldn't happen;
+    // the Ford action is gated by UI to river stops only).
+    const hereId = state.location.atLandmarkId;
+    const here = hereId ? getLandmark(hereId) : null;
+    const river = here?.river ?? { depthFt: 3, currentMph: 3, ferryPrice: 5 };
     state = ford(state, { method, river, waitDays });
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };

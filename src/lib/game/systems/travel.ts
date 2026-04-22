@@ -79,10 +79,12 @@ export function applyTravel(state: GameState, _rng: Rng): GameState {
         terrain: newTerrain,
         atLandmarkId: stopHere ? nextLandmark.id : null
       },
-      eventLog: [
-        ...next.eventLog,
-        { day: state.day, text: stopHere ? `Arrived at ${nextLandmark.name}.` : `Passed ${nextLandmark.name}.` }
-      ],
+      // Scenic landmarks get a flavor line here. Stop-worthy landmarks defer
+      // their log entry to the travel loop, which combines arrival with the
+      // days/miles summary into one readable line.
+      eventLog: stopHere
+        ? next.eventLog
+        : [...next.eventLog, { day: state.day, text: `Passed ${nextLandmark.name}.` }],
       completed: after === null ? true : next.completed,
       outcome: after === null ? 'arrived' : next.outcome
     };

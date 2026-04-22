@@ -176,7 +176,7 @@
 {/if}
 
 {#if showFord && !gs.completed}
-  <FordModal slot={data.slot} onclose={() => (showFord = false)} />
+  <FordModal state={gs} slot={data.slot} onclose={() => (showFord = false)} />
 {/if}
 
 {#if showTrade && !gs.completed}

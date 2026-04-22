@@ -55,6 +55,35 @@
     <div class="flavor">{flavor}</div>
   {/if}
 
+  {#if landmark.kind === 'river' && landmark.river}
+    <div class="river-details">
+      <div class="river-head">RIVER CONDITIONS</div>
+      <div class="river-grid">
+        <div class="river-stat">
+          <span class="river-icon">📏</span>
+          <span class="river-label">DEPTH</span>
+          <span class="river-val">{landmark.river.depthFt.toFixed(1)} ft</span>
+        </div>
+        <div class="river-stat">
+          <span class="river-icon">🌊</span>
+          <span class="river-label">CURRENT</span>
+          <span class="river-val">{landmark.river.currentMph} mph</span>
+        </div>
+        <div class="river-stat">
+          <span class="river-icon">⛵</span>
+          <span class="river-label">FERRY</span>
+          <span class="river-val">${landmark.river.ferryPrice}</span>
+        </div>
+      </div>
+      <p class="river-hint">
+        {landmark.river.depthFt >= 4 ? 'Deep — fording risks soaking supplies or losing livestock.'
+         : landmark.river.depthFt >= 3 ? 'Moderate depth — fording is feasible but not safe.'
+         : 'Shallow enough to ford, most days.'}
+        {landmark.river.currentMph >= 3 ? ' Current is swift — watch for drifting.' : ''}
+      </p>
+    </div>
+  {/if}
+
   <div class="meta-row">
     <div class="meta-cell">
       <span class="meta-head">DAY</span>
@@ -175,6 +204,49 @@
   .stage-river .flavor,
   .stage-end .flavor {
     border-top-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .river-details {
+    padding: 0.6em 0.8em;
+    background: rgba(74, 139, 201, 0.08);
+    border: 1px solid rgba(74, 139, 201, 0.35);
+    border-radius: 3px;
+  }
+  .river-head {
+    font-size: 0.7em;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    color: #6aa4d4;
+    margin-bottom: 0.4em;
+  }
+  .river-grid {
+    display: flex;
+    gap: 1.5em;
+    flex-wrap: wrap;
+    margin-bottom: 0.4em;
+  }
+  .river-stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+  }
+  .river-icon { font-size: 1.2em; line-height: 1; }
+  .river-label {
+    font-size: 0.7em;
+    letter-spacing: 0.12em;
+    color: #6aa4d4;
+    font-weight: 700;
+  }
+  .river-val {
+    font-weight: 700;
+    color: #c8dae8;
+  }
+  .river-hint {
+    font-size: 0.85em;
+    font-style: italic;
+    color: #a9c4dc;
+    margin: 0;
+    line-height: 1.4;
   }
 
   .meta-row {
