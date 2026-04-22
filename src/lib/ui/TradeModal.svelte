@@ -17,12 +17,22 @@
   // Items available for purchase at the post (staples + common needs)
   const buyableIds = ['flour', 'beans', 'bacon', 'bullets', 'bandages', 'quinine', 'coat', 'blanket', 'wheel', 'axle', 'tongue', 'ox_shoes'];
 
-  // Qty state keyed by id. Pre-populated with 0 so NumberStepper bindings
-  // always have a defined starting value.
+  // Qty state keyed by id. Pre-populated with 0 for every possible id so
+  // NumberStepper bindings always have a defined starting value at mount —
+  // binding to `sellQty[id]` where the key is missing breaks the stepper
+  // (initial value is undefined, later inc/dec produce NaN).
+  // svelte-ignore state_referenced_locally
+  const initialSellableIds = Object.entries(gameState.inventory)
+    .filter(([id, qty]) => qty > 0 && PRICES[id])
+    .map(([id]) => id);
   let buyQty = $state<Record<string, number>>(
     Object.fromEntries(buyableIds.map((id) => [id, 0]))
   );
-  let sellQty = $state<Record<string, number>>({});
+  let sellQty = $state<Record<string, number>>(
+    Object.fromEntries(initialSellableIds.map((id) => [id, 0]))
+  );
+  // If inventory changes while the modal is open (e.g., trade reloads the
+  // state), add any newly-present item IDs to the sell map.
   $effect(() => {
     for (const id of sellableIds) {
       if (sellQty[id] === undefined) sellQty[id] = 0;

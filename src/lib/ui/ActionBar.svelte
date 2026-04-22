@@ -3,7 +3,6 @@
   import { getLandmark } from '$lib/game/content/landmarks';
   import { enhance } from '$app/forms';
   import NumberStepper from './NumberStepper.svelte';
-  import LandmarkChip from './LandmarkChip.svelte';
 
   let { state: gameState, slot, onrest, onhunt, onford, ontrade }: {
     state: GameState;
@@ -21,44 +20,29 @@
   );
   const atTradingPost = $derived(atLandmark?.kind === 'trading_post');
   const atRiver = $derived(atLandmark?.kind === 'river');
-  // Travel is blocked at river crossings — the player must ford before continuing.
   const travelBlocked = $derived(atRiver);
 
-  // Keep the travel-days value sticky across page reloads (form posts that don't use
-  // enhance cause a full re-mount). A tiny sessionStorage round-trip preserves user
-  // intent. Read-before-write is required: if we had two separate $effects, the write
-  // would fire on first mount with the default `1` and wipe any saved value before
-  // the read could load it.
-  const STORAGE_KEY = $derived(`ht_travel_days_${slot}`);
-  let travelDays = $state(1);
-  let hydrated = false;
+  // Persist travelDays across remounts. localStorage + sync init means the
+  // stepper is never blank on re-render.
+  const storageKey = $derived(`ht_travel_days_${slot}`);
+  function loadSavedDays(key: string): number {
+    if (typeof window === 'undefined') return 1;
+    const saved = window.localStorage.getItem(key);
+    if (!saved) return 1;
+    const n = parseInt(saved, 10);
+    return Number.isFinite(n) && n >= 1 && n <= 10 ? n : 1;
+  }
+  // Initial load uses the initial slot value; subsequent slot changes are rare
+  // (would only happen if the route param itself changed, which remounts).
+  // svelte-ignore state_referenced_locally
+  let travelDays = $state(loadSavedDays(`ht_travel_days_${slot}`));
   $effect(() => {
-    // IMPORTANT: read travelDays synchronously at the top so Svelte registers it
-    // as a dependency. Without this, `$effect` only tracks what it *reads*, and
-    // later stepper changes (which only *write* travelDays) would never trigger
-    // the sessionStorage write — meaning reloads kept finding the original
-    // default and "resetting" the user's value.
-    const currentDays = travelDays;
     if (typeof window === 'undefined') return;
-
-    if (!hydrated) {
-      const saved = window.sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const n = parseInt(saved, 10);
-        if (Number.isFinite(n) && n >= 1 && n <= 10) travelDays = n;
-      }
-      hydrated = true;
-      return; // skip the write on the hydrating pass
-    }
-    window.sessionStorage.setItem(STORAGE_KEY, String(currentDays));
+    window.localStorage.setItem(storageKey, String(travelDays));
   });
 
   let traveling = $state(false);
 </script>
-
-{#if atLandmark}
-  <LandmarkChip landmark={atLandmark} />
-{/if}
 
 <div class="panel action-panel {atLandmark ? `panel-${atLandmark.kind}` : ''}">
   <form
@@ -68,32 +52,62 @@
       traveling = true;
       return async ({ update }) => {
         await update();
-        // Hold the "traveling" indicator for the full wagon-slide duration
-        // (CSS transition is 2.5s) so all other actions stay locked out
-        // while the wagon is visibly in motion.
+        // Hold the "traveling" indicator for the full wagon-slide duration.
         setTimeout(() => { traveling = false; }, 2500);
       };
     }}
-    style="display: flex; gap: 0.4em; align-items: center;"
+    class="travel-form"
   >
     <NumberStepper name="days" bind:value={travelDays} min={1} max={10} disabled={traveling || travelBlocked} ariaLabel="Travel days" />
-    <button type="submit" disabled={traveling || travelBlocked} title={travelBlocked ? 'Ford the river first' : ''}>
-      {#if traveling}
-        Traveling…
-      {:else if travelBlocked}
-        Ford the river first
-      {:else if atLandmark}
-        Continue {travelDays} day{travelDays === 1 ? '' : 's'}
-      {:else}
-        Travel {travelDays} day{travelDays === 1 ? '' : 's'}
-      {/if}
+    <button type="submit" class="action travel" disabled={traveling || travelBlocked} title={travelBlocked ? 'Ford the river first' : ''}>
+      <span class="action-icon">🚶</span>
+      <span class="action-label">
+        {#if traveling}
+          Traveling…
+        {:else if travelBlocked}
+          Ford first
+        {:else if atLandmark}
+          Continue {travelDays}d
+        {:else}
+          Travel {travelDays}d
+        {/if}
+      </span>
     </button>
   </form>
 
-  <button type="button" onclick={onrest} disabled={traveling}>Rest / Camp</button>
-  <button type="button" onclick={onhunt} disabled={traveling}>Hunt</button>
-  <button type="button" class:highlight={atTradingPost} onclick={ontrade} disabled={traveling || !atTradingPost} title={atTradingPost ? '' : 'Only when stopped at a trading post'}>Trade</button>
-  <button type="button" class:highlight={atRiver} onclick={onford} disabled={traveling || !atRiver} title={atRiver ? '' : 'Only when stopped at a river crossing'}>Ford</button>
+  <button type="button" class="action" onclick={onrest} disabled={traveling}>
+    <span class="action-icon">🏕️</span>
+    <span class="action-label">Rest</span>
+  </button>
+
+  <button type="button" class="action" onclick={onhunt} disabled={traveling}>
+    <span class="action-icon">🏹</span>
+    <span class="action-label">Hunt</span>
+  </button>
+
+  <button
+    type="button"
+    class="action"
+    class:highlight={atTradingPost}
+    onclick={ontrade}
+    disabled={traveling || !atTradingPost}
+    title={atTradingPost ? '' : 'Only when stopped at a trading post'}
+  >
+    <span class="action-icon">🏪</span>
+    <span class="action-label">Trade</span>
+  </button>
+
+  <button
+    type="button"
+    class="action"
+    class:highlight={atRiver}
+    onclick={onford}
+    disabled={traveling || !atRiver}
+    title={atRiver ? '' : 'Only when stopped at a river crossing'}
+  >
+    <span class="action-icon">🛶</span>
+    <span class="action-label">Ford</span>
+  </button>
 </div>
 
 <style>
@@ -101,8 +115,49 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5em;
-    align-items: center;
+    align-items: stretch;
     transition: border-color 0.25s;
+  }
+  .travel-form {
+    display: flex;
+    gap: 0.4em;
+    align-items: stretch;
+  }
+
+  .action {
+    /* Override default button chrome to unify icon + label layout */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.4em 0.8em;
+    background: var(--c-rust-dark);
+    color: var(--c-tan-bright);
+    border: 2px solid var(--c-ink);
+    border-radius: 3px;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: background 0.12s, box-shadow 0.12s;
+  }
+  .action:hover:not(:disabled) {
+    background: var(--c-rust);
+  }
+  .action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .action-icon {
+    font-size: 1.2em;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .action.travel {
+    /* Slightly wider label to accommodate dynamic text */
+    min-width: 8em;
   }
 
   /* Contextual highlight on the action panel border per location */
