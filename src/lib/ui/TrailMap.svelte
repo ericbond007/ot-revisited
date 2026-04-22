@@ -3,26 +3,85 @@
   import { LANDMARKS } from '$lib/game/content/landmarks';
   let { state: gameState }: { state: GameState } = $props();
 
-  // Total trail miles (sum of milesFromPrevious).
+  // Stop-worthy landmarks are the "chunk" boundaries. Everything in between is
+  // scenic. We render one chunk at a time so each dot is far enough apart to
+  // read. The full-trail scale made every landmark a pixel away from the next.
+  const STOP_KINDS = new Set<string>(['start', 'trading_post', 'river', 'end']);
+
   const totalMiles = LANDMARKS.reduce((s, l) => s + l.milesFromPrevious, 0);
 
-  // For each landmark compute its cumulative mileage and percentage along the trail.
-  const markers = (() => {
+  // Precompute cumulative mile for each landmark.
+  const marks = (() => {
     let cum = 0;
     return LANDMARKS.map((l) => {
       cum += l.milesFromPrevious;
-      return {
-        ...l,
-        mile: cum,
-        pct: (cum / totalMiles) * 100
-      };
+      return { ...l, mile: cum };
     });
   })();
 
-  const wagonPct = $derived(Math.min(100, (gameState.location.milesTraveled / totalMiles) * 100));
   const previousId = $derived(gameState.location.previousLandmarkId);
+  const nextId = $derived(gameState.location.nextLandmarkId);
+
+  // Current chunk bounds: walk back from previous (or next, if we haven't passed
+  // anything yet) to find the start of this chunk, and forward to find its end.
+  const leg = $derived.by(() => {
+    // Anchor index = the most recent landmark we've passed. If none, anchor on
+    // next so we at least see the upcoming chunk.
+    const anchorId = previousId ?? nextId;
+    const anchorIdx = Math.max(0, marks.findIndex((m) => m.id === anchorId));
+
+    // Start: walk back from anchor (inclusive) to the most recent stop-worthy.
+    let startIdx = 0;
+    for (let i = anchorIdx; i >= 0; i--) {
+      if (STOP_KINDS.has(marks[i].kind)) { startIdx = i; break; }
+    }
+    // End: walk forward from startIdx+1 to the next stop-worthy.
+    let endIdx = marks.length - 1;
+    for (let i = startIdx + 1; i < marks.length; i++) {
+      if (STOP_KINDS.has(marks[i].kind)) { endIdx = i; break; }
+    }
+
+    const chunk = marks.slice(startIdx, endIdx + 1);
+    const startMile = marks[startIdx].mile;
+    const endMile = marks[endIdx].mile;
+    const span = Math.max(1, endMile - startMile);
+
+    return { chunk, startIdx, endIdx, startMile, endMile, span };
+  });
+
+  // Wagon position within the leg, as a percentage along it.
+  const wagonLegPct = $derived(
+    Math.max(0, Math.min(100, ((gameState.location.milesTraveled - leg.startMile) / leg.span) * 100))
+  );
+
+  // Overall journey progress (for the mini-strip at the bottom).
+  const overallPct = $derived(Math.min(100, (gameState.location.milesTraveled / totalMiles) * 100));
+
+  // Visibility: how many stop-worthy landmarks ahead can the party "see"?
+  // Base = 1 (the one at the end of the current leg); Scout adds 2; Spyglass adds 1.
+  const hasScout = $derived(gameState.party.some((m) => !m.dead && m.profession === 'scout'));
+  const hasSpyglass = $derived((gameState.inventory.spyglass ?? 0) > 0);
+  const lookaheadStops = $derived(1 + (hasScout ? 2 : 0) + (hasSpyglass ? 1 : 0));
+
+  // Collect the next N stop-worthy landmarks beyond the current leg's end, for
+  // the "Ahead" preview strip.
+  const upcoming = $derived.by(() => {
+    const out: typeof marks = [];
+    for (let i = leg.endIdx + 1; i < marks.length && out.length < lookaheadStops - 1; i++) {
+      if (STOP_KINDS.has(marks[i].kind)) out.push(marks[i]);
+    }
+    return out;
+  });
 
   let fullscreen = $state(false);
+
+  // Classic OT orientation: Independence on the RIGHT (east), destination on
+  // the LEFT (west). Position dots from the right via `right: X%`.
+  function dotRightPctForLeg(mile: number): number {
+    const pctAlongLeg = ((mile - leg.startMile) / leg.span) * 100;
+    // Inset 4% on each side for breathing room
+    return 4 + pctAlongLeg * 0.92;
+  }
 </script>
 
 <div class="map panel"
@@ -31,70 +90,277 @@
     color: var(--c-ink);
     position: {fullscreen ? 'fixed' : 'relative'};
     {fullscreen ? 'inset: 0; z-index: 50;' : ''}
-    min-height: 320px;
-    padding: 1em 1em 4em 1em;
+    min-height: 340px;
+    padding: 1em 1em 5.5em 1em;
   "
 >
-  <button type="button" onclick={() => (fullscreen = !fullscreen)}
-    style="position: absolute; top: 0.5em; right: 0.5em; padding: 0.3em 0.6em; font-size: 0.8em; background: var(--c-ink); color: var(--c-parchment);">
+  <button type="button" onclick={() => (fullscreen = !fullscreen)} class="fs-btn">
     {fullscreen ? '✕ Close' : '⛶ Expand'}
   </button>
 
-  <h4 style="color: var(--c-ink); margin: 0 0 0.5em 0; letter-spacing: 0.15em;">THE TRAIL — {Math.round(gameState.location.milesTraveled)} / {totalMiles} mi</h4>
+  <h4 class="map-head">
+    <span class="leg-label">{leg.chunk[0].name} → {leg.chunk[leg.chunk.length - 1].name}</span>
+    <span class="leg-miles">{Math.round(gameState.location.milesTraveled - leg.startMile)} / {Math.round(leg.span)} mi this leg</span>
+  </h4>
 
-  <!-- Dashed trail. Independence on the RIGHT (east), Oregon City on the LEFT (west) — geographically correct + classic OT. -->
-  <div style="position: relative; height: 200px; margin-top: 1em;">
-    <div style="position: absolute; top: 50%; left: 4%; right: 4%; height: 2px; background: repeating-linear-gradient(to right, var(--c-rust) 0 6px, transparent 6px 12px);"></div>
+  <!-- Dashed trail for the current leg. Independence (east) on the RIGHT. -->
+  <div class="trail-wrap">
+    <div class="trail-line"></div>
 
-    <!-- Compass labels on the edges -->
-    <div style="position: absolute; top: 0; right: 0; font-size: 0.7em; font-weight: 700; letter-spacing: 0.1em; color: var(--c-ink);">← EAST</div>
-    <div style="position: absolute; top: 0; left: 0; font-size: 0.7em; font-weight: 700; letter-spacing: 0.1em; color: var(--c-ink);">WEST →</div>
+    <div class="compass-east">← EAST</div>
+    <div class="compass-west">WEST →</div>
 
-    {#each markers as m}
-      {@const reached = previousId && markers.findIndex((x) => x.id === previousId) >= markers.indexOf(m)}
+    {#each leg.chunk as m, i}
+      {@const dotRight = dotRightPctForLeg(m.mile)}
+      {@const reached = gameState.location.milesTraveled >= m.mile}
       <div
-        style="
-          position: absolute;
-          right: calc({Math.max(4, Math.min(96, m.pct))}% - 6px);
-          top: 50%;
-          transform: translateY(-50%);
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: {m.kind === 'river' ? '#6a8aa8' : (reached ? 'var(--c-ink)' : 'var(--c-wood)')};
-          border: 2px solid var(--c-ink);
-        "
+        class="dot kind-{m.kind}"
+        class:reached
+        style="right: calc({dotRight}% - 7px);"
         title="{m.name} ({m.mile} mi)"
       ></div>
+      <!-- Alternate labels above/below the line so names don't collide on tight legs. -->
+      <div
+        class="dot-label"
+        class:above={i % 2 === 0}
+        class:below={i % 2 === 1}
+        style="right: calc({dotRight}% - 60px);"
+      >
+        {m.name}
+      </div>
     {/each}
 
-    <!-- Wagon — starts at right (Independence), moves leftward (west) -->
-    <div
-      class="wagon"
-      style="right: calc({Math.max(2, Math.min(98, wagonPct))}% - 12px);"
-    >🐂🛖</div>
+    <!-- Wagon: slides along the current leg -->
+    <div class="wagon" style="right: calc({4 + wagonLegPct * 0.92}% - 12px);">🐂🛖</div>
   </div>
 
-  <!-- Next landmark flavor -->
-  <div style="font-size: 0.85em; font-style: italic; position: absolute; bottom: 1em; left: 1em; right: 1em; text-align: center;">
-    Heading for {markers.find((m) => m.id === gameState.location.nextLandmarkId)?.name ?? '—'}
+  <!-- Upcoming stops (base + scout + spyglass visibility) -->
+  {#if upcoming.length > 0}
+    <div class="ahead-strip" title={hasScout || hasSpyglass ? `${hasScout ? 'Scout' : ''}${hasScout && hasSpyglass ? ' + ' : ''}${hasSpyglass ? 'Spyglass' : ''} extends your view` : ''}>
+      <span class="ahead-label">AHEAD</span>
+      <span class="ahead-sep">·</span>
+      {#each upcoming as u, i}
+        <span class="ahead-item">
+          <span class="ahead-icon kind-{u.kind}"></span>
+          {u.name}
+        </span>
+        {#if i < upcoming.length - 1}
+          <span class="ahead-sep">·</span>
+        {/if}
+      {/each}
+    </div>
+  {/if}
+
+  <!-- Overall journey mini-strip -->
+  <div class="mini-strip">
+    <div class="mini-label">OVERALL</div>
+    <div class="mini-track">
+      <div class="mini-fill" style="right: {100 - overallPct}%;"></div>
+      <div class="mini-wagon" style="right: calc({overallPct}% - 4px);"></div>
+    </div>
+    <div class="mini-value">{Math.round(gameState.location.milesTraveled)} / {totalMiles}</div>
   </div>
 </div>
 
 <style>
+  .fs-btn {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+    padding: 0.3em 0.6em;
+    font-size: 0.8em;
+    background: var(--c-ink);
+    color: var(--c-parchment);
+    border: 2px solid var(--c-ink);
+  }
+
+  .map-head {
+    color: var(--c-ink);
+    margin: 0 0 0.3em 0;
+    letter-spacing: 0.1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1em;
+    flex-wrap: wrap;
+    font-size: 0.95em;
+  }
+  .leg-label {
+    font-size: 0.95em;
+    color: var(--c-rust-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .leg-miles {
+    font-size: 0.78em;
+    color: var(--c-wood);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    font-style: italic;
+  }
+
+  .trail-wrap {
+    position: relative;
+    height: 180px;
+    margin-top: 1em;
+  }
+  .trail-line {
+    position: absolute;
+    top: 50%;
+    left: 4%;
+    right: 4%;
+    height: 2px;
+    background: repeating-linear-gradient(
+      to right,
+      var(--c-rust) 0 6px,
+      transparent 6px 12px
+    );
+  }
+
+  .compass-east, .compass-west {
+    position: absolute;
+    top: 0;
+    font-size: 0.7em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--c-ink);
+  }
+  .compass-east { right: 0; }
+  .compass-west { left: 0; }
+
+  .dot {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--c-ink);
+    background: var(--c-wood);
+  }
+  .dot.reached { background: var(--c-ink); }
+  .dot.kind-river    { background: #6a8aa8; }
+  .dot.kind-trading_post { background: var(--c-rust); }
+  .dot.kind-end      { background: #f5c96a; border-color: #7a5a10; }
+  .dot.kind-start    { background: var(--c-rust-dark); }
+
+  .dot-label {
+    position: absolute;
+    width: 120px;
+    text-align: center;
+    font-size: 0.72em;
+    font-weight: 700;
+    color: var(--c-ink);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    pointer-events: none;
+  }
+  .dot-label.above { top: calc(50% - 28px); }
+  .dot-label.below { top: calc(50% + 14px); }
+
   .wagon {
     position: absolute;
     top: 38%;
     transform: translateY(-50%);
     font-size: 1.5em;
-    /* Slide smoothly when position changes — makes travel visible */
     transition: right 2.5s cubic-bezier(0.4, 0.0, 0.2, 1);
-    /* Subtle idle bob so it always feels alive */
     animation: wagon-bob 1.8s ease-in-out infinite;
     filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.2));
   }
   @keyframes wagon-bob {
     0%, 100% { transform: translateY(-50%) rotate(-0.8deg); }
     50%      { transform: translateY(calc(-50% - 3px)) rotate(0.8deg); }
+  }
+
+  /* Upcoming-landmarks preview strip. Sits just above the overall mini-strip. */
+  .ahead-strip {
+    position: absolute;
+    left: 1em;
+    right: 1em;
+    bottom: 2.3em;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    flex-wrap: wrap;
+    font-size: 0.72em;
+    color: var(--c-wood);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .ahead-label {
+    font-size: 0.85em;
+    letter-spacing: 0.15em;
+    color: var(--c-rust-dark);
+  }
+  .ahead-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    color: var(--c-ink);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .ahead-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--c-ink);
+    display: inline-block;
+  }
+  .ahead-icon.kind-river { background: #6a8aa8; }
+  .ahead-icon.kind-trading_post { background: var(--c-rust); }
+  .ahead-icon.kind-end { background: #f5c96a; }
+  .ahead-sep { color: var(--c-wood); opacity: 0.5; }
+
+  /* Overall journey mini-strip at the bottom */
+  .mini-strip {
+    position: absolute;
+    left: 1em;
+    right: 1em;
+    bottom: 1em;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.6em;
+    align-items: center;
+  }
+  .mini-label {
+    font-size: 0.65em;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--c-wood);
+  }
+  .mini-track {
+    position: relative;
+    height: 4px;
+    background: rgba(138, 90, 42, 0.25);
+    border-radius: 2px;
+    overflow: visible;
+  }
+  .mini-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: var(--c-rust);
+    border-radius: 2px;
+    transition: right 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+  .mini-wagon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--c-rust-dark);
+    border: 1px solid var(--c-ink);
+    border-radius: 50%;
+    transition: right 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+  .mini-value {
+    font-size: 0.75em;
+    color: var(--c-wood);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
   }
 </style>
