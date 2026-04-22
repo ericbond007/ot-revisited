@@ -25,19 +25,24 @@
   const travelBlocked = $derived(atRiver);
 
   // Keep the travel-days value sticky across page reloads (form posts that don't use
-  // enhance cause remounts). A tiny sessionStorage round-trip preserves user intent.
+  // enhance cause a full re-mount). A tiny sessionStorage round-trip preserves user
+  // intent. Read-before-write is required: if we had two separate $effects, the write
+  // would fire on first mount with the default `1` and wipe any saved value before
+  // the read could load it.
   const STORAGE_KEY = $derived(`ht_travel_days_${slot}`);
   let travelDays = $state(1);
+  let hydrated = false;
   $effect(() => {
     if (typeof window === 'undefined') return;
-    const saved = window.sessionStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const n = parseInt(saved, 10);
-      if (Number.isFinite(n) && n >= 1 && n <= 10) travelDays = n;
+    if (!hydrated) {
+      const saved = window.sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const n = parseInt(saved, 10);
+        if (Number.isFinite(n) && n >= 1 && n <= 10) travelDays = n;
+      }
+      hydrated = true;
+      return; // skip the write on the hydrating pass
     }
-  });
-  $effect(() => {
-    if (typeof window === 'undefined') return;
     window.sessionStorage.setItem(STORAGE_KEY, String(travelDays));
   });
 
