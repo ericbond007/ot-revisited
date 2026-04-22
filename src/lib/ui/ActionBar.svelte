@@ -33,7 +33,14 @@
   let travelDays = $state(1);
   let hydrated = false;
   $effect(() => {
+    // IMPORTANT: read travelDays synchronously at the top so Svelte registers it
+    // as a dependency. Without this, `$effect` only tracks what it *reads*, and
+    // later stepper changes (which only *write* travelDays) would never trigger
+    // the sessionStorage write — meaning reloads kept finding the original
+    // default and "resetting" the user's value.
+    const currentDays = travelDays;
     if (typeof window === 'undefined') return;
+
     if (!hydrated) {
       const saved = window.sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -43,7 +50,7 @@
       hydrated = true;
       return; // skip the write on the hydrating pass
     }
-    window.sessionStorage.setItem(STORAGE_KEY, String(travelDays));
+    window.sessionStorage.setItem(STORAGE_KEY, String(currentDays));
   });
 
   let traveling = $state(false);
