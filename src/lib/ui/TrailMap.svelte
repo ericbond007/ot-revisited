@@ -119,8 +119,6 @@
     );
   }
 
-  let fullscreen = $state(false);
-
   // Classic OT orientation: Independence on the RIGHT (east), destination on
   // the LEFT (west). Position dots from the right via `right: X%`.
   function dotRightPctForLeg(mile: number): number {
@@ -134,16 +132,11 @@
   style="
     background: var(--c-parchment);
     color: var(--c-ink);
-    position: {fullscreen ? 'fixed' : 'relative'};
-    {fullscreen ? 'inset: 0; z-index: 50;' : ''}
+    position: relative;
     min-height: 340px;
     padding: 1em 1em 5.5em 1em;
   "
 >
-  <button type="button" onclick={() => (fullscreen = !fullscreen)} class="fs-btn">
-    {fullscreen ? '✕ Close' : '⛶ Expand'}
-  </button>
-
   <h4 class="map-head">
     <span class="leg-label">{leg.chunk[0].name} → {leg.chunk[leg.chunk.length - 1].name}</span>
     <span class="leg-miles">{Math.round(gameState.location.milesTraveled - leg.startMile)} / {Math.round(leg.span)} mi this leg</span>
@@ -211,17 +204,6 @@
 </div>
 
 <style>
-  .fs-btn {
-    position: absolute;
-    top: 0.5em;
-    right: 0.5em;
-    padding: 0.3em 0.6em;
-    font-size: 0.8em;
-    background: var(--c-ink);
-    color: var(--c-parchment);
-    border: 2px solid var(--c-ink);
-  }
-
   .map-head {
     color: var(--c-ink);
     margin: 0 0 0.3em 0;
