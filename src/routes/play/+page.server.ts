@@ -33,13 +33,25 @@ async function runTravelLoop(
   locals: App.Locals,
   slot: string
 ) {
+  const startDay = initialState.day;
+  const startMiles = initialState.location.milesTraveled;
   let state = initialState;
   for (let i = 0; i < days && !state.completed; i++) {
     const result = tickDayPausable(state);
     if (result.pendingEvent) {
+      const daysTraveled = result.state.day - startDay;
+      const milesTraveled = Math.round(result.state.location.milesTraveled - startMiles);
+      const summary =
+        daysTraveled > 0
+          ? `Traveled ${daysTraveled} day${daysTraveled === 1 ? '' : 's'} (${milesTraveled} mi) before being stopped.`
+          : `Barely started out before being stopped.`;
       state = {
         ...result.state,
-        flags: { ...result.state.flags, _pendingEventId: result.pendingEvent.id }
+        flags: { ...result.state.flags, _pendingEventId: result.pendingEvent.id },
+        eventLog: [
+          ...result.state.eventLog,
+          { day: result.state.day, text: summary }
+        ]
       };
       await locals.repo.save(locals.deviceId, slot, state);
       return state;
