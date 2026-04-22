@@ -19,7 +19,7 @@ function baseState(overrides: Partial<GameState> = {}): GameState {
       terrain: 'prairie'
     },
     party: [
-      { id: 'a', name: 'Ezra', profession: 'farmer', isLeader: true, age: 30, health: 100, conditions: [], dead: false },
+      { id: 'a', name: 'Ezra', profession: 'carpenter', isLeader: true, age: 30, health: 100, conditions: [], dead: false },
       { id: 'b', name: 'Mary', profession: 'doctor', isLeader: false, age: 28, health: 100, conditions: [], dead: false },
       { id: 'c', name: 'Tom', profession: 'hunter', isLeader: false, age: 22, health: 100, conditions: [], dead: false }
     ],
@@ -62,6 +62,21 @@ describe('foodConsumedToday', () => {
     const s = baseState();
     for (const m of s.party) m.dead = true;
     expect(foodConsumedToday(s)).toBe(0);
+  });
+
+  it('applies Farmer -5% food reduction (floored)', () => {
+    const s = baseState();
+    // 3 alive × 2 lb = 6 base; 6 × 0.95 = 5.7 → floor 5
+    s.party[0].profession = 'farmer';
+    expect(foodConsumedToday(s)).toBe(5);
+  });
+
+  it('Farmer reduction does not apply when the farmer is dead', () => {
+    const s = baseState();
+    s.party[0].profession = 'farmer';
+    s.party[0].dead = true;
+    // 2 alive × 2 = 4 base; no Farmer bonus
+    expect(foodConsumedToday(s)).toBe(4);
   });
 });
 

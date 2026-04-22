@@ -6,7 +6,9 @@ import type { Ox } from '../../src/lib/game/types';
 function newGame() {
   const s = createInitialState({
     seed: 'rest-test',
-    leader: { name: 'A', profession: 'farmer' },
+    // Plain adults (no Farmer) so the daily-consumption assertion isn't
+    // offset by Farmer forage. Farmer-specific behavior has its own tests.
+    leader: { name: 'A', profession: 'carpenter' },
     companions: [{ name: 'B', profession: 'doctor' }],
     startDate: { year: 1848, month: 4, day: 15 }
   });

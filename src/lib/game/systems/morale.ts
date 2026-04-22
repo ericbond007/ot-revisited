@@ -1,6 +1,14 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { foodItemIds } from '../content/items';
+import { hasLiveWhore } from '../professions/predicates';
+
+// Whore keeps morale from cratering — +15% floor while she's alive in the party.
+export const WHORE_MORALE_FLOOR = 15;
+
+export function moraleFloorFor(state: GameState): number {
+  return hasLiveWhore(state) ? WHORE_MORALE_FLOOR : 0;
+}
 
 export function healingMultiplier(morale: number): number {
   if (morale >= 80) return 1.25;
@@ -31,6 +39,7 @@ export function adjustMorale(state: GameState, _rng: Rng): GameState {
     }
   }
 
-  const morale = Math.max(0, Math.min(100, state.morale + delta));
+  const floor = moraleFloorFor(state);
+  const morale = Math.max(floor, Math.min(100, state.morale + delta));
   return { ...state, morale };
 }

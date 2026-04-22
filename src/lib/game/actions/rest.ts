@@ -1,7 +1,8 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { makeRng } from '../rng';
-import { hasLiveFarmer } from '../professions/predicates';
+import { hasLiveFarmer, hasLiveTeamster, hasLivePreacher, hasLiveWhore } from '../professions/predicates';
+import { TEAMSTER_RECOVERY_MULT } from '../systems/oxen';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
@@ -113,13 +114,24 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
       })
     };
 
-    s = { ...s, oxen: recoverOxenFatigue(s.oxen, OX_FATIGUE_RECOVERY_PER_REST_DAY) };
+    const oxRecovery = hasLiveTeamster(s)
+      ? Math.round(OX_FATIGUE_RECOVERY_PER_REST_DAY * TEAMSTER_RECOVERY_MULT)
+      : OX_FATIGUE_RECOVERY_PER_REST_DAY;
+    s = { ...s, oxen: recoverOxenFatigue(s.oxen, oxRecovery) };
 
     s = attemptFire(s, rng);
 
     if (hasLiveFarmer(s)) {
       const currentFlour = s.inventory.flour ?? 0;
       s = { ...s, inventory: { ...s.inventory, flour: currentFlour + FARMER_FORAGE_AT_REST } };
+    }
+
+    // Preacher +1 morale per rest night; Whore +2. Both stack.
+    let nightMorale = 0;
+    if (hasLivePreacher(s)) nightMorale += 1;
+    if (hasLiveWhore(s))    nightMorale += 2;
+    if (nightMorale > 0) {
+      s = { ...s, morale: Math.min(100, s.morale + nightMorale) };
     }
 
     // Shovel actions apply on the first day only.

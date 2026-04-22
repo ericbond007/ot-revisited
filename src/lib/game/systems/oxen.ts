@@ -1,5 +1,6 @@
 import type { GameState, Ox, Pace } from '../types';
 import type { Rng } from '../rng';
+import { hasLiveTeamster } from '../professions/predicates';
 
 const FATIGUE_PER_DAY_BY_PACE: Record<Pace, number> = {
   slow: 2,
@@ -11,12 +12,15 @@ const FATIGUE_PER_DAY_BY_PACE: Record<Pace, number> = {
 const SHOELESS_FATIGUE_MULTIPLIER = 1.5;
 const HIGH_FATIGUE_THRESHOLD = 80;
 const OVERWORK_HEALTH_DRAIN = 2;
+export const TEAMSTER_FATIGUE_MULT = 0.85;
+export const TEAMSTER_RECOVERY_MULT = 1.20;
 
 export function tickOxen(state: GameState, _rng: Rng): GameState {
   const base = FATIGUE_PER_DAY_BY_PACE[state.pace];
+  const teamsterMult = hasLiveTeamster(state) ? TEAMSTER_FATIGUE_MULT : 1;
   const oxen = state.oxen.map((ox) => {
     if (ox.health === 0) return ox;
-    const fatigueGain = Math.round(base * (ox.shod ? 1 : SHOELESS_FATIGUE_MULTIPLIER));
+    const fatigueGain = Math.round(base * (ox.shod ? 1 : SHOELESS_FATIGUE_MULTIPLIER) * teamsterMult);
     const fatigue = Math.min(100, ox.fatigue + fatigueGain);
     const healthDrain = fatigue >= HIGH_FATIGUE_THRESHOLD ? OVERWORK_HEALTH_DRAIN : 0;
     const health = Math.max(0, ox.health - healthDrain);

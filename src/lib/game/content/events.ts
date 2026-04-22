@@ -1,6 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { inTerrain, monthIs, yearAtLeast, yearBetween } from './event-gating';
+import { consumeWagonPart, deathMoralePenalty } from '../professions/bonuses';
 
 export type EventCategory =
   | 'weather'
@@ -130,13 +131,17 @@ const broken_wheel: GameEvent = {
       id: 'replace',
       label: 'Replace with a spare wheel',
       isDefault: true,
-      apply: (s) => {
+      apply: (s, rng) => {
         const have = s.inventory.wheel ?? 0;
         if (have > 0) {
+          const { state: after, saved } = consumeWagonPart(s, rng, 'wheel');
+          const log = saved
+            ? "The carpenter pieced the old wheel back together — the spare was kept."
+            : 'A spare wheel went on; the wagon rolls again.';
           return {
-            ...s,
-            inventory: { ...s.inventory, wheel: have - 1 },
-            wagon: { ...s.wagon, condition: Math.min(100, s.wagon.condition + 10) }
+            ...after,
+            wagon: { ...after.wagon, condition: Math.min(100, after.wagon.condition + 10) },
+            eventLog: [...after.eventLog, { day: after.day, text: log }]
           };
         }
         return { ...s, wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 15) } };
@@ -201,10 +206,17 @@ const tongue_snaps: GameEvent = {
       id: 'repair',
       label: 'Repair with a spare tongue',
       isDefault: true,
-      apply: (s) => {
+      apply: (s, rng) => {
         const have = s.inventory.tongue ?? 0;
         if (have > 0) {
-          return { ...s, inventory: { ...s.inventory, tongue: have - 1 } };
+          const { state: after, saved } = consumeWagonPart(s, rng, 'tongue');
+          if (saved) {
+            return {
+              ...after,
+              eventLog: [...after.eventLog, { day: after.day, text: "The carpenter spliced the old tongue with a plank — the spare was kept." }]
+            };
+          }
+          return after;
         }
         return { ...s, wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 20) } };
       }
@@ -223,10 +235,17 @@ const canvas_tear: GameEvent = {
       id: 'patch',
       label: 'Patch it',
       isDefault: true,
-      apply: (s) => {
+      apply: (s, rng) => {
         const have = s.inventory.canvas ?? 0;
         if (have > 0) {
-          return { ...s, inventory: { ...s.inventory, canvas: have - 1 } };
+          const { state: after, saved } = consumeWagonPart(s, rng, 'canvas');
+          if (saved) {
+            return {
+              ...after,
+              eventLog: [...after.eventLog, { day: after.day, text: "The carpenter stitched the tear clean — the spare canvas was kept." }]
+            };
+          }
+          return after;
         }
         return { ...s, wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 8) }, morale: Math.max(0, s.morale - 1) };
       }
@@ -624,10 +643,11 @@ const burial: GameEvent = {
             eventLog: [...s.eventLog, { day: s.day, text: 'A grave was dug. The party said their farewells with some comfort.' }]
           };
         }
+        const penalty = deathMoralePenalty(s, 4);
         return {
           ...s,
           flags,
-          morale: Math.max(0, s.morale - 4),
+          morale: Math.max(0, s.morale - penalty),
           eventLog: [...s.eventLog, { day: s.day, text: 'Without a shovel, the body was covered with stones. A hard farewell.' }]
         };
       }
@@ -638,10 +658,11 @@ const burial: GameEvent = {
       apply: (s) => {
         const flags = { ...s.flags };
         delete (flags as Record<string, unknown>)._burialPending;
+        const penalty = deathMoralePenalty(s, 3);
         return {
           ...s,
           flags,
-          morale: Math.max(0, s.morale - 3),
+          morale: Math.max(0, s.morale - penalty),
           eventLog: [...s.eventLog, { day: s.day, text: 'The party moved on with only a brief silence. Heavy hearts.' }]
         };
       }

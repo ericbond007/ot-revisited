@@ -1,5 +1,6 @@
 import type { GameState, Rations } from '../types';
 import { foodItemIds } from '../content/items';
+import { hasLiveFarmer } from '../professions/predicates';
 
 const FOOD_PER_PERSON: Record<Rations, number> = {
   meager: 1,
@@ -8,13 +9,15 @@ const FOOD_PER_PERSON: Record<Rations, number> = {
 };
 
 const WATER_PER_PERSON_GAL = 1;
+const FARMER_FOOD_MULT = 0.95;
 
 export function aliveCount(state: GameState): number {
   return state.party.filter((m) => !m.dead).length;
 }
 
 export function foodConsumedToday(state: GameState): number {
-  return aliveCount(state) * FOOD_PER_PERSON[state.rations];
+  const base = aliveCount(state) * FOOD_PER_PERSON[state.rations];
+  return hasLiveFarmer(state) ? Math.floor(base * FARMER_FOOD_MULT) : base;
 }
 
 export function waterConsumedToday(state: GameState): number {
