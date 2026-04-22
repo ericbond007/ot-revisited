@@ -3,6 +3,7 @@
   import { getLandmark } from '$lib/game/content/landmarks';
   import { enhance } from '$app/forms';
   import NumberStepper from './NumberStepper.svelte';
+  import LandmarkChip from './LandmarkChip.svelte';
 
   let { state: gameState, slot, onrest, onhunt, onford, ontrade }: {
     state: GameState;
@@ -20,18 +21,34 @@
   );
   const atTradingPost = $derived(atLandmark?.kind === 'trading_post');
   const atRiver = $derived(atLandmark?.kind === 'river');
+  // Travel is blocked at river crossings — the player must ford before continuing.
+  const travelBlocked = $derived(atRiver);
 
+  // Keep the travel-days value sticky across page reloads (form posts that don't use
+  // enhance cause remounts). A tiny sessionStorage round-trip preserves user intent.
+  const STORAGE_KEY = $derived(`ht_travel_days_${slot}`);
   let travelDays = $state(1);
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = window.sessionStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const n = parseInt(saved, 10);
+      if (Number.isFinite(n) && n >= 1 && n <= 10) travelDays = n;
+    }
+  });
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    window.sessionStorage.setItem(STORAGE_KEY, String(travelDays));
+  });
+
   let traveling = $state(false);
 </script>
 
-<div class="panel" style="display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;">
-  {#if atLandmark}
-    <div class="at-landmark-badge">
-      At <strong>{atLandmark.name}</strong>
-    </div>
-  {/if}
+{#if atLandmark}
+  <LandmarkChip landmark={atLandmark} />
+{/if}
 
+<div class="panel action-panel {atLandmark ? `panel-${atLandmark.kind}` : ''}">
   <form
     method="POST"
     action="?/travel&slot={qp}"
@@ -47,12 +64,14 @@
     }}
     style="display: flex; gap: 0.4em; align-items: center;"
   >
-    <NumberStepper name="days" bind:value={travelDays} min={1} max={10} disabled={traveling} ariaLabel="Travel days" />
-    <button type="submit" disabled={traveling}>
+    <NumberStepper name="days" bind:value={travelDays} min={1} max={10} disabled={traveling || travelBlocked} ariaLabel="Travel days" />
+    <button type="submit" disabled={traveling || travelBlocked} title={travelBlocked ? 'Ford the river first' : ''}>
       {#if traveling}
         Traveling…
+      {:else if travelBlocked}
+        Ford the river first
       {:else if atLandmark}
-        Continue ({travelDays} day{travelDays === 1 ? '' : 's'})
+        Continue {travelDays} day{travelDays === 1 ? '' : 's'}
       {:else}
         Travel {travelDays} day{travelDays === 1 ? '' : 's'}
       {/if}
@@ -61,22 +80,32 @@
 
   <button type="button" onclick={onrest} disabled={traveling}>Rest / Camp</button>
   <button type="button" onclick={onhunt} disabled={traveling}>Hunt</button>
-  <button type="button" onclick={ontrade} disabled={traveling || !atTradingPost} title={atTradingPost ? '' : 'Only when stopped at a trading post'}>Trade</button>
-  <button type="button" onclick={onford} disabled={traveling || !atRiver} title={atRiver ? '' : 'Only when stopped at a river crossing'}>Ford</button>
+  <button type="button" class:highlight={atTradingPost} onclick={ontrade} disabled={traveling || !atTradingPost} title={atTradingPost ? '' : 'Only when stopped at a trading post'}>Trade</button>
+  <button type="button" class:highlight={atRiver} onclick={onford} disabled={traveling || !atRiver} title={atRiver ? '' : 'Only when stopped at a river crossing'}>Ford</button>
 </div>
 
 <style>
-  .at-landmark-badge {
-    background: var(--c-parchment);
-    color: var(--c-ink);
-    border: 2px solid var(--c-rust);
-    padding: 0.3em 0.8em;
-    border-radius: 3px;
-    font-size: 0.9em;
-    letter-spacing: 0.05em;
+  .action-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    align-items: center;
+    transition: border-color 0.25s;
   }
-  .at-landmark-badge strong {
-    color: var(--c-rust-dark);
-    font-weight: 700;
+
+  /* Contextual highlight on the action panel border per location */
+  .panel-trading_post { border-color: var(--c-rust); }
+  .panel-river { border-color: #4a8bc9; background: #1a1f28; }
+  .panel-end { border-color: #f5c96a; }
+
+  /* Highlight the contextually-relevant action button */
+  .highlight:not(:disabled) {
+    background: var(--c-rust);
+    box-shadow: 0 0 0 2px var(--c-rust-dark), 0 0 10px rgba(201, 106, 42, 0.4);
+    animation: action-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes action-pulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--c-rust-dark), 0 0 10px rgba(201, 106, 42, 0.3); }
+    50%      { box-shadow: 0 0 0 2px var(--c-rust-dark), 0 0 16px rgba(201, 106, 42, 0.7); }
   }
 </style>

@@ -1,6 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error } from '@sveltejs/kit';
 import { rest, type ShovelAction } from '$lib/game/actions/rest';
+import { getLandmark } from '$lib/game/content/landmarks';
 import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
 import { EVENTS } from '$lib/game/content/events';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
@@ -24,7 +25,7 @@ async function loadState(locals: App.Locals, slot: string) {
 }
 
 // Runs up to `days` day-ticks. Halts early on:
-//   - event fire (persists remaining for resume after resolution)
+//   - event fire (remaining days discarded; player re-clicks Travel after resolving)
 //   - reaching a stop-worthy landmark (user must decide whether to trade/ford/etc)
 async function runTravelLoop(
   initialState: Awaited<ReturnType<typeof loadState>>,
@@ -36,14 +37,9 @@ async function runTravelLoop(
   for (let i = 0; i < days && !state.completed; i++) {
     const result = tickDayPausable(state);
     if (result.pendingEvent) {
-      const newRemaining = days - (i + 1);
       state = {
         ...result.state,
-        flags: {
-          ...result.state.flags,
-          _pendingEventId: result.pendingEvent.id,
-          ...(newRemaining > 0 ? { _travelRemaining: newRemaining } : {})
-        }
+        flags: { ...result.state.flags, _pendingEventId: result.pendingEvent.id }
       };
       await locals.repo.save(locals.deviceId, slot, state);
       return state;
@@ -66,6 +62,16 @@ export const actions: Actions = {
     const fd = await request.formData();
     const days = Math.max(1, Math.min(10, parseInt(fd.get('days')?.toString() ?? '1', 10)));
     let state = await loadState(locals, slot);
+
+    // Block continuing from a river without fording — river crossings require
+    // an explicit choice (ford / caulk / ferry / wait).
+    if (state.location.atLandmarkId) {
+      const here = getLandmark(state.location.atLandmarkId);
+      if (here.kind === 'river') {
+        throw error(409, 'The river must be crossed before you can continue. Open the Ford action.');
+      }
+    }
+
     state = await runTravelLoop(state, days, locals, slot);
     return { state, pendingEventId: (state.flags._pendingEventId as string | undefined) };
   },
@@ -83,22 +89,16 @@ export const actions: Actions = {
     if (!event) throw error(400, `Unknown event ${eventId}`);
     state = applyPendingChoice(state, event, choiceId);
 
-    // Extract how many travel days were queued before the event paused us.
-    const remaining = typeof state.flags._travelRemaining === 'number' ? state.flags._travelRemaining : 0;
-
-    // Clear both pause-related flags; if the loop below re-pauses it'll set them again.
+    // Every event resolution ends travel — the player must explicitly click
+    // Travel again to continue. This gives them a chance to react (check
+    // party, trade, rest) before pushing on.
     const flags = { ...state.flags };
     delete (flags as Record<string, unknown>)._pendingEventId;
     delete (flags as Record<string, unknown>)._travelRemaining;
     state = { ...state, flags };
 
-    if (remaining > 0) {
-      state = await runTravelLoop(state, remaining, locals, slot);
-    } else {
-      await locals.repo.save(locals.deviceId, slot, state);
-    }
-
-    return { state, pendingEventId: (state.flags._pendingEventId as string | undefined) };
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
   },
 
   rest: async ({ url, request, locals }) => {
