@@ -1,6 +1,7 @@
 <script lang="ts">
   import { MALE_NAMES, FEMALE_NAMES } from '$lib/game/content/historical-names';
   import NumberStepper from '$lib/ui/NumberStepper.svelte';
+  import ProfessionPicker from '$lib/ui/ProfessionPicker.svelte';
 
   let { data, form } = $props();
 
@@ -62,18 +63,20 @@
   <form method="POST" action="?/depart">
     <div style="display: flex; flex-direction: column; gap: 0.8em; margin-bottom: 1.5em;">
       {#each members as m, i}
-        <div class="panel" style="display: grid; grid-template-columns: 2fr 2fr auto; gap: 0.5em; align-items: center;">
-          <input type="text" name="member_{i}_name" bind:value={m.name} placeholder="Name" />
-          <select name="member_{i}_profession" bind:value={m.profession}>
-            {#each data.professions as p}
-              <option value={p.id}>{p.name}</option>
-            {/each}
-          </select>
-          {#if members.length > 2}
-            <button type="button" onclick={() => removeMember(i)} style="padding: 0.3em 0.7em;">✕</button>
-          {:else}
-            <span style="color: var(--c-wood); font-size: 0.8em;">required</span>
-          {/if}
+        <div class="panel member-card">
+          <div class="member-head">
+            <input type="text" name="member_{i}_name" bind:value={m.name} placeholder="Name" class="name-input" />
+            {#if members.length > 2}
+              <button type="button" onclick={() => removeMember(i)} class="remove-btn" title="Remove companion">✕</button>
+            {:else}
+              <span class="required-tag">LEADER</span>
+            {/if}
+          </div>
+          <ProfessionPicker
+            name="member_{i}_profession"
+            bind:value={m.profession}
+            professions={data.professions}
+          />
         </div>
       {/each}
     </div>
@@ -206,5 +209,33 @@
   .date-pickers select {
     min-height: 2.4em;
     padding: 0 0.6em;
+  }
+
+  .member-card {
+    padding: 0.6em 0.8em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+  .member-head {
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
+  }
+  .name-input {
+    flex: 1;
+    font-weight: 700;
+  }
+  .remove-btn {
+    padding: 0.3em 0.7em;
+    background: var(--c-bg-raised);
+    border: 2px solid var(--c-wood);
+  }
+  .required-tag {
+    font-size: 0.7em;
+    letter-spacing: 0.15em;
+    color: var(--c-rust);
+    font-weight: 700;
+    padding: 0.3em 0.6em;
   }
 </style>
