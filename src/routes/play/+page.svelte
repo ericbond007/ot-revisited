@@ -10,6 +10,7 @@
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
   import RestModal from '$lib/ui/RestModal.svelte';
+  import SettingsPanel from '$lib/ui/SettingsPanel.svelte';
 
   let { data, form } = $props();
   const gs = $derived(form?.state ?? data.state);

@@ -143,6 +143,40 @@ export const actions: Actions = {
     return { state };
   },
 
+  setPace: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const raw = fd.get('pace')?.toString();
+    const ALLOWED_PACES = ['slow', 'moderate', 'fast', 'grueling'] as const;
+    type Pace = typeof ALLOWED_PACES[number];
+    if (!raw || !ALLOWED_PACES.includes(raw as Pace)) {
+      throw error(400, 'invalid pace');
+    }
+    const pace: Pace = raw as Pace;
+    const state = await loadState(locals, slot);
+    const next = { ...state, pace };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
+  setRations: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const raw = fd.get('rations')?.toString();
+    const ALLOWED_RATIONS = ['meager', 'normal', 'filling'] as const;
+    type Rations = typeof ALLOWED_RATIONS[number];
+    if (!raw || !ALLOWED_RATIONS.includes(raw as Rations)) {
+      throw error(400, 'invalid rations');
+    }
+    const rations: Rations = raw as Rations;
+    const state = await loadState(locals, slot);
+    const next = { ...state, rations };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
   trade: async ({ url, request, locals }) => {
     const slot = url.searchParams.get('slot');
     if (!slot) throw error(400, 'slot required');
