@@ -43,6 +43,13 @@ function passiveDay(state: GameState, seedSuffix: string): GameState {
 export function ford(state: GameState, opts: FordOptions): GameState {
   let s = upgradeState(state);
 
+  // After any ford method succeeds, we've crossed — clear the at-landmark flag
+  // so travel can resume toward the next waypoint.
+  const clearAtLandmark = (st: GameState): GameState => ({
+    ...st,
+    location: { ...st.location, atLandmarkId: null }
+  });
+
   switch (opts.method) {
     case 'ferry': {
       if (s.cash < opts.river.ferryPrice) {
@@ -50,14 +57,14 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       }
       s = { ...s, cash: s.cash - opts.river.ferryPrice };
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: `Paid $${opts.river.ferryPrice} for ferry across the river.` }] };
-      return passiveDay(s, 'ferry');
+      return clearAtLandmark(passiveDay(s, 'ferry'));
     }
 
     case 'caulk': {
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: 'Caulked the wagon and floated across the river.' }] };
       s = passiveDay(s, 'caulk-1');
       s = passiveDay(s, 'caulk-2');
-      return s;
+      return clearAtLandmark(s);
     }
 
     case 'wait': {
@@ -69,6 +76,8 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       for (let i = 0; i < days; i++) {
         s = passiveDay(s, `wait-${i}`);
       }
+      // "Wait" alone doesn't cross the river — you still need to choose a method afterward.
+      // So atLandmarkId stays. Player will click Ford/Caulk/Ferry later.
       return s;
     }
 
@@ -97,7 +106,8 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       }
 
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: 'Forded the river.' }] };
-      return passiveDay(s, 'ford');
+      return clearAtLandmark(passiveDay(s, 'ford'));
     }
   }
 }
+
