@@ -14,8 +14,16 @@
       .filter(([id, qty]) => qty > 0 && PRICES[id])
       .map(([id]) => id)
   );
-  // Items available for purchase at the post (staples + common needs)
-  const buyableIds = ['flour', 'beans', 'bacon', 'bullets', 'bandages', 'quinine', 'coat', 'blanket', 'wheel', 'axle', 'tongue', 'ox_shoes'];
+  // Items available for purchase at the post. Wider than Independence's
+  // outfitter for staples but fewer premium items; shovel is included so
+  // well-digging isn't gated on starting with a Preacher.
+  const buyableIds = [
+    'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit',
+    'bullets', 'bandages', 'quinine', 'herbal_poultice',
+    'coat', 'blanket',
+    'wheel', 'axle', 'tongue', 'canvas', 'spare_plank',
+    'ox_shoes', 'shovel', 'rope', 'cookware', 'bible'
+  ];
 
   // Qty state keyed by id. Pre-populated with 0 for every possible id so
   // NumberStepper bindings always have a defined starting value at mount —

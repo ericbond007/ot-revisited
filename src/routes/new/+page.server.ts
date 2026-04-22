@@ -53,6 +53,7 @@ export const actions: Actions = {
     const slotName = `Journey ${new Date().toLocaleDateString()}`;
     await locals.repo.save(locals.deviceId, slotName, state);
 
-    throw redirect(303, `/play?slot=${encodeURIComponent(slotName)}`);
+    // Route to the outfitter (spend starter cash on supplies before departure).
+    throw redirect(303, `/outfit?slot=${encodeURIComponent(slotName)}`);
   }
 };

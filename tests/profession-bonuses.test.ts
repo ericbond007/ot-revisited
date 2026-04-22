@@ -7,7 +7,11 @@ import type { GameState, PartyMember, ProfessionId } from '../src/lib/game/types
 import { tickOxen } from '../src/lib/game/systems/oxen';
 import { adjustMorale } from '../src/lib/game/systems/morale';
 import { rest } from '../src/lib/game/actions/rest';
-import { consumeWagonPart, deathMoralePenalty } from '../src/lib/game/professions/bonuses';
+import {
+  consumeWagonPart,
+  deathMoralePenalty,
+  applyWhoreTradingPostEarnings
+} from '../src/lib/game/professions/bonuses';
 import { makeRng } from '../src/lib/game/rng';
 
 function mkMember(id: string, profession: ProfessionId, name = id): PartyMember {
@@ -139,5 +143,32 @@ describe('Carpenter', () => {
       expect(saved).toBe(false);
       expect(after.inventory.wheel).toBe(0);
     }
+  });
+});
+
+describe('Whore trading-post earnings', () => {
+  it('adds $5-15 to cash and logs "the hard way"', () => {
+    const s = baseState(['whore', 'doctor'], { cash: 100 });
+    const after = applyWhoreTradingPostEarnings(s, makeRng('ft:1'), 'Fort Laramie');
+    expect(after.cash).toBeGreaterThan(100);
+    expect(after.cash - 100).toBeGreaterThanOrEqual(5);
+    expect(after.cash - 100).toBeLessThanOrEqual(15);
+    const last = after.eventLog[after.eventLog.length - 1];
+    expect(last.text).toMatch(/earned \$\d+ at Fort Laramie the hard way/);
+  });
+
+  it('does nothing when no Whore is alive', () => {
+    const s = baseState(['carpenter', 'doctor'], { cash: 100 });
+    const after = applyWhoreTradingPostEarnings(s, makeRng('ft:1'), 'Fort Laramie');
+    expect(after.cash).toBe(100);
+    expect(after.eventLog.length).toBe(0);
+  });
+
+  it('uses the first alive whore by name', () => {
+    const s = baseState(['whore', 'whore'], { cash: 0 });
+    s.party[0].name = 'Jenny';
+    s.party[1].name = 'Mae';
+    const after = applyWhoreTradingPostEarnings(s, makeRng('ft:1'), 'Fort Kearny');
+    expect(after.eventLog[0].text).toContain('Jenny');
   });
 });

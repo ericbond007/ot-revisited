@@ -4,6 +4,8 @@ import { rest, type ShovelAction } from '$lib/game/actions/rest';
 import { getLandmark } from '$lib/game/content/landmarks';
 import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
 import { EVENTS } from '$lib/game/content/events';
+import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
+import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
 import { trade } from '$lib/game/actions/trade';
@@ -78,6 +80,11 @@ async function runTravelLoop(
         ...state,
         eventLog: [...state.eventLog, { day: state.day, text: summary }]
       };
+      // Whore earnings fire on arrival at trading posts.
+      if (here.kind === 'trading_post') {
+        const whoreRng = makeRng(`${state.seed}:whore:${here.id}:${state.day}`);
+        state = applyWhoreTradingPostEarnings(state, whoreRng, here.name);
+      }
       break;
     }
   }
