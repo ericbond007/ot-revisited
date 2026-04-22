@@ -3,8 +3,9 @@
   const hasSaves = $derived(data.saves.length > 0);
 </script>
 
-<div class="container">
-  <h1>Hoosier Trail</h1>
+<div class="container landing">
+  <h1 class="brand">OT<span class="dot">.</span>IO</h1>
+  <p class="subtitle">The OT: Oregon Trail Revisited</p>
   <p style="color: var(--c-wood); font-size: 1.1em; margin-bottom: 2em;">
     A single-player journey along the Oregon Trail, 1841–1869.
   </p>
@@ -20,3 +21,26 @@
     </a>
   </div>
 </div>
+
+<style>
+  .landing {
+    padding-top: 2em;
+  }
+  .brand {
+    font-size: 3.6em;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.1em 0;
+    color: var(--c-rust);
+    font-weight: 900;
+  }
+  .brand .dot {
+    color: var(--c-tan-bright);
+  }
+  .subtitle {
+    margin: 0 0 0.4em 0;
+    color: var(--c-wood);
+    font-size: 1.1em;
+    font-style: italic;
+    letter-spacing: 0.04em;
+  }
+</style>

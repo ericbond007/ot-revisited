@@ -1,0 +1,38 @@
+node_modules
+.svelte-kit
+build
+dist
+.output
+
+# VCS + local
+.git
+.gitignore
+.github
+.env
+.env.*
+*.log
+
+# Tests / dev
+tests
+vitest.config.*
+.vscode
+.idea
+
+# Local dev database
+dev.db
+dev.db-*
+
+# Docs don't need to live in the image
+docs
+
+# Superpowers scratch
+.superpowers
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker assets themselves
+Dockerfile
+.dockerignore
+docker-compose.yml

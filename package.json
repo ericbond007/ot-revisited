@@ -1,7 +1,8 @@
 {
-	"name": "hoosiertrail",
+	"name": "ot-revisited",
 	"private": true,
 	"version": "0.0.1",
+	"description": "The OT: Oregon Trail Revisited — browser-based Oregon Trail clone.",
 	"type": "module",
 	"engines": {
 		"node": ">=20"

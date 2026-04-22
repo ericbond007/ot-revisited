@@ -1,4 +1,4 @@
-// Core types for the Hoosier Trail game state.
+// Core types for the OT: Oregon Trail Revisited game state.
 // See spec §3.2 for the full data model.
 
 export type Pace = 'slow' | 'moderate' | 'fast' | 'grueling';

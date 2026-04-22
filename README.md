@@ -1,53 +1,55 @@
-# Hoosier Trail
+# The OT: Oregon Trail Revisited
 
-Browser-based replica of the original Oregon Trail. Single-player, choice-driven, self-hostable.
+**Short name:** OT.IO
+
+A browser-based, single-player replica of the original Oregon Trail. Choice-driven, self-hostable, free to run.
 
 ## Status
 
-v1 in progress. Foundation (Plan 1) complete: game engine types, seeded RNG, day-tick turn loop, SQLite saves. Core mechanics (Plan 2) next.
+Phase 1 UI polish complete. Full trail, 32 landmarks, 30+ events, per-river stats, chunked map view with scout/spyglass lookahead, themed tooltips, landmark stage takeover at trading posts / river crossings.
 
 ## Stack
 
-- SvelteKit + TypeScript
-- Vitest for tests
+- SvelteKit 2 + Svelte 5 runes + TypeScript
 - Drizzle ORM + better-sqlite3 for persistence
+- Vitest for tests
+- `@sveltejs/adapter-node` — runs as a single Node process
 
 ## Development
 
 ```bash
 npm install
 npm run db:generate   # regenerate migrations after schema changes
-npm test              # run the suite
-npm run test:watch    # watch mode
-npm run dev           # dev server (UI arrives in Plan 4)
+npm test              # full suite (currently 225 tests)
+npm run dev           # dev server on :5173
 ```
 
-## Running the UI
+## Production build
 
 ```bash
 npm run build         # produces build/
-node build/index.js   # starts the self-hosted server (default port 3000)
+node build/index.js   # starts the Node server (default port 3000)
 ```
 
-Open http://localhost:3000/ in a browser.
+Open http://localhost:3000/.
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for self-hosting instructions.
+## Deploying
 
-Plan 4a UI screens:
-- `/` — landing; lists existing saves
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — covers Docker + traefik, systemd, backups.
+
+## UI screens
+
+- `/` — landing; lists saves
 - `/new` — party-setup wizard; creates a new journey
 - `/load` — load or delete saved games
-
-Main play screen lands in Plan 4b.
+- `/play?slot=<name>` — main play screen
 
 ## Project layout
 
-- `src/lib/game/` — pure game engine (no DB, no DOM). `types.ts`, `rng.ts`, `engine.ts`, `saves.ts`, `systems/`.
-- `src/lib/db/` — SQLite persistence. `schema.ts`, `client.ts`, `saves-repo.ts`.
-- `tests/` — Vitest tests mirroring the source layout.
-- `docs/superpowers/specs/` — design spec.
-- `docs/superpowers/plans/` — implementation plans.
-
-## Design spec
-
-See `docs/superpowers/specs/2026-04-20-hoosier-trail-design.md`.
+- `src/lib/game/` — pure game engine (no DB, no DOM)
+- `src/lib/db/` — SQLite persistence layer
+- `src/lib/ui/` — Svelte components
+- `src/routes/` — SvelteKit routes + form actions
+- `tests/` — Vitest tests
+- `docs/superpowers/specs/` — original design spec
+- `docs/superpowers/plans/` — implementation plans (historical)

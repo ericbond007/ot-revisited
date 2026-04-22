@@ -1,0 +1,31 @@
+services:
+  ot-revisited:
+    image: ot-revisited:latest
+    build: .
+    container_name: ot-revisited
+    restart: unless-stopped
+    # Do NOT publish a host port — traefik reaches the container over the
+    # shared docker network below. If you're running without traefik, add:
+    #   ports: ["3020:3000"]
+    volumes:
+      - ot-data:/data
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # HTTP -> HTTPS redirect (optional; remove if your traefik global config
+      # already handles it).
+      # Replace <your-domain> with your hostname before deploying.
+      - "traefik.http.routers.ot-revisited.rule=Host(`<your-domain>`)"
+      - "traefik.http.routers.ot-revisited.entrypoints=websecure"
+      - "traefik.http.routers.ot-revisited.tls=true"
+      - "traefik.http.routers.ot-revisited.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ot-revisited.loadbalancer.server.port=3000"
+
+networks:
+  traefik:
+    external: true
+
+volumes:
+  ot-data:

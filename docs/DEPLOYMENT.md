@@ -1,110 +1,135 @@
-# Deploying Hoosier Trail
+# Deploying The OT: Oregon Trail Revisited
 
-The game is a single SvelteKit + Node.js process backed by a local SQLite file.
-Deploy it anywhere you can run Node ≥20.
+The game is a single SvelteKit + Node process backed by a local SQLite file. Two recommended deploy modes:
 
-## Prerequisites
+- **Docker + Traefik** (preferred for self-hosting behind a reverse proxy)
+- **Bare-metal systemd** (any Linux box with Node ≥20)
 
-- Node.js 20 or higher
-- ~100 MB disk for dependencies + SQLite
-- A domain + reverse proxy if exposing to the internet (optional)
+Player data lives in a single SQLite file. Saves survive upgrades as long as you preserve that file (or the named volume that contains it).
 
-## Build
+## Docker + Traefik
+
+This is the cleanest mode when you already run Traefik with an auto-TLS resolver. The container exposes port 3000 only inside a shared Docker network; Traefik reaches it via labels — you never publish a host port.
+
+### Prerequisites
+
+- Docker + Compose v2
+- A running Traefik instance with a cert resolver (the compose file below assumes one named `letsencrypt` — change it to match yours)
+- A Docker network attached to Traefik (this guide assumes it's called `traefik` — change if yours differs)
+- DNS: your chosen hostname (`<your-domain>`) pointed at the Traefik host
+
+### Install
 
 ```bash
-npm ci
-npm run db:generate   # only if schema changed
-npm run build         # produces build/
+git clone https://github.com/<your-org>/ot-revisited.git
+cd ot-revisited
+
+# Update docker-compose.yml:
+#   - Replace <your-domain> with your actual hostname
+#   - Match `traefik.docker.network` + the top-level `networks:` to your Traefik network name
+#   - Match `tls.certresolver` to your Traefik resolver name
+
+docker compose build
+docker compose up -d
+docker compose logs -f
 ```
 
-The `build/` directory is self-contained and can be copied to a server.
+On first start the container creates `/data/game.db` inside the `ot-data` volume and runs migrations automatically. Traefik picks up the labels and serves the game over HTTPS within a few seconds.
 
-## Run
+### Updates
 
 ```bash
-# Default port 3000
-node build/index.js
-
-# Custom port + DB location
-PORT=4000 DATABASE_URL=file:/var/lib/hoosiertrail/game.db node build/index.js
+cd /path/to/ot-revisited
+git pull
+docker compose build
+docker compose up -d
 ```
 
-Environment variables:
+Migrations run automatically at startup. Saves in the `ot-data` volume are preserved.
 
-- `PORT` — listen port (default 3000)
-- `HOST` — listen host (default 0.0.0.0)
-- `DATABASE_URL` — SQLite file path (default `./dev.db`). Use `file:/absolute/path`.
-- `DRIZZLE_MIGRATIONS_DIR` — absolute path to `drizzle/` migrations folder if not next to the build
+### Backups
 
-## systemd example
+SQLite is the only persistent state. Use SQLite's online backup API (a raw file copy of a WAL-mode DB can be corrupt):
 
-`/etc/systemd/system/hoosiertrail.service`:
+```bash
+#!/bin/sh
+set -e
+BACKUP_DIR=/var/backups/ot-revisited
+STAMP=$(date +%F)
+mkdir -p "$BACKUP_DIR"
+docker exec ot-revisited sqlite3 /data/game.db ".backup /data/backup-$STAMP.db"
+docker cp ot-revisited:/data/backup-$STAMP.db "$BACKUP_DIR/game-$STAMP.db"
+docker exec ot-revisited rm -f /data/backup-$STAMP.db
+find "$BACKUP_DIR" -name 'game-*.db' -mtime +14 -delete
+```
+
+Schedule via cron or a systemd timer.
+
+### Uninstall
+
+```bash
+docker compose down
+docker volume rm ot-revisited_ot-data   # WARNING: destroys all save games
+```
+
+## Bare-metal (systemd)
+
+If you don't want Docker, run as a dedicated system user behind whatever reverse proxy you like.
+
+```bash
+# As root
+useradd --system --home /opt/ot-revisited --shell /usr/sbin/nologin otrev
+git clone https://github.com/<your-org>/ot-revisited.git /opt/ot-revisited
+cd /opt/ot-revisited
+sudo -u otrev npm ci
+sudo -u otrev npm run build
+mkdir -p /var/lib/ot-revisited
+chown otrev:otrev /var/lib/ot-revisited
+```
+
+`/etc/systemd/system/ot-revisited.service`:
 
 ```ini
 [Unit]
-Description=Hoosier Trail
+Description=The OT: Oregon Trail Revisited
 After=network.target
 
 [Service]
 Type=simple
-User=hoosiertrail
-WorkingDirectory=/opt/hoosiertrail
+User=otrev
+Group=otrev
+WorkingDirectory=/opt/ot-revisited
 Environment=PORT=3000
-Environment=DATABASE_URL=file:/var/lib/hoosiertrail/game.db
-Environment=DRIZZLE_MIGRATIONS_DIR=/opt/hoosiertrail/drizzle
-ExecStart=/usr/bin/node /opt/hoosiertrail/build/index.js
+Environment=HOST=127.0.0.1
+Environment=DATABASE_URL=file:/var/lib/ot-revisited/game.db
+Environment=DRIZZLE_MIGRATIONS_DIR=/opt/ot-revisited/drizzle
+ExecStart=/usr/bin/node /opt/ot-revisited/build/index.js
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Then:
-
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now hoosiertrail
-sudo journalctl -u hoosiertrail -f
+systemctl daemon-reload
+systemctl enable --now ot-revisited
+journalctl -u ot-revisited -f
 ```
 
-## Reverse proxy (nginx)
+Point your reverse proxy at `http://127.0.0.1:3000`.
 
-```nginx
-server {
-    server_name hoosiertrail.example.com;
-    listen 443 ssl http2;
-    # ... TLS config ...
+## Environment variables
 
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-## Backups
-
-The SQLite database is the only persistent state. Back it up with any cron-scheduled copy:
-
-```bash
-sqlite3 /var/lib/hoosiertrail/game.db ".backup /var/backups/hoosiertrail-$(date +%F).db"
-```
-
-## Upgrading
-
-1. `git pull`
-2. `npm ci`
-3. `npm run db:generate && npm run build`
-4. `sudo systemctl restart hoosiertrail`
-
-SQLite schema migrations are applied automatically at startup; no manual
-migration step is needed.
+| Var                      | Default                     | Notes                                    |
+|--------------------------|-----------------------------|------------------------------------------|
+| `HOST`                   | `0.0.0.0`                   | Listen address                           |
+| `PORT`                   | `3000`                      | Listen port                              |
+| `DATABASE_URL`           | `file:./dev.db`             | Use `file:/absolute/path` in production  |
+| `DRIZZLE_MIGRATIONS_DIR` | resolved next to the build  | Override if running from a non-standard layout |
+| `NODE_ENV`               | unset                       | Set to `production` in production        |
 
 ## Free-tier hosting options
 
-- **Fly.io** (free tier): `fly launch` + `fly volumes create ht_data --size 1` for the SQLite file
-- **Cloudflare Pages + Durable Objects**: not suitable for the SQLite-on-disk model without rework
-- **Hetzner / DigitalOcean**: cheapest VPS that runs Node + disk
-- **Home server** (recommended for a personal journey): any Raspberry Pi or old laptop
+- **Fly.io** free tier — `fly launch` and add a 1 GB volume for the SQLite file
+- **Hetzner / DigitalOcean** — cheapest VPS that runs Node + a disk
+- **Home server** — any Raspberry Pi or old laptop running Docker
