@@ -45,13 +45,18 @@ async function runTravelLoop(
         daysTraveled > 0
           ? `Traveled ${daysTraveled} day${daysTraveled === 1 ? '' : 's'} (${milesTraveled} mi) before being stopped.`
           : `Barely started out before being stopped.`;
+      // Defer the travel summary into a flag; resolveEvent appends it AFTER
+      // the event's own resolution entries so the log reads chronologically:
+      //   1) event resolution lines
+      //   2) "Traveled N days (M mi) before being stopped."
       state = {
         ...result.state,
-        flags: { ...result.state.flags, _pendingEventId: result.pendingEvent.id },
-        eventLog: [
-          ...result.state.eventLog,
-          { day: result.state.day, text: summary }
-        ]
+        flags: {
+          ...result.state.flags,
+          _pendingEventId: result.pendingEvent.id,
+          _pendingTravelSummary: summary,
+          _pendingTravelSummaryDay: result.state.day
+        }
       };
       await locals.repo.save(locals.deviceId, slot, state);
       return state;
@@ -115,12 +120,28 @@ export const actions: Actions = {
     state = applyPendingChoice(state, event, choiceId);
 
     // Every event resolution ends travel — the player must explicitly click
-    // Travel again to continue. This gives them a chance to react (check
-    // party, trade, rest) before pushing on.
+    // Travel again to continue.
     const flags = { ...state.flags };
+    const pendingSummary = flags._pendingTravelSummary;
+    const pendingSummaryDay = flags._pendingTravelSummaryDay;
     delete (flags as Record<string, unknown>)._pendingEventId;
     delete (flags as Record<string, unknown>)._travelRemaining;
-    state = { ...state, flags };
+    delete (flags as Record<string, unknown>)._pendingTravelSummary;
+    delete (flags as Record<string, unknown>)._pendingTravelSummaryDay;
+
+    // Append the travel summary AFTER the event's own log entries so the order
+    // reads: [event resolution lines] → "Traveled N days (M mi) before being stopped."
+    const appendedLog = typeof pendingSummary === 'string'
+      ? [
+          ...state.eventLog,
+          {
+            day: typeof pendingSummaryDay === 'number' ? pendingSummaryDay : state.day,
+            text: pendingSummary
+          }
+        ]
+      : state.eventLog;
+
+    state = { ...state, flags, eventLog: appendedLog };
 
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
