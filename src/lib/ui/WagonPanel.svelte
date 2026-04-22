@@ -83,10 +83,12 @@
     letter-spacing: normal;
     text-transform: none;
     font-weight: normal;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  .wagon-panel:hover {
+  .wagon-panel:hover:not(:disabled) {
+    background: var(--c-panel); /* override global button:hover rust fill */
     border-color: var(--c-rust);
+    box-shadow: 0 0 0 1px var(--c-rust) inset;
   }
 
   .wp-head {

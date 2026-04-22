@@ -11,39 +11,55 @@
 
   const item = $derived(ITEMS[id]);
 
-  // Hover-intent: require a short pause before showing so casual mouse travel
-  // across rows doesn't flash tooltips everywhere.
   const HOVER_DELAY_MS = 500;
-  let shown = $state(false);
+  let hovered = $state(false);
+  let pinned = $state(false);
   let showTimer: ReturnType<typeof setTimeout> | null = null;
 
+  const shown = $derived(pinned || hovered);
+
   function onEnter() {
+    if (pinned) return;
     if (showTimer) clearTimeout(showTimer);
-    showTimer = setTimeout(() => { shown = true; }, HOVER_DELAY_MS);
+    showTimer = setTimeout(() => { hovered = true; }, HOVER_DELAY_MS);
   }
   function onLeave() {
     if (showTimer) { clearTimeout(showTimer); showTimer = null; }
-    shown = false;
+    hovered = false;
   }
   function onFocusIn() {
-    // Keyboard focus shows the tooltip immediately (accessibility).
-    shown = true;
+    hovered = true;
+  }
+  function onAuxClick(e: MouseEvent) {
+    // button === 1 is middle mouse. Toggle pinned state.
+    if (e.button !== 1) return;
+    e.preventDefault();
+    pinned = !pinned;
+    if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+    hovered = false;
+  }
+  // Suppress the default middle-click autoscroll cursor while the user is pinning.
+  function onMouseDown(e: MouseEvent) {
+    if (e.button === 1) e.preventDefault();
   }
 </script>
 
 <span
   class="tt-wrap"
+  class:pinned
   role="button"
   tabindex="0"
   onpointerenter={onEnter}
   onpointerleave={onLeave}
   onfocusin={onFocusIn}
   onfocusout={onLeave}
+  onauxclick={onAuxClick}
+  onmousedown={onMouseDown}
 >
   {@render children()}
 
   {#if item && shown}
-    <span class="tt-card" role="tooltip">
+    <span class="tt-card" class:pinned role="tooltip">
       <span class="tt-name">{item.name}</span>
       <span class="tt-category">{item.category.replace(/_/g, ' ')}</span>
       {#if item.description}
@@ -51,6 +67,9 @@
       {/if}
       {#if item.weightLbPerUnit > 0}
         <span class="tt-meta">{item.weightLbPerUnit} lb each</span>
+      {/if}
+      {#if pinned}
+        <span class="tt-pin-hint">pinned — middle-click to release</span>
       {/if}
     </span>
   {/if}
@@ -62,6 +81,10 @@
     display: inline-block;
     cursor: help;
     border-bottom: 1px dotted var(--c-rust);
+  }
+  .tt-wrap.pinned {
+    border-bottom-color: var(--c-rust-dark);
+    border-bottom-style: solid;
   }
 
   .tt-card {
@@ -84,17 +107,16 @@
     font-weight: normal;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     pointer-events: none;
+    opacity: 1;
     display: flex;
     flex-direction: column;
     gap: 0.3em;
-    animation: tt-fade-in 0.18s ease-out;
   }
-  @keyframes tt-fade-in {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
+  .tt-card.pinned {
+    border-color: var(--c-rust-dark);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--c-rust-dark);
   }
   .tt-card::after {
-    /* Little triangle pointer */
     content: '';
     position: absolute;
     top: 100%;
@@ -103,6 +125,9 @@
     height: 0;
     border: 6px solid transparent;
     border-top-color: var(--c-rust);
+  }
+  .tt-card.pinned::after {
+    border-top-color: var(--c-rust-dark);
   }
 
   .tt-name {
@@ -123,5 +148,11 @@
     font-size: 0.75em;
     color: var(--c-wood);
     font-style: italic;
+  }
+  .tt-pin-hint {
+    font-size: 0.7em;
+    color: var(--c-wood);
+    font-style: italic;
+    margin-top: 0.2em;
   }
 </style>

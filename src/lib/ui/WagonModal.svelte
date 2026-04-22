@@ -220,7 +220,7 @@
     padding: 0.15em 0;
   }
   .spare-row.none {
-    opacity: 0.4;
+    color: var(--c-wood);
   }
   .spare-qty {
     font-weight: 700;
@@ -228,6 +228,7 @@
   }
   .spare-qty.zero {
     color: var(--c-wood);
+    font-weight: normal;
   }
 
   .actions {
