@@ -10,6 +10,8 @@
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
   import RestModal from '$lib/ui/RestModal.svelte';
+  import WagonModal from '$lib/ui/WagonModal.svelte';
+  import WagonPanel from '$lib/ui/WagonPanel.svelte';
   import SettingsPanel from '$lib/ui/SettingsPanel.svelte';
 
   let { data, form } = $props();
@@ -20,6 +22,7 @@
   let showHunt = $state(false);
   let showFord = $state(false);
   let showTrade = $state(false);
+  let showWagon = $state(false);
 
   // Delay the event modal's appearance so the wagon has time to slide +
   // the travel-summary log entry is visible before the modal covers things.
@@ -79,6 +82,8 @@
     </div>
   </header>
 
+  <SettingsPanel state={gs} slot={data.slot} />
+
   <div class="main-row">
     <!-- Left column (wide): map + actions + event log -->
     <div class="left-col">
@@ -100,9 +105,10 @@
       <EventLog state={gs} />
     </div>
 
-    <!-- Right rail: party + inventory -->
+    <!-- Right rail: party + wagon + inventory -->
     <div class="side-rail">
       <PartyPanel state={gs} />
+      <WagonPanel state={gs} onopen={() => (showWagon = true)} />
       <InventoryPanel state={gs} />
     </div>
   </div>
@@ -114,6 +120,10 @@
 
 {#if showRest && !gs.completed}
   <RestModal state={gs} slot={data.slot} onclose={() => (showRest = false)} />
+{/if}
+
+{#if showWagon}
+  <WagonModal state={gs} onclose={() => (showWagon = false)} />
 {/if}
 
 {#if showHunt && !gs.completed}
@@ -132,35 +142,42 @@
   .play-wrap {
     display: flex;
     flex-direction: column;
-    gap: 0.8em;
-    padding: 0.8em;
-    min-height: calc(100vh - 60px);
+    gap: 0.5em;
+    padding: 0.6em;
+    height: calc(100vh - 60px); /* lock to viewport — no page scroll */
+    overflow: hidden;
   }
-  .top-bar { display: flex; justify-content: space-between; align-items: center; }
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5em 0.8em;
+  }
   .main-row {
     display: grid;
-    grid-template-columns: 1fr 280px;
-    gap: 0.8em;
+    grid-template-columns: 1fr 260px;
+    gap: 0.6em;
     flex: 1;
     min-height: 0;
   }
   .left-col {
     display: flex;
     flex-direction: column;
-    gap: 0.8em;
+    gap: 0.5em;
     min-width: 0;
     min-height: 0;
   }
   .side-rail {
     display: flex;
     flex-direction: column;
-    gap: 0.8em;
+    gap: 0.5em;
     min-width: 0;
     min-height: 0;
     overflow-y: auto;
   }
 
   @media (max-width: 900px) {
+    .play-wrap { height: auto; overflow: visible; }
     .main-row { grid-template-columns: 1fr; }
     .side-rail { overflow-y: visible; }
   }
