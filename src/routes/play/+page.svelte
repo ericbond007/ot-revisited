@@ -1,5 +1,6 @@
 <script lang="ts">
   import TrailMap from '$lib/ui/TrailMap.svelte';
+  import LandmarkStage from '$lib/ui/LandmarkStage.svelte';
   import PartyPanel from '$lib/ui/PartyPanel.svelte';
   import InventoryPanel from '$lib/ui/InventoryPanel.svelte';
   import EventLog from '$lib/ui/EventLog.svelte';
@@ -14,11 +15,20 @@
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
   import PartyModal from '$lib/ui/PartyModal.svelte';
   import InventoryModal from '$lib/ui/InventoryModal.svelte';
-  import SettingsPanel from '$lib/ui/SettingsPanel.svelte';
+  import StatPicker from '$lib/ui/StatPicker.svelte';
+  import { getLandmark } from '$lib/game/content/landmarks';
+  import type { GameState } from '$lib/game/types';
 
   let { data, form } = $props();
-  const gs = $derived(form?.state ?? data.state);
+  const gs = $derived<GameState>(form?.state ?? data.state);
   const pendingEventId = $derived((gs.flags._pendingEventId as string | undefined));
+  const qp = $derived(encodeURIComponent(data.slot));
+  const paceAction = $derived(`?/setPace&slot=${qp}`);
+  const rationsAction = $derived(`?/setRations&slot=${qp}`);
+
+  const atLandmark = $derived(
+    gs.location.atLandmarkId ? getLandmark(gs.location.atLandmarkId) : null
+  );
 
   let showRest = $state(false);
   let showHunt = $state(false);
@@ -56,12 +66,27 @@
       setTimeout(() => { dayFlash = false; }, 800);
     }
   });
+
+  const paceOptions: Array<{ value: GameState['pace']; label: string; sublabel: string; icon: string }> = [
+    { value: 'slow',     label: 'Slow',     sublabel: '12 mi/day · easy on team',   icon: '🐢' },
+    { value: 'moderate', label: 'Moderate', sublabel: '18 mi/day · baseline',        icon: '🐂' },
+    { value: 'fast',     label: 'Fast',     sublabel: '24 mi/day · +fatigue',        icon: '🏃' },
+    { value: 'grueling', label: 'Grueling', sublabel: '30 mi/day · injury risk',     icon: '⚡' }
+  ];
+  const rationsOptions: Array<{ value: GameState['rations']; label: string; sublabel: string; icon: string }> = [
+    { value: 'meager',  label: 'Low',    sublabel: '1 lb/person · health drain', icon: '🥣' },
+    { value: 'normal',  label: 'Medium', sublabel: '2 lb/person · baseline',     icon: '🍽️' },
+    { value: 'filling', label: 'High',   sublabel: '3 lb/person · +morale',      icon: '🍖' }
+  ];
 </script>
 
 <div class="play-wrap">
-  <!-- Header -->
+  <!-- Journey header -->
   <header class="panel top-bar">
-    <h2 style="margin: 0;">{gs.party[0].name}'s Journey</h2>
+    <div class="title-row">
+      <button type="button" class="journey-icon" title="Journey details (coming soon)">🤠</button>
+      <h2 class="journey-title">{gs.party[0].name}'s Journey</h2>
+    </div>
     <div class="date-readout {dayFlash ? 'pulse' : ''}">
       <span class="stat" title="Current day of the journey">
         <span class="stat-icon">📅</span>
@@ -73,25 +98,33 @@
         <span class="stat-label">DATE</span>
         <span>{['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][gs.date.month - 1]} {gs.date.day}, {gs.date.year}</span>
       </span>
-      <span class="stat" title="Travel speed">
-        <span class="stat-icon">🐂</span>
-        <span class="stat-label">PACE</span>
-        <span class="capitalize">{gs.pace}</span>
-      </span>
-      <span class="stat" title="Food rations per person per day">
-        <span class="stat-icon">🍖</span>
-        <span class="stat-label">RATIONS</span>
-        <span class="capitalize">{gs.rations}</span>
-      </span>
+      <StatPicker
+        icon="🐂"
+        label="PACE"
+        name="pace"
+        action={paceAction}
+        current={gs.pace}
+        options={paceOptions}
+      />
+      <StatPicker
+        icon="🍖"
+        label="RATIONS"
+        name="rations"
+        action={rationsAction}
+        current={gs.rations}
+        options={rationsOptions}
+      />
     </div>
   </header>
 
-  <SettingsPanel state={gs} slot={data.slot} />
-
   <div class="main-row">
-    <!-- Left column (wide): map + actions + event log -->
+    <!-- Left column (wide): map OR landmark stage + actions + event log -->
     <div class="left-col">
-      <TrailMap state={gs} />
+      {#if atLandmark}
+        <LandmarkStage state={gs} landmark={atLandmark} />
+      {:else}
+        <TrailMap state={gs} />
+      {/if}
 
       <div class="actions-row">
         {#if gs.completed}
@@ -156,18 +189,46 @@
     flex-direction: column;
     gap: 0.5em;
     padding: 0.6em;
-    height: calc(100vh - 60px); /* lock to viewport — no page scroll */
+    height: 100vh;
     overflow: hidden;
   }
   .top-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5em 0.8em;
+    padding: 0.4em 0.8em;
+    gap: 1em;
+    flex-wrap: wrap;
   }
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  .journey-icon {
+    /* Override default button chrome — acts like a soft icon button */
+    background: transparent;
+    color: var(--c-rust);
+    border: 2px solid transparent;
+    padding: 0.1em 0.3em;
+    font-size: 1.4em;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .journey-icon:hover {
+    border-color: var(--c-rust);
+    background: var(--c-bg-raised);
+  }
+  .journey-title {
+    margin: 0;
+    font-size: 1.2em;
+  }
+
   .main-row {
     display: grid;
-    grid-template-columns: 1fr 260px;
+    grid-template-columns: 1fr 280px;
     gap: 0.6em;
     flex: 1;
     min-height: 0;
@@ -197,7 +258,7 @@
   .date-readout {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3em 1.2em;
+    gap: 0.3em 0.8em;
     align-items: center;
     color: var(--c-tan);
   }
@@ -225,8 +286,5 @@
   .date-readout.pulse .day-num {
     color: var(--c-rust);
     text-shadow: 0 0 10px var(--c-rust);
-  }
-  .date-readout .capitalize {
-    text-transform: capitalize;
   }
 </style>

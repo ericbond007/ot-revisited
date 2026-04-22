@@ -28,9 +28,10 @@
     weightPct < 100 ? '#c96a2a' : '#e85a4a'
   );
 
-  const visibleCount = 5;
-  const visibleEntries = $derived(entries.slice(0, visibleCount));
-  const remainingCount = $derived(Math.max(0, entries.length - visibleCount));
+  // Show all entries in the panel — the right-rail scrolls internally if needed,
+  // so there's no reason to truncate. Clicking the panel still opens the full
+  // grouped modal.
+  const visibleEntries = $derived(entries);
 </script>
 
 <button type="button" class="panel inventory-panel" onclick={onopen} title="Click for full inventory">
@@ -59,9 +60,6 @@
         <span class="preview-qty">×{e.qty}</span>
       </div>
     {/each}
-    {#if remainingCount > 0}
-      <div class="preview-more">…and {remainingCount} more</div>
-    {/if}
     {#if entries.length === 0}
       <div class="preview-more">(empty)</div>
     {/if}

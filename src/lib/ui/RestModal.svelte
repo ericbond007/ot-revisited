@@ -68,9 +68,6 @@
           {#if digWell}
             <input type="hidden" name="shovelAction" value="dig_well" />
           {/if}
-          <p class="note">
-            Burying the dead and digging the wagon out of mud happen via events, not here.
-          </p>
         </div>
       {:else}
         <p class="empty">No shovel in inventory — shovel work unavailable.</p>
@@ -194,12 +191,6 @@
     color: var(--c-tan);
   }
 
-  .note {
-    color: var(--c-wood);
-    font-size: 0.8em;
-    font-style: italic;
-    margin: 0.4em 0 0 0;
-  }
   .empty {
     color: var(--c-wood);
     font-size: 0.85em;
