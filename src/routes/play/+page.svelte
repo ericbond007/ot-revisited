@@ -152,7 +152,11 @@
 </div>
 
 {#if pendingEventId && modalReady}
-  <EventModal eventId={pendingEventId} slot={data.slot} />
+  <EventModal
+    eventId={pendingEventId}
+    slot={data.slot}
+    body={(gs.flags._pendingEventBody as string | undefined)}
+  />
 {/if}
 
 {#if showRest && !gs.completed}

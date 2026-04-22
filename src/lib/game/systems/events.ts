@@ -37,6 +37,10 @@ export function resolveEvent(state: GameState, event: GameEvent, choiceId: strin
   const choice = event.choices.find((c) => c.id === choiceId);
   if (!choice) throw new Error(`resolveEvent: unknown choice "${choiceId}" for event "${event.id}"`);
   const applied = choice.apply(state, rng);
+  // Audited choices (silentLog) write their own outcome line in apply().
+  // Unaudited choices keep getting the auto-appended "Title: label." entry
+  // until they're migrated.
+  if (choice.silentLog) return applied;
   return {
     ...applied,
     eventLog: [

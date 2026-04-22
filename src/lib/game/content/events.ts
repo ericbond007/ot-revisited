@@ -19,6 +19,10 @@ export interface EventChoice {
   label: string;
   apply: (state: GameState, rng: Rng) => GameState;
   isDefault?: boolean;
+  // When true, suppress the auto-appended "Title: choice label." log line.
+  // Audited choices that write their own outcome line set this to true so the
+  // log isn't redundant. Unaudited choices keep getting the auto-append.
+  silentLog?: boolean;
 }
 
 export interface GameEvent {
@@ -26,6 +30,10 @@ export interface GameEvent {
   category: EventCategory;
   title: string;
   body: string;
+  // Optional text-pool key for body flavor variants. When present, the engine
+  // picks one variant by seeded rng at fire time and stores it in
+  // flags._pendingEventBody so the modal renders it.
+  bodyKey?: string;
   weight: number;
   choices: EventChoice[];
   gate?: (state: GameState) => boolean;

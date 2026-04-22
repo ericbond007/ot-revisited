@@ -11,6 +11,7 @@ import { rollEvent, resolveEvent } from './systems/events';
 import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
 import type { GameEvent } from './content/events';
+import { pickText } from './content/text-pools';
 
 function advanceDate(d: { year: number; month: number; day: number }) {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -43,6 +44,12 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   if (s.flags._lastEventDay !== s.day) {
     const pending = rollEvent(s, rng);
     if (pending) {
+      // Resolve body variant at fire time so it stays consistent across renders.
+      // Falls back to the inline body string when no pool is registered yet.
+      if (pending.bodyKey) {
+        const resolvedBody = pickText(pending.bodyKey, rng, pending.body);
+        s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
+      }
       return { state: s, pendingEvent: pending };
     }
   }

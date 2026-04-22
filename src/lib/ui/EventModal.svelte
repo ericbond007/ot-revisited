@@ -3,9 +3,12 @@
   import { EVENTS } from '$lib/game/content/events';
   import { enhance } from '$app/forms';
 
-  let { eventId, slot }: { eventId: string; slot: string } = $props();
+  let { eventId, slot, body: bodyOverride }: { eventId: string; slot: string; body?: string } = $props();
   const event = $derived(EVENTS.find((e) => e.id === eventId));
   const qp = $derived(encodeURIComponent(slot));
+  // Engine-resolved body variant takes precedence over the inline body string
+  // when an event has bodyKey + a registered pool.
+  const bodyText = $derived(bodyOverride ?? event?.body ?? '');
 
   // Category-based flavor
   const categoryIcon: Record<EventCategory, string> = {
@@ -47,7 +50,7 @@
         <h2 class="event-title">{event.title}</h2>
       </div>
 
-      <p class="event-body">{event.body}</p>
+      <p class="event-body">{bodyText}</p>
 
       <div class="choice-label">WHAT DO YOU DO?</div>
 
