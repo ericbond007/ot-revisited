@@ -75,20 +75,21 @@
 
   .card {
     /* Override default button chrome */
-    padding: 0.4em 0.8em;
+    padding: 0.3em 0.65em;
     background: var(--c-bg-raised);
     color: var(--c-tan);
     border: 2px solid var(--c-wood);
     border-radius: 3px;
     font-family: inherit;
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.3em;
-    font-size: 0.85em;
+    font-size: 0.78em;
+    min-height: 0;
     transition: background 0.12s, border-color 0.12s, color 0.12s;
   }
   .card:hover:not(:disabled) {
@@ -109,14 +110,9 @@
     cursor: not-allowed;
   }
 
-  .card-icon { font-size: 1.1em; line-height: 1; }
+  .card-icon { font-size: 1em; line-height: 1; }
   .card-sub {
-    font-weight: normal;
-    letter-spacing: normal;
-    text-transform: none;
-    color: var(--c-wood);
-    font-size: 0.85em;
-    margin-left: 0.2em;
+    display: none; /* keep row compact — sublabel shown via title tooltip */
   }
   .card.selected .card-sub { color: var(--c-tan); }
 </style>

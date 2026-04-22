@@ -595,3 +595,111 @@ const spring_flood: GameEvent = {
 };
 
 EVENTS.push(donner_rumor, gold_rush_news, cholera_peak_1852, mormon_handcart, pony_express, spring_flood);
+
+// --- Situation-triggered events (gated by flags set elsewhere in the engine) ---
+
+// Burial — fires the day after any party member dies (reapDead sets _burialPending).
+// High weight so it's essentially guaranteed to be picked from the eligible pool.
+const burial: GameEvent = {
+  id: 'personal_burial',
+  category: 'personal',
+  title: 'A burial on the trail',
+  body: 'The party halts to lay the dead to rest. A proper grave gives the living a moment of grace before pressing on.',
+  weight: 9999,
+  gate: (s) => !!s.flags._burialPending,
+  choices: [
+    {
+      id: 'dig_grave',
+      label: 'Dig a proper grave (requires shovel)',
+      isDefault: true,
+      apply: (s) => {
+        const flags = { ...s.flags };
+        delete (flags as Record<string, unknown>)._burialPending;
+        const hasShovel = (s.inventory.shovel ?? 0) > 0;
+        if (hasShovel) {
+          return {
+            ...s,
+            flags,
+            morale: Math.min(100, s.morale + 2),
+            eventLog: [...s.eventLog, { day: s.day, text: 'A grave was dug. The party said their farewells with some comfort.' }]
+          };
+        }
+        return {
+          ...s,
+          flags,
+          morale: Math.max(0, s.morale - 4),
+          eventLog: [...s.eventLog, { day: s.day, text: 'Without a shovel, the body was covered with stones. A hard farewell.' }]
+        };
+      }
+    },
+    {
+      id: 'moment_of_silence',
+      label: "Just a moment's silence — press on",
+      apply: (s) => {
+        const flags = { ...s.flags };
+        delete (flags as Record<string, unknown>)._burialPending;
+        return {
+          ...s,
+          flags,
+          morale: Math.max(0, s.morale - 3),
+          eventLog: [...s.eventLog, { day: s.day, text: 'The party moved on with only a brief silence. Heavy hearts.' }]
+        };
+      }
+    }
+  ]
+};
+
+// Wagon stuck in mud — rare random event, uses the shovel.
+const stuck_in_mud: GameEvent = {
+  id: 'wagon_stuck',
+  category: 'wagon',
+  title: 'The wagon is stuck in mud',
+  body: 'A soft patch of trail turned to muck under the wheels. The oxen strain against the yoke; nothing budges.',
+  weight: 2,
+  gate: inTerrain('prairie', 'forest'),
+  choices: [
+    {
+      id: 'dig_out',
+      label: 'Dig out with the shovel',
+      isDefault: true,
+      apply: (s) => {
+        const hasShovel = (s.inventory.shovel ?? 0) > 0;
+        if (hasShovel) {
+          return {
+            ...s,
+            eventLog: [...s.eventLog, { day: s.day, text: 'Dug the wagon free. Half a day lost but no damage.' }]
+          };
+        }
+        return {
+          ...s,
+          wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 15) },
+          eventLog: [...s.eventLog, { day: s.day, text: 'Without a shovel the wagon was pried loose with levers and rope. Wagon condition -15.' }]
+        };
+      }
+    },
+    {
+      id: 'force',
+      label: 'Force the oxen through — whip and shout',
+      apply: (s, rng) => {
+        const fatigueHit = rng.int(12, 25);
+        const oxen = s.oxen.map((o) => ({ ...o, fatigue: Math.min(100, o.fatigue + fatigueHit) }));
+        return {
+          ...s,
+          oxen,
+          eventLog: [...s.eventLog, { day: s.day, text: `Forced through the mud. The oxen are wrecked (+${fatigueHit} fatigue each).` }]
+        };
+      }
+    },
+    {
+      id: 'camp_wait',
+      label: 'Camp here and wait for it to dry',
+      apply: (s) => ({
+        ...s,
+        morale: Math.max(0, s.morale - 1),
+        eventLog: [...s.eventLog, { day: s.day, text: 'Camped a day waiting out the mud. Good rest, but a day lost.' }]
+      })
+    }
+  ]
+};
+
+EVENTS.push(burial, stuck_in_mud);

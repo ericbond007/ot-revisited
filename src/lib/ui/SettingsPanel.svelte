@@ -42,7 +42,9 @@
 <style>
   .settings-panel {
     display: flex;
-    flex-direction: column;
-    gap: 0.5em;
+    flex-wrap: wrap;
+    gap: 0.4em 1.5em;
+    padding: 0.5em 0.8em;
+    align-items: center;
   }
 </style>

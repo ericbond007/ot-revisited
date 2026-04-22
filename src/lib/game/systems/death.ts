@@ -29,9 +29,16 @@ export function reapDead(state: GameState, _rng: Rng): GameState {
   if (!anyChange) return state;
 
   const allDead = party.every((m) => m.dead);
+  // Flag a pending burial — the next event roll will fire the burial event.
+  // (If all-dead, no point: game is wiped.)
+  const flags = allDead
+    ? state.flags
+    : { ...state.flags, _burialPending: true };
+
   return {
     ...state,
     party,
+    flags,
     completed: allDead ? true : state.completed,
     outcome: allDead ? 'wiped' : state.outcome,
     eventLog: [
