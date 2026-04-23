@@ -14,7 +14,8 @@ export const BASE_KIT: StarterKit = {
     flour: 500,
     bullets: 20,
     shovel: 1,
-    yoke: 1
+    yoke: 1,
+    water_skin: 2
   }
 };
 
