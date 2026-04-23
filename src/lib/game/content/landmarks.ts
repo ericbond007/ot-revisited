@@ -6,6 +6,17 @@ export interface RiverStats {
   ferryPrice: number;
 }
 
+// Narrow classification of trading-post flavor. Drives visual theming
+// (accent color, glyph) in the trade UI and keeps room for future kinds
+// (`native_post`, `road_ranch`, `ferry_crossing`, etc.). Purely cosmetic;
+// no gameplay math reads this.
+export type PostKind =
+  | 'us_army'      // military quartermaster — navy accent
+  | 'hbc'          // Hudson's Bay Company — dark green, British imports
+  | 'mountain'     // isolated mountain man — rust / weathered
+  | 'frontier'     // mixed fur-trade / emigrant hub — default rust
+  | 'end_of_trail'; // luxurious last-chance — gold
+
 export interface Landmark {
   id: string;
   name: string;
@@ -21,6 +32,10 @@ export interface Landmark {
   // post had its own character (quartermaster basics at Kearny, HBC imports at
   // Hall, sparse at Bridger, end-of-trail luxuries at The Dalles, etc.).
   stock?: readonly string[];
+  // Post flavor — a narrow kind tag + a prose blurb shown at the top of the
+  // Visit / Trade screens. Only populated on trading posts (today).
+  postKind?: PostKind;
+  blurb?: string;
 }
 
 export const LANDMARKS: readonly Landmark[] = [
@@ -32,6 +47,8 @@ export const LANDMARKS: readonly Landmark[] = [
     river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
   { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 120, terrain: 'prairie',   kind: 'trading_post',
     // U.S. Army post. Quartermaster-issue basics — no luxuries.
+    postKind: 'us_army',
+    blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries.',
     stock: [
       'flour', 'beans', 'bacon', 'hardtack',
       'bullets', 'bandages', 'quinine',
@@ -47,6 +64,8 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post',
     // Fur-trade origin turned emigrant hub. The broadest selection on the
     // trail — and famously the highest prices.
+    postKind: 'frontier',
+    blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
@@ -70,6 +89,8 @@ export const LANDMARKS: readonly Landmark[] = [
     river: { depthFt: 4.5, currentMph: 4, ferryPrice: 8 } },
   { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 65,  terrain: 'mountains', kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
+    postKind: 'mountain',
+    blurb: "Jim Bridger's stockade is famously thin on stock. Moccasins, buffalo robes, and whatever the mountain men happened to bring in this week. Take what you can get.",
     stock: [
       'flour', 'bacon',
       'bullets', 'bandages',
@@ -84,6 +105,8 @@ export const LANDMARKS: readonly Landmark[] = [
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
     // wool blankets, manufactured goods). California Trail splits here.
+    postKind: 'hbc',
+    blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum',
@@ -95,6 +118,8 @@ export const LANDMARKS: readonly Landmark[] = [
     river: { depthFt: 5.0, currentMph: 3, ferryPrice: 6 } },
   { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 130, terrain: 'desert',    kind: 'trading_post',
     // Small HBC station. Modest stock, not a major resupply.
+    postKind: 'hbc',
+    blurb: 'A small HBC station by the Boise River. Cottonwoods, worn travelers, and a modest stock — not a major resupply, but the water is good.',
     stock: [
       'flour', 'bacon', 'dried_fruit',
       'bullets', 'bandages', 'quinine',
@@ -107,6 +132,8 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 70,  terrain: 'mountains', kind: 'trading_post',
     // HBC river post. Basic but reliable stock. Native trade goods are a
     // specialty here (Walla Walla / Cayuse trade networks).
+    postKind: 'hbc',
+    blurb: 'A lonely HBC outpost by the Columbia. Basic but reliable stock, and a specialty in Native trade goods — Walla Walla and Cayuse networks run through here.',
     stock: [
       'flour', 'beans', 'bacon',
       'bullets', 'bandages', 'quinine',
@@ -117,6 +144,8 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 100, terrain: 'mountains', kind: 'trading_post',
     // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
+    postKind: 'end_of_trail',
+    blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',

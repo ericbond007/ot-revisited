@@ -47,18 +47,9 @@
     return [];
   });
 
-  // Light flavor — same per-landmark pool as LandmarkStage (kept inline for
-  // now; could share via text-pools.ts when Visit grows).
-  const FLAVOR: Record<string, string> = {
-    ft_kearny:      'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices.',
-    ft_laramie:     'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — supplies are dear.',
-    ft_bridger:     "Jim Bridger's stockade is famously thin on stock. Take what you can get.",
-    ft_hall:        "A Hudson's Bay Company post on the Snake. The California Trail splits here — half the wagons turn south.",
-    ft_boise:       'A small HBC station by the Boise River. Worn travelers rest among cottonwoods.',
-    ft_walla_walla: 'A lonely outpost by the Columbia. The final stretch begins.',
-    the_dalles:     'A river-port town at the head of the Columbia gorge. End-of-trail chaos.'
-  };
-  const flavor = $derived(FLAVOR[landmark.id] ?? 'You enter the post.');
+  // Flavor blurb lives on the Landmark itself now (landmarks.ts). Falls
+  // back to a generic line for any post that hasn't been written up yet.
+  const flavor = $derived(landmark.blurb ?? 'You enter the post.');
 </script>
 
 <div class="modal-backdrop" onclick={onclose} role="presentation">

@@ -1,309 +1,740 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { PRICES } from '$lib/game/content/prices';
-  import { ITEMS } from '$lib/game/content/items';
-  import { getLandmark } from '$lib/game/content/landmarks';
+  import { ITEMS, type ItemCategory } from '$lib/game/content/items';
+  import { getLandmark, type PostKind } from '$lib/game/content/landmarks';
+  import { getProfession } from '$lib/game/content/professions';
   import ItemTooltip from './ItemTooltip.svelte';
   import NumberStepper from './NumberStepper.svelte';
 
-  let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
+  let { state: gameState, slot, onclose }: {
+    state: GameState;
+    slot: string;
+    onclose: () => void;
+  } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
-  // Which landmark are we trading at? Stock differs per post.
+  // Landmark context — drives per-post flavor + stock.
   const hereId = $derived(gameState.location.atLandmarkId);
   const here = $derived(hereId ? getLandmark(hereId) : null);
   const postName = $derived(here?.name ?? 'Trading Post');
+  const postKind = $derived<PostKind>(here?.postKind ?? 'frontier');
+  const postBlurb = $derived(here?.blurb ?? 'A post on the trail.');
 
-  // Fallback stock list for any trading post that doesn't declare its own
-  // (defensive — every trading_post landmark ships with a `stock` field now).
+  // Fallback stock for any trading_post without its own declared stock list.
   const FALLBACK_STOCK = [
     'flour', 'beans', 'bacon', 'bullets', 'bandages', 'quinine',
     'coat', 'blanket', 'ox_shoes', 'rope'
   ];
 
-  // Items the player owns and can sell — any item with a price that they have
-  // stock of. (Sellable list isn't gated by the post's stock — you can always
-  // offload what you're carrying, even at a post that doesn't usually stock it.)
-  const sellableIds = $derived(
-    Object.entries(gameState.inventory)
-      .filter(([id, qty]) => qty > 0 && PRICES[id])
-      .map(([id]) => id)
-  );
+  // Per-post theming. Purely cosmetic — accent color + header glyph chosen
+  // to match each post kind's historical flavor.
+  const POST_THEME: Record<PostKind, { accent: string; glyph: string; tag: string }> = {
+    us_army:      { accent: '#4a6a8c', glyph: '🎖️', tag: 'U.S. Army post' },
+    hbc:          { accent: '#1f5a3f', glyph: '🦫', tag: "Hudson's Bay Company" },
+    mountain:     { accent: '#8a5a2a', glyph: '⛰️', tag: 'Mountain outpost' },
+    frontier:     { accent: '#b86a42', glyph: '🏪', tag: 'Frontier post' },
+    end_of_trail: { accent: '#c9a05a', glyph: '✨', tag: 'End of the trail' }
+  };
+  const theme = $derived(POST_THEME[postKind]);
 
-  // Items the post actually carries. Filtered to ids that also have a price
-  // so the UI can't render a broken row.
-  const buyableIds = $derived(
+  // Merchant / Banker buy discount + sell bonus (matches trade.ts).
+  const hasMerchant = $derived(gameState.party.some((m) => !m.dead && m.profession === 'merchant'));
+  const hasBanker = $derived(gameState.party.some((m) => !m.dead && m.profession === 'banker'));
+  const buyMult = $derived(1 - (hasMerchant ? 0.15 : 0) - (hasBanker ? 0.10 : 0));
+  const sellMult = $derived(1 + (hasMerchant ? 0.20 : 0) + (hasBanker ? 0.10 : 0));
+
+  // Post stock (what the player can BUY here).
+  // svelte-ignore state_referenced_locally
+  const initialStock = (hereId ? getLandmark(hereId).stock : null) ?? FALLBACK_STOCK;
+  // svelte-ignore state_referenced_locally
+  const initialStockFiltered = initialStock.filter((id) => PRICES[id] && ITEMS[id]);
+  const stockIds = $derived(
     (here?.stock ?? FALLBACK_STOCK).filter((id) => PRICES[id] && ITEMS[id])
   );
 
-  // Qty state keyed by id. Pre-populated with 0 for every possible id so
-  // NumberStepper bindings always have a defined starting value at mount —
-  // binding to `sellQty[id]` where the key is missing breaks the stepper
-  // (initial value is undefined, later inc/dec produce NaN).
+  // Items the player currently owns (and can sell).
   // svelte-ignore state_referenced_locally
-  const initialSellableIds = Object.entries(gameState.inventory)
+  const initialOwnedIds = Object.entries(gameState.inventory)
     .filter(([id, qty]) => qty > 0 && PRICES[id])
     .map(([id]) => id);
-  // Snapshot the initial landmark stock synchronously so NumberStepper
-  // bindings have defined values at mount time.
+  const ownedIds = $derived(
+    Object.entries(gameState.inventory)
+      .filter(([id, qty]) => qty > 0 && PRICES[id] && ITEMS[id])
+      .map(([id]) => id)
+  );
+
+  // Unified item list = union of stock + owned. Each row can buy, sell, or
+  // both (rendered as two sub-rows on the same line).
   // svelte-ignore state_referenced_locally
-  const initialBuyableIds =
-    (hereId ? getLandmark(hereId).stock : null) ?? FALLBACK_STOCK;
-  // svelte-ignore state_referenced_locally
-  const initialBuyableFiltered = initialBuyableIds.filter((id) => PRICES[id] && ITEMS[id]);
+  const allIdsInitial = Array.from(new Set([...initialStockFiltered, ...initialOwnedIds]))
+    .filter((id) => ITEMS[id] && PRICES[id]);
+  const allIds = $derived(
+    Array.from(new Set([...stockIds, ...ownedIds])).filter((id) => ITEMS[id] && PRICES[id])
+  );
+
+  // Per-item qty state. buyQty > 0 = buying. sellQty > 0 = selling. An item
+  // with both > 0 is rare but allowed (defensive — totals math still works).
   let buyQty = $state<Record<string, number>>(
-    Object.fromEntries(initialBuyableFiltered.map((id) => [id, 0]))
+    Object.fromEntries(allIdsInitial.map((id) => [id, 0]))
   );
   let sellQty = $state<Record<string, number>>(
-    Object.fromEntries(initialSellableIds.map((id) => [id, 0]))
+    Object.fromEntries(allIdsInitial.map((id) => [id, 0]))
   );
-  // Keep both records populated with every current id — derived lists can
-  // change mid-modal (sellableIds if inventory shifts, buyableIds if we ever
-  // re-enter a different post without remount). NumberStepper bindings break
-  // when their key is missing.
+  // Keep qty dicts in sync with derived lists — stock / inventory can shift
+  // mid-modal (shouldn't, but be defensive; NumberStepper bindings break on
+  // undefined keys).
   $effect(() => {
-    for (const id of buyableIds) {
+    for (const id of allIds) {
       if (buyQty[id] === undefined) buyQty[id] = 0;
-    }
-  });
-  $effect(() => {
-    for (const id of sellableIds) {
       if (sellQty[id] === undefined) sellQty[id] = 0;
     }
   });
 
-  // Totals preview
+  // Group ids by item category so the list reads like a store shelf rather
+  // than a flat alphabetical dump.
+  const CATEGORY_ORDER: ItemCategory[] = [
+    'food', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo',
+    'clothing', 'livestock', 'comfort', 'native_trade'
+  ];
+  const CATEGORY_LABEL: Record<ItemCategory, string> = {
+    food: 'Food', medicine: 'Medicine', weapon: 'Weapons', ammo: 'Ammunition',
+    tool: 'Tools', wagon_part: 'Wagon parts', livestock: 'Livestock',
+    clothing: 'Clothing', comfort: 'Comfort', native_trade: 'Trade goods'
+  };
+  const CATEGORY_ICON: Record<ItemCategory, string> = {
+    food: '🍖', medicine: '💊', weapon: '🔫', ammo: '🎯', tool: '🔨',
+    wagon_part: '🛠️', livestock: '🐂', clothing: '🧥', comfort: '🎁',
+    native_trade: '🪶'
+  };
+
+  type Group = { cat: ItemCategory; ids: string[] };
+  const groups = $derived.by<Group[]>(() => {
+    const byCat: Partial<Record<ItemCategory, string[]>> = {};
+    for (const id of allIds) {
+      const meta = ITEMS[id];
+      if (!meta) continue;
+      (byCat[meta.category] ??= []).push(id);
+    }
+    return CATEGORY_ORDER
+      .filter((c) => byCat[c] && byCat[c]!.length > 0)
+      .map((c) => ({ cat: c, ids: byCat[c]!.sort((a, b) => ITEMS[a].name.localeCompare(ITEMS[b].name)) }));
+  });
+
+  // Totals — driven by raw buyQty/sellQty but applying the same multipliers
+  // trade.ts uses on the server.
   const buyTotal = $derived(
-    Object.entries(buyQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.buy ?? 0), 0)
+    Object.entries(buyQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.buy ?? 0) * buyMult, 0)
   );
   const sellTotal = $derived(
-    Object.entries(sellQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.sell ?? 0), 0)
+    Object.entries(sellQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.sell ?? 0) * sellMult, 0)
   );
   const netCost = $derived(buyTotal - sellTotal);
-  const canAfford = $derived(netCost <= gameState.cash);
+  const canAfford = $derived(Math.ceil(netCost) <= gameState.cash);
+  const afterCash = $derived(gameState.cash - netCost);
+
+  // Weight preview — change in wagon weight after the trade resolves.
+  const currentWeight = $derived(
+    Object.entries(gameState.inventory).reduce(
+      (s, [id, q]) => s + (q || 0) * (ITEMS[id]?.weightLbPerUnit ?? 0), 0
+    )
+  );
+  const weightDelta = $derived(
+    Object.entries(buyQty).reduce((s, [id, q]) => s + q * (ITEMS[id]?.weightLbPerUnit ?? 0), 0)
+    - Object.entries(sellQty).reduce((s, [id, q]) => s + q * (ITEMS[id]?.weightLbPerUnit ?? 0), 0)
+  );
+  const afterWeight = $derived(currentWeight + weightDelta);
+  const capacity = $derived(gameState.wagon.carryCapacity);
+  const weightPct = $derived(Math.round((afterWeight / capacity) * 100));
+  const weightColor = $derived(
+    weightPct >= 100 ? '#e85a4a' :
+    weightPct >= 90  ? '#c96a2a' :
+    weightPct >= 70  ? '#f5c96a' : '#8bb96a'
+  );
+
+  // Live "what you'll have after" panel data — starter (current) + buys - sells.
+  type LiveEntry = { id: string; name: string; current: number; delta: number; after: number };
+  type LiveGroup = { cat: ItemCategory; entries: LiveEntry[] };
+  const liveGroups = $derived.by<LiveGroup[]>(() => {
+    const byCat: Partial<Record<ItemCategory, LiveEntry[]>> = {};
+    const ids = new Set<string>([
+      ...Object.keys(gameState.inventory),
+      ...Object.keys(buyQty),
+      ...Object.keys(sellQty)
+    ]);
+    for (const id of ids) {
+      const meta = ITEMS[id];
+      if (!meta) continue;
+      const current = gameState.inventory[id] ?? 0;
+      const delta = (buyQty[id] ?? 0) - (sellQty[id] ?? 0);
+      const after = current + delta;
+      if (after <= 0 && delta === 0) continue;
+      (byCat[meta.category] ??= []).push({ id, name: meta.name, current, delta, after });
+    }
+    return CATEGORY_ORDER
+      .filter((c) => byCat[c] && byCat[c]!.length > 0)
+      .map((c) => ({ cat: c, entries: byCat[c]!.sort((a, b) => a.name.localeCompare(b.name)) }));
+  });
+
+  // Leader name + profession chip for the header.
+  const leader = $derived(gameState.party[0]);
+  const leaderProf = $derived(leader?.profession ? getProfession(leader.profession) : null);
 </script>
 
-<div class="modal-backdrop" onclick={onclose} role="presentation">
-  <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
-    <h2 style="color: var(--c-rust);">🏪 {postName}</h2>
-    <p class="lede">
-      Cash on hand: <strong>${gameState.cash}</strong> · {buyableIds.length} item{buyableIds.length === 1 ? '' : 's'} in stock. Hover any item for details.
-    </p>
+<div class="trade-backdrop" onclick={onclose} role="presentation">
+  <div class="trade-wrap post-{postKind}" onclick={(e) => e.stopPropagation()} role="presentation"
+       style="--post-accent: {theme.accent};">
 
-    <form method="POST" action="?/trade&slot={qp}">
-      <div class="trade-grid">
-        <div class="trade-col">
-          <h4>BUY</h4>
-          {#each buyableIds as id}
-            {#if ITEMS[id] && PRICES[id]}
-              <div class="trade-row">
-                <div class="trade-row-label">
-                  <ItemTooltip {id}>
-                    {#snippet children()}
-                      <span class="item-name">{ITEMS[id].name}</span>
-                    {/snippet}
-                  </ItemTooltip>
-                  <span class="price">${PRICES[id].buy.toFixed(2)} ea</span>
+    <!-- Left rail: post flavor + live inventory + profession discount -->
+    <aside class="side-rail">
+      <section class="panel post-panel">
+        <div class="post-head">
+          <span class="post-glyph">{theme.glyph}</span>
+          <div class="post-titles">
+            <span class="post-tag">{theme.tag}</span>
+            <h2 class="post-name">{postName}</h2>
+          </div>
+        </div>
+        <p class="post-blurb">{postBlurb}</p>
+      </section>
+
+      <section class="panel live-inv-panel">
+        <div class="panel-head">
+          WHAT YOU'LL HAVE
+          <span class="hint">after trade</span>
+        </div>
+        {#if liveGroups.length === 0}
+          <p class="empty">Nothing yet.</p>
+        {:else}
+          <div class="live-groups">
+            {#each liveGroups as g}
+              <div class="live-group">
+                <div class="live-group-head">
+                  <span class="live-group-icon">{CATEGORY_ICON[g.cat]}</span>
+                  <span class="live-group-label">{CATEGORY_LABEL[g.cat]}</span>
                 </div>
-                <NumberStepper
-                  name="buy_{id}"
-                  bind:value={buyQty[id]}
-                  min={0}
-                  max={99}
-                  ariaLabel="Buy {ITEMS[id].name}"
-                />
-              </div>
-            {/if}
-          {/each}
-        </div>
-
-        <div class="trade-col">
-          <h4>SELL</h4>
-          {#if sellableIds.length === 0}
-            <p class="empty">Nothing to sell.</p>
-          {/if}
-          {#each sellableIds as id}
-            {#if ITEMS[id] && PRICES[id]}
-              <div class="trade-row">
-                <div class="trade-row-label">
-                  <ItemTooltip {id}>
-                    {#snippet children()}
-                      <span class="item-name">{ITEMS[id].name}</span>
-                    {/snippet}
-                  </ItemTooltip>
-                  <span class="price">
-                    <span class="own">owned {gameState.inventory[id]}</span>
-                    @ ${PRICES[id].sell.toFixed(2)}
-                  </span>
+                <div class="live-rows">
+                  {#each g.entries as e}
+                    <div class="live-row" class:sold-out={e.after === 0}>
+                      <span class="live-name">{e.name}</span>
+                      <span class="live-qty">
+                        <strong>{e.after}</strong>
+                        {#if e.delta > 0}<span class="live-delta add">+{e.delta}</span>
+                        {:else if e.delta < 0}<span class="live-delta sub">{e.delta}</span>{/if}
+                      </span>
+                    </div>
+                  {/each}
                 </div>
-                <NumberStepper
-                  name="sell_{id}"
-                  bind:value={sellQty[id]}
-                  min={0}
-                  max={gameState.inventory[id]}
-                  ariaLabel="Sell {ITEMS[id].name}"
-                />
               </div>
-            {/if}
-          {/each}
-        </div>
-      </div>
+            {/each}
+          </div>
+        {/if}
+      </section>
 
-      <!-- Totals bar -->
-      <div class="totals" class:overdraw={!canAfford}>
-        <div class="total-col">
-          <span class="total-label">Buying</span>
-          <span class="total-val">${buyTotal.toFixed(2)}</span>
+      {#if hasMerchant || hasBanker}
+        <section class="panel discount-panel">
+          <div class="panel-head">PROFESSION BONUS</div>
+          <p>
+            {hasMerchant && hasBanker
+              ? 'Merchant + Banker are haggling — both buy and sell are favorable.'
+              : hasMerchant
+                ? 'Merchant is haggling — −15% buy, +20% sell.'
+                : 'Banker is bankrolling — −10% buy, +10% sell.'}
+          </p>
+        </section>
+      {/if}
+    </aside>
+
+    <!-- Main column -->
+    <div class="main-col">
+      <!-- Header panel -->
+      <header class="trade-head panel">
+        <h1>{postName}</h1>
+        <p class="lede">
+          {#if leader}<strong>{leader.name}</strong>{#if leaderProf}, <span class="lede-prof">{leaderProf.name}</span>{/if} at the counter. {/if}
+          Pick what to take, what to leave.
+        </p>
+      </header>
+
+      <!-- Sticky totals bar -->
+      <div class="totals-bar panel" class:overdraw={!canAfford}>
+        <div class="total-cell">
+          <span class="total-label">CASH</span>
+          <span class="total-val cash">${gameState.cash}</span>
         </div>
-        <div class="total-col">
-          <span class="total-label">Selling</span>
-          <span class="total-val">${sellTotal.toFixed(2)}</span>
+        <div class="total-cell">
+          <span class="total-label">BUY</span>
+          <span class="total-val spend">${buyTotal.toFixed(2)}</span>
         </div>
-        <div class="total-col">
-          <span class="total-label">Net</span>
-          <span class="total-val net" class:negative={netCost < 0}>
+        <div class="total-cell">
+          <span class="total-label">SELL</span>
+          <span class="total-val revenue">${sellTotal.toFixed(2)}</span>
+        </div>
+        <div class="total-cell">
+          <span class="total-label">NET</span>
+          <span class="total-val net" class:positive={netCost < 0}>
             {netCost >= 0 ? '−' : '+'}${Math.abs(netCost).toFixed(2)}
           </span>
         </div>
-        <div class="total-col">
-          <span class="total-label">After</span>
+        <div class="total-cell">
+          <span class="total-label">AFTER</span>
           <span class="total-val" class:danger={!canAfford}>
-            ${(gameState.cash - netCost).toFixed(2)}
+            ${afterCash.toFixed(2)}
+          </span>
+        </div>
+        <div class="total-cell">
+          <span class="total-label">WEIGHT</span>
+          <span class="total-val small" style="color: {weightColor};">
+            {Math.round(afterWeight)}/{capacity.toLocaleString()} · {weightPct}%
           </span>
         </div>
       </div>
 
-      <div class="actions">
-        <button type="submit" disabled={!canAfford}>Confirm Trade</button>
-        <button type="button" onclick={onclose}>Cancel</button>
-        {#if !canAfford}
-          <span class="warning">Can't afford this.</span>
-        {/if}
-      </div>
-    </form>
+      <form method="POST" action="?/trade&slot={qp}" class="trade-form">
+        <div class="scroll-area">
+          {#each groups as g}
+            <section class="group">
+              <div class="group-head">
+                <span class="group-icon">{CATEGORY_ICON[g.cat]}</span>
+                <span class="group-label">{CATEGORY_LABEL[g.cat]}</span>
+              </div>
+              <div class="item-grid">
+                {#each g.ids as id}
+                  {@const owned = gameState.inventory[id] ?? 0}
+                  {@const inStock = stockIds.includes(id)}
+                  {@const buying = buyQty[id] ?? 0}
+                  {@const selling = sellQty[id] ?? 0}
+                  {@const afterOwned = owned + buying - selling}
+                  <div class="item-row" class:out-of-stock={!inStock && owned === 0}>
+                    <div class="item-label">
+                      <ItemTooltip {id}>
+                        {#snippet children()}
+                          <span class="item-name">{ITEMS[id].name}</span>
+                        {/snippet}
+                      </ItemTooltip>
+                      <div class="price-row">
+                        {#if inStock}
+                          <span class="price buy-price">
+                            buy ${(PRICES[id].buy * buyMult).toFixed(2)}
+                          </span>
+                        {/if}
+                        {#if owned > 0}
+                          <span class="price sell-price">
+                            sell ${(PRICES[id].sell * sellMult).toFixed(2)}
+                          </span>
+                        {/if}
+                      </div>
+                    </div>
+                    <div class="item-controls">
+                      {#if inStock}
+                        <div class="control-col">
+                          <span class="control-tag buy">BUY</span>
+                          <NumberStepper
+                            name="buy_{id}"
+                            bind:value={buyQty[id]}
+                            min={0}
+                            max={99}
+                            ariaLabel="Buy {ITEMS[id].name}"
+                            hideValue
+                            displayValue={afterOwned}
+                            addedValue={buying}
+                          />
+                        </div>
+                      {/if}
+                      {#if owned > 0}
+                        <div class="control-col">
+                          <span class="control-tag sell">SELL</span>
+                          <NumberStepper
+                            name="sell_{id}"
+                            bind:value={sellQty[id]}
+                            min={0}
+                            max={owned}
+                            ariaLabel="Sell {ITEMS[id].name}"
+                            hideValue
+                            displayValue={afterOwned}
+                            addedValue={-selling}
+                          />
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </section>
+          {/each}
+        </div>
+
+        <!-- Action bar -->
+        <div class="action-bar panel">
+          <button type="submit" class="confirm" disabled={!canAfford}>
+            Confirm Trade
+          </button>
+          <button type="button" class="cancel" onclick={onclose}>Cancel</button>
+          {#if !canAfford}
+            <span class="warning">Can't afford this — trim the list.</span>
+          {/if}
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
 <style>
-  .modal-backdrop {
+  /* Full-viewport backdrop. The post-themed accent drives border + header
+     tinting so each post feels distinct without a full theme rewrite. */
+  .trade-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(26, 15, 8, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: rgba(26, 15, 8, 0.92);
     z-index: 100;
-    padding: 1em;
-    overflow-y: auto;
-  }
-  .modal-body {
-    max-width: 780px;
-    width: 100%;
-    padding: 1.5em;
-    border-color: var(--c-rust);
-    max-height: 92vh;
-    overflow-y: auto;
-  }
-  .lede {
-    margin: 0 0 1em 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
   }
 
-  .trade-grid {
+  .trade-wrap {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1em;
-  }
-  @media (max-width: 640px) {
-    .trade-grid { grid-template-columns: 1fr; }
-  }
-  .trade-col h4 {
-    color: var(--c-rust);
-    margin: 0 0 0.5em 0;
-    font-size: 0.85em;
-    letter-spacing: 0.15em;
-  }
-
-  .trade-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
+    grid-template-columns: 300px 1fr;
     gap: 0.6em;
-    padding: 0.4em 0;
-    border-bottom: 1px dashed rgba(138, 90, 42, 0.2);
+    width: 100%;
+    height: 100vh;
+    padding: 0.6em;
+    overflow: hidden;
   }
-  .trade-row:last-child { border-bottom: 0; }
-  .trade-row-label {
+
+  .side-rail {
     display: flex;
     flex-direction: column;
-    gap: 0.15em;
+    gap: 0.5em;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.2em;
+  }
+  .main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    min-height: 0;
     min-width: 0;
   }
-  .item-name { font-size: 0.95em; }
-  .price {
-    font-size: 0.8em;
-    color: var(--c-wood);
-  }
-  .own {
-    color: var(--c-rust);
-    font-weight: 700;
-  }
 
-  .empty {
-    color: var(--c-wood);
-    font-style: italic;
-    font-size: 0.9em;
+  /* Post flavor panel — themed per post kind via --post-accent. */
+  .post-panel {
+    padding: 0.9em 1em;
+    border-color: var(--post-accent);
+    border-width: 3px;
   }
-
-  .totals {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5em;
-    padding: 0.7em 0.9em;
-    margin-top: 1em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-ink);
-    border-radius: 3px;
-    transition: border-color 0.15s;
+  .post-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    margin-bottom: 0.6em;
   }
-  .totals.overdraw {
-    border-color: #e85a4a;
+  .post-glyph {
+    font-size: 2.2em;
+    line-height: 1;
   }
-  .total-col {
+  .post-titles {
     display: flex;
     flex-direction: column;
     gap: 0.1em;
+    min-width: 0;
   }
+  .post-tag {
+    font-size: 0.7em;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    color: var(--post-accent);
+    text-transform: uppercase;
+  }
+  .post-name {
+    margin: 0;
+    font-size: 1.25em;
+    color: var(--c-tan-bright);
+    line-height: 1.1;
+  }
+  .post-blurb {
+    margin: 0;
+    color: var(--c-tan);
+    font-size: 0.9em;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* Live inventory — mirrors the outfit screen's sidebar. */
+  .live-inv-panel { padding: 0.7em 0.9em; }
+  .live-inv-panel .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5em;
+  }
+  .live-inv-panel .hint {
+    font-size: 0.7em;
+    color: var(--c-wood);
+    font-style: italic;
+    font-weight: normal;
+    letter-spacing: normal;
+  }
+  .live-groups { display: flex; flex-direction: column; gap: 0.5em; }
+  .live-group-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35em;
+    padding-bottom: 0.15em;
+    border-bottom: 1px solid rgba(138, 90, 42, 0.3);
+    margin-bottom: 0.15em;
+  }
+  .live-group-icon { font-size: 1em; line-height: 1; }
+  .live-group-label {
+    font-size: 0.72em;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--post-accent);
+    text-transform: uppercase;
+  }
+  .live-rows { display: flex; flex-direction: column; }
+  .live-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.15em 0.2em;
+    font-size: 0.85em;
+  }
+  .live-row:nth-child(odd) { background: rgba(138, 90, 42, 0.06); }
+  .live-row.sold-out { opacity: 0.45; text-decoration: line-through; }
+  .live-name { color: var(--c-tan); }
+  .live-qty { display: inline-flex; align-items: baseline; gap: 0.3em; }
+  .live-qty strong {
+    color: var(--post-accent);
+    font-weight: 700;
+    font-size: 1.05em;
+  }
+  .live-delta {
+    font-size: 0.72em;
+    font-weight: 700;
+    padding: 0.1em 0.35em;
+    border-radius: 2px;
+  }
+  .live-delta.add {
+    color: #8bb96a;
+    background: rgba(139, 185, 106, 0.15);
+  }
+  .live-delta.sub {
+    color: #e85a4a;
+    background: rgba(232, 90, 74, 0.15);
+  }
+
+  .discount-panel { padding: 0.7em 0.9em; }
+  .discount-panel p {
+    margin: 0;
+    font-size: 0.85em;
+    color: var(--c-tan);
+    line-height: 1.4;
+  }
+
+  .panel-head {
+    font-size: 0.7em;
+    letter-spacing: 0.15em;
+    color: var(--c-wood);
+    font-weight: 700;
+    margin-bottom: 0.4em;
+  }
+
+  /* Header of the main column */
+  .trade-head {
+    padding: 0.6em 0.9em;
+    display: flex;
+    align-items: baseline;
+    gap: 0.9em;
+    flex-wrap: wrap;
+    border-color: var(--post-accent);
+    border-width: 3px;
+  }
+  .trade-head h1 {
+    margin: 0;
+    color: var(--post-accent);
+    letter-spacing: 0.05em;
+    font-size: 1.3em;
+  }
+  .lede {
+    margin: 0;
+    color: var(--c-wood);
+    font-size: 0.88em;
+    font-style: italic;
+  }
+  .lede-prof { color: var(--post-accent); font-style: normal; font-weight: 700; }
+
+  /* Sticky totals bar */
+  .totals-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 0.5em 1em;
+    padding: 0.7em 0.9em;
+    transition: border-color 0.15s;
+  }
+  .totals-bar.overdraw { border-color: #e85a4a; }
+  .total-cell { display: flex; flex-direction: column; gap: 0.1em; }
   .total-label {
     font-size: 0.65em;
     letter-spacing: 0.15em;
     color: var(--c-wood);
     font-weight: 700;
   }
-  .total-val {
-    font-weight: 700;
-    font-size: 0.95em;
-    color: var(--c-tan-bright);
+  .total-val { font-weight: 700; font-size: 1.05em; color: var(--c-tan-bright); }
+  .total-val.small { font-size: 0.85em; }
+  .total-val.spend { color: #c96a2a; }
+  .total-val.revenue { color: #8bb96a; }
+  .total-val.net { color: #c96a2a; }
+  .total-val.net.positive { color: #8bb96a; }
+  .total-val.danger { color: #e85a4a; }
+
+  /* Scrollable item list */
+  .trade-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    flex: 1;
+    min-height: 0;
   }
-  .total-val.net {
-    color: #c96a2a;
-  }
-  .total-val.net.negative {
-    color: #8bb96a;
-  }
-  .total-val.danger {
-    color: #e85a4a;
+  .scroll-area {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.3em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
   }
 
-  .actions {
+  .group {
+    background: var(--c-panel);
+    border: 2px solid var(--c-border);
+    border-radius: 4px;
+  }
+  .group-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     display: flex;
+    align-items: center;
     gap: 0.5em;
-    margin-top: 1em;
+    padding: 0.55em 0.8em;
+    background: var(--c-panel);
+    border-bottom: 1px solid var(--post-accent);
+    color: var(--c-tan);
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    font-size: 0.95em;
+  }
+  .group-icon { font-size: 1.2em; line-height: 1; }
+
+  .item-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 0;
+    padding: 0 0.4em 0.5em 0.4em;
+  }
+  .item-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6em;
+    padding: 0.45em 0.6em;
+    border-bottom: 1px solid rgba(138, 90, 42, 0.25);
+    min-width: 0;
+  }
+  .item-row:nth-child(odd) { background: rgba(138, 90, 42, 0.12); }
+  .item-row:last-child { border-bottom: 0; }
+  .item-row:hover { background: rgba(201, 106, 42, 0.14); }
+  .item-row.out-of-stock { opacity: 0.5; }
+
+  .item-label { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; }
+  .item-name { font-size: 0.95em; }
+  .price-row {
+    display: flex;
+    gap: 0.6em;
+    flex-wrap: wrap;
+    font-size: 0.76em;
+  }
+  .price { color: var(--c-wood); }
+  .buy-price::before { content: ''; }
+  .sell-price { color: #8bb96a; }
+
+  /* Stepper cluster — when both BUY and SELL are possible, render them
+     side-by-side with a small tag above each so they're easy to tell apart. */
+  .item-controls {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 0.8em;
+  }
+  .control-col {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15em;
+  }
+  .control-tag {
+    font-size: 0.6em;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    padding: 0.1em 0.4em;
+    border-radius: 2px;
+  }
+  .control-tag.buy {
+    color: var(--c-tan-bright);
+    background: var(--post-accent);
+  }
+  .control-tag.sell {
+    color: #8bb96a;
+    background: rgba(139, 185, 106, 0.18);
+    border: 1px solid rgba(139, 185, 106, 0.4);
+  }
+
+  /* Action bar — pinned at the bottom of main-col */
+  .action-bar {
+    display: flex;
+    gap: 0.8em;
     align-items: center;
     flex-wrap: wrap;
+    padding: 0.7em 0.9em;
+    border-color: var(--post-accent);
+  }
+  .confirm {
+    font-size: 1.05em;
+    padding: 0.7em 1.4em;
+    background: var(--post-accent);
+    color: var(--c-tan-bright);
+  }
+  .confirm:hover:not(:disabled) {
+    filter: brightness(1.15);
+  }
+  .cancel {
+    color: var(--c-wood);
+    background: var(--c-bg-raised);
+    border: 2px solid var(--c-wood);
   }
   .warning {
     color: #e85a4a;
-    font-size: 0.85em;
+    font-size: 0.9em;
     font-style: italic;
+  }
+
+  .empty {
+    color: var(--c-wood);
+    font-style: italic;
+    margin: 0.3em 0;
+  }
+
+  @media (max-width: 900px) {
+    .trade-wrap {
+      grid-template-columns: 1fr;
+      height: auto;
+      overflow: auto;
+    }
+    .side-rail { overflow-y: visible; }
+    .scroll-area { overflow-y: visible; }
   }
 </style>
