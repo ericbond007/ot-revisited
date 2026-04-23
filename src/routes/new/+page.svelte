@@ -72,15 +72,51 @@
   }
 </script>
 
-<div class="container">
-  <h1>Assemble your party</h1>
-  <p style="color: var(--c-wood);">2 to 6 adults. Pick a profession for each — stacks matter.</p>
+<div class="new-wrap">
+
+  <!-- Left rail: profession quick reference + tips -->
+  <aside class="side-rail">
+    <section class="panel tips-panel">
+      <div class="panel-head">TIPS</div>
+      <ul class="tips">
+        <li><strong>Stacks matter.</strong> Multiple doctors don't stack — pick diverse professions.</li>
+        <li><strong>Hunter + Gunsmith</strong> → +40% meat per hunt.</li>
+        <li><strong>Merchant + Banker</strong> → −25% buy / +30% sell at posts.</li>
+        <li><strong>Doctor</strong> is near-mandatory for 1848–52 starts (cholera years).</li>
+        <li><strong>Departure date:</strong> too early = no grass for the oxen; too late = Rockies in winter.</li>
+      </ul>
+    </section>
+
+    <section class="panel prof-ref">
+      <div class="panel-head">PROFESSION BONUSES</div>
+      <div class="prof-list">
+        {#each data.professions as p}
+          <div class="prof-row">
+            <strong class="prof-name">
+              {p.name}
+              {#if p.femaleOnly}<span class="fem-tag">♀</span>{/if}
+            </strong>
+            <p class="prof-bonus">{p.bonusSummary}</p>
+          </div>
+        {/each}
+      </div>
+    </section>
+  </aside>
+
+  <!-- Main column -->
+  <div class="main-col">
+
+  <header class="page-head panel">
+    <h1>Assemble your party</h1>
+    <p class="lede">2 to 6 adults. Pick a profession for each — stacks matter.</p>
+  </header>
 
   {#if form?.error}
-    <div class="panel" style="border-color: var(--c-rust); margin: 1em 0;">{form.error}</div>
+    <div class="panel form-error">{form.error}</div>
   {/if}
 
-  <form method="POST" action="?/depart">
+  <form method="POST" action="?/depart" class="new-form">
+    <div class="scroll-area">
     <div style="display: flex; flex-direction: column; gap: 0.8em; margin-bottom: 1.5em;">
       {#each members as m, i}
         <div class="panel member-card">
@@ -161,22 +197,156 @@
       </div>
     </div>
 
-    <button type="submit" style="font-size: 1.1em; padding: 0.8em 1.5em;">Depart</button>
-    <a href="/" style="margin-left: 1em;">Cancel</a>
+    </div><!-- /.scroll-area -->
+
+    <div class="action-bar panel">
+      <button type="submit" class="depart-btn">Depart</button>
+      <a href="/" class="cancel">Cancel</a>
+    </div>
   </form>
 
-  <h3 style="margin-top: 2em;">Profession bonuses</h3>
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em;">
-    {#each data.professions as p}
-      <div class="panel" style="font-size: 0.9em;">
-        <strong style="color: var(--c-rust);">{p.name}</strong>{#if p.femaleOnly} <span style="color: var(--c-wood); font-size: 0.8em;">(female-only)</span>{/if}
-        <div>{p.bonusSummary}</div>
-      </div>
-    {/each}
-  </div>
+  </div><!-- /.main-col -->
 </div>
 
 <style>
+  /* Full-viewport layout with a tips + profession-ref sidebar. Matches the
+     outfit screen's grid. Falls back to stacked flow below 900px. */
+  .new-wrap {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0.6em;
+    height: 100vh;
+    padding: 0.6em;
+    overflow: hidden;
+  }
+
+  .side-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.2em;
+  }
+  .tips-panel, .prof-ref { padding: 0.7em 0.9em; }
+  .panel-head {
+    font-size: 0.7em;
+    letter-spacing: 0.15em;
+    color: var(--c-wood);
+    font-weight: 700;
+    margin-bottom: 0.4em;
+  }
+  .tips {
+    list-style: disc;
+    padding-left: 1.1em;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    font-size: 0.85em;
+    color: var(--c-tan);
+    line-height: 1.4;
+  }
+  .tips strong { color: var(--c-rust); }
+
+  .prof-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+  }
+  .prof-row {
+    padding: 0.3em 0 0.3em 0;
+    border-bottom: 1px dashed rgba(138, 90, 42, 0.18);
+  }
+  .prof-row:last-child { border-bottom: 0; }
+  .prof-name {
+    color: var(--c-rust);
+    font-size: 0.88em;
+    letter-spacing: 0.02em;
+  }
+  .fem-tag {
+    color: var(--c-rust);
+    font-size: 0.9em;
+    margin-left: 0.2em;
+  }
+  .prof-bonus {
+    margin: 0.15em 0 0 0;
+    font-size: 0.78em;
+    color: var(--c-tan);
+    line-height: 1.35;
+  }
+
+  .main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    min-height: 0;
+  }
+  .page-head {
+    padding: 0.6em 0.9em;
+    display: flex;
+    align-items: baseline;
+    gap: 0.9em;
+    flex-wrap: wrap;
+  }
+  .page-head h1 {
+    margin: 0;
+    color: var(--c-rust);
+    font-size: 1.3em;
+    letter-spacing: 0.05em;
+  }
+  .lede {
+    margin: 0;
+    color: var(--c-wood);
+    font-size: 0.88em;
+    font-style: italic;
+  }
+  .form-error {
+    padding: 0.7em 0.9em;
+    border-color: #e85a4a;
+    color: #e85a4a;
+    font-weight: 700;
+  }
+
+  .new-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    flex: 1;
+    min-height: 0;
+  }
+  .scroll-area {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.3em;
+  }
+  .action-bar {
+    display: flex;
+    gap: 0.8em;
+    align-items: center;
+    padding: 0.7em 0.9em;
+    border-color: var(--c-rust);
+  }
+  .depart-btn {
+    font-size: 1.05em;
+    padding: 0.7em 1.4em;
+  }
+  .cancel {
+    color: var(--c-wood);
+    text-decoration: underline;
+  }
+
+  @media (max-width: 900px) {
+    .new-wrap {
+      grid-template-columns: 1fr;
+      height: auto;
+      overflow: visible;
+      padding: 1em;
+    }
+    .side-rail, .scroll-area { overflow-y: visible; }
+  }
+
   .presets {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

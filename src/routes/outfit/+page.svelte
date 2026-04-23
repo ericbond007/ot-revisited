@@ -210,6 +210,50 @@
 </script>
 
 <div class="outfit-wrap">
+
+  <!-- Left rail: tips + contextual hints -->
+  <aside class="side-rail">
+    <section class="panel tips-panel">
+      <div class="panel-head">TIPS</div>
+      <ul class="tips">
+        <li><strong>Pack light.</strong> Every pound over your wagon's cap slows you down and breaks things faster.</li>
+        <li><strong>Food math.</strong> Plan for ~2 lb per adult per day. A 120-day trip with a party of 4 = ~1,000 lb.</li>
+        <li><strong>Water skins.</strong> Each one adds to your carry cap (not yet mechanical — but bring a few).</li>
+        <li><strong>Spare oxen.</strong> One dies on the trail, you need a replacement yoked the next morning.</li>
+        <li><strong>Spare parts.</strong> Spare wheel + axle + tongue + canvas are cheap insurance.</li>
+        <li><strong>Medicine.</strong> Quinine for fever, bandages for wounds. Patent medicine is a gamble.</li>
+      </ul>
+    </section>
+
+    {#if hasMerchant || hasBanker}
+      <section class="panel discount-panel">
+        <div class="panel-head">PROFESSION DISCOUNT</div>
+        <p>
+          {hasMerchant && hasBanker
+            ? 'Merchant + Banker are haggling for you — prices reflect both.'
+            : hasMerchant
+              ? 'Merchant is haggling — −15% buy price.'
+              : 'Banker is bankrolling — −10% buy price.'}
+        </p>
+        <p class="small">Current multiplier: ×{buyMult.toFixed(2)}</p>
+      </section>
+    {/if}
+
+    <section class="panel wagon-hint-panel">
+      <div class="panel-head">{selectedWagonModel.name.toUpperCase()}</div>
+      <p>{selectedWagonModel.description}</p>
+      <dl class="hint-stats">
+        <div><dt>Capacity</dt><dd>{selectedWagonModel.carryCapacity.toLocaleString()} lb</dd></div>
+        <div><dt>Optimal team</dt><dd>{selectedWagonModel.optimalTeam} oxen</dd></div>
+        <div><dt>Min team</dt><dd>{selectedWagonModel.minTeam} oxen</dd></div>
+        <div><dt>Speed</dt><dd>×{selectedWagonModel.baseSpeedMult.toFixed(2)}</dd></div>
+      </dl>
+    </section>
+  </aside>
+
+  <!-- Main column -->
+  <div class="main-col">
+
   <header class="outfit-head panel">
     <h1>Outfit the Wagon</h1>
     <p class="lede">
@@ -412,22 +456,94 @@
       {/if}
     </div>
   </form>
+
+  </div><!-- /.main-col -->
 </div>
 
 <style>
-  /* Lock the page to the viewport so the outfit screen reads like the play
-     screen — totals + actions always visible, only the content area scrolls.
-     Falls back to regular document flow on narrow screens (<= 900px) where
-     the sticky actions bar would crowd the content too much. */
+  /* Full-viewport lock with a left tips rail, mirroring the play screen
+     (which uses a right side-rail). Only the main-col content scrolls;
+     header, totals, and action bar stay pinned. Falls back to stacked
+     document flow on narrow screens (<= 900px). */
   .outfit-wrap {
-    max-width: 1100px;
-    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0.6em;
+    height: 100vh;
     padding: 0.6em;
+    overflow: hidden;
+  }
+
+  .side-rail {
     display: flex;
     flex-direction: column;
     gap: 0.5em;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.2em;
+  }
+  .tips-panel, .discount-panel, .wagon-hint-panel {
+    padding: 0.7em 0.9em;
+  }
+  .tips {
+    list-style: disc;
+    padding-left: 1.1em;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    font-size: 0.85em;
+    color: var(--c-tan);
+    line-height: 1.4;
+  }
+  .tips strong { color: var(--c-rust); }
+  .discount-panel p {
+    margin: 0 0 0.3em 0;
+    font-size: 0.85em;
+    color: var(--c-tan);
+  }
+  .discount-panel .small {
+    color: var(--c-wood);
+    font-style: italic;
+    font-size: 0.78em;
+  }
+  .wagon-hint-panel p {
+    margin: 0 0 0.5em 0;
+    font-size: 0.85em;
+    color: var(--c-tan);
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .hint-stats {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3em;
+    font-size: 0.78em;
+  }
+  .hint-stats div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05em;
+  }
+  .hint-stats dt {
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    color: var(--c-wood);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .hint-stats dd {
+    margin: 0;
+    font-weight: 700;
+    color: var(--c-tan-bright);
+  }
+
+  .main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    min-height: 0;
   }
 
   .outfit-form {
@@ -457,9 +573,13 @@
 
   @media (max-width: 900px) {
     .outfit-wrap {
+      grid-template-columns: 1fr;
       height: auto;
       overflow: visible;
       padding: 1em;
+    }
+    .side-rail {
+      overflow-y: visible;
     }
     .scroll-area {
       overflow-y: visible;
