@@ -1,8 +1,19 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { LANDMARKS } from '$lib/game/content/landmarks';
+  import { getWagon } from '$lib/game/content/wagons';
   import WagonIcon from './WagonIcon.svelte';
   let { state: gameState }: { state: GameState } = $props();
+
+  // Map wagon size varies by model so Heavy reads visibly larger than Light.
+  const wagonIconSize = $derived.by(() => {
+    const model = getWagon(gameState.wagon.model);
+    switch (model.id) {
+      case 'light': return '1.2em';
+      case 'heavy': return '1.7em';
+      default: return '1.4em';
+    }
+  });
 
   // Stop-worthy landmarks are the "chunk" boundaries. Everything in between is
   // scenic. We render one chunk at a time so each dot is far enough apart to
@@ -178,10 +189,10 @@
       </div>
     {/each}
 
-    <!-- Wagon: slides along the current leg -->
+    <!-- Wagon: slides along the current leg. Size reflects the wagon model. -->
     <div class="wagon" style="right: calc({4 + wagonLegPct * 0.92}% - 12px);">
       <span class="wagon-ox">🐂</span>
-      <WagonIcon size="1.4em" strokeWidth={1.6} />
+      <WagonIcon size={wagonIconSize} strokeWidth={1.6} />
     </div>
   </div>
 

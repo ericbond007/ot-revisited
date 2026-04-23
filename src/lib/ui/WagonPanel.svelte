@@ -1,7 +1,10 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
+  import { getWagon } from '$lib/game/content/wagons';
 
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
+
+  const wagonModel = $derived(getWagon(state.wagon.model));
 
   const condition = $derived(Math.round(state.wagon.condition));
   const conditionColor = $derived(
@@ -36,7 +39,7 @@
 
 <button type="button" class="panel wagon-panel" onclick={onopen} title="Click for wagon details">
   <div class="wp-head">
-    <h4>WAGON</h4>
+    <h4>WAGON <span class="wp-model">· {wagonModel.shortName}</span></h4>
     <span class="expand-hint">▸</span>
   </div>
 
@@ -50,9 +53,16 @@
 
   <div class="ox-summary">
     <span class="ox-icon">🐂</span>
-    <span class="ox-count">{aliveOxen.length}/{state.oxen.length}</span>
+    <span class="ox-count" title="Alive / total — wagon's optimal team is {wagonModel.optimalTeam}">
+      {aliveOxen.length}/{state.oxen.length} · team {wagonModel.optimalTeam}
+    </span>
     <span class="ox-stat" title="Average ox health">❤ {avgOxHealth}</span>
     <span class="ox-stat" title="Average ox fatigue">⚡ {avgOxFatigue}</span>
+    {#if aliveOxen.length < wagonModel.minTeam}
+      <span class="ox-warn" title="Below the wagon's min team — you can't move">⛔ stranded</span>
+    {:else if aliveOxen.length < wagonModel.optimalTeam}
+      <span class="ox-warn" title="Below optimal team — slower travel">⚠ undermanned</span>
+    {/if}
     {#if shoelessOxen > 0}
       <span class="ox-warn" title="Oxen without shoes move slower">⚠ {shoelessOxen} bare</span>
     {/if}
@@ -101,6 +111,13 @@
     margin: 0;
     font-size: 0.75em;
     letter-spacing: 0.15em;
+  }
+  .wp-model {
+    font-size: 0.9em;
+    color: var(--c-tan);
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    text-transform: none;
   }
   .expand-hint {
     color: var(--c-wood);

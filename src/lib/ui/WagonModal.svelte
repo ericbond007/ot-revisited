@@ -1,9 +1,12 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
+  import { getWagon } from '$lib/game/content/wagons';
   import ItemTooltip from './ItemTooltip.svelte';
   import WagonIcon from './WagonIcon.svelte';
 
   let { state, onclose }: { state: GameState; onclose: () => void } = $props();
+
+  const wagonModel = $derived(getWagon(state.wagon.model));
 
   const condition = $derived(Math.round(state.wagon.condition));
   const conditionColor = $derived(
@@ -36,10 +39,20 @@
 
 <div class="modal-backdrop">
   <div class="panel modal-body">
-    <h2 style="color: var(--c-rust); display: flex; align-items: center; gap: 0.4em;">
+    <h2 style="color: var(--c-rust); display: flex; align-items: center; gap: 0.4em; margin-bottom: 0.2em;">
       <WagonIcon size="1.1em" />
-      <span>The Wagon</span>
+      <span>{wagonModel.name}</span>
     </h2>
+    <p class="model-desc">{wagonModel.description}</p>
+    <div class="model-stats">
+      <span><strong>{wagonModel.carryCapacity.toLocaleString()}</strong> lb capacity</span>
+      <span>·</span>
+      <span>optimal team <strong>{wagonModel.optimalTeam}</strong></span>
+      <span>·</span>
+      <span>min team <strong>{wagonModel.minTeam}</strong></span>
+      <span>·</span>
+      <span>speed <strong>×{wagonModel.baseSpeedMult.toFixed(2)}</strong></span>
+    </div>
 
     <!-- Condition bar -->
     <section class="section">
@@ -123,6 +136,22 @@
     padding: 1.5em;
     border-color: var(--c-rust);
   }
+
+  .model-desc {
+    color: var(--c-wood);
+    font-style: italic;
+    margin: 0 0 0.4em 0;
+    line-height: 1.4;
+  }
+  .model-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    font-size: 0.85em;
+    color: var(--c-tan);
+    margin-bottom: 1.1em;
+  }
+  .model-stats strong { color: var(--c-tan-bright); }
 
   .section { margin-bottom: 1.2em; }
   .section:last-of-type { margin-bottom: 1em; }
