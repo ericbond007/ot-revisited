@@ -11,7 +11,9 @@
     bulkSteps = [],
     disabled = false,
     ariaLabel = 'Number',
-    hideValue = false
+    hideValue = false,
+    displayValue,
+    addedValue
   }: {
     name?: string;
     value?: number;
@@ -22,9 +24,16 @@
     disabled?: boolean;
     ariaLabel?: string;
     // Mouse-first mode — no typeable input box. Form still submits via a
-    // hidden <input>. Consumers (the outfit page, etc.) are expected to
-    // render the current value elsewhere.
+    // hidden <input>. The chip between the -/+ buttons shows the count.
     hideValue?: boolean;
+    // Override what the chip displays. Used when the stepper's `value`
+    // is a delta (e.g. "how many to buy") but the player cares about the
+    // absolute total (owned + buying). If omitted, the chip shows `value`.
+    displayValue?: number;
+    // When non-zero, float a colored `+N` / `N` bubble above the button
+    // on that side — green over + when positive, red over − when
+    // negative. Visualizes the pending change without taking row width.
+    addedValue?: number;
   } = $props();
 
   function clamp(v: number): number {
@@ -63,17 +72,21 @@
 <div class="stepper" class:disabled>
   <button
     type="button"
-    class="step-btn"
+    class="step-btn step-minus"
     aria-label="{ariaLabel}: decrease"
     onclick={dec}
     disabled={disabled || value <= min}
-  >−</button>
+  >
+    −
+    {#if addedValue !== undefined && addedValue < 0}
+      <span class="bubble bubble-sub">{addedValue}</span>
+    {/if}
+  </button>
 
   {#if hideValue}
-    <!-- Mouse-first: no visible/typeable box. Keep form submission intact
-         via a hidden input, and show the current count as a compact
-         read-only chip between the -/+ buttons. -->
-    <span class="value-chip" aria-hidden="true">{value}</span>
+    <!-- Mouse-first: no visible/typeable box. The chip shows either the
+         raw value or an override (e.g. owned + pending = total). -->
+    <span class="value-chip" aria-hidden="true">{displayValue ?? value}</span>
     <input type="hidden" {name} {value} />
   {:else}
     <input
@@ -92,11 +105,16 @@
 
   <button
     type="button"
-    class="step-btn"
+    class="step-btn step-plus"
     aria-label="{ariaLabel}: increase"
     onclick={inc}
     disabled={disabled || value >= max}
-  >+</button>
+  >
+    +
+    {#if addedValue !== undefined && addedValue > 0}
+      <span class="bubble bubble-add">+{addedValue}</span>
+    {/if}
+  </button>
 
   {#each bulkSteps as n}
     <button
@@ -115,7 +133,8 @@
     align-items: stretch;
     border: 2px solid var(--c-ink);
     border-radius: 4px;
-    overflow: hidden;
+    /* Don't clip bubbles that float above the +/- buttons. */
+    overflow: visible;
     background: var(--c-bg-raised);
     line-height: 1;
   }
@@ -125,6 +144,7 @@
 
   .step-btn {
     /* Override default button styles from theme.css for a compact, square shape */
+    position: relative;
     padding: 0;
     width: 2.2em;
     height: 2.2em;
@@ -142,6 +162,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  /* Floating `+N` / `-N` indicator that hovers above the button which
+     caused the pending change. Green for adds, red for removes. */
+  .bubble {
+    position: absolute;
+    top: -0.55em;
+    background: #8bb96a;
+    color: var(--c-ink);
+    font-size: 0.55em;
+    font-weight: 900;
+    padding: 0.15em 0.45em;
+    border-radius: 10px;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.02em;
+  }
+  .bubble-add {
+    right: -0.35em;
+  }
+  .bubble-sub {
+    left: -0.35em;
+    background: #e85a4a;
+    color: var(--c-tan-bright);
   }
   .step-btn.bulk {
     /* Bulk buttons are a visual shortcut, not the primary control — keep

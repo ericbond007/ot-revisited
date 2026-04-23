@@ -486,24 +486,12 @@
                 {@const total = owned + adding}
                 <div class="item-row">
                   <div class="item-label">
-                    <div class="item-name-row">
-                      <ItemTooltip {id}>
-                        {#snippet children()}
-                          <span class="item-name">{ITEMS[id].name}</span>
-                        {/snippet}
-                      </ItemTooltip>
-                      {#if owned > 0}
-                        <span class="owned-tag" title="Already in your starter kit">has {owned}</span>
-                      {/if}
-                    </div>
-                    <div class="item-meta-row">
-                      <span class="item-price">${price.toFixed(2)} ea</span>
-                      {#if total > 0}
-                        <span class="item-total" class:has-pending={adding > 0}>
-                          → <strong>{total}</strong>{#if adding > 0}<span class="total-added">+{adding}</span>{/if}
-                        </span>
-                      {/if}
-                    </div>
+                    <ItemTooltip {id}>
+                      {#snippet children()}
+                        <span class="item-name">{ITEMS[id].name}</span>
+                      {/snippet}
+                    </ItemTooltip>
+                    <span class="item-price">${price.toFixed(2)} ea</span>
                   </div>
                   <div class="item-controls">
                     <NumberStepper
@@ -514,6 +502,8 @@
                       bulkSteps={isBulkCat ? [10, 50] : []}
                       ariaLabel="Buy {ITEMS[id].name}"
                       hideValue
+                      displayValue={total}
+                      addedValue={adding}
                     />
                   </div>
                 </div>
@@ -1011,31 +1001,14 @@
   .item-row:nth-child(odd) { background: rgba(138, 90, 42, 0.15); }
   .item-row:last-child { border-bottom: 0; }
   .item-row:hover { background: rgba(201, 106, 42, 0.14); }
-  .item-label { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; }
-  .item-name-row {
+  .item-label {
     display: flex;
-    align-items: baseline;
-    gap: 0.4em;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.15em;
+    min-width: 0;
   }
   .item-name { font-size: 0.95em; }
-  .item-meta-row {
-    display: flex;
-    align-items: baseline;
-    gap: 0.7em;
-    flex-wrap: wrap;
-  }
   .item-price { font-size: 0.76em; color: var(--c-wood); }
-  .owned-tag {
-    font-size: 0.78em;
-    letter-spacing: 0.08em;
-    font-weight: 700;
-    color: var(--c-tan-bright);
-    background: var(--c-rust-dark);
-    padding: 0.18em 0.5em;
-    border-radius: 3px;
-    text-transform: uppercase;
-  }
 
   .item-controls {
     display: inline-flex;
@@ -1043,32 +1016,6 @@
     gap: 0.3em;
     flex-wrap: wrap;
     justify-content: flex-end;
-  }
-  /* Running total — lives under the item price now, pulled out of the
-     control cluster so the steppers can't push it off-row. Made louder
-     per user feedback (they want the *count* to be the primary read, not
-     the stepper input). */
-  .item-total {
-    color: var(--c-wood);
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.25em;
-    font-size: 0.95em;
-  }
-  .item-total strong {
-    color: var(--c-tan-bright);
-    font-weight: 700;
-    font-size: 1.25em;
-  }
-  .item-total.has-pending strong { color: #8bb96a; }
-  .total-added {
-    font-size: 0.75em;
-    color: #8bb96a;
-    font-weight: 700;
-    background: rgba(139, 185, 106, 0.15);
-    padding: 0.08em 0.3em;
-    border-radius: 2px;
   }
 
   .depart {
