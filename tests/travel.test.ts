@@ -11,9 +11,13 @@ function newGame() {
     companions: [{ name: 'B', profession: 'doctor' }],
     startDate: { year: 1848, month: 4, day: 15 }
   });
+  // Prairie schooner's optimal team is 4; 4 healthy oxen keeps the team
+  // factor at 1.0 so per-day-miles math is easy to reason about.
   const oxen: Ox[] = [
     { id: 'o1', health: 100, fatigue: 0, shod: true },
-    { id: 'o2', health: 100, fatigue: 0, shod: true }
+    { id: 'o2', health: 100, fatigue: 0, shod: true },
+    { id: 'o3', health: 100, fatigue: 0, shod: true },
+    { id: 'o4', health: 100, fatigue: 0, shod: true }
   ];
   return { ...s, oxen };
 }
@@ -44,9 +48,18 @@ describe('milesPerDay', () => {
     expect(mtns).toBeLessThan(prairie * 0.7);
   });
 
-  it('fewer than 2 healthy oxen = 0 mi/day', () => {
+  it('fewer oxen than the wagon model minimum = 0 mi/day', () => {
     const s = newGame();
-    const stranded = { ...s, oxen: [{ id: 'o1', health: 0, fatigue: 0, shod: true }] };
+    // Prairie schooner's minTeam is 2, so 1 healthy ox strands the party.
+    const stranded = {
+      ...s,
+      oxen: [
+        { id: 'o1', health: 0, fatigue: 0, shod: true },
+        { id: 'o2', health: 0, fatigue: 0, shod: true },
+        { id: 'o3', health: 0, fatigue: 0, shod: true },
+        { id: 'o4', health: 100, fatigue: 0, shod: true }
+      ]
+    };
     expect(milesPerDay(stranded)).toBe(0);
   });
 });

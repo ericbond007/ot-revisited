@@ -2,6 +2,8 @@ import type { GameState, Pace, Terrain } from '../types';
 import type { Rng } from '../rng';
 import { oxenSpeedFactor } from './oxen';
 import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../content/landmarks';
+import { getWagon } from '../content/wagons';
+import { loadSpeedMult } from './load';
 
 const PACE_BASE_MILES: Record<Pace, number> = {
   slow: 12,
@@ -28,12 +30,16 @@ function runningMilesTo(id: string): number {
 }
 
 export function milesPerDay(state: GameState): number {
+  const wagon = getWagon(state.wagon.model);
   const aliveOxen = state.oxen.filter((o) => o.health > 0).length;
-  if (aliveOxen < 2) return 0;
+  // Hard gate: under wagon's minTeam, the wagon simply can't be pulled.
+  if (aliveOxen < wagon.minTeam) return 0;
+
   const base = PACE_BASE_MILES[state.pace];
   const terrain = TERRAIN_MULTIPLIER[state.location.terrain];
-  const oxen = oxenSpeedFactor(state.oxen);
-  return Math.round(base * terrain * oxen);
+  const oxen = oxenSpeedFactor(state.oxen, wagon.optimalTeam);
+  const load = loadSpeedMult(state);
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * load);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.

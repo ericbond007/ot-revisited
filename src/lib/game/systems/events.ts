@@ -2,6 +2,15 @@ import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { EVENTS } from '../content/events';
 import type { GameEvent } from '../content/events';
+import { wagonHazardMult } from './load';
+
+// Wagon-category events fire more often when the wagon is overloaded —
+// structural stress translates to higher breakdown odds. All other
+// categories keep their base weight.
+function effectiveWeight(ev: GameEvent, state: GameState): number {
+  if (ev.category === 'wagon') return ev.weight * wagonHazardMult(state);
+  return ev.weight;
+}
 
 const BASE_FIRE_CHANCE = 0.30;
 
@@ -22,12 +31,12 @@ export function rollEvent(state: GameState, rng: Rng, opts: RollOptions = {}): G
   const eligible = eligibleEvents(state, pool);
   if (eligible.length === 0) return null;
 
-  const totalWeight = eligible.reduce((sum, e) => sum + e.weight, 0);
+  const totalWeight = eligible.reduce((sum, e) => sum + effectiveWeight(e, state), 0);
   if (totalWeight <= 0) return null;
 
   let pick = rng.next() * totalWeight;
   for (const e of eligible) {
-    pick -= e.weight;
+    pick -= effectiveWeight(e, state);
     if (pick <= 0) return e;
   }
   return eligible[eligible.length - 1];
