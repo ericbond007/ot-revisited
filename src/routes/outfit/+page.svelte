@@ -102,17 +102,43 @@
   const canDepart = $derived(canAfford && teamStatus.tone !== 'bad');
 
   // Current starter-kit inventory — read-only summary of what the party
-  // already has from their profession gear.
-  const starterEntries = $derived(
-    Object.entries(gs.inventory)
-      .filter(([, qty]) => qty > 0)
-      .map(([id, qty]) => ({
+  // already has from their profession gear. Grouped by category so the
+  // player can scan "what food / medicine / tools do I already have?"
+  // without reading every row.
+  type StarterGroup = {
+    cat: ItemCategory;
+    entries: Array<{ id: string; qty: number; name: string; weight: number }>;
+    totalWeight: number;
+  };
+  const starterGroups = $derived.by<StarterGroup[]>(() => {
+    const order: ItemCategory[] = [
+      'food', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo', 'clothing', 'livestock', 'comfort', 'native_trade'
+    ];
+    const byCat: Partial<Record<ItemCategory, StarterGroup['entries']>> = {};
+    for (const [id, qty] of Object.entries(gs.inventory)) {
+      if (!qty || qty <= 0) continue;
+      const meta = ITEMS[id];
+      if (!meta) continue;
+      (byCat[meta.category] ??= []).push({
         id,
         qty,
-        name: ITEMS[id]?.name ?? id,
-        category: ITEMS[id]?.category ?? 'other' as ItemCategory
-      }))
-      .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
+        name: meta.name,
+        weight: meta.weightLbPerUnit * qty
+      });
+    }
+    return order
+      .filter((c) => byCat[c] && byCat[c]!.length > 0)
+      .map((c) => {
+        const entries = byCat[c]!.sort((a, b) => a.name.localeCompare(b.name));
+        const totalWeight = entries.reduce((s, e) => s + e.weight, 0);
+        return { cat: c, entries, totalWeight };
+      });
+  });
+  const starterItemCount = $derived(
+    starterGroups.reduce((s, g) => s + g.entries.length, 0)
+  );
+  const starterTotalWeight = $derived(
+    starterGroups.reduce((s, g) => s + g.totalWeight, 0)
   );
 
   // Group buyables by category — we render categories as collapsible sections
@@ -244,19 +270,36 @@
 
   <!-- Starter kit — read-only summary of what the party already has -->
   <section class="starter panel">
-    <div class="panel-head">YOUR STARTER KIT <span class="hint">from profession gear · read-only</span></div>
-    {#if starterEntries.length === 0}
+    <div class="panel-head">
+      YOUR STARTER KIT
+      <span class="hint">
+        from profession gear · {starterItemCount} item{starterItemCount === 1 ? '' : 's'} ·
+        {Math.round(starterTotalWeight)} lb
+      </span>
+    </div>
+    {#if starterGroups.length === 0}
       <p class="empty">No starting supplies.</p>
     {:else}
-      <div class="starter-grid">
-        {#each starterEntries as e}
-          <div class="starter-row">
-            <ItemTooltip id={e.id}>
-              {#snippet children()}
-                <span class="starter-name">{e.name}</span>
-              {/snippet}
-            </ItemTooltip>
-            <span class="starter-qty">×{e.qty}</span>
+      <div class="starter-categories">
+        {#each starterGroups as g}
+          <div class="starter-group">
+            <div class="starter-group-head">
+              <span class="starter-group-icon">{CATEGORY_ICON[g.cat]}</span>
+              <span class="starter-group-label">{CATEGORY_LABEL[g.cat]}</span>
+              <span class="starter-group-wt">{Math.round(g.totalWeight)} lb</span>
+            </div>
+            <div class="starter-rows">
+              {#each g.entries as e}
+                <div class="starter-row">
+                  <ItemTooltip id={e.id}>
+                    {#snippet children()}
+                      <span class="starter-name">{e.name}</span>
+                    {/snippet}
+                  </ItemTooltip>
+                  <span class="starter-qty">×<strong>{e.qty}</strong></span>
+                </div>
+              {/each}
+            </div>
           </div>
         {/each}
       </div>
@@ -413,24 +456,65 @@
   .party-row { display: inline-flex; gap: 0.3em; align-items: baseline; }
   .prof { color: var(--c-wood); font-size: 0.85em; }
 
-  /* Starter kit — compact read-only chip grid */
-  .starter { padding: 0.7em 0.9em; }
-  .starter-grid {
+  /* Starter kit — grouped by category so quantities are easy to scan */
+  .starter { padding: 0.8em 1em; }
+  .starter-categories {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-    gap: 0;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.9em 1.2em;
+  }
+  .starter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+  }
+  .starter-group-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+    padding: 0.15em 0;
+    border-bottom: 2px solid var(--c-wood);
+    margin-bottom: 0.25em;
+  }
+  .starter-group-icon { font-size: 1.1em; line-height: 1; }
+  .starter-group-label {
+    font-size: 0.8em;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: var(--c-rust);
+    text-transform: uppercase;
+  }
+  .starter-group-wt {
+    margin-left: auto;
+    font-size: 0.75em;
+    color: var(--c-wood);
+    font-style: italic;
+  }
+  .starter-rows {
+    display: flex;
+    flex-direction: column;
   }
   .starter-row {
     display: flex;
     justify-content: space-between;
-    padding: 0.25em 0.5em;
-    font-size: 0.9em;
+    align-items: baseline;
+    padding: 0.28em 0.4em;
+    font-size: 1em;
     border-bottom: 1px dashed rgba(138, 90, 42, 0.18);
   }
   .starter-row:nth-child(odd) { background: rgba(138, 90, 42, 0.06); }
   .starter-row:last-child { border-bottom: 0; }
   .starter-name { color: var(--c-tan); }
-  .starter-qty { color: var(--c-rust); font-weight: 700; }
+  .starter-qty {
+    color: var(--c-wood);
+    font-size: 0.9em;
+  }
+  .starter-qty strong {
+    color: var(--c-rust);
+    font-weight: 700;
+    font-size: 1.15em;
+    margin-left: 0.1em;
+  }
   .empty {
     color: var(--c-wood);
     font-style: italic;
