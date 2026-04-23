@@ -1,25 +1,86 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
-  import { ITEMS } from '$lib/game/content/items';
+  import { ITEMS, type ItemCategory } from '$lib/game/content/items';
+  import { foodConsumedToday } from '$lib/game/systems/consumption';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
-  const entries = $derived(
-    Object.entries(state.inventory)
-      .filter(([, qty]) => qty > 0)
-      .map(([id, qty]) => {
-        const meta = ITEMS[id];
-        return {
-          id,
-          qty,
-          name: meta?.name ?? id,
-          weight: (meta?.weightLbPerUnit ?? 0) * qty,
-          category: meta?.category ?? 'other'
-        };
-      })
-      .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
+  const CATEGORY_ORDER: ItemCategory[] = [
+    'food',
+    'medicine',
+    'tool',
+    'wagon_part',
+    'weapon',
+    'ammo',
+    'clothing',
+    'livestock',
+    'comfort',
+    'native_trade'
+  ];
+  const CATEGORY_LABEL: Record<ItemCategory, string> = {
+    food: 'Food',
+    medicine: 'Medicine',
+    weapon: 'Weapons',
+    ammo: 'Ammo',
+    tool: 'Tools',
+    wagon_part: 'Parts',
+    livestock: 'Livestock',
+    clothing: 'Clothing',
+    comfort: 'Comfort',
+    native_trade: 'Trade'
+  };
+  const CATEGORY_ICON: Record<ItemCategory, string> = {
+    food: '🍖',
+    medicine: '💊',
+    weapon: '🔫',
+    ammo: '🎯',
+    tool: '🔨',
+    wagon_part: '🛠️',
+    livestock: '🐂',
+    clothing: '🧥',
+    comfort: '🎁',
+    native_trade: '🪶'
+  };
+
+  type Entry = { id: string; name: string; qty: number; weight: number };
+  type Group = { cat: ItemCategory; entries: Entry[] };
+
+  const groups = $derived.by<Group[]>(() => {
+    const byCat: Partial<Record<ItemCategory, Entry[]>> = {};
+    for (const [id, qty] of Object.entries(state.inventory)) {
+      if (!qty || qty <= 0) continue;
+      const meta = ITEMS[id];
+      if (!meta) continue;
+      (byCat[meta.category] ??= []).push({
+        id,
+        name: meta.name,
+        qty,
+        weight: meta.weightLbPerUnit * qty
+      });
+    }
+    return CATEGORY_ORDER
+      .filter((c) => byCat[c] && byCat[c]!.length > 0)
+      .map((c) => ({
+        cat: c,
+        entries: byCat[c]!.sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name))
+      }));
+  });
+
+  // Food summary — pulls the one stat the player cares about most to the
+  // top of the panel so they don't have to scan the Food group to answer
+  // "how much food do we have?".
+  const foodGroup = $derived(groups.find((g) => g.cat === 'food'));
+  const foodLb = $derived(foodGroup ? foodGroup.entries.reduce((s, e) => s + e.weight, 0) : 0);
+  const dailyFoodLb = $derived(foodConsumedToday(state));
+  const foodDays = $derived(dailyFoodLb > 0 ? Math.floor(foodLb / dailyFoodLb) : 0);
+  const foodColor = $derived(
+    foodDays >= 30 ? '#8bb96a' :
+    foodDays >= 14 ? '#f5c96a' :
+    foodDays >= 7  ? '#c96a2a' : '#e85a4a'
   );
 
-  const totalWeight = $derived(Math.round(entries.reduce((s, e) => s + e.weight, 0)));
+  const totalWeight = $derived(
+    Math.round(groups.reduce((s, g) => s + g.entries.reduce((a, e) => a + e.weight, 0), 0))
+  );
   const capacity = $derived(state.wagon.carryCapacity);
   const weightPct = $derived(Math.min(100, Math.round((totalWeight / capacity) * 100)));
   const weightColor = $derived(
@@ -27,11 +88,6 @@
     weightPct < 90 ? '#f5c96a' :
     weightPct < 100 ? '#c96a2a' : '#e85a4a'
   );
-
-  // Show all entries in the panel — the right-rail scrolls internally if needed,
-  // so there's no reason to truncate. Clicking the panel still opens the full
-  // grouped modal.
-  const visibleEntries = $derived(entries);
 </script>
 
 <button type="button" class="panel inventory-panel" onclick={onopen} title="Click for full inventory">
@@ -45,6 +101,17 @@
     <span class="water">💧 {state.resources.water}/{state.resources.waterCap} gal</span>
   </div>
 
+  <!-- At-a-glance food summary. Days remaining is the number the player
+       actually uses to make decisions; lb is included for the math-minded. -->
+  <div class="food-summary" title="{Math.round(foodLb)} lb of food / {dailyFoodLb} lb per day">
+    <span class="food-icon">🍖</span>
+    <span class="food-days" style="color: {foodColor};">
+      <strong>{foodDays}</strong>
+      <span class="food-unit">days</span>
+    </span>
+    <span class="food-lb">{Math.round(foodLb)} lb</span>
+  </div>
+
   <div class="weight-row">
     <span class="weight-label">Weight</span>
     <div class="weight-bar">
@@ -53,15 +120,28 @@
     <span class="weight-num" style="color: {weightColor};">{totalWeight}/{capacity}</span>
   </div>
 
-  <div class="preview">
-    {#each visibleEntries as e}
-      <div class="preview-row">
-        <span class="preview-name">{e.name}</span>
-        <span class="preview-qty">×{e.qty}</span>
+  <!-- Category-grouped items. Short enough per-group that the panel is
+       scannable at a glance; full detail lives in the modal. -->
+  <div class="groups">
+    {#each groups as g}
+      <div class="group">
+        <div class="group-head">
+          <span class="group-icon">{CATEGORY_ICON[g.cat]}</span>
+          <span class="group-label">{CATEGORY_LABEL[g.cat]}</span>
+          <span class="group-count">{g.entries.length}</span>
+        </div>
+        <div class="group-rows">
+          {#each g.entries as e}
+            <div class="row">
+              <span class="row-name">{e.name}</span>
+              <span class="row-qty">×{e.qty}</span>
+            </div>
+          {/each}
+        </div>
       </div>
     {/each}
-    {#if entries.length === 0}
-      <div class="preview-more">(empty)</div>
+    {#if groups.length === 0}
+      <div class="empty">(empty)</div>
     {/if}
   </div>
 </button>
@@ -119,6 +199,33 @@
   .cash { font-weight: 700; }
   .water { color: var(--c-tan); }
 
+  /* Food summary — the at-a-glance "how long will we last?" chip. */
+  .food-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    padding: 0.3em 0.5em;
+    background: var(--c-bg-raised);
+    border: 1px solid rgba(138, 90, 42, 0.35);
+    border-radius: 3px;
+  }
+  .food-icon { font-size: 1.1em; line-height: 1; }
+  .food-days { display: inline-flex; align-items: baseline; gap: 0.2em; }
+  .food-days strong {
+    font-weight: 700;
+    font-size: 1.25em;
+  }
+  .food-unit {
+    font-size: 0.78em;
+    color: var(--c-tan);
+  }
+  .food-lb {
+    margin-left: auto;
+    font-size: 0.78em;
+    color: var(--c-wood);
+    font-style: italic;
+  }
+
   .weight-row {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -145,22 +252,52 @@
     text-align: right;
   }
 
-  .preview {
+  /* Grouped item list. Category heads break the panel into scannable
+     chunks; without them the list is a 20-row alphabetical wall. */
+  .groups {
     display: flex;
     flex-direction: column;
-    gap: 0.1em;
-    font-size: 0.8em;
+    gap: 0.35em;
     margin-top: 0.2em;
   }
-  .preview-row {
+  .group-head {
     display: flex;
-    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.35em;
+    padding: 0.1em 0.15em 0.15em 0.15em;
+    border-bottom: 1px solid rgba(138, 90, 42, 0.35);
   }
-  .preview-name { color: var(--c-tan); }
-  .preview-qty { color: var(--c-rust); font-weight: 700; }
-  .preview-more {
+  .group-icon { font-size: 0.95em; line-height: 1; }
+  .group-label {
+    font-size: 0.7em;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--c-rust);
+    text-transform: uppercase;
+  }
+  .group-count {
+    margin-left: auto;
+    font-size: 0.72em;
     color: var(--c-wood);
     font-style: italic;
-    font-size: 0.9em;
+  }
+  .group-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05em;
+    padding: 0.1em 0.15em;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+  }
+  .row-name { color: var(--c-tan); }
+  .row-qty { color: var(--c-rust); font-weight: 700; }
+  .empty {
+    color: var(--c-wood);
+    font-style: italic;
+    font-size: 0.85em;
+    padding: 0.3em 0;
   }
 </style>
