@@ -73,7 +73,6 @@
               disabled={submitting}
               style="animation-delay: {40 + i * 60}ms;"
             >
-              <span class="choice-index">{String.fromCharCode(65 + i)}</span>
               <span class="choice-label-text">{c.label}</span>
               {#if c.isDefault}<span class="default-tag">default</span>{/if}
             </button>
@@ -195,23 +194,6 @@
     cursor: not-allowed;
   }
 
-  .choice-index {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.8em;
-    height: 1.8em;
-    border-radius: 50%;
-    background: var(--c-rust-dark);
-    color: var(--c-tan-bright);
-    font-weight: 900;
-    font-size: 0.85em;
-    flex-shrink: 0;
-  }
-  .choice-card:hover:not(:disabled) .choice-index {
-    background: var(--c-rust);
-  }
-
   .choice-label-text {
     flex: 1;
   }
@@ -227,8 +209,5 @@
 
   .choice-card.default {
     border-color: var(--c-rust);
-  }
-  .choice-card.default .choice-index {
-    background: var(--c-rust);
   }
 </style>
