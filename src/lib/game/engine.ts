@@ -1,4 +1,4 @@
-import type { GameDate, GameState, PartyMember, ProfessionId } from './types';
+import type { GameDate, GameState, PartyMember, ProfessionId, Sex } from './types';
 import { applyDailyConsumption } from './systems/consumption';
 import { progressConditions } from './systems/conditions';
 import { adjustMorale } from './systems/morale';
@@ -15,6 +15,9 @@ import { buildStarterKit } from './content/starter-kit';
 export interface PartyPick {
   name: string;
   profession: ProfessionId;
+  // Optional in tests; defaults to 'male' to match the save-upgrade default
+  // for pre-migration data. Real UI always supplies it.
+  sex?: Sex;
 }
 
 export interface NewGameOptions {
@@ -58,6 +61,8 @@ function makeMember(
     id: `p${index}`,
     name: pick.name,
     profession: pick.profession,
+    sex: pick.sex ?? 'male',
+    kind: 'adult',
     isLeader,
     age: 30,
     health: 100,
@@ -76,7 +81,11 @@ export function createInitialState(opts: NewGameOptions): GameState {
     ...opts.companions.map((c, i) => makeMember(c, false, i + 1))
   ];
 
-  const professions = party.map((m) => m.profession);
+  // Starter kit pulls only adults' professions — children (added via events
+  // mid-journey) never contribute to the initial kit since they aren't in the
+  // party at creation time. Non-null assertion is safe: every member from the
+  // wizard is an adult with a profession set.
+  const professions = party.flatMap((m) => (m.profession ? [m.profession] : []));
   const kit = buildStarterKit(professions);
   const oxen = Array.from({ length: kit.oxen }, (_, i) => ({
     id: `ox-${i}`,

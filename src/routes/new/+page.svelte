@@ -5,11 +5,29 @@
 
   let { data, form } = $props();
 
-  type Member = { name: string; profession: string };
+  type Member = { name: string; profession: string; sex: 'male' | 'female' };
   let members = $state<Member[]>([
-    { name: MALE_NAMES[0], profession: 'farmer' },
-    { name: FEMALE_NAMES[0], profession: 'doctor' }
+    { name: MALE_NAMES[0],   profession: 'farmer', sex: 'male' },
+    { name: FEMALE_NAMES[0], profession: 'doctor', sex: 'female' }
   ]);
+
+  // When the player flips sex, swap to a matching historical name if the
+  // current one belongs to the opposite list (so they don't end up with a
+  // Sarah who's male unless they typed that deliberately).
+  function setSex(i: number, sex: 'male' | 'female') {
+    const m = members[i];
+    if (m.sex === sex) return;
+    const currentInMale = MALE_NAMES.includes(m.name);
+    const currentInFemale = FEMALE_NAMES.includes(m.name);
+    if ((sex === 'male' && currentInFemale) || (sex === 'female' && currentInMale)) {
+      const pool = sex === 'male' ? MALE_NAMES : FEMALE_NAMES;
+      m.name = pool[i % pool.length];
+    }
+    m.sex = sex;
+    // Clear profession if it was female-only and we're flipping to male.
+    const selected = data.professions.find((p) => p.id === m.profession);
+    if (selected?.femaleOnly && sex === 'male') m.profession = 'farmer';
+  }
 
   let year = $state(1848);
   let month = $state(4);
@@ -43,8 +61,9 @@
 
   function addMember() {
     if (members.length >= 6) return;
-    const nextName = members.length % 2 === 0 ? MALE_NAMES[members.length] : FEMALE_NAMES[members.length];
-    members.push({ name: nextName, profession: 'hunter' });
+    const nextSex = members.length % 2 === 0 ? 'male' : 'female';
+    const pool = nextSex === 'male' ? MALE_NAMES : FEMALE_NAMES;
+    members.push({ name: pool[members.length], profession: 'hunter', sex: nextSex });
   }
   function removeMember(i: number) {
     if (members.length <= 2) return;
@@ -66,6 +85,25 @@
         <div class="panel member-card">
           <div class="member-head">
             <input type="text" name="member_{i}_name" bind:value={m.name} placeholder="Name" class="name-input" />
+            <input type="hidden" name="member_{i}_sex" value={m.sex} />
+            <div class="sex-toggle" role="radiogroup" aria-label="Sex">
+              <button
+                type="button"
+                class="sex-btn"
+                class:selected={m.sex === 'male'}
+                onclick={() => setSex(i, 'male')}
+                title="Male"
+                aria-pressed={m.sex === 'male'}
+              >♂</button>
+              <button
+                type="button"
+                class="sex-btn"
+                class:selected={m.sex === 'female'}
+                onclick={() => setSex(i, 'female')}
+                title="Female"
+                aria-pressed={m.sex === 'female'}
+              >♀</button>
+            </div>
             {#if members.length > 2}
               <button type="button" onclick={() => removeMember(i)} class="remove-btn" title="Remove companion">✕</button>
             {:else}
@@ -75,7 +113,7 @@
           <ProfessionPicker
             name="member_{i}_profession"
             bind:value={m.profession}
-            professions={data.professions}
+            professions={data.professions.filter((p) => !p.femaleOnly || m.sex === 'female')}
           />
         </div>
       {/each}
@@ -237,5 +275,28 @@
     color: var(--c-rust);
     font-weight: 700;
     padding: 0.3em 0.6em;
+  }
+  .sex-toggle {
+    display: inline-flex;
+    border: 2px solid var(--c-wood);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .sex-btn {
+    padding: 0.25em 0.55em;
+    background: var(--c-bg-raised);
+    color: var(--c-tan);
+    border: 0;
+    font-size: 1.1em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+  }
+  .sex-btn:hover:not(.selected) {
+    background: var(--c-panel);
+  }
+  .sex-btn.selected {
+    background: var(--c-rust);
+    color: var(--c-tan-bright);
   }
 </style>

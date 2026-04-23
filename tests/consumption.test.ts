@@ -19,9 +19,9 @@ function baseState(overrides: Partial<GameState> = {}): GameState {
       terrain: 'prairie'
     },
     party: [
-      { id: 'a', name: 'Ezra', profession: 'carpenter', isLeader: true, age: 30, health: 100, conditions: [], dead: false },
-      { id: 'b', name: 'Mary', profession: 'doctor', isLeader: false, age: 28, health: 100, conditions: [], dead: false },
-      { id: 'c', name: 'Tom', profession: 'hunter', isLeader: false, age: 22, health: 100, conditions: [], dead: false }
+      { id: 'a', name: 'Ezra', profession: 'carpenter', sex: 'male', kind: 'adult', isLeader: true, age: 30, health: 100, conditions: [], dead: false },
+      { id: 'b', name: 'Mary', profession: 'doctor', sex: 'female', kind: 'adult', isLeader: false, age: 28, health: 100, conditions: [], dead: false },
+      { id: 'c', name: 'Tom', profession: 'hunter', sex: 'male', kind: 'adult', isLeader: false, age: 22, health: 100, conditions: [], dead: false }
     ],
     wagon: { condition: 100, carryCapacity: 2500 },
     oxen: [],

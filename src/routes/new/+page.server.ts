@@ -2,7 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { createInitialState } from '$lib/game/engine';
 import { PROFESSIONS } from '$lib/game/content/professions';
-import type { ProfessionId } from '$lib/game/types';
+import type { ProfessionId, Sex } from '$lib/game/types';
 
 export const load: PageServerLoad = async () => {
   return {
@@ -18,6 +18,7 @@ export const load: PageServerLoad = async () => {
 interface PartyFormMember {
   name: string;
   profession: ProfessionId;
+  sex: Sex;
 }
 
 function parseMembers(fd: FormData): PartyFormMember[] {
@@ -25,8 +26,10 @@ function parseMembers(fd: FormData): PartyFormMember[] {
   for (let i = 0; i < 6; i++) {
     const name = fd.get(`member_${i}_name`)?.toString();
     const profession = fd.get(`member_${i}_profession`)?.toString() as ProfessionId | undefined;
+    const rawSex = fd.get(`member_${i}_sex`)?.toString();
     if (!name || !profession) continue;
-    members.push({ name, profession });
+    const sex: Sex = rawSex === 'female' ? 'female' : 'male';
+    members.push({ name, profession, sex });
   }
   return members;
 }

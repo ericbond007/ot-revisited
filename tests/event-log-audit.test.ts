@@ -27,8 +27,8 @@ function baseState(): GameState {
       terrain: 'prairie'
     },
     party: [
-      { id: 'a', name: 'Ann', profession: 'doctor' as ProfessionId, isLeader: true,  age: 30, health: 100, conditions: [], dead: false },
-      { id: 'b', name: 'Ben', profession: 'hunter' as ProfessionId, isLeader: false, age: 28, health: 100, conditions: [], dead: false }
+      { id: 'a', name: 'Ann', profession: 'doctor' as ProfessionId, sex: 'female', kind: 'adult', isLeader: true,  age: 30, health: 100, conditions: [], dead: false },
+      { id: 'b', name: 'Ben', profession: 'hunter' as ProfessionId, sex: 'male',   kind: 'adult', isLeader: false, age: 28, health: 100, conditions: [], dead: false }
     ],
     wagon: { condition: 80, carryCapacity: 2500 },
     oxen: [

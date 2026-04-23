@@ -15,8 +15,9 @@ import {
 import { makeRng } from '../src/lib/game/rng';
 
 function mkMember(id: string, profession: ProfessionId, name = id): PartyMember {
+  // Default to male adults; tests that care about sex override inline.
   return {
-    id, name, profession, isLeader: false, age: 30, health: 100, conditions: [], dead: false
+    id, name, profession, sex: 'male', kind: 'adult', isLeader: false, age: 30, health: 100, conditions: [], dead: false
   };
 }
 

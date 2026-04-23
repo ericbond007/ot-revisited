@@ -87,10 +87,10 @@
     <div class="party-head">PARTY</div>
     <div class="party-list">
       {#each gs.party as m}
-        {@const prof = getProfession(m.profession)}
+        {@const prof = m.profession ? getProfession(m.profession) : null}
         <div class="party-row">
           <strong>{m.name}</strong>
-          <span class="prof">({prof.name})</span>
+          {#if prof}<span class="prof">({prof.name})</span>{/if}
         </div>
       {/each}
     </div>

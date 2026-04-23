@@ -37,10 +37,17 @@ export interface Condition {
   daysSinceOnset: number;
 }
 
+export type Sex = 'male' | 'female';
+export type MemberKind = 'adult' | 'child';
+
 export interface PartyMember {
   id: string;
   name: string;
-  profession: ProfessionId;
+  // Profession only for adults. Children are recruited via events and have no
+  // profession — they contribute through future mechanics (chores, morale).
+  profession?: ProfessionId;
+  sex: Sex;
+  kind: MemberKind;
   isLeader: boolean;
   age: number;
   health: number; // 0..100
