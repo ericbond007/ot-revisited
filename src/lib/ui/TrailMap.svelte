@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { LANDMARKS } from '$lib/game/content/landmarks';
+  import WagonIcon from './WagonIcon.svelte';
   let { state: gameState }: { state: GameState } = $props();
 
   // Stop-worthy landmarks are the "chunk" boundaries. Everything in between is
@@ -178,7 +179,10 @@
     {/each}
 
     <!-- Wagon: slides along the current leg -->
-    <div class="wagon" style="right: calc({4 + wagonLegPct * 0.92}% - 12px);">🐂🛖</div>
+    <div class="wagon" style="right: calc({4 + wagonLegPct * 0.92}% - 12px);">
+      <span class="wagon-ox">🐂</span>
+      <WagonIcon size="1.4em" strokeWidth={1.6} />
+    </div>
   </div>
 
   <!-- Upcoming stops (base + scout + spyglass visibility) -->
@@ -314,10 +318,18 @@
     position: absolute;
     top: 38%;
     transform: translateY(-50%);
-    font-size: 1.5em;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 1em;
+    color: var(--c-ink);
     transition: right 2.5s cubic-bezier(0.4, 0.0, 0.2, 1);
     animation: wagon-bob 1.8s ease-in-out infinite;
     filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.2));
+  }
+  .wagon-ox {
+    font-size: 1.25em;
+    line-height: 1;
   }
   @keyframes wagon-bob {
     0%, 100% { transform: translateY(-50%) rotate(-0.8deg); }

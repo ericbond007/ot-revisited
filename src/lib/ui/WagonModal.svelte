@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import ItemTooltip from './ItemTooltip.svelte';
+  import WagonIcon from './WagonIcon.svelte';
 
   let { state, onclose }: { state: GameState; onclose: () => void } = $props();
 
@@ -35,7 +36,10 @@
 
 <div class="modal-backdrop">
   <div class="panel modal-body">
-    <h2 style="color: var(--c-rust);">🛖 The Wagon</h2>
+    <h2 style="color: var(--c-rust); display: flex; align-items: center; gap: 0.4em;">
+      <WagonIcon size="1.1em" />
+      <span>The Wagon</span>
+    </h2>
 
     <!-- Condition bar -->
     <section class="section">
