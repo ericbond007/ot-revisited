@@ -210,15 +210,15 @@
 </script>
 
 <div class="outfit-wrap">
-  <header class="outfit-head">
+  <header class="outfit-head panel">
     <h1>Outfit the Wagon</h1>
     <p class="lede">
-      Last chance to stock up before leaving <strong>Independence, Missouri</strong>.
-      Your starter kit is packed — add to it below. Anything left over becomes your travel cash.
+      Last chance to stock up at <strong>Independence, Missouri</strong> — anything left
+      over becomes your travel cash.
     </p>
   </header>
 
-  <!-- Sticky totals bar -->
+  <!-- Totals bar (fixed, above the scroll) -->
   <div class="totals-bar panel" class:overdraw={!canAfford}>
     <div class="total-cell">
       <span class="total-label">CASH</span>
@@ -254,22 +254,26 @@
     <div class="panel form-error">{form.error}</div>
   {/if}
 
-  <!-- Party -->
-  <section class="party-preview panel">
-    <div class="panel-head">PARTY</div>
-    <div class="party-list">
-      {#each gs.party as m}
-        {@const prof = m.profession ? getProfession(m.profession) : null}
-        <div class="party-row">
-          <strong>{m.name}</strong>
-          {#if prof}<span class="prof">({prof.name})</span>{/if}
-        </div>
-      {/each}
-    </div>
-  </section>
+  <form method="POST" action="?/outfit&slot={encodeURIComponent(data.slot)}" class="outfit-form">
 
-  <!-- Starter kit — read-only summary of what the party already has -->
-  <section class="starter panel">
+    <div class="scroll-area">
+
+      <!-- Party -->
+      <section class="party-preview panel">
+        <div class="panel-head">PARTY</div>
+        <div class="party-list">
+          {#each gs.party as m}
+            {@const prof = m.profession ? getProfession(m.profession) : null}
+            <div class="party-row">
+              <strong>{m.name}</strong>
+              {#if prof}<span class="prof">({prof.name})</span>{/if}
+            </div>
+          {/each}
+        </div>
+      </section>
+
+      <!-- Starter kit — read-only summary of what the party already has -->
+      <section class="starter panel">
     <div class="panel-head">
       YOUR STARTER KIT
       <span class="hint">
@@ -306,98 +310,99 @@
     {/if}
   </section>
 
-  <form method="POST" action="?/outfit&slot={encodeURIComponent(data.slot)}">
-
-    <!-- Wagon picker -->
-    <section class="wagon-section panel">
-      <div class="panel-head">
-        CHOOSE YOUR WAGON
-        <span class="hint">Prairie schooner is pre-paid. Light refunds. Heavy costs extra.</span>
-      </div>
-      <WagonPicker
-        models={data.wagons}
-        bind:value={selectedWagon}
-        defaultPrice={defaultWagonPrice}
-      />
-    </section>
-
-    <!-- Oxen -->
-    <section class="oxen-section panel">
-      <div class="panel-head">
-        OXEN
-        <span class="hint">${data.oxPrice} each at Independence. Extras are insurance.</span>
-      </div>
-      <div class="oxen-row">
-        <div class="oxen-counts">
-          <span class="oxen-glyph">🐂</span>
-          <span class="oxen-have">Starter: <strong>{startingOxenCount}</strong></span>
-          <span class="oxen-plus">+</span>
-          <NumberStepper
-            name="extraOxen"
-            bind:value={extraOxen}
-            min={0}
-            max={data.maxExtraOxen}
-            ariaLabel="Extra oxen to buy"
-          />
-          <span class="oxen-total">= <strong>{totalOxen}</strong> oxen</span>
+      <!-- Wagon picker -->
+      <section class="wagon-section panel">
+        <div class="panel-head">
+          CHOOSE YOUR WAGON
+          <span class="hint">Prairie schooner is pre-paid. Light refunds. Heavy costs extra.</span>
         </div>
-        <div class="team-status tone-{teamStatus.tone}">{teamStatus.text}</div>
-      </div>
-    </section>
-
-    <!-- Supplies -->
-    <section class="buy-head">
-      <h2>Add supplies</h2>
-      <p class="hint">Tap a category to expand. Food, Medicine, and Tools are open by default.</p>
-    </section>
-
-    {#each groups as g}
-      {@const qtyInGroup = groupQtyCount(g.ids)}
-      {@const subtotal = groupSubtotal(g.ids)}
-      {@const isOpen = openCats[g.cat]}
-      <section class="group" class:open={isOpen}>
-        <button type="button" class="group-head" onclick={() => toggleCat(g.cat)}>
-          <span class="group-icon">{CATEGORY_ICON[g.cat]}</span>
-          <span class="group-label">{CATEGORY_LABEL[g.cat]}</span>
-          {#if qtyInGroup > 0}
-            <span class="group-count">+{qtyInGroup} items · ${subtotal.toFixed(2)}</span>
-          {/if}
-          <span class="group-chev">{isOpen ? '▾' : '▸'}</span>
-        </button>
-        {#if isOpen}
-          <div class="item-grid">
-            {#each g.ids as id}
-              {@const price = PRICES[id].buy * buyMult}
-              {@const owned = gs.inventory[id] ?? 0}
-              <div class="item-row">
-                <div class="item-label">
-                  <div class="item-name-row">
-                    <ItemTooltip {id}>
-                      {#snippet children()}
-                        <span class="item-name">{ITEMS[id].name}</span>
-                      {/snippet}
-                    </ItemTooltip>
-                    {#if owned > 0}
-                      <span class="owned-tag" title="Already in your starter kit">has {owned}</span>
-                    {/if}
-                  </div>
-                  <span class="item-price">${price.toFixed(2)} ea</span>
-                </div>
-                <NumberStepper
-                  name="buy_{id}"
-                  bind:value={buyQty[id]}
-                  min={0}
-                  max={99}
-                  ariaLabel="Buy {ITEMS[id].name}"
-                />
-              </div>
-            {/each}
-          </div>
-        {/if}
+        <WagonPicker
+          models={data.wagons}
+          bind:value={selectedWagon}
+          defaultPrice={defaultWagonPrice}
+        />
       </section>
-    {/each}
 
-    <div class="actions">
+      <!-- Oxen -->
+      <section class="oxen-section panel">
+        <div class="panel-head">
+          OXEN
+          <span class="hint">${data.oxPrice} each at Independence. Extras are insurance.</span>
+        </div>
+        <div class="oxen-row">
+          <div class="oxen-counts">
+            <span class="oxen-glyph">🐂</span>
+            <span class="oxen-have">Starter: <strong>{startingOxenCount}</strong></span>
+            <span class="oxen-plus">+</span>
+            <NumberStepper
+              name="extraOxen"
+              bind:value={extraOxen}
+              min={0}
+              max={data.maxExtraOxen}
+              ariaLabel="Extra oxen to buy"
+            />
+            <span class="oxen-total">= <strong>{totalOxen}</strong> oxen</span>
+          </div>
+          <div class="team-status tone-{teamStatus.tone}">{teamStatus.text}</div>
+        </div>
+      </section>
+
+      <!-- Supplies -->
+      <section class="buy-head">
+        <h2>Add supplies</h2>
+        <p class="hint">Tap a category to expand. Food, Medicine, and Tools are open by default.</p>
+      </section>
+
+      {#each groups as g}
+        {@const qtyInGroup = groupQtyCount(g.ids)}
+        {@const subtotal = groupSubtotal(g.ids)}
+        {@const isOpen = openCats[g.cat]}
+        <section class="group" class:open={isOpen}>
+          <button type="button" class="group-head" onclick={() => toggleCat(g.cat)}>
+            <span class="group-icon">{CATEGORY_ICON[g.cat]}</span>
+            <span class="group-label">{CATEGORY_LABEL[g.cat]}</span>
+            {#if qtyInGroup > 0}
+              <span class="group-count">+{qtyInGroup} items · ${subtotal.toFixed(2)}</span>
+            {/if}
+            <span class="group-chev">{isOpen ? '▾' : '▸'}</span>
+          </button>
+          {#if isOpen}
+            <div class="item-grid">
+              {#each g.ids as id}
+                {@const price = PRICES[id].buy * buyMult}
+                {@const owned = gs.inventory[id] ?? 0}
+                <div class="item-row">
+                  <div class="item-label">
+                    <div class="item-name-row">
+                      <ItemTooltip {id}>
+                        {#snippet children()}
+                          <span class="item-name">{ITEMS[id].name}</span>
+                        {/snippet}
+                      </ItemTooltip>
+                      {#if owned > 0}
+                        <span class="owned-tag" title="Already in your starter kit">has {owned}</span>
+                      {/if}
+                    </div>
+                    <span class="item-price">${price.toFixed(2)} ea</span>
+                  </div>
+                  <NumberStepper
+                    name="buy_{id}"
+                    bind:value={buyQty[id]}
+                    min={0}
+                    max={99}
+                    ariaLabel="Buy {ITEMS[id].name}"
+                  />
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </section>
+      {/each}
+
+    </div><!-- /.scroll-area -->
+
+    <!-- Fixed action bar at the bottom -->
+    <div class="action-bar panel">
       <button type="submit" class="depart" disabled={!canDepart}>
         {leader ? `Begin ${leader.name}'s Journey` : 'Begin Journey'}
       </button>
@@ -410,24 +415,75 @@
 </div>
 
 <style>
+  /* Lock the page to the viewport so the outfit screen reads like the play
+     screen — totals + actions always visible, only the content area scrolls.
+     Falls back to regular document flow on narrow screens (<= 900px) where
+     the sticky actions bar would crowd the content too much. */
   .outfit-wrap {
-    max-width: 900px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 1.2em 1.2em 3em 1.2em;
+    padding: 0.6em;
     display: flex;
     flex-direction: column;
-    gap: 0.8em;
+    gap: 0.5em;
+    height: 100vh;
+    overflow: hidden;
   }
 
+  .outfit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    flex: 1;
+    min-height: 0;
+  }
+  .scroll-area {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 0.3em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+  .action-bar {
+    display: flex;
+    gap: 0.8em;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 0.7em 0.9em;
+    border-color: var(--c-rust);
+  }
+
+  @media (max-width: 900px) {
+    .outfit-wrap {
+      height: auto;
+      overflow: visible;
+      padding: 1em;
+    }
+    .scroll-area {
+      overflow-y: visible;
+    }
+  }
+
+  .outfit-head {
+    padding: 0.6em 0.9em;
+    display: flex;
+    align-items: baseline;
+    gap: 0.9em;
+    flex-wrap: wrap;
+  }
   .outfit-head h1 {
-    margin: 0 0 0.2em 0;
+    margin: 0;
     color: var(--c-rust);
     letter-spacing: 0.05em;
+    font-size: 1.3em;
   }
   .lede {
     margin: 0;
     color: var(--c-wood);
-    font-size: 0.95em;
+    font-size: 0.88em;
+    font-style: italic;
   }
   .hint {
     color: var(--c-wood);
@@ -694,16 +750,9 @@
     text-transform: uppercase;
   }
 
-  .actions {
-    display: flex;
-    gap: 0.8em;
-    margin-top: 1em;
-    align-items: center;
-    flex-wrap: wrap;
-  }
   .depart {
     font-size: 1.05em;
-    padding: 0.8em 1.5em;
+    padding: 0.7em 1.4em;
   }
   .back {
     color: var(--c-wood);
