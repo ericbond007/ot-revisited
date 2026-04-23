@@ -1,4 +1,5 @@
 import type { GameDate, GameState, PartyMember, ProfessionId, Sex } from './types';
+import { DEFAULT_WAGON_MODEL, getWagon, type WagonModelId } from './content/wagons';
 import { applyDailyConsumption } from './systems/consumption';
 import { progressConditions } from './systems/conditions';
 import { adjustMorale } from './systems/morale';
@@ -25,6 +26,9 @@ export interface NewGameOptions {
   leader: PartyPick;
   companions: PartyPick[];
   startDate: GameDate;
+  // Optional wagon choice. Defaults to prairie schooner (matches pre-#103
+  // behavior, so legacy callers get the same result).
+  wagonModel?: WagonModelId;
 }
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -94,6 +98,9 @@ export function createInitialState(opts: NewGameOptions): GameState {
     shod: true
   }));
 
+  const wagonModelId = opts.wagonModel ?? DEFAULT_WAGON_MODEL;
+  const wagonModel = getWagon(wagonModelId);
+
   return {
     seed: opts.seed,
     day: 1,
@@ -106,7 +113,11 @@ export function createInitialState(opts: NewGameOptions): GameState {
       terrain: 'prairie'
     },
     party,
-    wagon: { condition: 100, carryCapacity: 2500 },
+    wagon: {
+      model: wagonModelId,
+      condition: 100,
+      carryCapacity: wagonModel.carryCapacity
+    },
     oxen,
     inventory: kit.inventory,
     cash: kit.cash,

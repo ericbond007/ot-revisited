@@ -1,5 +1,6 @@
 import type { GameState, GameStateFlag, PartyMember, Sex } from './types';
 import { MALE_NAMES, FEMALE_NAMES } from './content/historical-names';
+import { DEFAULT_WAGON_MODEL, getWagon } from './content/wagons';
 
 const DEFAULT_FLAGS: Record<GameStateFlag, boolean> = {
   hasBoilingKnowledge: false,
@@ -32,5 +33,21 @@ function upgradeMember(m: PartyMember): PartyMember {
 export function upgradeState(state: GameState): GameState {
   const flags = { ...DEFAULT_FLAGS, ...state.flags };
   const party = state.party.map(upgradeMember);
-  return { ...state, flags, party };
+
+  // Pre-wagon-model saves don't have wagon.model. Default → prairie schooner
+  // (matches the pre-migration carryCapacity of 2500 lb). If a save somehow
+  // has a nonsense model id, snap back to the default too.
+  const modelId =
+    state.wagon.model && getWagonOrNull(state.wagon.model) ? state.wagon.model : DEFAULT_WAGON_MODEL;
+  const wagon = { ...state.wagon, model: modelId };
+
+  return { ...state, flags, party, wagon };
+}
+
+function getWagonOrNull(id: string): ReturnType<typeof getWagon> | null {
+  try {
+    return getWagon(id as never);
+  } catch {
+    return null;
+  }
 }

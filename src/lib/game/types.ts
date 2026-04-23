@@ -65,6 +65,7 @@ export interface Ox {
 }
 
 export interface Wagon {
+  model: import('./content/wagons').WagonModelId;
   condition: number; // 0..100
   carryCapacity: number; // lb
 }

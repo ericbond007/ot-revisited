@@ -34,7 +34,7 @@ function baseState(partyProfs: ProfessionId[] = ['carpenter'], overrides: Partia
       terrain: 'prairie'
     },
     party: partyProfs.map((p, i) => mkMember(`m${i}`, p, `M${i}`)),
-    wagon: { condition: 100, carryCapacity: 2500 },
+    wagon: { model: 'prairie_schooner', condition: 100, carryCapacity: 2500 },
     oxen: [
       { id: 'o1', health: 100, fatigue: 10, shod: true },
       { id: 'o2', health: 100, fatigue: 10, shod: true }
