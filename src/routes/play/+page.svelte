@@ -10,6 +10,7 @@
   import HuntModal from '$lib/ui/HuntModal.svelte';
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
+  import VisitModal from '$lib/ui/VisitModal.svelte';
   import RestModal from '$lib/ui/RestModal.svelte';
   import WagonModal from '$lib/ui/WagonModal.svelte';
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
@@ -34,6 +35,7 @@
   let showRest = $state(false);
   let showHunt = $state(false);
   let showFord = $state(false);
+  let showVisit = $state(false);
   let showTrade = $state(false);
   let showWagon = $state(false);
   let showParty = $state(false);
@@ -148,7 +150,7 @@
             onrest={() => (showRest = true)}
             onhunt={() => (showHunt = true)}
             onford={() => (showFord = true)}
-            ontrade={() => (showTrade = true)}
+            onvisit={() => (showVisit = true)}
           />
         {/if}
       </div>
@@ -195,6 +197,15 @@
 
 {#if showFord && !gs.completed}
   <FordModal state={gs} slot={data.slot} onclose={() => (showFord = false)} />
+{/if}
+
+{#if showVisit && atLandmark && !gs.completed}
+  <VisitModal
+    state={gs}
+    landmark={atLandmark}
+    onclose={() => (showVisit = false)}
+    ontrade={() => (showTrade = true)}
+  />
 {/if}
 
 {#if showTrade && !gs.completed}

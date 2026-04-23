@@ -4,13 +4,15 @@
   import { enhance } from '$app/forms';
   import NumberStepper from './NumberStepper.svelte';
 
-  let { state: gameState, slot, onrest, onhunt, onford, ontrade }: {
+  let { state: gameState, slot, onrest, onhunt, onford, onvisit }: {
     state: GameState;
     slot: string;
     onrest?: () => void;
     onhunt?: () => void;
     onford?: () => void;
-    ontrade?: () => void;
+    // Visit is the entry point for any landmark interaction (trading posts
+    // today; future Indian trading posts / road ranches use the same hook).
+    onvisit?: () => void;
   } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
@@ -18,7 +20,9 @@
   const atLandmark = $derived(
     gameState.location.atLandmarkId ? getLandmark(gameState.location.atLandmarkId) : null
   );
-  const atTradingPost = $derived(atLandmark?.kind === 'trading_post');
+  // Any landmark kind that has a Visit hub. For now that's just trading
+  // posts; later this widens to Indian trading posts, road ranches, etc.
+  const atVisitable = $derived(atLandmark?.kind === 'trading_post');
   const atRiver = $derived(atLandmark?.kind === 'river');
   const travelBlocked = $derived(atRiver);
 
@@ -88,13 +92,13 @@
   <button
     type="button"
     class="action"
-    class:highlight={atTradingPost}
-    onclick={ontrade}
-    disabled={traveling || !atTradingPost}
-    title={atTradingPost ? '' : 'Only when stopped at a trading post'}
+    class:highlight={atVisitable}
+    onclick={onvisit}
+    disabled={traveling || !atVisitable}
+    title={atVisitable ? '' : 'Only when stopped at a trading post'}
   >
-    <span class="action-icon">🏪</span>
-    <span class="action-label">Trade</span>
+    <span class="action-icon">🏛️</span>
+    <span class="action-label">Visit</span>
   </button>
 
   <button
