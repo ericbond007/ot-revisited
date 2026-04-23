@@ -36,6 +36,12 @@ export interface Landmark {
   // Visit / Trade screens. Only populated on trading posts (today).
   postKind?: PostKind;
   blurb?: string;
+  // Whether this post accepts goods from emigrants. Defaults to true.
+  // Historically, U.S. Army quartermasters at forts like Kearny issued
+  // supplies to soldiers — they did not buy from civilians. A future
+  // `native_post` landmark kind will also use this when relations are
+  // hostile (task #121).
+  buysFromEmigrants?: boolean;
 }
 
 export const LANDMARKS: readonly Landmark[] = [
@@ -47,8 +53,11 @@ export const LANDMARKS: readonly Landmark[] = [
     river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
   { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 120, terrain: 'prairie',   kind: 'trading_post',
     // U.S. Army post. Quartermaster-issue basics — no luxuries.
+    // Historical note: Army quartermasters issued to soldiers; they did
+    // not buy goods from emigrants. Kearny is sell-only (for the player).
     postKind: 'us_army',
-    blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries.',
+    buysFromEmigrants: false,
+    blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries, and he will not buy from you.',
     stock: [
       'flour', 'beans', 'bacon', 'hardtack',
       'bullets', 'bandages', 'quinine',

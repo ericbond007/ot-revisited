@@ -20,6 +20,9 @@
   const postName = $derived(here?.name ?? 'Trading Post');
   const postKind = $derived<PostKind>(here?.postKind ?? 'frontier');
   const postBlurb = $derived(here?.blurb ?? 'A post on the trail.');
+  // Defaults to true — only explicit false-flagged posts (U.S. Army, a
+  // hostile native post, etc.) refuse to buy goods from the party.
+  const buysFromEmigrants = $derived(here?.buysFromEmigrants !== false);
 
   // Fallback stock for any trading_post without its own declared stock list.
   const FALLBACK_STOCK = [
@@ -196,6 +199,9 @@
           </div>
         </div>
         <p class="post-blurb">{postBlurb}</p>
+        {#if !buysFromEmigrants}
+          <div class="post-notice">Quartermaster — sells only, won't buy from you.</div>
+        {/if}
       </section>
 
       <section class="panel live-inv-panel">
@@ -305,6 +311,8 @@
                   {@const buying = buyQty[id] ?? 0}
                   {@const selling = sellQty[id] ?? 0}
                   {@const afterOwned = owned + buying - selling}
+                  {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo'}
+                  {@const canSell = buysFromEmigrants && owned > 0}
                   <div class="item-row" class:out-of-stock={!inStock && owned === 0}>
                     <div class="item-label">
                       <ItemTooltip {id}>
@@ -318,9 +326,13 @@
                             buy ${(PRICES[id].buy * buyMult).toFixed(2)}
                           </span>
                         {/if}
-                        {#if owned > 0}
+                        {#if canSell}
                           <span class="price sell-price">
                             sell ${(PRICES[id].sell * sellMult).toFixed(2)}
+                          </span>
+                        {:else if owned > 0}
+                          <span class="price sell-price disabled">
+                            won't buy (have {owned})
                           </span>
                         {/if}
                       </div>
@@ -333,7 +345,8 @@
                             name="buy_{id}"
                             bind:value={buyQty[id]}
                             min={0}
-                            max={99}
+                            max={isBulkCat ? 999 : 99}
+                            bulkSteps={isBulkCat ? [10, 50] : []}
                             ariaLabel="Buy {ITEMS[id].name}"
                             hideValue
                             displayValue={afterOwned}
@@ -341,7 +354,7 @@
                           />
                         </div>
                       {/if}
-                      {#if owned > 0}
+                      {#if canSell}
                         <div class="control-col">
                           <span class="control-tag sell">SELL</span>
                           <NumberStepper
@@ -349,6 +362,7 @@
                             bind:value={sellQty[id]}
                             min={0}
                             max={owned}
+                            bulkSteps={isBulkCat && owned >= 10 ? [10, 50] : []}
                             ariaLabel="Sell {ITEMS[id].name}"
                             hideValue
                             displayValue={afterOwned}
@@ -459,6 +473,18 @@
     font-size: 0.9em;
     font-style: italic;
     line-height: 1.5;
+  }
+  .post-notice {
+    margin-top: 0.7em;
+    padding: 0.3em 0.5em;
+    font-size: 0.75em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--c-tan-bright);
+    background: rgba(0, 0, 0, 0.25);
+    border-left: 3px solid var(--post-accent);
+    border-radius: 0 2px 2px 0;
   }
 
   /* Live inventory — mirrors the outfit screen's sidebar. */
@@ -662,6 +688,11 @@
   .price { color: var(--c-wood); }
   .buy-price::before { content: ''; }
   .sell-price { color: #8bb96a; }
+  .sell-price.disabled {
+    color: var(--c-wood);
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
 
   /* Stepper cluster — when both BUY and SELL are possible, render them
      side-by-side with a small tag above each so they're easy to tell apart. */
