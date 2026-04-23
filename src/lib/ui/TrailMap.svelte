@@ -22,13 +22,19 @@
   const previousId = $derived(gameState.location.previousLandmarkId);
   const nextId = $derived(gameState.location.nextLandmarkId);
 
-  // Current chunk bounds: walk back from previous (or next, if we haven't passed
-  // anything yet) to find the start of this chunk, and forward to find its end.
+  // Current chunk bounds: walk back from the most recent landmark we've passed
+  // to find the start of this chunk, and forward to find its end.
   const leg = $derived.by(() => {
-    // Anchor index = the most recent landmark we've passed. If none, anchor on
-    // next so we at least see the upcoming chunk.
-    const anchorId = previousId ?? nextId;
-    const anchorIdx = Math.max(0, marks.findIndex((m) => m.id === anchorId));
+    // At game start `previousLandmarkId` is null — we haven't passed anything
+    // yet, so the leg anchors on Independence (index 0). Otherwise anchor on
+    // the landmark we just passed.
+    const anchorIdx = previousId
+      ? Math.max(0, marks.findIndex((m) => m.id === previousId))
+      : 0;
+    // Avoid an unused-warning on the nextLandmark reactive by touching it;
+    // the wagon position and labels still depend on it indirectly through
+    // milesTraveled, but keeping the read here guards against future changes.
+    void nextId;
 
     // Start: walk back from anchor (inclusive) to the most recent stop-worthy.
     let startIdx = 0;
