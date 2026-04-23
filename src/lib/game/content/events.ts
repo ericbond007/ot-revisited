@@ -2,6 +2,7 @@ import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { inTerrain, monthIs, yearAtLeast, yearBetween } from './event-gating';
 import { consumeWagonPart, deathMoralePenalty } from '../professions/bonuses';
+import { randomChildName } from './historical-names';
 
 export type EventCategory =
   | 'weather'
@@ -556,17 +557,35 @@ const lost_child: GameEvent = {
   weight: 1,
   choices: [
     {
-      id: 'help',
-      label: 'Take them to the next post',
+      id: 'take_in',
+      label: 'Take them in',
       isDefault: true,
       silentLog: true,
+      apply: (s, rng) => {
+        // Decide sex + age + name from the seeded rng so replays are deterministic.
+        const sex: 'male' | 'female' = rng.chance(0.5) ? 'male' : 'female';
+        const age = rng.int(5, 13);
+        const name = randomChildName(sex, rng.int(0, 999));
+        const id = `c${s.day}-${rng.int(1000, 9999)}`;
+        const child = {
+          id, name, sex, kind: 'adult' as const, // placeholder — real kind set below
+          isLeader: false, age, health: 100, conditions: [], dead: false
+        };
+        // Set kind to 'child' explicitly (TS narrowing through the literal above).
+        const childMember = { ...child, kind: 'child' as const };
+        return logLine(
+          { ...s, party: [...s.party, childMember], morale: Math.min(100, s.morale + 3) },
+          `Took in ${name}, a ${sex === 'female' ? 'girl' : 'boy'} of ${age}. Morale +3.`
+        );
+      }
+    },
+    {
+      id: 'leave',
+      label: 'Leave them — you can barely feed your own',
+      silentLog: true,
       apply: (s) => logLine(
-        {
-          ...s,
-          morale: Math.min(100, s.morale + 3),
-          inventory: { ...s.inventory, flour: Math.max(0, (s.inventory.flour ?? 0) - 5) }
-        },
-        'Took the lost child to the next post. Morale +3, flour −5.'
+        { ...s, morale: Math.max(0, s.morale - 4) },
+        'Left the child by the trail. The party is silent for a long while. Morale −4.'
       )
     }
   ]

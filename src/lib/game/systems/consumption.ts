@@ -2,26 +2,43 @@ import type { GameState, Rations } from '../types';
 import { foodItemIds } from '../content/items';
 import { hasLiveFarmer } from '../professions/predicates';
 
-const FOOD_PER_PERSON: Record<Rations, number> = {
+const FOOD_PER_ADULT: Record<Rations, number> = {
   meager: 1,
   normal: 2,
   filling: 3
 };
 
-const WATER_PER_PERSON_GAL = 1;
+// Children eat roughly 60% of an adult's ration, drink 70% of the water.
+// Scales the daily per-member count; floored so the sum stays integer.
+const CHILD_FOOD_MULT = 0.6;
+const CHILD_WATER_MULT = 0.7;
+const WATER_PER_ADULT_GAL = 1;
 const FARMER_FOOD_MULT = 0.95;
 
 export function aliveCount(state: GameState): number {
   return state.party.filter((m) => !m.dead).length;
 }
 
+export function aliveAdultCount(state: GameState): number {
+  return state.party.filter((m) => !m.dead && m.kind === 'adult').length;
+}
+
+export function aliveChildCount(state: GameState): number {
+  return state.party.filter((m) => !m.dead && m.kind === 'child').length;
+}
+
 export function foodConsumedToday(state: GameState): number {
-  const base = aliveCount(state) * FOOD_PER_PERSON[state.rations];
+  const perAdult = FOOD_PER_ADULT[state.rations];
+  const adults = aliveAdultCount(state);
+  const children = aliveChildCount(state);
+  const base = adults * perAdult + Math.floor(children * perAdult * CHILD_FOOD_MULT);
   return hasLiveFarmer(state) ? Math.floor(base * FARMER_FOOD_MULT) : base;
 }
 
 export function waterConsumedToday(state: GameState): number {
-  return aliveCount(state) * WATER_PER_PERSON_GAL;
+  const adults = aliveAdultCount(state);
+  const children = aliveChildCount(state);
+  return adults * WATER_PER_ADULT_GAL + Math.ceil(children * WATER_PER_ADULT_GAL * CHILD_WATER_MULT);
 }
 
 export function applyDailyConsumption(state: GameState): GameState {

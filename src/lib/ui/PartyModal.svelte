@@ -26,6 +26,15 @@
     return healthWord(m.health);
   }
 
+  function personGlyph(m: PartyMember): string {
+    if (m.kind === 'child') return m.sex === 'female' ? '👧' : '👦';
+    return m.sex === 'female' ? '👩' : '👨';
+  }
+  function personRoleLabel(m: PartyMember): string {
+    if (m.kind === 'child') return 'CHILD';
+    return m.profession ? m.profession.toUpperCase() : 'ADULT';
+  }
+
   const moraleColor = $derived(
     state.morale >= 70 ? '#8bb96a' :
     state.morale >= 40 ? '#f5c96a' :
@@ -65,13 +74,14 @@
       <div class="people-list">
         {#each state.party as m}
           {@const hc = healthColor(m.health)}
-          <div class="person-row" class:dead={m.dead}>
+          <div class="person-row" class:dead={m.dead} class:child={m.kind === 'child'}>
             <div class="person-head">
+              <span class="person-glyph" title="{m.kind === 'child' ? 'Child' : 'Adult'} · {m.sex}">{personGlyph(m)}</span>
               <span class="person-name">
                 {m.name}
                 {#if m.isLeader}<span class="leader-star" title="Party leader">★</span>{/if}
               </span>
-              <span class="person-profession">{m.profession}</span>
+              <span class="person-profession">{personRoleLabel(m)}</span>
               <span class="person-age">age {m.age}</span>
             </div>
             <div class="person-bar-row">
@@ -152,8 +162,16 @@
   .person-head {
     display: flex;
     gap: 0.5em;
-    align-items: baseline;
+    align-items: center;
     flex-wrap: wrap;
+  }
+  .person-glyph {
+    font-size: 1.4em;
+    line-height: 1;
+  }
+  .person-row.child {
+    border-left: 3px solid var(--c-rust);
+    padding-left: calc(0.7em - 3px);
   }
   .person-name {
     font-weight: 700;

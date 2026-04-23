@@ -35,17 +35,38 @@ export function reapDead(state: GameState, _rng: Rng): GameState {
     ? state.flags
     : { ...state.flags, _burialPending: true };
 
+  // The death of a child weighs heavier on morale than an adult's. We don't
+  // change the burial event's penalties (that's a separate moment); this is
+  // an immediate hit applied at the moment of death so the party visibly
+  // reels even before the burial choice. Adult deaths apply no immediate
+  // morale change here — burial event already covers that.
+  let immediateMorale = 0;
+  for (let i = 0; i < party.length; i++) {
+    if (state.party[i].dead) continue;
+    if (!party[i].dead) continue;
+    if (party[i].kind === 'child') immediateMorale -= 8;
+  }
+  const morale = immediateMorale === 0
+    ? state.morale
+    : Math.max(0, state.morale + immediateMorale);
+
   return {
     ...state,
     party,
     flags,
+    morale,
     completed: allDead ? true : state.completed,
     outcome: allDead ? 'wiped' : state.outcome,
     eventLog: [
       ...state.eventLog,
       ...party
         .filter((m, i) => !state.party[i].dead && m.dead)
-        .map((m) => ({ day: state.day, text: `${m.name} has died. Cause: ${m.deathCause}.` }))
+        .map((m) => ({
+          day: state.day,
+          text: m.kind === 'child'
+            ? `${m.name}, a child, has died. Cause: ${m.deathCause}. The party is shattered (morale −8).`
+            : `${m.name} has died. Cause: ${m.deathCause}.`
+        }))
     ]
   };
 }

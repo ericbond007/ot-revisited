@@ -7,8 +7,13 @@
   const qp = $derived(encodeURIComponent(slot));
   const rifleCount = $derived(gameState.inventory.rifle ?? 0);
   const bullets = $derived(gameState.inventory.bullets ?? 0);
-  const aliveCount = $derived(gameState.party.filter((m) => !m.dead).length);
-  const aliveNames = $derived(gameState.party.filter((m) => !m.dead).map((m) => m.name));
+  // Children can't hunt — they stay at camp. "Able-bodied" = alive adults.
+  const aliveCount = $derived(
+    gameState.party.filter((m) => !m.dead && m.kind === 'adult').length
+  );
+  const aliveNames = $derived(
+    gameState.party.filter((m) => !m.dead && m.kind === 'adult').map((m) => m.name)
+  );
 
   type Target = 'small' | 'medium' | 'big' | 'gather';
   type Ammo = 'light' | 'moderate' | 'heavy';

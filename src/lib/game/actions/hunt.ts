@@ -90,7 +90,8 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   };
 
   if (profile.injuryRisk > 0 && rng.chance(profile.injuryRisk)) {
-    const alive = s.party.filter((m) => !m.dead);
+    // Only adults hunt, so only adults take hunting injuries.
+    const alive = s.party.filter((m) => !m.dead && m.kind === 'adult');
     if (alive.length > 0) {
       const victim = alive[rng.int(0, alive.length - 1)];
       s = {

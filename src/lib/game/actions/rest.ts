@@ -126,10 +126,16 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
       s = { ...s, inventory: { ...s.inventory, flour: currentFlour + FARMER_FORAGE_AT_REST } };
     }
 
-    // Preacher +1 morale per rest night; Whore +2. Both stack.
+    // Preacher +1 morale per rest night.
+    // Whore +1 per alive adult male in the party (she is a service to the party;
+    // female party members and children contribute 0). Uncapped — party with
+    // 5 men + 1 whore = +5 per night. Both stack with Preacher.
     let nightMorale = 0;
     if (hasLivePreacher(s)) nightMorale += 1;
-    if (hasLiveWhore(s))    nightMorale += 2;
+    if (hasLiveWhore(s)) {
+      const aliveMaleAdults = s.party.filter((m) => !m.dead && m.kind === 'adult' && m.sex === 'male').length;
+      nightMorale += aliveMaleAdults;
+    }
     if (nightMorale > 0) {
       s = { ...s, morale: Math.min(100, s.morale + nightMorale) };
     }

@@ -78,6 +78,32 @@ describe('foodConsumedToday', () => {
     // 2 alive × 2 = 4 base; no Farmer bonus
     expect(foodConsumedToday(s)).toBe(4);
   });
+
+  it('children eat 60% of an adult ration (floored)', () => {
+    const s = baseState();
+    // 3 adults × 2 = 6 baseline.
+    // Add a child who at normal rations contributes floor(1 × 2 × 0.6) = 1.
+    s.party.push({
+      id: 'k', name: 'Tommy', sex: 'male', kind: 'child', isLeader: false,
+      age: 8, health: 100, conditions: [], dead: false
+    });
+    expect(foodConsumedToday(s)).toBe(7);
+  });
+
+  it('children drink 70% of adult water (ceil)', () => {
+    const s = baseState();
+    // 3 adults × 1 = 3 baseline.
+    // 2 children × 1 × 0.7 = 1.4 → ceil = 2.
+    s.party.push({
+      id: 'k1', name: 'A', sex: 'male', kind: 'child', isLeader: false,
+      age: 8, health: 100, conditions: [], dead: false
+    });
+    s.party.push({
+      id: 'k2', name: 'B', sex: 'female', kind: 'child', isLeader: false,
+      age: 6, health: 100, conditions: [], dead: false
+    });
+    expect(waterConsumedToday(s)).toBe(5);
+  });
 });
 
 describe('waterConsumedToday', () => {
