@@ -1,6 +1,13 @@
 import type { GameState } from '../types';
 import { getPrice } from '../content/prices';
+import { ITEMS } from '../content/items';
 import { hasLiveMerchant, hasLiveBanker } from '../professions/predicates';
+
+// Resolve an item id to its display name. Falls back to the id if missing
+// (shouldn't happen — every tradable item has a catalog entry).
+function itemName(id: string): string {
+  return ITEMS[id]?.name ?? id.replace(/_/g, ' ');
+}
 
 export interface TradeEntry {
   item: string;
@@ -62,8 +69,8 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
   const netDisplay = Math.round(rawRevenue - rawCost);
 
   const parts: string[] = [];
-  if (buys.length > 0) parts.push(`bought ${buys.map((b) => `${b.qty} ${b.item}`).join(', ')}`);
-  if (sells.length > 0) parts.push(`sold ${sells.map((s) => `${s.qty} ${s.item}`).join(', ')}`);
+  if (buys.length > 0) parts.push(`bought ${buys.map((b) => `${b.qty} ${itemName(b.item)}`).join(', ')}`);
+  if (sells.length > 0) parts.push(`sold ${sells.map((s) => `${s.qty} ${itemName(s.item)}`).join(', ')}`);
   const logText = `Trade: ${parts.join('; ')} (net $${netDisplay}).`;
 
   return {

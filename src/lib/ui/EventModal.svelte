@@ -74,7 +74,6 @@
               style="animation-delay: {40 + i * 60}ms;"
             >
               <span class="choice-label-text">{c.label}</span>
-              {#if c.isDefault}<span class="default-tag">default</span>{/if}
             </button>
           </form>
         {/each}
@@ -196,15 +195,6 @@
 
   .choice-label-text {
     flex: 1;
-  }
-
-  .default-tag {
-    font-size: 0.7em;
-    color: var(--c-wood);
-    font-weight: normal;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    font-style: italic;
   }
 
   .choice-card.default {
