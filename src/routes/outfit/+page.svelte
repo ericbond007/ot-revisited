@@ -4,9 +4,22 @@
   import { PRICES } from '$lib/game/content/prices';
   import NumberStepper from '$lib/ui/NumberStepper.svelte';
   import ItemTooltip from '$lib/ui/ItemTooltip.svelte';
+  import WagonPicker from '$lib/ui/WagonPicker.svelte';
   import { getProfession } from '$lib/game/content/professions';
+  import { getWagon, type WagonModel, type WagonModelId } from '$lib/game/content/wagons';
 
-  let { data }: { data: { slot: string; state: GameState; buyables: string[] } } = $props();
+  let { data, form }: {
+    data: {
+      slot: string;
+      state: GameState;
+      buyables: string[];
+      wagons: Record<WagonModelId, WagonModel>;
+      defaultWagon: WagonModelId;
+      oxPrice: number;
+      maxExtraOxen: number;
+    };
+    form?: { error?: string } | null;
+  } = $props();
   const gs = $derived(data.state);
 
   // Profession bonuses apply at Independence too — Banker/Merchant discount
@@ -23,10 +36,70 @@
     Object.fromEntries(data.buyables.filter((id) => PRICES[id] && ITEMS[id]).map((id) => [id, 0]))
   );
 
-  const totalCost = $derived(
+  // Wagon + oxen selections.
+  // svelte-ignore state_referenced_locally
+  let selectedWagon = $state<WagonModelId>(gs.wagon.model);
+  let extraOxen = $state(0);
+
+  const defaultWagonPrice = $derived(data.wagons[data.defaultWagon].price);
+  const selectedWagonModel = $derived(getWagon(selectedWagon));
+  const wagonCashDiff = $derived(getWagon(gs.wagon.model).price - selectedWagonModel.price);
+
+  const suppliesCost = $derived(
     Object.entries(buyQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.buy ?? 0) * buyMult, 0)
   );
+  const oxenCost = $derived(extraOxen * data.oxPrice);
+  const totalCost = $derived(suppliesCost + oxenCost - wagonCashDiff);
   const canAfford = $derived(Math.ceil(totalCost) <= gs.cash);
+
+  // Weight of supplies being bought (independent of starter inventory weight,
+  // which is already packed). Shown against the selected wagon's cap so the
+  // player sees the headroom.
+  const suppliesWeight = $derived(
+    Object.entries(buyQty).reduce((s, [id, q]) => s + q * (ITEMS[id]?.weightLbPerUnit ?? 0), 0)
+  );
+  const starterWeight = $derived(
+    Object.entries(gs.inventory).reduce(
+      (s, [id, q]) => s + (q || 0) * (ITEMS[id]?.weightLbPerUnit ?? 0),
+      0
+    )
+  );
+  const totalWeight = $derived(starterWeight + suppliesWeight);
+  const capacity = $derived(selectedWagonModel.carryCapacity);
+  const weightPct = $derived(Math.round((totalWeight / capacity) * 100));
+  const weightColor = $derived(
+    weightPct >= 100 ? '#e85a4a' :
+    weightPct >= 80  ? '#c96a2a' :
+    weightPct >= 60  ? '#f5c96a' : '#8bb96a'
+  );
+
+  // Oxen / team factor readout.
+  const startingOxenCount = $derived(gs.oxen.length);
+  const totalOxen = $derived(startingOxenCount + extraOxen);
+  const teamStatus = $derived.by<{ tone: 'ok' | 'warn' | 'bad'; text: string }>(() => {
+    const m = selectedWagonModel;
+    if (totalOxen < m.minTeam) {
+      return {
+        tone: 'bad',
+        text: `${m.name} needs at least ${m.minTeam} oxen to pull. You have ${totalOxen}.`
+      };
+    }
+    if (totalOxen < m.optimalTeam) {
+      const pct = Math.round((totalOxen / m.optimalTeam) * 100);
+      return {
+        tone: 'warn',
+        text: `${m.name} is designed for ${m.optimalTeam} oxen — with ${totalOxen}, you'll travel at ${pct}% of this wagon's speed.`
+      };
+    }
+    if (totalOxen === m.optimalTeam) {
+      return { tone: 'ok', text: `Team at full strength (${totalOxen} oxen).` };
+    }
+    return {
+      tone: 'ok',
+      text: `${totalOxen} oxen — ${totalOxen - m.optimalTeam} spare${totalOxen - m.optimalTeam === 1 ? '' : 's'} for insurance.`
+    };
+  });
+  const canDepart = $derived(canAfford && teamStatus.tone !== 'bad');
 
   // Current starter-kit inventory — read-only summary of what the party
   // already has from their profession gear.
@@ -127,12 +200,18 @@
     </div>
     <div class="total-cell">
       <span class="total-label">SPEND</span>
-      <span class="total-val spend">−${totalCost.toFixed(2)}</span>
+      <span class="total-val spend">{totalCost >= 0 ? '−' : '+'}${Math.abs(totalCost).toFixed(2)}</span>
     </div>
     <div class="total-cell">
       <span class="total-label">AFTER</span>
       <span class="total-val after" class:danger={!canAfford}>
         ${(gs.cash - totalCost).toFixed(2)}
+      </span>
+    </div>
+    <div class="total-cell">
+      <span class="total-label">WEIGHT</span>
+      <span class="total-val small" style="color: {weightColor};">
+        {Math.round(totalWeight)} / {capacity.toLocaleString()} lb · {weightPct}%
       </span>
     </div>
     {#if hasMerchant || hasBanker}
@@ -144,6 +223,10 @@
       </div>
     {/if}
   </div>
+
+  {#if form?.error}
+    <div class="panel form-error">{form.error}</div>
+  {/if}
 
   <!-- Party -->
   <section class="party-preview panel">
@@ -180,10 +263,48 @@
     {/if}
   </section>
 
-  <!-- Buy more — collapsible categories -->
   <form method="POST" action="?/outfit&slot={encodeURIComponent(data.slot)}">
+
+    <!-- Wagon picker -->
+    <section class="wagon-section panel">
+      <div class="panel-head">
+        CHOOSE YOUR WAGON
+        <span class="hint">Prairie schooner is pre-paid. Light refunds. Heavy costs extra.</span>
+      </div>
+      <WagonPicker
+        models={data.wagons}
+        bind:value={selectedWagon}
+        defaultPrice={defaultWagonPrice}
+      />
+    </section>
+
+    <!-- Oxen -->
+    <section class="oxen-section panel">
+      <div class="panel-head">
+        OXEN
+        <span class="hint">${data.oxPrice} each at Independence. Extras are insurance.</span>
+      </div>
+      <div class="oxen-row">
+        <div class="oxen-counts">
+          <span class="oxen-glyph">🐂</span>
+          <span class="oxen-have">Starter: <strong>{startingOxenCount}</strong></span>
+          <span class="oxen-plus">+</span>
+          <NumberStepper
+            name="extraOxen"
+            bind:value={extraOxen}
+            min={0}
+            max={data.maxExtraOxen}
+            ariaLabel="Extra oxen to buy"
+          />
+          <span class="oxen-total">= <strong>{totalOxen}</strong> oxen</span>
+        </div>
+        <div class="team-status tone-{teamStatus.tone}">{teamStatus.text}</div>
+      </div>
+    </section>
+
+    <!-- Supplies -->
     <section class="buy-head">
-      <h2>Add more supplies</h2>
+      <h2>Add supplies</h2>
       <p class="hint">Tap a category to expand. Food, Medicine, and Tools are open by default.</p>
     </section>
 
@@ -234,7 +355,7 @@
     {/each}
 
     <div class="actions">
-      <button type="submit" class="depart" disabled={!canAfford}>
+      <button type="submit" class="depart" disabled={!canDepart}>
         {leader ? `Begin ${leader.name}'s Journey` : 'Begin Journey'}
       </button>
       <a href="/" class="back">Cancel</a>
@@ -340,6 +461,67 @@
   .total-val.cash { color: var(--c-tan-bright); }
   .total-val.spend { color: #c96a2a; }
   .total-val.danger { color: #e85a4a; }
+
+  .form-error {
+    padding: 0.7em 0.9em;
+    border-color: #e85a4a;
+    color: #e85a4a;
+    font-weight: 700;
+  }
+
+  /* Wagon + oxen sections */
+  .wagon-section, .oxen-section {
+    padding: 0.7em 0.9em;
+  }
+  .wagon-section .panel-head, .oxen-section .panel-head {
+    margin-bottom: 0.5em;
+  }
+
+  .oxen-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+  }
+  .oxen-counts {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+  }
+  .oxen-glyph { font-size: 1.4em; line-height: 1; }
+  .oxen-have, .oxen-total, .oxen-plus {
+    font-size: 0.95em;
+    color: var(--c-tan);
+  }
+  .oxen-have strong, .oxen-total strong {
+    color: var(--c-tan-bright);
+  }
+  .oxen-plus { color: var(--c-wood); font-weight: 700; }
+
+  .team-status {
+    padding: 0.4em 0.6em;
+    border-radius: 3px;
+    font-size: 0.88em;
+    font-style: italic;
+    line-height: 1.3;
+  }
+  .team-status.tone-ok {
+    background: rgba(139, 185, 106, 0.15);
+    color: var(--c-tan);
+    border-left: 3px solid #8bb96a;
+  }
+  .team-status.tone-warn {
+    background: rgba(245, 201, 106, 0.15);
+    color: var(--c-tan);
+    border-left: 3px solid #f5c96a;
+  }
+  .team-status.tone-bad {
+    background: rgba(232, 90, 74, 0.15);
+    color: #f1a398;
+    border-left: 3px solid #e85a4a;
+    font-weight: 700;
+    font-style: normal;
+  }
 
   /* Buy sections */
   .buy-head { margin-top: 0.5em; }
