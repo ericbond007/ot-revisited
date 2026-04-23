@@ -211,13 +211,20 @@
   .spares-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.3em 0.8em;
+    gap: 0;
   }
   .spare-row {
     display: flex;
     justify-content: space-between;
     font-size: 0.9em;
-    padding: 0.15em 0;
+    padding: 0.25em 0.5em;
+    border-bottom: 1px dashed rgba(138, 90, 42, 0.18);
+  }
+  .spare-row:nth-child(odd) {
+    background: rgba(138, 90, 42, 0.06);
+  }
+  .spare-row:last-child {
+    border-bottom: 0;
   }
   .spare-row.none {
     color: var(--c-wood);

@@ -19,7 +19,7 @@
     children: import('svelte').Snippet;
   } = $props();
 
-  const HOVER_DELAY_MS = 500;
+  const HOVER_DELAY_MS = 250;
   let hovered = $state(false);
   let pinned = $state(false);
   let showTimer: ReturnType<typeof setTimeout> | null = null;

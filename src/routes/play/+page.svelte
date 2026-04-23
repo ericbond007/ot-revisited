@@ -126,6 +126,7 @@
         action={rationsAction}
         current={gs.rations}
         options={rationsOptions}
+        align="right"
       />
     </div>
   </header>

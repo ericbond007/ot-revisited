@@ -219,13 +219,20 @@
   .item-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.2em 0.8em;
+    gap: 0;
   }
   .item-row {
     display: flex;
     justify-content: space-between;
     font-size: 0.9em;
-    padding: 0.15em 0;
+    padding: 0.25em 0.5em;
+    border-bottom: 1px dashed rgba(138, 90, 42, 0.18);
+  }
+  .item-row:nth-child(odd) {
+    background: rgba(138, 90, 42, 0.06);
+  }
+  .item-row:last-child {
+    border-bottom: 0;
   }
   .item-name { color: var(--c-tan); }
   .item-qty {

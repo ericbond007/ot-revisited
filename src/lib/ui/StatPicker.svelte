@@ -14,7 +14,8 @@
     name,
     action,
     current,
-    options
+    options,
+    align = 'left'
   }: {
     icon: string;
     label: string;
@@ -22,6 +23,9 @@
     action: string;
     current: T;
     options: Option[];
+    // Pop anchor — set 'right' for stats near the viewport's right edge so
+    // the popover doesn't clip off-screen.
+    align?: 'left' | 'right';
   } = $props();
 
   let open = $state(false);
@@ -49,7 +53,7 @@
   </button>
 
   {#if open}
-    <div class="pop">
+    <div class="pop" class:align-right={align === 'right'}>
       <div class="pop-head">SET {label}</div>
       <div class="pop-cards">
         {#each options as opt}
@@ -138,6 +142,10 @@
     border: 2px solid var(--c-rust);
     border-radius: 4px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  }
+  .pop.align-right {
+    left: auto;
+    right: 0;
   }
   .pop-head {
     font-size: 0.7em;
