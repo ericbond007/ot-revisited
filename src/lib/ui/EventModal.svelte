@@ -1,14 +1,34 @@
 <script lang="ts">
   import type { EventCategory } from '$lib/game/content/events';
   import { EVENTS } from '$lib/game/content/events';
+  import type { GameState } from '$lib/game/types';
   import { enhance } from '$app/forms';
 
-  let { eventId, slot, body: bodyOverride }: { eventId: string; slot: string; body?: string } = $props();
+  let { eventId, slot, gameState, body: bodyOverride }: {
+    eventId: string;
+    slot: string;
+    gameState: GameState;
+    body?: string;
+  } = $props();
   const event = $derived(EVENTS.find((e) => e.id === eventId));
   const qp = $derived(encodeURIComponent(slot));
   // Engine-resolved body variant takes precedence over the inline body string
   // when an event has bodyKey + a registered pool.
   const bodyText = $derived(bodyOverride ?? event?.body ?? '');
+
+  // Resolve a choice's required-item gate against the current inventory.
+  // Returns {disabled, reason, icon} so the render loop can show the lock
+  // state inline without re-running the lookup.
+  function requireStatus(req: { itemId: string; icon?: string; reason?: string } | undefined): {
+    disabled: boolean;
+    reason?: string;
+    icon?: string;
+  } {
+    if (!req) return { disabled: false };
+    const owned = gameState.inventory[req.itemId] ?? 0;
+    if (owned > 0) return { disabled: false, icon: req.icon };
+    return { disabled: true, reason: req.reason, icon: req.icon };
+  }
 
   // Category-based flavor
   const categoryIcon: Record<EventCategory, string> = {
@@ -56,6 +76,7 @@
 
       <div class="choices">
         {#each event.choices as c, i}
+          {@const req = requireStatus(c.requires)}
           <form
             method="POST"
             action="?/resolveEvent&slot={qp}"
@@ -70,10 +91,18 @@
               type="submit"
               class="choice-card"
               class:default={c.isDefault}
-              disabled={submitting}
+              class:locked={req.disabled}
+              disabled={submitting || req.disabled}
+              title={req.disabled ? req.reason : ''}
               style="animation-delay: {40 + i * 60}ms;"
             >
+              {#if req.icon}
+                <span class="choice-icon" aria-hidden="true">{req.icon}</span>
+              {/if}
               <span class="choice-label-text">{c.label}</span>
+              {#if req.disabled && req.reason}
+                <span class="choice-reason">{req.reason}</span>
+              {/if}
             </button>
           </form>
         {/each}
@@ -193,8 +222,23 @@
     cursor: not-allowed;
   }
 
+  .choice-icon {
+    font-size: 1.2em;
+    line-height: 1;
+  }
   .choice-label-text {
     flex: 1;
+  }
+  .choice-reason {
+    font-size: 0.78em;
+    font-weight: 400;
+    font-style: italic;
+    color: #e85a4a;
+    letter-spacing: 0.02em;
+  }
+  .choice-card.locked .choice-icon {
+    filter: grayscale(1);
+    opacity: 0.6;
   }
 
   .choice-card.default {

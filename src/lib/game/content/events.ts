@@ -24,6 +24,10 @@ export interface EventChoice {
   // Audited choices that write their own outcome line set this to true so the
   // log isn't redundant. Unaudited choices keep getting the auto-append.
   silentLog?: boolean;
+  // Optional required-item gate. When set, the choice renders disabled in
+  // the modal if the party is missing the item, with a hint stating why.
+  // The item's icon is also surfaced alongside the label.
+  requires?: { itemId: string; icon?: string; reason?: string };
 }
 
 export interface GameEvent {
@@ -803,12 +807,19 @@ const burial: GameEvent = {
   choices: [
     {
       id: 'dig_grave',
-      label: 'Dig a proper grave (requires shovel)',
+      label: 'Dig a proper grave',
       isDefault: true,
       silentLog: true,
+      requires: {
+        itemId: 'shovel',
+        icon: '⛏️',
+        reason: 'No shovel in the wagon'
+      },
       apply: (s) => {
         const flags = { ...s.flags };
         delete (flags as Record<string, unknown>)._burialPending;
+        // Defensive: gate enforced by the UI, but if a shovel-less state
+        // somehow reaches here, still degrade gracefully.
         const hasShovel = (s.inventory.shovel ?? 0) > 0;
         if (hasShovel) {
           return logLine(

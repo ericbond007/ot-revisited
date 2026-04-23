@@ -176,6 +176,7 @@
   <EventModal
     eventId={pendingEventId}
     slot={data.slot}
+    gameState={gs}
     body={(gs.flags._pendingEventBody as string | undefined)}
   />
 {/if}
