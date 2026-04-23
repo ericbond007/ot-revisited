@@ -45,7 +45,21 @@
     window.localStorage.setItem(storageKey, String(travelDays));
   });
 
+  // The "traveling" flag gates all action buttons during the wagon-slide
+  // animation so the player can't double-submit while the server is
+  // updating. On arrival at a landmark, though, the travel is resolved —
+  // buttons (Ford, Visit, Rest, Hunt) should be immediately actionable.
   let traveling = $state(false);
+  let travelTimer: ReturnType<typeof setTimeout> | null = null;
+  $effect(() => {
+    if (atLandmark && traveling) {
+      traveling = false;
+      if (travelTimer) {
+        clearTimeout(travelTimer);
+        travelTimer = null;
+      }
+    }
+  });
 </script>
 
 <div class="panel action-panel {atLandmark ? `panel-${atLandmark.kind}` : ''}">
@@ -56,8 +70,14 @@
       traveling = true;
       return async ({ update }) => {
         await update();
-        // Hold the "traveling" indicator for the full wagon-slide duration.
-        setTimeout(() => { traveling = false; }, 2500);
+        // Hold the "traveling" indicator for the full wagon-slide duration,
+        // unless we've already arrived at a landmark — in which case the
+        // atLandmark $effect above has already cleared the flag.
+        if (travelTimer) clearTimeout(travelTimer);
+        travelTimer = setTimeout(() => {
+          traveling = false;
+          travelTimer = null;
+        }, 2500);
       };
     }}
     class="travel-form"
