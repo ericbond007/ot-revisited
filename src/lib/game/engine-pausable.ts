@@ -40,8 +40,15 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = adjustMorale(s, rng);
   s = applyTravel(s, rng);
 
+  // Travel events fire only on the road, never on arrival at a landmark
+  // (trading post, river, end). If the day's travel just parked us at a
+  // stop-worthy landmark, the player gets the landmark stage first; any
+  // on-road event from today would arrive on top of the trading-post UI.
+  // Landmark-scoped arrival events are a separate system (see task #115).
+  const arrivedAtLandmark = s.location.atLandmarkId !== null && s.location.atLandmarkId !== undefined;
+
   // Check event WITHOUT resolving. If cooldown allows, roll; if one fires, pause here.
-  if (s.flags._lastEventDay !== s.day) {
+  if (!arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
     const pending = rollEvent(s, rng);
     if (pending) {
       // Resolve body variant at fire time so it stays consistent across renders.

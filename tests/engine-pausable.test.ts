@@ -59,4 +59,30 @@ describe('tickDayPausable', () => {
     }
     throw new Error('Expected event to test apply');
   });
+
+  it('does not roll a travel event on the tick that arrives at a landmark', () => {
+    // Bug: on arrival at Fort Kearney the trading-post view appeared AND
+    // a travel event also fired on top. Travel events should be road-only.
+    // This test runs many seeds of "one day's march away from a
+    // stop-worthy landmark" and asserts no pendingEvent is ever queued
+    // when the tick lands at atLandmarkId.
+    const seeds = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10'];
+    let arrivals = 0;
+    for (const seed of seeds) {
+      const base = newGame(seed);
+      // Park them one mile short of the first stop-worthy landmark
+      // (Kansas River ~102 miles out). Moderate pace covers the gap.
+      const parked = {
+        ...base,
+        location: { ...base.location, milesTraveled: 101 }
+      };
+      const result = tickDayPausable(parked);
+      if (result.state.location.atLandmarkId) {
+        arrivals++;
+        // On every arrival tick, there must be no pending travel event.
+        expect(result.pendingEvent).toBeUndefined();
+      }
+    }
+    expect(arrivals).toBeGreaterThan(0);
+  });
 });
