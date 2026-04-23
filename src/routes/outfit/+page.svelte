@@ -496,7 +496,14 @@
                         <span class="owned-tag" title="Already in your starter kit">has {owned}</span>
                       {/if}
                     </div>
-                    <span class="item-price">${price.toFixed(2)} ea</span>
+                    <div class="item-meta-row">
+                      <span class="item-price">${price.toFixed(2)} ea</span>
+                      {#if total > 0}
+                        <span class="item-total" class:has-pending={adding > 0}>
+                          → <strong>{total}</strong>{#if adding > 0}<span class="total-added">+{adding}</span>{/if}
+                        </span>
+                      {/if}
+                    </div>
                   </div>
                   <div class="item-controls">
                     <NumberStepper
@@ -506,12 +513,8 @@
                       max={isBulkCat ? 999 : 99}
                       bulkSteps={isBulkCat ? [10, 50] : []}
                       ariaLabel="Buy {ITEMS[id].name}"
+                      hideValue
                     />
-                    {#if total > 0}
-                      <span class="item-total" class:has-pending={adding > 0}>
-                        → <strong>{total}</strong>{#if adding > 0}<span class="total-added">+{adding}</span>{/if}
-                      </span>
-                    {/if}
                   </div>
                 </div>
               {/each}
@@ -686,6 +689,9 @@
     flex-direction: column;
     gap: 0.5em;
     min-height: 0;
+    /* Without this, grid children (item-grid) can blow past the column
+       width and force a horizontal scrollbar on the whole section. */
+    min-width: 0;
   }
 
   .outfit-form {
@@ -698,7 +704,9 @@
   .scroll-area {
     flex: 1;
     min-height: 0;
+    min-width: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 0.3em;
     display: flex;
     flex-direction: column;
@@ -992,17 +1000,18 @@
   }
   .item-row {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.5em;
     padding: 0.35em 0.6em;
     border-bottom: 1px solid rgba(138, 90, 42, 0.25);
+    min-width: 0;
   }
   /* Stronger alternation so you can track which stepper goes with which item */
   .item-row:nth-child(odd) { background: rgba(138, 90, 42, 0.15); }
   .item-row:last-child { border-bottom: 0; }
   .item-row:hover { background: rgba(201, 106, 42, 0.14); }
-  .item-label { display: flex; flex-direction: column; gap: 0.1em; min-width: 0; }
+  .item-label { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; }
   .item-name-row {
     display: flex;
     align-items: baseline;
@@ -1010,6 +1019,12 @@
     flex-wrap: wrap;
   }
   .item-name { font-size: 0.95em; }
+  .item-meta-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7em;
+    flex-wrap: wrap;
+  }
   .item-price { font-size: 0.76em; color: var(--c-wood); }
   .owned-tag {
     font-size: 0.78em;
@@ -1025,21 +1040,26 @@
   .item-controls {
     display: inline-flex;
     align-items: center;
-    gap: 0.5em;
+    gap: 0.3em;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
+  /* Running total — lives under the item price now, pulled out of the
+     control cluster so the steppers can't push it off-row. Made louder
+     per user feedback (they want the *count* to be the primary read, not
+     the stepper input). */
   .item-total {
-    font-size: 0.82em;
     color: var(--c-wood);
     white-space: nowrap;
     display: inline-flex;
     align-items: baseline;
-    gap: 0.2em;
-    min-width: 3em;
+    gap: 0.25em;
+    font-size: 0.95em;
   }
   .item-total strong {
     color: var(--c-tan-bright);
     font-weight: 700;
-    font-size: 1.1em;
+    font-size: 1.25em;
   }
   .item-total.has-pending strong { color: #8bb96a; }
   .total-added {

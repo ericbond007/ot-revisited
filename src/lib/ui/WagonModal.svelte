@@ -37,8 +37,8 @@
   ];
 </script>
 
-<div class="modal-backdrop">
-  <div class="panel modal-body">
+<div class="modal-backdrop" onclick={onclose} role="presentation">
+  <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
     <h2 style="color: var(--c-rust); display: flex; align-items: center; gap: 0.4em; margin-bottom: 0.2em;">
       <WagonIcon size="1.1em" />
       <span>{wagonModel.name}</span>

@@ -10,7 +10,8 @@
     step = 1,
     bulkSteps = [],
     disabled = false,
-    ariaLabel = 'Number'
+    ariaLabel = 'Number',
+    hideValue = false
   }: {
     name?: string;
     value?: number;
@@ -20,6 +21,10 @@
     bulkSteps?: readonly number[];
     disabled?: boolean;
     ariaLabel?: string;
+    // Mouse-first mode — no typeable input box. Form still submits via a
+    // hidden <input>. Consumers (the outfit page, etc.) are expected to
+    // render the current value elsewhere.
+    hideValue?: boolean;
   } = $props();
 
   function clamp(v: number): number {
@@ -64,18 +69,26 @@
     disabled={disabled || value <= min}
   >−</button>
 
-  <input
-    type="number"
-    {name}
-    bind:value
-    {min}
-    {max}
-    {step}
-    {disabled}
-    aria-label={ariaLabel}
-    oninput={onInputInput}
-    onblur={onInputBlur}
-  />
+  {#if hideValue}
+    <!-- Mouse-first: no visible/typeable box. Keep form submission intact
+         via a hidden input, and show the current count as a compact
+         read-only chip between the -/+ buttons. -->
+    <span class="value-chip" aria-hidden="true">{value}</span>
+    <input type="hidden" {name} {value} />
+  {:else}
+    <input
+      type="number"
+      {name}
+      bind:value
+      {min}
+      {max}
+      {step}
+      {disabled}
+      aria-label={ariaLabel}
+      oninput={onInputInput}
+      onblur={onInputBlur}
+    />
+  {/if}
 
   <button
     type="button"
@@ -131,11 +144,32 @@
     justify-content: center;
   }
   .step-btn.bulk {
+    /* Bulk buttons are a visual shortcut, not the primary control — keep
+       them small so they don't overflow narrow item rows. */
     width: auto;
-    padding: 0 0.6em;
-    font-size: 0.85em;
+    height: 1.8em;
+    align-self: center;
+    padding: 0 0.45em;
+    margin-left: 0.15em;
+    font-size: 0.72em;
     font-weight: 700;
+    border-radius: 3px;
     border-left: 1px solid rgba(0, 0, 0, 0.2);
+  }
+  .value-chip {
+    /* Read-only count display when hideValue=true. Matches the form-input
+       slot in width so the layout doesn't shift between modes. */
+    min-width: 2.2em;
+    padding: 0 0.4em;
+    background: var(--c-parchment);
+    color: var(--c-ink);
+    font-family: var(--f-mono);
+    font-size: 1.1em;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
   }
   .step-btn:hover:not(:disabled) {
     background: var(--c-rust);
