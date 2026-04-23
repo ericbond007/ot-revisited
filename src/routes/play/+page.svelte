@@ -16,6 +16,7 @@
   import PartyModal from '$lib/ui/PartyModal.svelte';
   import InventoryModal from '$lib/ui/InventoryModal.svelte';
   import StatPicker from '$lib/ui/StatPicker.svelte';
+  import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
   import { getLandmark } from '$lib/game/content/landmarks';
   import type { GameState } from '$lib/game/types';
 
@@ -37,6 +38,7 @@
   let showWagon = $state(false);
   let showParty = $state(false);
   let showInventory = $state(false);
+  let menuOpen = $state(false);
 
   // Delay the event modal's appearance so the wagon has time to slide +
   // the travel-summary log entry is visible before the modal covers things.
@@ -84,7 +86,18 @@
   <!-- Journey header -->
   <header class="panel top-bar">
     <div class="title-row">
-      <button type="button" class="journey-icon" title="Journey details (coming soon)">🤠</button>
+      <div class="menu-anchor">
+        <button
+          type="button"
+          class="journey-icon"
+          class:active={menuOpen}
+          onclick={(e) => { e.stopPropagation(); menuOpen = !menuOpen; }}
+          title="Journey menu"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+        >🤠</button>
+        <JourneyMenu bind:open={menuOpen} />
+      </div>
       <h2 class="journey-title">{gs.party[0].name}'s Journey</h2>
     </div>
     <div class="date-readout {dayFlash ? 'pulse' : ''}">
@@ -209,6 +222,9 @@
     align-items: center;
     gap: 0.5em;
   }
+  .menu-anchor {
+    position: relative;
+  }
   .journey-icon {
     /* Override default button chrome — acts like a soft icon button */
     background: transparent;
@@ -221,7 +237,8 @@
     border-radius: 4px;
     transition: border-color 0.15s, background 0.15s;
   }
-  .journey-icon:hover {
+  .journey-icon:hover,
+  .journey-icon.active {
     border-color: var(--c-rust);
     background: var(--c-bg-raised);
   }
