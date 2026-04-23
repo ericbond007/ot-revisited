@@ -81,8 +81,9 @@ export const LANDMARKS: readonly Landmark[] = [
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
   { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 35,  terrain: 'mountains', kind: 'landmark' },
   { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 70,  terrain: 'mountains', kind: 'trading_post',
-    // Hudson's Bay Company post on the Snake. Well-supplied with British
-    // imports. California Trail splits here — steady stream of trade.
+    // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
+    // Well-supplied with British imports via HBC supply lines (tea, quality
+    // wool blankets, manufactured goods). California Trail splits here.
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum',
