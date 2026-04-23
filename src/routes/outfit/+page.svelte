@@ -141,6 +141,40 @@
     starterGroups.reduce((s, g) => s + g.totalWeight, 0)
   );
 
+  // Live inventory for the sidebar — shows what the party WILL have when
+  // they depart (starter kit + pending purchases). Each row tags the added
+  // portion with a +N chip so the player can see what they're adding
+  // while scrolling the supplies list.
+  type LiveGroup = {
+    cat: ItemCategory;
+    entries: Array<{ id: string; name: string; starter: number; added: number; total: number }>;
+  };
+  const liveGroups = $derived.by<LiveGroup[]>(() => {
+    const order: ItemCategory[] = [
+      'food', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo', 'clothing', 'livestock', 'comfort', 'native_trade'
+    ];
+    const byCat: Partial<Record<ItemCategory, LiveGroup['entries']>> = {};
+    const ids = new Set<string>([
+      ...Object.keys(gs.inventory),
+      ...Object.keys(buyQty)
+    ]);
+    for (const id of ids) {
+      const meta = ITEMS[id];
+      if (!meta) continue;
+      const starter = gs.inventory[id] ?? 0;
+      const added = buyQty[id] ?? 0;
+      const total = starter + added;
+      if (total <= 0) continue;
+      (byCat[meta.category] ??= []).push({ id, name: meta.name, starter, added, total });
+    }
+    return order
+      .filter((c) => byCat[c] && byCat[c]!.length > 0)
+      .map((c) => ({
+        cat: c,
+        entries: byCat[c]!.sort((a, b) => a.name.localeCompare(b.name))
+      }));
+  });
+
   // Group buyables by category — we render categories as collapsible sections
   // so the list isn't a wall of rows.
   type Group = { cat: ItemCategory; ids: string[] };
@@ -223,6 +257,38 @@
         <li><strong>Spare parts.</strong> Spare wheel + axle + tongue + canvas are cheap insurance.</li>
         <li><strong>Medicine.</strong> Quinine for fever, bandages for wounds. Patent medicine is a gamble.</li>
       </ul>
+    </section>
+
+    <section class="panel live-inv-panel">
+      <div class="panel-head">
+        WHAT YOU'LL HAVE
+        <span class="hint">starter + pending</span>
+      </div>
+      {#if liveGroups.length === 0}
+        <p class="empty">Nothing yet.</p>
+      {:else}
+        <div class="live-groups">
+          {#each liveGroups as g}
+            <div class="live-group">
+              <div class="live-group-head">
+                <span class="live-group-icon">{CATEGORY_ICON[g.cat]}</span>
+                <span class="live-group-label">{CATEGORY_LABEL[g.cat]}</span>
+              </div>
+              <div class="live-rows">
+                {#each g.entries as e}
+                  <div class="live-row">
+                    <span class="live-name">{e.name}</span>
+                    <span class="live-qty">
+                      <strong>{e.total}</strong>
+                      {#if e.added > 0}<span class="live-added">+{e.added}</span>{/if}
+                    </span>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
     </section>
 
     {#if hasMerchant || hasBanker}
@@ -482,8 +548,73 @@
     overflow-y: auto;
     padding-right: 0.2em;
   }
-  .tips-panel, .discount-panel, .wagon-hint-panel {
+  .tips-panel, .discount-panel, .wagon-hint-panel, .live-inv-panel {
     padding: 0.7em 0.9em;
+  }
+  .live-inv-panel .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5em;
+  }
+  .live-inv-panel .hint {
+    font-size: 0.7em;
+    color: var(--c-wood);
+    font-style: italic;
+    font-weight: normal;
+    letter-spacing: normal;
+  }
+  .live-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+  .live-group-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35em;
+    padding-bottom: 0.15em;
+    border-bottom: 1px solid rgba(138, 90, 42, 0.3);
+    margin-bottom: 0.15em;
+  }
+  .live-group-icon { font-size: 1em; line-height: 1; }
+  .live-group-label {
+    font-size: 0.72em;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--c-rust);
+    text-transform: uppercase;
+  }
+  .live-rows {
+    display: flex;
+    flex-direction: column;
+  }
+  .live-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.15em 0.2em;
+    font-size: 0.85em;
+  }
+  .live-row:nth-child(odd) { background: rgba(138, 90, 42, 0.06); }
+  .live-name { color: var(--c-tan); }
+  .live-qty {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3em;
+  }
+  .live-qty strong {
+    color: var(--c-rust);
+    font-weight: 700;
+    font-size: 1.05em;
+  }
+  .live-added {
+    font-size: 0.72em;
+    color: #8bb96a;
+    font-weight: 700;
+    background: rgba(139, 185, 106, 0.15);
+    padding: 0.1em 0.35em;
+    border-radius: 2px;
   }
   .tips {
     list-style: disc;
@@ -860,13 +991,13 @@
   .item-name { font-size: 0.95em; }
   .item-price { font-size: 0.76em; color: var(--c-wood); }
   .owned-tag {
-    font-size: 0.7em;
+    font-size: 0.78em;
     letter-spacing: 0.08em;
     font-weight: 700;
-    color: var(--c-rust);
-    background: rgba(201, 106, 42, 0.12);
-    padding: 0.1em 0.4em;
-    border-radius: 2px;
+    color: var(--c-tan-bright);
+    background: var(--c-rust-dark);
+    padding: 0.18em 0.5em;
+    border-radius: 3px;
     text-transform: uppercase;
   }
 
