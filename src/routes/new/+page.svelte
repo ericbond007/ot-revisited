@@ -245,9 +245,39 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
+  /* Themed native select — matches NumberStepper's visual weight. */
   .date-pickers select {
     min-height: 2.4em;
-    padding: 0 0.6em;
+    padding: 0.3em 2em 0.3em 0.7em;
+    background-color: var(--c-parchment);
+    color: var(--c-ink);
+    border: 2px solid var(--c-ink);
+    border-radius: 4px;
+    font-family: var(--f-mono);
+    font-size: 1em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    /* Custom chevron so the native OS arrow doesn't leak through */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M2 4.5l4 4 4-4' fill='none' stroke='%231a0f08' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.55em center;
+    background-size: 0.9em;
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  .date-pickers select:hover {
+    border-color: var(--c-rust);
+  }
+  .date-pickers select:focus {
+    outline: none;
+    border-color: var(--c-rust);
+    box-shadow: 0 0 0 2px rgba(201, 106, 42, 0.25);
+  }
+  .date-pickers select option {
+    background: var(--c-parchment);
+    color: var(--c-ink);
   }
 
   .member-card {
