@@ -467,6 +467,7 @@
         {@const qtyInGroup = groupQtyCount(g.ids)}
         {@const subtotal = groupSubtotal(g.ids)}
         {@const isOpen = openCats[g.cat]}
+        {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo'}
         <section class="group" class:open={isOpen}>
           <button type="button" class="group-head" onclick={() => toggleCat(g.cat)}>
             <span class="group-icon">{CATEGORY_ICON[g.cat]}</span>
@@ -481,6 +482,8 @@
               {#each g.ids as id}
                 {@const price = PRICES[id].buy * buyMult}
                 {@const owned = gs.inventory[id] ?? 0}
+                {@const adding = buyQty[id] ?? 0}
+                {@const total = owned + adding}
                 <div class="item-row">
                   <div class="item-label">
                     <div class="item-name-row">
@@ -495,13 +498,21 @@
                     </div>
                     <span class="item-price">${price.toFixed(2)} ea</span>
                   </div>
-                  <NumberStepper
-                    name="buy_{id}"
-                    bind:value={buyQty[id]}
-                    min={0}
-                    max={99}
-                    ariaLabel="Buy {ITEMS[id].name}"
-                  />
+                  <div class="item-controls">
+                    <NumberStepper
+                      name="buy_{id}"
+                      bind:value={buyQty[id]}
+                      min={0}
+                      max={isBulkCat ? 999 : 99}
+                      bulkSteps={isBulkCat ? [10, 50] : []}
+                      ariaLabel="Buy {ITEMS[id].name}"
+                    />
+                    {#if total > 0}
+                      <span class="item-total" class:has-pending={adding > 0}>
+                        → <strong>{total}</strong>{#if adding > 0}<span class="total-added">+{adding}</span>{/if}
+                      </span>
+                    {/if}
+                  </div>
                 </div>
               {/each}
             </div>
@@ -934,14 +945,22 @@
     border-color: var(--c-wood);
   }
   .group-head {
+    /* Sticky category header — stays at the top of the scroll area as the
+       player walks through the supplies list so they always see which
+       category they're in. */
+    position: sticky;
+    top: 0;
+    z-index: 2;
+
     /* Override default button chrome */
     display: flex;
     align-items: center;
     gap: 0.5em;
     width: 100%;
-    padding: 0.5em 0.8em;
-    background: transparent;
+    padding: 0.55em 0.8em;
+    background: var(--c-panel);
     border: 0;
+    border-bottom: 1px solid rgba(138, 90, 42, 0.4);
     cursor: pointer;
     font-family: inherit;
     color: var(--c-tan);
@@ -976,11 +995,13 @@
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 0.5em;
-    padding: 0.3em 0.5em;
-    border-bottom: 1px dashed rgba(138, 90, 42, 0.18);
+    padding: 0.35em 0.6em;
+    border-bottom: 1px solid rgba(138, 90, 42, 0.25);
   }
-  .item-row:nth-child(odd) { background: rgba(138, 90, 42, 0.06); }
+  /* Stronger alternation so you can track which stepper goes with which item */
+  .item-row:nth-child(odd) { background: rgba(138, 90, 42, 0.15); }
   .item-row:last-child { border-bottom: 0; }
+  .item-row:hover { background: rgba(201, 106, 42, 0.14); }
   .item-label { display: flex; flex-direction: column; gap: 0.1em; min-width: 0; }
   .item-name-row {
     display: flex;
@@ -999,6 +1020,35 @@
     padding: 0.18em 0.5em;
     border-radius: 3px;
     text-transform: uppercase;
+  }
+
+  .item-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  .item-total {
+    font-size: 0.82em;
+    color: var(--c-wood);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.2em;
+    min-width: 3em;
+  }
+  .item-total strong {
+    color: var(--c-tan-bright);
+    font-weight: 700;
+    font-size: 1.1em;
+  }
+  .item-total.has-pending strong { color: #8bb96a; }
+  .total-added {
+    font-size: 0.75em;
+    color: #8bb96a;
+    font-weight: 700;
+    background: rgba(139, 185, 106, 0.15);
+    padding: 0.08em 0.3em;
+    border-radius: 2px;
   }
 
   .depart {

@@ -1,11 +1,14 @@
 <script lang="ts">
   // Themed +/- stepper. Hidden native input keeps FormData submission working.
+  // `bulkSteps` optionally renders extra forward buttons (e.g. [10, 50])
+  // so food-class items don't require 50 clicks of `+`.
   let {
     name,
     value = $bindable(1),
     min = 1,
     max = 10,
     step = 1,
+    bulkSteps = [],
     disabled = false,
     ariaLabel = 'Number'
   }: {
@@ -14,6 +17,7 @@
     min?: number;
     max?: number;
     step?: number;
+    bulkSteps?: readonly number[];
     disabled?: boolean;
     ariaLabel?: string;
   } = $props();
@@ -28,6 +32,9 @@
   }
   function inc() {
     value = clamp(value + step);
+  }
+  function incBy(n: number) {
+    value = clamp(value + n);
   }
   function onInputInput(e: Event) {
     // Keep the bound value within [min, max] on every keystroke so it can
@@ -77,6 +84,16 @@
     onclick={inc}
     disabled={disabled || value >= max}
   >+</button>
+
+  {#each bulkSteps as n}
+    <button
+      type="button"
+      class="step-btn bulk"
+      aria-label="{ariaLabel}: add {n}"
+      onclick={() => incBy(n)}
+      disabled={disabled || value >= max}
+    >+{n}</button>
+  {/each}
 </div>
 
 <style>
@@ -112,6 +129,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  .step-btn.bulk {
+    width: auto;
+    padding: 0 0.6em;
+    font-size: 0.85em;
+    font-weight: 700;
+    border-left: 1px solid rgba(0, 0, 0, 0.2);
   }
   .step-btn:hover:not(:disabled) {
     background: var(--c-rust);
