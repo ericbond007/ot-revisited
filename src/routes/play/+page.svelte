@@ -15,6 +15,7 @@
   import WagonModal from '$lib/ui/WagonModal.svelte';
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
   import PartyModal from '$lib/ui/PartyModal.svelte';
+  import PartyMemberModal from '$lib/ui/PartyMemberModal.svelte';
   import InventoryModal from '$lib/ui/InventoryModal.svelte';
   import StatPicker from '$lib/ui/StatPicker.svelte';
   import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
@@ -39,7 +40,11 @@
   let showTrade = $state(false);
   let showWagon = $state(false);
   let showParty = $state(false);
+  let selectedMemberId = $state<string | null>(null);
   let showInventory = $state(false);
+  const selectedMember = $derived(
+    selectedMemberId ? gs.party.find((m) => m.id === selectedMemberId) ?? null : null
+  );
   let menuOpen = $state(false);
 
   // Delay the event modal's appearance so the wagon has time to slide +
@@ -184,7 +189,18 @@
 {/if}
 
 {#if showParty}
-  <PartyModal state={gs} onclose={() => (showParty = false)} />
+  <PartyModal
+    state={gs}
+    onclose={() => (showParty = false)}
+    onselect={(id) => (selectedMemberId = id)}
+  />
+{/if}
+
+{#if selectedMember}
+  <PartyMemberModal
+    member={selectedMember}
+    onclose={() => (selectedMemberId = null)}
+  />
 {/if}
 
 {#if showInventory}

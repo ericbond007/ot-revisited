@@ -1,7 +1,11 @@
 <script lang="ts">
   import type { GameState, PartyMember } from '$lib/game/types';
 
-  let { state, onclose }: { state: GameState; onclose: () => void } = $props();
+  let { state, onclose, onselect }: {
+    state: GameState;
+    onclose: () => void;
+    onselect?: (memberId: string) => void;
+  } = $props();
 
   function healthColor(h: number): string {
     if (h >= 70) return '#8bb96a';
@@ -74,7 +78,14 @@
       <div class="people-list">
         {#each state.party as m}
           {@const hc = healthColor(m.health)}
-          <div class="person-row" class:dead={m.dead} class:child={m.kind === 'child'}>
+          <button
+            type="button"
+            class="person-row"
+            class:dead={m.dead}
+            class:child={m.kind === 'child'}
+            onclick={() => onselect?.(m.id)}
+            title="Click for details"
+          >
             <div class="person-head">
               <span class="person-glyph" title="{m.kind === 'child' ? 'Child' : 'Adult'} · {m.sex}">{personGlyph(m)}</span>
               <span class="person-name">
@@ -83,6 +94,7 @@
               </span>
               <span class="person-profession">{personRoleLabel(m)}</span>
               <span class="person-age">age {m.age}</span>
+              <span class="chev">▸</span>
             </div>
             <div class="person-bar-row">
               <div class="person-bar-label">HEALTH</div>
@@ -94,7 +106,7 @@
             <div class="person-status">
               {statusLine(m)}
             </div>
-          </div>
+          </button>
         {/each}
       </div>
     </section>
@@ -149,15 +161,40 @@
 
   .people-list { display: flex; flex-direction: column; gap: 0.5em; }
   .person-row {
+    /* Override default button chrome — acts like a clickable row */
     display: flex;
     flex-direction: column;
     gap: 0.3em;
     padding: 0.5em 0.7em;
     background: var(--c-bg-raised);
+    border: 2px solid transparent;
     border-radius: 3px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: var(--c-tan);
+    font-weight: normal;
+    letter-spacing: normal;
+    text-transform: none;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .person-row:hover:not(:disabled) {
+    border-color: var(--c-rust);
   }
   .person-row.dead {
     color: var(--c-wood);
+    cursor: pointer; /* still clickable to see death details */
+  }
+  .chev {
+    color: var(--c-wood);
+    font-size: 0.85em;
+    opacity: 0.5;
+    margin-left: 0.4em;
+    transition: opacity 0.12s, color 0.12s;
+  }
+  .person-row:hover .chev {
+    color: var(--c-rust);
+    opacity: 1;
   }
   .person-head {
     display: flex;

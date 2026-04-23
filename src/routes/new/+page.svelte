@@ -67,6 +67,7 @@
   }
   function removeMember(i: number) {
     if (members.length <= 2) return;
+    if (i === 0) return; // leader can't be removed
     members.splice(i, 1);
   }
 </script>
@@ -104,10 +105,10 @@
                 aria-pressed={m.sex === 'female'}
               >♀</button>
             </div>
-            {#if members.length > 2}
-              <button type="button" onclick={() => removeMember(i)} class="remove-btn" title="Remove companion">✕</button>
+            {#if i === 0}
+              <span class="required-tag" title="The party leader cannot be removed">★ LEADER</span>
             {:else}
-              <span class="required-tag">LEADER</span>
+              <button type="button" onclick={() => removeMember(i)} class="remove-btn" title="Remove companion">✕</button>
             {/if}
           </div>
           <ProfessionPicker
