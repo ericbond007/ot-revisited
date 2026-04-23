@@ -2,28 +2,39 @@
   import type { GameState } from '$lib/game/types';
   import { PRICES } from '$lib/game/content/prices';
   import { ITEMS } from '$lib/game/content/items';
+  import { getLandmark } from '$lib/game/content/landmarks';
   import ItemTooltip from './ItemTooltip.svelte';
   import NumberStepper from './NumberStepper.svelte';
 
   let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
-  // Items the player owns and can sell
+  // Which landmark are we trading at? Stock differs per post.
+  const hereId = $derived(gameState.location.atLandmarkId);
+  const here = $derived(hereId ? getLandmark(hereId) : null);
+  const postName = $derived(here?.name ?? 'Trading Post');
+
+  // Fallback stock list for any trading post that doesn't declare its own
+  // (defensive — every trading_post landmark ships with a `stock` field now).
+  const FALLBACK_STOCK = [
+    'flour', 'beans', 'bacon', 'bullets', 'bandages', 'quinine',
+    'coat', 'blanket', 'ox_shoes', 'rope'
+  ];
+
+  // Items the player owns and can sell — any item with a price that they have
+  // stock of. (Sellable list isn't gated by the post's stock — you can always
+  // offload what you're carrying, even at a post that doesn't usually stock it.)
   const sellableIds = $derived(
     Object.entries(gameState.inventory)
       .filter(([id, qty]) => qty > 0 && PRICES[id])
       .map(([id]) => id)
   );
-  // Items available for purchase at the post. Wider than Independence's
-  // outfitter for staples but fewer premium items; shovel is included so
-  // well-digging isn't gated on starting with a Preacher.
-  const buyableIds = [
-    'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit',
-    'bullets', 'bandages', 'quinine', 'herbal_poultice',
-    'coat', 'blanket',
-    'wheel', 'axle', 'tongue', 'canvas', 'spare_plank',
-    'ox_shoes', 'shovel', 'rope', 'cookware', 'bible'
-  ];
+
+  // Items the post actually carries. Filtered to ids that also have a price
+  // so the UI can't render a broken row.
+  const buyableIds = $derived(
+    (here?.stock ?? FALLBACK_STOCK).filter((id) => PRICES[id] && ITEMS[id])
+  );
 
   // Qty state keyed by id. Pre-populated with 0 for every possible id so
   // NumberStepper bindings always have a defined starting value at mount —
@@ -33,14 +44,28 @@
   const initialSellableIds = Object.entries(gameState.inventory)
     .filter(([id, qty]) => qty > 0 && PRICES[id])
     .map(([id]) => id);
+  // Snapshot the initial landmark stock synchronously so NumberStepper
+  // bindings have defined values at mount time.
+  // svelte-ignore state_referenced_locally
+  const initialBuyableIds =
+    (hereId ? getLandmark(hereId).stock : null) ?? FALLBACK_STOCK;
+  // svelte-ignore state_referenced_locally
+  const initialBuyableFiltered = initialBuyableIds.filter((id) => PRICES[id] && ITEMS[id]);
   let buyQty = $state<Record<string, number>>(
-    Object.fromEntries(buyableIds.map((id) => [id, 0]))
+    Object.fromEntries(initialBuyableFiltered.map((id) => [id, 0]))
   );
   let sellQty = $state<Record<string, number>>(
     Object.fromEntries(initialSellableIds.map((id) => [id, 0]))
   );
-  // If inventory changes while the modal is open (e.g., trade reloads the
-  // state), add any newly-present item IDs to the sell map.
+  // Keep both records populated with every current id — derived lists can
+  // change mid-modal (sellableIds if inventory shifts, buyableIds if we ever
+  // re-enter a different post without remount). NumberStepper bindings break
+  // when their key is missing.
+  $effect(() => {
+    for (const id of buyableIds) {
+      if (buyQty[id] === undefined) buyQty[id] = 0;
+    }
+  });
   $effect(() => {
     for (const id of sellableIds) {
       if (sellQty[id] === undefined) sellQty[id] = 0;
@@ -60,9 +85,9 @@
 
 <div class="modal-backdrop" onclick={onclose} role="presentation">
   <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
-    <h2 style="color: var(--c-rust);">🏪 Trading Post</h2>
+    <h2 style="color: var(--c-rust);">🏪 {postName}</h2>
     <p class="lede">
-      Cash on hand: <strong>${gameState.cash}</strong>. Hover any item for details.
+      Cash on hand: <strong>${gameState.cash}</strong> · {buyableIds.length} item{buyableIds.length === 1 ? '' : 's'} in stock. Hover any item for details.
     </p>
 
     <form method="POST" action="?/trade&slot={qp}">

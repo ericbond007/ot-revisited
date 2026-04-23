@@ -15,6 +15,12 @@ export interface Landmark {
   // Present on river-kind landmarks. Per-river depth/current vary realistically
   // and drive Ford modal display + ford-action risk.
   river?: RiverStats;
+  // Per-post trading inventory for trading_post landmarks. TradeModal filters
+  // its buyable list against this. If undefined, the generic buyable list is
+  // used as a fallback. Lists are historically flavored, not exhaustive — each
+  // post had its own character (quartermaster basics at Kearny, HBC imports at
+  // Hall, sparse at Bridger, end-of-trail luxuries at The Dalles, etc.).
+  stock?: readonly string[];
 }
 
 export const LANDMARKS: readonly Landmark[] = [
@@ -24,14 +30,32 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'alcove_spring',       name: 'Alcove Spring',       milesFromPrevious: 40,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 30,  terrain: 'river',     kind: 'river',
     river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
-  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 120, terrain: 'prairie',   kind: 'trading_post' },
+  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 120, terrain: 'prairie',   kind: 'trading_post',
+    // U.S. Army post. Quartermaster-issue basics — no luxuries.
+    stock: [
+      'flour', 'beans', 'bacon', 'hardtack',
+      'bullets', 'bandages', 'quinine',
+      'coat', 'blanket',
+      'spare_plank', 'ox_shoes', 'rope'
+    ] },
   { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 120, terrain: 'prairie',   kind: 'landmark' },
   { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 60, terrain: 'river', kind: 'river',
     river: { depthFt: 2.5, currentMph: 2, ferryPrice: 4 } },
   { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 70, terrain: 'prairie', kind: 'landmark' },
   { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 25,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 30,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post' },
+  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post',
+    // Fur-trade origin turned emigrant hub. The broadest selection on the
+    // trail — and famously the highest prices.
+    stock: [
+      'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'coffee', 'tea',
+      'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
+      'coat', 'boots', 'blanket',
+      'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'ox_shoes',
+      'shovel', 'rope', 'cookware', 'compass', 'water_skin',
+      'tobacco', 'whiskey', 'bible',
+      'moccasins', 'buffalo_robe', 'beads'
+    ] },
   { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 12,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'guernsey_ruts',       name: 'Guernsey Ruts',       milesFromPrevious: 5,   terrain: 'prairie',   kind: 'landmark' },
   { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 75, terrain: 'river', kind: 'river',
@@ -44,18 +68,62 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
   { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 90, terrain: 'river',    kind: 'river',
     river: { depthFt: 4.5, currentMph: 4, ferryPrice: 8 } },
-  { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 65,  terrain: 'mountains', kind: 'trading_post' },
+  { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 65,  terrain: 'mountains', kind: 'trading_post',
+    // Jim Bridger's mountain post. Famously sparse — take what you can get.
+    stock: [
+      'flour', 'bacon',
+      'bullets', 'bandages',
+      'blanket',
+      'spare_plank', 'ox_shoes', 'iron_scrap', 'rope',
+      'moccasins', 'buffalo_robe'
+    ] },
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 100, terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
   { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 35,  terrain: 'mountains', kind: 'landmark' },
-  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 70,  terrain: 'mountains', kind: 'trading_post' },
+  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 70,  terrain: 'mountains', kind: 'trading_post',
+    // Hudson's Bay Company post on the Snake. Well-supplied with British
+    // imports. California Trail splits here — steady stream of trade.
+    stock: [
+      'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
+      'bullets', 'bandages', 'quinine', 'laudanum',
+      'coat', 'boots', 'blanket',
+      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes',
+      'tobacco', 'whiskey', 'harmonica'
+    ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
     river: { depthFt: 5.0, currentMph: 3, ferryPrice: 6 } },
-  { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 130, terrain: 'desert',    kind: 'trading_post' },
+  { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 130, terrain: 'desert',    kind: 'trading_post',
+    // Small HBC station. Modest stock, not a major resupply.
+    stock: [
+      'flour', 'bacon', 'dried_fruit',
+      'bullets', 'bandages', 'quinine',
+      'coat', 'blanket',
+      'canvas', 'spare_plank', 'ox_shoes',
+      'moccasins', 'buffalo_robe'
+    ] },
   { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 95,  terrain: 'desert',    kind: 'landmark' },
   { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 120, terrain: 'mountains', kind: 'landmark' },
-  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 70,  terrain: 'mountains', kind: 'trading_post' },
-  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 100, terrain: 'mountains', kind: 'trading_post' },
+  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 70,  terrain: 'mountains', kind: 'trading_post',
+    // HBC river post. Basic but reliable stock. Native trade goods are a
+    // specialty here (Walla Walla / Cayuse trade networks).
+    stock: [
+      'flour', 'beans', 'bacon',
+      'bullets', 'bandages', 'quinine',
+      'coat', 'blanket',
+      'canvas', 'tongue',
+      'moccasins', 'buffalo_robe', 'beads'
+    ] },
+  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 100, terrain: 'mountains', kind: 'trading_post',
+    // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
+    // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
+    stock: [
+      'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
+      'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
+      'coat', 'boots', 'blanket',
+      'wheel', 'axle', 'tongue', 'canvas',
+      'cookware', 'rope',
+      'tobacco', 'whiskey', 'bible', 'harmonica', 'fiddle'
+    ] },
   { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 50,  terrain: 'mountains', kind: 'landmark' },
   { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 55,  terrain: 'forest',    kind: 'end' }
 ];
