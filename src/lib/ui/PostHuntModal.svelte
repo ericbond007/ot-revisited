@@ -105,8 +105,8 @@
       {#if haul.meat > 0}
         <p class="advice">
           The meat will spoil in <strong>{daysUntilSpoil} day{daysUntilSpoil === 1 ? '' : 's'}</strong>.
-          The party eats it first at every meal. To preserve it, halt at camp and cure it into jerky
-          <span class="dim">(camp action — coming soon)</span>.
+          The party eats it first at every meal. To preserve it, make camp and
+          pick <strong>Cure meat into jerky</strong> — salt halves the cure time and raises the yield.
         </p>
       {/if}
     {:else}
@@ -265,7 +265,6 @@
     line-height: 1.5;
   }
   .advice strong { color: var(--c-tan-bright); }
-  .dim { color: var(--c-wood); font-style: italic; }
 
   .empty {
     color: var(--c-wood);
