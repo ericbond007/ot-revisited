@@ -17,10 +17,18 @@
       defaultWagon: WagonModelId;
       oxPrice: number;
       maxExtraOxen: number;
+      suggestedDogName: string;
     };
     form?: { error?: string } | null;
   } = $props();
   const gs = $derived(data.state);
+
+  // Dog — bring one from home? Free (it's your farm dog, not a purchase).
+  // Defaults on. Name is editable; suggestion comes from the server's
+  // seeded pick of the period-name list so refreshing doesn't churn it.
+  let bringDog = $state(true);
+  // svelte-ignore state_referenced_locally
+  let dogName = $state(data.suggestedDogName);
 
   // Profession bonuses apply at Independence too — Banker/Merchant discount
   // the shopkeeper's quote. Mirror the math in trade.ts exactly.
@@ -379,7 +387,43 @@
               {#if prof}<span class="prof">({prof.name})</span>{/if}
             </div>
           {/each}
+          {#if bringDog && dogName.trim()}
+            <div class="party-row">
+              <span class="dog-glyph" aria-hidden="true">🐕</span>
+              <strong>{dogName.trim()}</strong>
+              <span class="prof">(dog)</span>
+            </div>
+          {/if}
         </div>
+      </section>
+
+      <!-- Dog — bring your farm dog? Free. -->
+      <section class="dog-section panel">
+        <div class="panel-head">
+          YOUR DOG
+          <span class="hint">Hunt partner, camp guard, morale tick. Free — it's family.</span>
+        </div>
+        <label class="dog-row">
+          <input type="checkbox" bind:checked={bringDog} name="bringDog" />
+          <span class="dog-glyph-big" aria-hidden="true">🐕</span>
+          <span class="dog-copy">
+            <span class="dog-title">Bring a dog along</span>
+            <span class="dog-sub">+15% hunt yield · +1 morale/day · reduces bandit rolls</span>
+          </span>
+        </label>
+        {#if bringDog}
+          <div class="dog-name-row">
+            <span class="dog-name-label">NAME</span>
+            <input
+              type="text"
+              class="dog-name-input"
+              name="dogName"
+              bind:value={dogName}
+              placeholder="Shep"
+              maxlength="20"
+            />
+          </div>
+        {/if}
       </section>
 
       <!-- Starter kit — read-only summary of what the party already has -->
@@ -763,6 +807,55 @@
     margin-bottom: 0.4em;
   }
   .party-preview { padding: 0.7em 0.9em; }
+
+  /* Dog section — single-toggle card with optional name input. */
+  .dog-section { padding: 0.7em 0.9em; }
+  .dog-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    cursor: pointer;
+    padding: 0.3em 0;
+  }
+  .dog-row input[type='checkbox'] {
+    width: 1.1em;
+    height: 1.1em;
+    cursor: pointer;
+    accent-color: var(--c-rust);
+  }
+  .dog-glyph-big { font-size: 1.8em; line-height: 1; }
+  .dog-glyph { font-size: 1em; line-height: 1; margin-right: 0.2em; }
+  .dog-copy { display: flex; flex-direction: column; gap: 0.15em; }
+  .dog-title { color: var(--c-tan-bright); font-weight: 700; }
+  .dog-sub { font-size: 0.82em; color: var(--c-wood); }
+  .dog-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-top: 0.5em;
+    padding-left: 2.3em;
+  }
+  .dog-name-label {
+    font-size: 0.7em;
+    letter-spacing: 0.12em;
+    color: var(--c-wood);
+    font-weight: 700;
+  }
+  .dog-name-input {
+    width: 12em;
+    padding: 0.25em 0.5em;
+    background: var(--c-parchment);
+    color: var(--c-ink);
+    border: 2px solid var(--c-ink);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.95em;
+    font-weight: 700;
+  }
+  .dog-name-input:focus {
+    outline: 2px solid var(--c-rust);
+    outline-offset: -2px;
+  }
   .party-list {
     display: flex;
     flex-wrap: wrap;

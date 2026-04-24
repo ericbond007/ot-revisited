@@ -46,6 +46,15 @@
         <div class="line2">HP {m.health}/100 · {statusLabel(m)}</div>
       </div>
     {/each}
+    {#if state.dog}
+      <div class="person dog-row">
+        <span class="pn">
+          <span class="glyph" title="Dog">🐕</span>
+          <strong>{state.dog.name}</strong>
+        </span>
+        <span class="prof">(dog)</span>
+      </div>
+    {/if}
   </div>
 
   <div class="morale-row">

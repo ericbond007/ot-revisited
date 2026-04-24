@@ -100,6 +100,10 @@ export interface LogEntry {
   text: string;
 }
 
+export interface Dog {
+  name: string;
+}
+
 export interface GameState {
   seed: string;
   day: number;
@@ -108,6 +112,10 @@ export interface GameState {
   party: PartyMember[];
   wagon: Wagon;
   oxen: Ox[];
+  // Optional companion dog. Presence = alive; when killed in events,
+  // this field is set to undefined rather than mutated. Events can also
+  // grant a new dog to a dogless party (#142).
+  dog?: Dog;
   inventory: Record<ItemId, number>;
   cash: number;
   resources: Resources;

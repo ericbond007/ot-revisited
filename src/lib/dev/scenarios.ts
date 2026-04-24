@@ -219,6 +219,15 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'with_dog',
+    label: 'With a dog',
+    description: 'Starter party at Fort Kearny with a dog named Shep — hunt bonus + daily morale +1.',
+    build: () => {
+      const base = atLandmark(baseState('dog'), 'ft_kearny');
+      return { ...base, dog: { name: 'Shep' } };
+    }
+  },
+  {
     id: 'abandoned_hall_1857',
     label: 'Fort Hall (abandoned, 1857)',
     description: 'Party arrives at Fort Hall in 1857 — HBC has left. Empty stockade, no trade, no Visit.',

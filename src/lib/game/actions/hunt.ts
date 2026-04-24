@@ -84,6 +84,9 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   let yieldMultiplier = 1;
   if (hasLiveHunter(s)) yieldMultiplier += 0.2;
   if (hasLiveGunsmith(s)) yieldMultiplier += 0.2;
+  // A dog retrieves, flushes, tracks — documented emigrant-party boost.
+  // Small so it stacks under profession bonuses without dwarfing them.
+  if (s.dog) yieldMultiplier += 0.15;
 
   let carryMultiplier = 1;
   if (opts.hunters === 2) {

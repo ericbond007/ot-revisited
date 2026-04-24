@@ -4,6 +4,8 @@ import { trade } from '$lib/game/actions/trade';
 import { OUTFITTER_BUYABLES } from '$lib/game/content/outfitter';
 import { WAGONS, getWagon, DEFAULT_WAGON_MODEL, type WagonModelId } from '$lib/game/content/wagons';
 import { recomputeWaterCap } from '$lib/game/systems/water-cap';
+import { randomDogName } from '$lib/game/content/dog-names';
+import { makeRng } from '$lib/game/rng';
 import type { GameState, Ox } from '$lib/game/types';
 
 const OX_PRICE = 20;
@@ -21,6 +23,10 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     throw redirect(303, `/play?slot=${encodeURIComponent(slot)}`);
   }
 
+  // Suggest a dog name from the period list, seeded by the slot so the
+  // name doesn't churn across renders but differs between saves.
+  const suggestedDogName = randomDogName(makeRng(`dog-suggest:${slot}`));
+
   return {
     slot,
     state,
@@ -28,7 +34,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     wagons: WAGONS,
     defaultWagon: DEFAULT_WAGON_MODEL,
     oxPrice: OX_PRICE,
-    maxExtraOxen: MAX_EXTRA_OXEN
+    maxExtraOxen: MAX_EXTRA_OXEN,
+    suggestedDogName
   };
 };
 
@@ -72,6 +79,13 @@ export const actions: Actions = {
     const wagonModel = parseWagonId(fd.get('wagonModel')?.toString());
     const extraOxenRaw = parseInt(fd.get('extraOxen')?.toString() ?? '0', 10);
     const extraOxen = Math.max(0, Math.min(MAX_EXTRA_OXEN, Number.isFinite(extraOxenRaw) ? extraOxenRaw : 0));
+
+    // Dog — unchecked checkboxes don't submit, so presence of `bringDog`
+    // in the form means "yes". Name falls back to the suggested one if
+    // the player clears it.
+    const bringDog = fd.get('bringDog') !== null;
+    const dogNameRaw = fd.get('dogName')?.toString().trim() ?? '';
+    const dogName = dogNameRaw.slice(0, 30);
 
     const buys: Array<{ item: string; qty: number }> = [];
     for (const [key, value] of fd.entries()) {
@@ -120,6 +134,17 @@ export const actions: Actions = {
       return fail(400, {
         error: `${wagon.name} needs at least ${wagon.minTeam} oxen to pull. You have ${aliveOxen}.`
       });
+    }
+
+    // 5. Attach or detach the dog based on the player's choice. Falls
+    //    back to a reseeded random name if "bring" was checked but the
+    //    field came through blank (unlikely — client defaults it).
+    if (bringDog) {
+      const finalName = dogName || randomDogName(makeRng(`dog-fallback:${slot}`));
+      state = { ...state, dog: { name: finalName } };
+    } else {
+      const { dog: _drop, ...rest } = state;
+      state = rest as typeof state;
     }
 
     state = { ...state, flags: { ...state.flags, _outfitted: true } };

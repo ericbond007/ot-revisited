@@ -39,6 +39,10 @@ export function adjustMorale(state: GameState, _rng: Rng): GameState {
     }
   }
 
+  // A dog's daily company — small, steady +1. Stacks with any
+  // profession / rations / wellness bumps above.
+  if (state.dog) delta += 1;
+
   const floor = moraleFloorFor(state);
   const morale = Math.max(floor, Math.min(100, state.morale + delta));
   return { ...state, morale };
