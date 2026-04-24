@@ -149,6 +149,21 @@ export function ford(state: GameState, opts: FordOptions): GameState {
         }
       }
 
+      // Dog loss risk scales with river danger — ~3% at a calm ford,
+      // up to ~15% at a deep, fast river. Ferry + caulk skip this
+      // check because the dog isn't in the current.
+      if (s.dog && rng.chance(Math.min(0.15, danger / 20 + 0.03))) {
+        const dogName = s.dog.name;
+        const line = `${dogName} was swept away in the current. The party watched helpless from the far bank.`;
+        events.push(line);
+        s = {
+          ...s,
+          dog: undefined,
+          morale: Math.max(0, s.morale - 10),
+          eventLog: [...s.eventLog, { day: s.day, text: line }]
+        };
+      }
+
       const success = 'Forded the river.';
       events.push(success);
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: success }] };

@@ -50,3 +50,57 @@ describe('dog', () => {
     expect(parsed.dog?.name).toBe('Old Blue');
   });
 });
+
+describe('dog events', () => {
+  it('loss events require state.dog to fire', async () => {
+    const { EVENTS } = await import('../src/lib/game/content/events');
+    // Use one state with every terrain that any loss event needs, so
+    // only the has-dog boolean differentiates.
+    const terrains: Array<GameState['location']['terrain']> = ['prairie', 'mountains', 'forest'];
+    const lossIds = ['dog_snakebite', 'dog_wolves', 'dog_stolen'];
+    const lossEvents = EVENTS.filter((e) => lossIds.includes(e.id));
+    expect(lossEvents.length).toBe(lossIds.length);
+
+    for (const ev of lossEvents) {
+      const someTerrainWithDogPasses = terrains.some((t) =>
+        ev.gate?.({ ...newGame(), dog: { name: 'Rex' }, location: { ...newGame().location, terrain: t } })
+      );
+      const anyTerrainWithoutDogPasses = terrains.some((t) =>
+        ev.gate?.({ ...newGame(), location: { ...newGame().location, terrain: t } })
+      );
+      expect(someTerrainWithDogPasses).toBe(true);
+      expect(anyTerrainWithoutDogPasses).toBe(false);
+    }
+  });
+
+  it('gain events are gated behind not having a dog', async () => {
+    const { EVENTS } = await import('../src/lib/game/content/events');
+    const gainEvents = EVENTS.filter((e) =>
+      ['stray_dog_follows', 'abandoned_wagon_dog'].includes(e.id)
+    );
+    const withDog = { ...newGame(), dog: { name: 'Rex' } };
+    const withoutDog = newGame();
+    for (const ev of gainEvents) {
+      expect(ev.gate?.(withoutDog)).toBe(true);
+      expect(ev.gate?.(withDog)).toBe(false);
+    }
+  });
+
+  it('stray_dog_follows → take_in sets state.dog', async () => {
+    const { EVENTS } = await import('../src/lib/game/content/events');
+    const ev = EVENTS.find((e) => e.id === 'stray_dog_follows')!;
+    const takeIn = ev.choices.find((c) => c.id === 'take_in')!;
+    const out = takeIn.apply(newGame(), makeRng('stray-take'));
+    expect(out.dog).toBeTruthy();
+    expect(typeof out.dog?.name).toBe('string');
+  });
+
+  it('dog_stolen → press_on clears the dog', async () => {
+    const { EVENTS } = await import('../src/lib/game/content/events');
+    const ev = EVENTS.find((e) => e.id === 'dog_stolen')!;
+    const pressOn = ev.choices.find((c) => c.id === 'press_on')!;
+    const s = { ...newGame(), dog: { name: 'Shep' } };
+    const out = pressOn.apply(s, makeRng('stolen-press'));
+    expect(out.dog).toBeUndefined();
+  });
+});

@@ -903,3 +903,223 @@ const stuck_in_mud: GameEvent = {
 };
 
 EVENTS.push(burial, stuck_in_mud);
+
+// --- Dog events (task #142) --------------------------------------------
+// Gate on whether the party has a dog. Loss events require `state.dog`;
+// gain events require `!state.dog`. Events clear or set `state.dog`
+// directly — this is how the player loses and re-acquires a companion.
+
+const dog_snakebite: GameEvent = {
+  id: 'dog_snakebite',
+  category: 'personal',
+  title: 'A rattlesnake strike',
+  body: "Coiled in the shade by the trail. Your dog got there first.",
+  weight: 2,
+  gate: (s) => !!s.dog && ['prairie', 'mountains'].includes(s.location.terrain),
+  choices: [
+    {
+      id: 'tend_wound',
+      label: 'Tend the wound through the night',
+      isDefault: true,
+      silentLog: true,
+      requires: { itemId: 'laudanum', icon: '💊', reason: 'Need laudanum' },
+      apply: (s, rng) => {
+        const dogName = s.dog?.name ?? 'The dog';
+        const inventory = { ...s.inventory, laudanum: Math.max(0, (s.inventory.laudanum ?? 0) - 1) };
+        if (rng.chance(0.6)) {
+          return logLine(
+            { ...s, inventory, morale: Math.max(0, s.morale - 2) },
+            `${dogName} survived the snakebite, weak but breathing. Morale −2 from the scare.`
+          );
+        }
+        return logLine(
+          { ...s, inventory, dog: undefined, morale: Math.max(0, s.morale - 8) },
+          `${dogName} did not make it through the night. Morale −8.`
+        );
+      }
+    },
+    {
+      id: 'accept_loss',
+      label: 'Nothing to be done',
+      silentLog: true,
+      apply: (s) => {
+        const dogName = s.dog?.name ?? 'The dog';
+        return logLine(
+          { ...s, dog: undefined, morale: Math.max(0, s.morale - 10) },
+          `${dogName} died of the snakebite within hours. Morale −10.`
+        );
+      }
+    }
+  ]
+};
+
+const dog_wolves: GameEvent = {
+  id: 'dog_wolves',
+  category: 'encounter',
+  title: 'Wolves at the camp edge',
+  body: 'Yellow eyes catch the firelight. Your dog bristles, low and growling.',
+  weight: 2,
+  gate: (s) => !!s.dog && ['forest', 'mountains'].includes(s.location.terrain),
+  choices: [
+    {
+      id: 'stand_with_dog',
+      label: 'Stand watch alongside the dog',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const dogName = s.dog?.name ?? 'The dog';
+        const roll = rng.int(1, 100);
+        // 60% — repelled: morale boost. 30% — dog wounded but alive.
+        // 10% — dog killed in the fight.
+        if (roll <= 60) {
+          return logLine(
+            { ...s, morale: Math.min(100, s.morale + 4) },
+            `${dogName} drove the wolves off into the dark. Morale +4.`
+          );
+        }
+        if (roll <= 90) {
+          return logLine(
+            { ...s, morale: Math.max(0, s.morale - 2) },
+            `${dogName} took a bite to the flank but kept the wolves back. Limping for now. Morale −2.`
+          );
+        }
+        return logLine(
+          { ...s, dog: undefined, morale: Math.max(0, s.morale - 12) },
+          `${dogName} killed one wolf but fell to the rest. The party was saved. Morale −12.`
+        );
+      }
+    },
+    {
+      id: 'call_inside',
+      label: 'Call the dog in and hope they pass',
+      silentLog: true,
+      apply: (s, rng) => {
+        const dogName = s.dog?.name ?? 'The dog';
+        if (rng.chance(0.5)) {
+          // Wolves take a yoke / spare part off the wagon bed.
+          return logLine(
+            { ...s, morale: Math.max(0, s.morale - 3) },
+            `${dogName} came inside. The wolves circled, then moved on — but something was gnawed on the wagon. Morale −3.`
+          );
+        }
+        return logLine(s, `${dogName} came inside. The wolves never came close.`);
+      }
+    }
+  ]
+};
+
+const dog_stolen: GameEvent = {
+  id: 'dog_stolen',
+  category: 'personal',
+  title: 'Your dog is missing',
+  body: "You wake to an empty bedroll. A neighbor's camp mentions someone leading a dog away before dawn.",
+  weight: 1,
+  gate: (s) => !!s.dog,
+  choices: [
+    {
+      id: 'pay_reward',
+      label: 'Offer a reward for their return ($5)',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const dogName = s.dog?.name ?? 'The dog';
+        if (s.cash < 5) {
+          return logLine(
+            { ...s, dog: undefined, morale: Math.max(0, s.morale - 8) },
+            `Not enough cash to post a reward. ${dogName} is gone. Morale −8.`
+          );
+        }
+        if (rng.chance(0.7)) {
+          return logLine(
+            { ...s, cash: s.cash - 5 },
+            `${dogName} came trotting back by evening, wagging as if nothing had happened.`
+          );
+        }
+        return logLine(
+          { ...s, cash: s.cash - 5, dog: undefined, morale: Math.max(0, s.morale - 6) },
+          `The reward didn't bring ${dogName} back. Morale −6.`
+        );
+      }
+    },
+    {
+      id: 'press_on',
+      label: 'Press on without them',
+      silentLog: true,
+      apply: (s) => {
+        const dogName = s.dog?.name ?? 'The dog';
+        return logLine(
+          { ...s, dog: undefined, morale: Math.max(0, s.morale - 10) },
+          `${dogName} did not come back. Morale −10.`
+        );
+      }
+    }
+  ]
+};
+
+const stray_dog_follows: GameEvent = {
+  id: 'stray_dog_follows',
+  category: 'finds',
+  title: 'A dog has been trailing us',
+  body: 'A lean hound has shadowed the wagon for a full day, keeping back but never leaving. No collar.',
+  weight: 2,
+  // Only meaningful if you don't already have a dog.
+  gate: (s) => !s.dog,
+  choices: [
+    {
+      id: 'take_in',
+      label: 'Feed it through the night',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const names = ['Scout', 'Jasper', 'Tip', 'Sandy', 'Patch', 'Ranger', 'Shep', 'Biscuit'];
+        const name = names[rng.int(0, names.length - 1)];
+        return logLine(
+          { ...s, dog: { name }, morale: Math.min(100, s.morale + 3) },
+          `The stray settled by the fire. The children called her ${name}. Morale +3.`
+        );
+      }
+    },
+    {
+      id: 'shoo_away',
+      label: 'Shoo it off — we have enough mouths',
+      silentLog: true,
+      apply: (s) => logLine(s, 'You chased the hound off. It watched from a rise before turning back the way you came.')
+    }
+  ]
+};
+
+const abandoned_wagon_dog: GameEvent = {
+  id: 'abandoned_wagon_dog',
+  category: 'finds',
+  title: 'A wagon left beside the trail',
+  body: 'The canvas is gone, the bed stripped — and a rail-thin dog still waits in its shadow. Nothing else for miles.',
+  weight: 1,
+  gate: (s) => !s.dog,
+  choices: [
+    {
+      id: 'take_dog',
+      label: 'Whistle it over',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const names = ['Old Blue', 'Traveler', 'Duke', 'Boss', 'Cap', 'Major'];
+        const name = names[rng.int(0, names.length - 1)];
+        return logLine(
+          { ...s, dog: { name }, morale: Math.min(100, s.morale + 4) },
+          `The dog hesitated, then came. ${name}, you decided. Morale +4.`
+        );
+      }
+    },
+    {
+      id: 'leave_dog',
+      label: 'Leave it — not your burden',
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.max(0, s.morale - 3) },
+        'You kept moving. The dog watched the wagon roll away. Morale −3.'
+      )
+    }
+  ]
+};
+
+EVENTS.push(dog_snakebite, dog_wolves, dog_stolen, stray_dog_follows, abandoned_wagon_dog);
