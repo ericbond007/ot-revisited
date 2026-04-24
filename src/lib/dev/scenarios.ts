@@ -228,6 +228,19 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'with_chickens',
+    label: 'Party with chickens',
+    description: 'Fort Laramie with 4 hens in the coop, a dog, and a growing egg pile.',
+    build: () => {
+      const base = atLandmark(baseState('chickens'), 'ft_laramie');
+      return {
+        ...base,
+        dog: { name: 'Tip' },
+        inventory: { ...base.inventory, chicken: 4, egg: 6 }
+      };
+    }
+  },
+  {
     id: 'abandoned_hall_1857',
     label: 'Fort Hall (abandoned, 1857)',
     description: 'Party arrives at Fort Hall in 1857 — HBC has left. Empty stockade, no trade, no Visit.',

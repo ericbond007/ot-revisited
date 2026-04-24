@@ -12,6 +12,7 @@ import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
 import { applySpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
+import { applyEggLay } from './systems/eggs';
 import type { GameEvent } from './content/events';
 import { pickText } from './content/text-pools';
 
@@ -36,6 +37,8 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
 
   let s = progressConditions(normalized, rng);
+  // Eggs lay at dawn so today's yield is available for today's meal.
+  s = applyEggLay(s);
   // Spoilage runs BEFORE consumption so the party can't eat rotten meat
   // on its spoil-day. Any remaining fresh game_meat is zeroed out first.
   s = applySpoilage(s);

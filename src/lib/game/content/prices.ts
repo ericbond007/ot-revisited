@@ -17,12 +17,16 @@ export const PRICES: Record<string, PriceEntry> = {
   // path works but priced low (and posts won't usually stock it).
   game_meat:   { buy: 0.30, sell: 0.10 },
   berries:     { buy: 0.40, sell: 0.20 },
+  egg:         { buy: 0.10, sell: 0.05 },
   sugar:       { buy: 0.35, sell: 0.20 },
   coffee:      { buy: 1.50, sell: 0.80 },
   tea:         { buy: 1.00, sell: 0.60 },
 
   // Livestock
   yoke:        { buy: 6.00, sell: 3.00 },
+  // A live laying hen — cheap at Independence, trickier to stock
+  // mid-trail. Sell side low because posts rarely want more poultry.
+  chicken:     { buy: 0.50, sell: 0.20 },
 
   // Wagon parts
   wheel:       { buy: 10.00, sell: 6.00 },

@@ -1123,3 +1123,62 @@ const abandoned_wagon_dog: GameEvent = {
 };
 
 EVENTS.push(dog_snakebite, dog_wolves, dog_stolen, stray_dog_follows, abandoned_wagon_dog);
+
+// --- Chicken events (task #138) -----------------------------------------
+// Gated on having live chickens. Predators (coyote / hawk / stray dog)
+// try the coop at night. A dog scares them off — which is part of why
+// emigrants kept one.
+
+const chicken_predator: GameEvent = {
+  id: 'chicken_predator',
+  category: 'encounter',
+  title: 'Something at the coop',
+  body: 'A scuff of feathers, a ruckus in the dark. Something is after the chickens.',
+  weight: 2,
+  gate: (s) => (s.inventory.chicken ?? 0) > 0,
+  choices: [
+    {
+      id: 'rush_out',
+      label: 'Rush out with a lantern',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        // Dog present → predator driven off, no loss.
+        if (s.dog) {
+          return logLine(
+            s,
+            `${s.dog.name} lunged past you into the dark, barking. The coop was untouched by morning.`
+          );
+        }
+        // No dog → 1–2 chickens taken.
+        const current = s.inventory.chicken ?? 0;
+        const lost = Math.min(current, rng.int(1, 2));
+        return logLine(
+          { ...s, inventory: { ...s.inventory, chicken: current - lost } },
+          `By the time you got there, ${lost} ${lost === 1 ? 'hen was' : 'hens were'} already gone into the brush.`
+        );
+      }
+    },
+    {
+      id: 'stay_in_wagon',
+      label: 'Stay in the wagon — could be anything',
+      silentLog: true,
+      apply: (s, rng) => {
+        if (s.dog) {
+          return logLine(
+            s,
+            `${s.dog.name} worked the coop corner until morning. Nothing got through.`
+          );
+        }
+        const current = s.inventory.chicken ?? 0;
+        const lost = Math.min(current, rng.int(1, 3));
+        return logLine(
+          { ...s, inventory: { ...s.inventory, chicken: current - lost } },
+          `In the morning, ${lost} ${lost === 1 ? 'hen was' : 'hens were'} missing from the coop.`
+        );
+      }
+    }
+  ]
+};
+
+EVENTS.push(chicken_predator);

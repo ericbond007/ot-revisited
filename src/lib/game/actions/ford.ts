@@ -6,6 +6,7 @@ import { progressConditions } from '../systems/conditions';
 import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
 import { applyDehydration } from '../systems/dehydration';
+import { applyEggLay } from '../systems/eggs';
 
 export interface RiverState {
   depthFt: number;
@@ -50,6 +51,7 @@ function advanceOneDay(d: { year: number; month: number; day: number }) {
 function passiveDay(state: GameState, seedSuffix: string): GameState {
   const rng = makeRng(`${state.seed}:action:ford:${state.day}:${seedSuffix}`);
   let s = progressConditions(state, rng);
+  s = applyEggLay(s);
   s = applyDailyConsumption(s);
   s = adjustMorale(s, rng);
   s = applyDehydration(s);
@@ -147,6 +149,20 @@ export function ford(state: GameState, opts: FordOptions): GameState {
             eventLog: [...s.eventLog, { day: s.day, text: line }]
           };
         }
+      }
+
+      // Chickens in the coop are exposed on the ford method too — coops
+      // get tipped and the birds drown or drift. Scales with danger.
+      const chickens = s.inventory.chicken ?? 0;
+      if (chickens > 0 && rng.chance(Math.min(0.4, danger / 10 + 0.1))) {
+        const lost = Math.min(chickens, rng.int(1, Math.max(1, Math.ceil(chickens / 2))));
+        const line = `The coop tipped in the current. ${lost} ${lost === 1 ? 'hen' : 'hens'} lost.`;
+        events.push(line);
+        s = {
+          ...s,
+          inventory: { ...s.inventory, chicken: chickens - lost },
+          eventLog: [...s.eventLog, { day: s.day, text: line }]
+        };
       }
 
       // Dog loss risk scales with river danger — ~3% at a calm ford,

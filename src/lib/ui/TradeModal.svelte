@@ -4,6 +4,7 @@
   import { ITEMS, type ItemCategory } from '$lib/game/content/items';
   import { getLandmark, type PostKind } from '$lib/game/content/landmarks';
   import { getProfession } from '$lib/game/content/professions';
+  import { getWagon } from '$lib/game/content/wagons';
   import ItemTooltip from './ItemTooltip.svelte';
   import NumberStepper from './NumberStepper.svelte';
 
@@ -149,6 +150,16 @@
   const afterWeight = $derived(currentWeight + weightDelta);
   const capacity = $derived(gameState.wagon.carryCapacity);
   const weightPct = $derived(Math.round((afterWeight / capacity) * 100));
+
+  // Chicken coop cap per wagon model. The BUY stepper for chickens
+  // clamps at (cap - currently-owned + selling) so the player can't
+  // overstuff the coop. The server-side trade() re-checks this.
+  const chickenCap = $derived(getWagon(gameState.wagon.model).chickenCap);
+  const chickensOwned = $derived(gameState.inventory.chicken ?? 0);
+  const chickensSelling = $derived(sellQty.chicken ?? 0);
+  const chickenRoom = $derived(
+    Math.max(0, chickenCap - chickensOwned + chickensSelling)
+  );
   const weightColor = $derived(
     weightPct >= 100 ? '#e85a4a' :
     weightPct >= 90  ? '#c96a2a' :
@@ -339,19 +350,23 @@
                     </div>
                     <div class="item-controls">
                       {#if inStock}
+                        {@const chickenMax = id === 'chicken' ? chickenRoom : (isBulkCat ? 999 : 99)}
                         <div class="control-col">
                           <span class="control-tag buy">BUY</span>
                           <NumberStepper
                             name="buy_{id}"
                             bind:value={buyQty[id]}
                             min={0}
-                            max={isBulkCat ? 999 : 99}
+                            max={chickenMax}
                             bulkSteps={isBulkCat ? [10, 50] : []}
                             ariaLabel="Buy {ITEMS[id].name}"
                             hideValue
                             displayValue={afterOwned}
                             addedValue={buying}
                           />
+                          {#if id === 'chicken' && chickenRoom === 0}
+                            <span class="coop-full">coop full</span>
+                          {/if}
                         </div>
                       {/if}
                       {#if canSell}
@@ -722,6 +737,13 @@
     color: #8bb96a;
     background: rgba(139, 185, 106, 0.18);
     border: 1px solid rgba(139, 185, 106, 0.4);
+  }
+  .coop-full {
+    font-size: 0.68em;
+    letter-spacing: 0.08em;
+    color: #e85a4a;
+    font-style: italic;
+    margin-top: 0.2em;
   }
 
   /* Action bar — pinned at the bottom of main-col */

@@ -8,6 +8,7 @@ import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
 import { applySpoilage, computeSpoilDay } from '../systems/spoilage';
 import { applyDehydration } from '../systems/dehydration';
+import { applyEggLay } from '../systems/eggs';
 
 export type HuntTarget = 'small' | 'medium' | 'big' | 'gather';
 export type AmmoBand = 'light' | 'moderate' | 'heavy';
@@ -71,6 +72,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   const rng = makeRng(`${s.seed}:action:hunt:${s.day}:0`);
 
   s = progressConditions(s, rng);
+  s = applyEggLay(s);
   // Spoilage fires before consumption so rotten meat is purged, not eaten.
   s = applySpoilage(s);
   s = applyDailyConsumption(s);

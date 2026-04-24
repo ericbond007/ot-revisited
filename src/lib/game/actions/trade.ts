@@ -2,6 +2,7 @@ import type { GameState } from '../types';
 import { getPrice } from '../content/prices';
 import { ITEMS } from '../content/items';
 import { getLandmark } from '../content/landmarks';
+import { getWagon } from '../content/wagons';
 import { hasLiveMerchant, hasLiveBanker } from '../professions/predicates';
 import { computeWaterCap } from '../systems/water-cap';
 
@@ -76,6 +77,18 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
     const have = state.inventory[item] ?? 0;
     if (qty > have) {
       throw new Error(`trade: attempted to sell ${qty} ${item} but only have ${have} (quantity)`);
+    }
+  }
+
+  // Chicken wagon-cap — you can't buy more birds than the coop fits.
+  // Enforced per-trade; sells don't need a check (selling frees space).
+  const chickenBuy = buys.find((b) => b.item === 'chicken')?.qty ?? 0;
+  if (chickenBuy > 0) {
+    const chickenSell = sells.find((s) => s.item === 'chicken')?.qty ?? 0;
+    const cap = getWagon(state.wagon.model).chickenCap;
+    const afterCount = (state.inventory.chicken ?? 0) - chickenSell + chickenBuy;
+    if (afterCount > cap) {
+      throw new Error(`trade: coop is full — only ${cap - (state.inventory.chicken ?? 0) + chickenSell} more chickens fit.`);
     }
   }
 

@@ -14,6 +14,7 @@ import { reapDead } from './systems/death';
 import { buildStarterKit } from './content/starter-kit';
 import { computeWaterCap } from './systems/water-cap';
 import { applyDehydration } from './systems/dehydration';
+import { applyEggLay } from './systems/eggs';
 
 export interface PartyPick {
   name: string;
@@ -146,6 +147,7 @@ export type TickStep = (state: GameState, rng: Rng) => GameState;
 // --- composition ---
 const DAILY_STEPS: TickStep[] = [
   progressConditions,
+  (s) => applyEggLay(s), // eggs lay first so they're available to eat
   (s) => applyDailyConsumption(s), // consumption has no Rng param; wrap it
   tickOxen,
   tickWagon,

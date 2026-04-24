@@ -10,6 +10,7 @@ import { recoverOxenFatigue } from '../systems/oxen';
 import { attemptFire } from '../systems/fire';
 import { reapDead } from '../systems/death';
 import { applyDehydration } from '../systems/dehydration';
+import { applyEggLay } from '../systems/eggs';
 import {
   getCampAction,
   hourCostFor,
@@ -103,6 +104,7 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     const rng = makeRng(`${s.seed}:action:rest:${s.day}:0`);
 
     s = progressConditions(s, rng);
+    s = applyEggLay(s);
     s = applyDailyConsumption(s);
     s = adjustMorale(s, rng);
 

@@ -52,6 +52,11 @@
   const defaultWagonPrice = $derived(data.wagons[data.defaultWagon].price);
   const selectedWagonModel = $derived(getWagon(selectedWagon));
   const wagonCashDiff = $derived(getWagon(gs.wagon.model).price - selectedWagonModel.price);
+  // Chickens — coop cap comes from the selected wagon (player might
+  // swap rigs here too), so the stepper auto-clamps as the wagon changes.
+  const chickenRoom = $derived(
+    Math.max(0, selectedWagonModel.chickenCap - (gs.inventory.chicken ?? 0))
+  );
 
   const suppliesCost = $derived(
     Object.entries(buyQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.buy ?? 0) * buyMult, 0)
@@ -542,7 +547,7 @@
                       name="buy_{id}"
                       bind:value={buyQty[id]}
                       min={0}
-                      max={isBulkCat ? 999 : 99}
+                      max={id === 'chicken' ? chickenRoom : (isBulkCat ? 999 : 99)}
                       bulkSteps={isBulkCat ? [10, 50] : []}
                       ariaLabel="Buy {ITEMS[id].name}"
                       hideValue

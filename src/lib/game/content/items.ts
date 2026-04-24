@@ -30,6 +30,10 @@ export const ITEMS: Record<string, ItemMeta> = {
   // small morale bump when eaten. foodDrawOrder 0.5 = after fresh meat but
   // before pantry staples.
   berries:     { id: 'berries',     name: 'Wild berries', category: 'food', weightLbPerUnit: 0.5, foodDrawOrder: 0.5, description: 'Currants, chokecherries, wild plums. Eaten fresh — small morale bump.' },
+  // Fresh eggs from the wagon's chickens. Perishable in the spec but
+  // kept simple for now — no spoil clock, just a steady trickle from
+  // the coop. foodDrawOrder 0.75 = after berries, before flour.
+  egg:         { id: 'egg',         name: 'Egg',          category: 'food', weightLbPerUnit: 0.1, foodDrawOrder: 0.75, description: 'Fresh from the coop. Breakfast staple on the trail — variety beats hardtack.' },
   flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten after fresh meat.' },
   beans:       { id: 'beans',       name: 'Beans',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 2, description: 'Shelf-stable protein. Keeps indefinitely.' },
   bacon:       { id: 'bacon',       name: 'Bacon',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: 'Salted pork. High-calorie, slow to spoil.' },
@@ -45,6 +49,10 @@ export const ITEMS: Record<string, ItemMeta> = {
 
   ox: { id: 'ox', name: 'Ox', category: 'livestock', weightLbPerUnit: 0, description: 'Draft animal. Pulls the wagon. More oxen = faster travel and higher carry cap.' },
   yoke: { id: 'yoke', name: 'Yoke', category: 'livestock', weightLbPerUnit: 15, description: 'Harnesses the oxen to the wagon. Replaces broken yokes.' },
+  // Live chickens — carried in a coop strapped to the wagon bed.
+  // Wagon-capped per model (light: 3 / prairie: 5 / heavy: 8). Lay
+  // eggs daily. Can die to predator events or drown in rough fords.
+  chicken: { id: 'chicken', name: 'Chicken', category: 'livestock', weightLbPerUnit: 3, description: 'Hen in a coop. Lays eggs daily while alive. Coop size limited by wagon model.' },
 
   wagon:       { id: 'wagon',       name: 'Wagon',          category: 'wagon_part', weightLbPerUnit: 0, description: 'Your home on wheels.' },
   wheel:       { id: 'wheel',       name: 'Spare wheel',    category: 'wagon_part', weightLbPerUnit: 50, description: 'Replace a broken wheel. Fully restores some wagon condition.' },

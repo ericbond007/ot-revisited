@@ -24,6 +24,9 @@ export interface WagonModel {
   // heavy Conestoga ~30 gal (a full shanty barrel). Water skins stack
   // +5 gal each on top of this baseline.
   baseWaterCapGal: number;
+  // How many live chickens fit in a coop strapped to this wagon.
+  // Represents the physical coop footprint, not a food-weight cap.
+  chickenCap: number;
 }
 
 export const WAGONS: Record<WagonModelId, WagonModel> = {
@@ -38,7 +41,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     baseSpeedMult: 1.10,
     optimalTeam: 2,
     minTeam: 1,
-    baseWaterCapGal: 15
+    baseWaterCapGal: 15,
+    chickenCap: 3
   },
   prairie_schooner: {
     id: 'prairie_schooner',
@@ -51,7 +55,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     baseSpeedMult: 1.00,
     optimalTeam: 4,
     minTeam: 2,
-    baseWaterCapGal: 20
+    baseWaterCapGal: 20,
+    chickenCap: 5
   },
   heavy: {
     id: 'heavy',
@@ -64,7 +69,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     baseSpeedMult: 0.85,
     optimalTeam: 6,
     minTeam: 4,
-    baseWaterCapGal: 25
+    baseWaterCapGal: 25,
+    chickenCap: 8
   }
 };
 
