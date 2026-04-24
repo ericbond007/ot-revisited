@@ -41,11 +41,25 @@
     return Math.max(min, Math.min(max, v));
   }
 
-  function dec() {
-    value = clamp(value - step);
+  // Modifier-key bulk: Ctrl = ×5, Shift = ×10, both = ×50. Plain click
+  // stays at ±step. Works on both the − and + buttons. Keeps
+  // mouse-first play fast without needing a bulkSteps UI row for every
+  // item category.
+  function bulkFactor(e: MouseEvent | KeyboardEvent): number {
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && e.shiftKey) return 50;
+    if (ctrl) return 5;
+    if (e.shiftKey) return 10;
+    return 1;
   }
-  function inc() {
-    value = clamp(value + step);
+
+  function dec(e?: MouseEvent | KeyboardEvent) {
+    const factor = e ? bulkFactor(e) : 1;
+    value = clamp(value - step * factor);
+  }
+  function inc(e?: MouseEvent | KeyboardEvent) {
+    const factor = e ? bulkFactor(e) : 1;
+    value = clamp(value + step * factor);
   }
   function incBy(n: number) {
     value = clamp(value + n);
@@ -73,7 +87,7 @@
   <button
     type="button"
     class="step-btn step-minus"
-    aria-label="{ariaLabel}: decrease"
+    aria-label="{ariaLabel}: decrease (Ctrl=×5, Shift=×10)"
     onclick={dec}
     disabled={disabled || value <= min}
   >
@@ -106,7 +120,7 @@
   <button
     type="button"
     class="step-btn step-plus"
-    aria-label="{ariaLabel}: increase"
+    aria-label="{ariaLabel}: increase (Ctrl=×5, Shift=×10)"
     onclick={inc}
     disabled={disabled || value >= max}
   >
