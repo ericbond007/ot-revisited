@@ -65,9 +65,13 @@
       <div class="menu-divider"></div>
       <div class="menu-head dev-head">🧪 DEV SCENARIOS</div>
       {#each SCENARIOS as sc}
+        <!-- No `onclick={close}` on the submit button — closing the menu
+             before submit unmounts the form, so the POST never fires.
+             Navigation to /play on the action's redirect will tear down
+             the menu naturally. -->
         <form method="POST" action="/?/loadScenario" class="dev-form">
           <input type="hidden" name="scenario" value={sc.id} />
-          <button type="submit" class="item dev-item" role="menuitem" onclick={close}>
+          <button type="submit" class="item dev-item" role="menuitem">
             <span class="item-icon">🎯</span>
             <span class="item-body">
               <span class="item-label">{sc.label}</span>
