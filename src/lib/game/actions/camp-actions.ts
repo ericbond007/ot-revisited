@@ -7,7 +7,7 @@ import { hasLivePreacher } from '../professions/predicates';
 // an hour cost that shares the 12-hour daily budget with shovel actions.
 //
 // Adding a new action = one entry in `CAMP_ACTIONS` with `availability`
-// and `apply`. The RestModal renders them as a multi-select grid;
+// and `apply`. The CampStage renders them as a multi-select grid;
 // rest.ts applies each picked action's effect after the day's
 // morale/consumption/healing but before death reap.
 
@@ -272,7 +272,7 @@ const digOut: CampAction = {
   apply: (s) => logLine(s, 'Dug out of mud/snow.')
 };
 
-/** Registry — order controls UI render order in RestModal. */
+/** Registry — order controls UI render order in CampStage. */
 export const CAMP_ACTIONS: readonly CampAction[] = [
   // Morale / comfort
   passWhiskey,

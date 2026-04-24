@@ -12,7 +12,7 @@
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
   import VisitModal from '$lib/ui/VisitModal.svelte';
-  import RestModal from '$lib/ui/RestModal.svelte';
+  import CampStage from '$lib/ui/CampStage.svelte';
   import WagonModal from '$lib/ui/WagonModal.svelte';
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
   import PartyModal from '$lib/ui/PartyModal.svelte';
@@ -36,7 +36,7 @@
     gs.location.atLandmarkId ? getLandmark(gs.location.atLandmarkId) : null
   );
 
-  let showRest = $state(false);
+  let showCamp = $state(false);
   let showHunt = $state(false);
   let showFord = $state(false);
   let showVisit = $state(false);
@@ -144,7 +144,9 @@
   <div class="main-row">
     <!-- Left column (wide): map OR landmark stage + actions + event log -->
     <div class="left-col">
-      {#if atLandmark}
+      {#if showCamp && !gs.completed}
+        <CampStage state={gs} slot={data.slot} onleave={() => (showCamp = false)} />
+      {:else if atLandmark}
         <LandmarkStage state={gs} landmark={atLandmark} />
       {:else}
         <TrailMap state={gs} />
@@ -153,9 +155,12 @@
       <div class="actions-row">
         {#if gs.completed}
           <EndScreen state={gs} />
-        {:else}
+        {:else if !showCamp}
+          <!-- Camp stage owns its own Begin/Leave controls. Hiding the
+               trail ActionBar while in camp keeps Travel/Hunt/etc from
+               being clickable during camp planning. -->
           <ActionBar state={gs} slot={data.slot}
-            onrest={() => (showRest = true)}
+            onrest={() => (showCamp = true)}
             onhunt={() => (showHunt = true)}
             onford={() => (showFord = true)}
             onvisit={() => (showVisit = true)}
@@ -182,10 +187,6 @@
     gameState={gs}
     body={(gs.flags._pendingEventBody as string | undefined)}
   />
-{/if}
-
-{#if showRest && !gs.completed}
-  <RestModal state={gs} slot={data.slot} onclose={() => (showRest = false)} />
 {/if}
 
 {#if showWagon}
