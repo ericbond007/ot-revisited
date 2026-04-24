@@ -34,7 +34,8 @@ export type CampActionId =
   | 'cure_meat'
   | 'dig_well'
   | 'dig_grave'
-  | 'dig_out';
+  | 'dig_out'
+  | 'gather_firewood';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -272,6 +273,37 @@ const digOut: CampAction = {
   apply: (s) => logLine(s, 'Dug out of mud/snow.')
 };
 
+// Firewood gathering — always available. Yield scales with terrain
+// (same mean table as passive travel-day gather, but bigger because
+// you're focused on it instead of walking). 3-hour slot.
+const gatherFirewood: CampAction = {
+  id: 'gather_firewood',
+  label: 'Gather firewood',
+  sub: '3 hr · terrain-dependent yield',
+  icon: '🪵',
+  hourCost: 3,
+  availability: () => ({ available: true }),
+  apply: (s, rng) => {
+    // Same mean table as travel-day gather, but 2× since this is
+    // focused time in one spot rather than grabbing what you pass.
+    const baseByTerrain: Record<string, number> = {
+      forest: 24, prairie: 12, mountains: 20, desert: 4, river: 16
+    };
+    const mean = baseByTerrain[s.location.terrain] ?? 10;
+    const gained = rng.int(Math.round(mean * 0.7), Math.round(mean * 1.3));
+    return logLine(
+      {
+        ...s,
+        resources: {
+          ...s.resources,
+          firewood: (s.resources.firewood ?? 0) + gained
+        }
+      },
+      `Gathered ${gained} lb of firewood from the ${s.location.terrain}.`
+    );
+  }
+};
+
 /** Registry — order controls UI render order in CampStage. */
 export const CAMP_ACTIONS: readonly CampAction[] = [
   // Morale / comfort
@@ -281,6 +313,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   readBible,
   // Preservation
   cureMeat,
+  // Practical
+  gatherFirewood,
   // Shovel work (gated on having a shovel)
   digWell,
   digGrave,
@@ -293,6 +327,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   sing_along: singAlong,
   read_bible: readBible,
   cure_meat: cureMeat,
+  gather_firewood: gatherFirewood,
   dig_well: digWell,
   dig_grave: digGrave,
   dig_out: digOut

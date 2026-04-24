@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, tickDay } from '../src/lib/game/engine';
-import type { Ox } from '../src/lib/game/types';
+import type { GameState, Ox } from '../src/lib/game/types';
 
-function freshGameWithOxen() {
+function freshGameWithOxen(): GameState {
   const s = createInitialState({
     seed: 'integration',
     leader: { name: 'Ezra', profession: 'farmer' },
@@ -22,10 +22,12 @@ function freshGameWithOxen() {
   // so dehydration (#135) would kill the party within 2 weeks. Give the
   // test fixture a large water cushion so the tick pipeline is what
   // these integration tests measure, not the water subsystem.
+  // Firewood likewise — enough for 30+ cold-night-free days so fire
+  // mechanic (#15) doesn't drain party health during smoke tests.
   return {
     ...s,
     oxen,
-    resources: { water: 500, waterCap: 500 }
+    resources: { water: 500, waterCap: 500, firewood: 500 }
   };
 }
 

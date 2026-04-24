@@ -99,6 +99,11 @@ export interface Location {
 export interface Resources {
   water: number; // gallons on hand
   waterCap: number;
+  // Firewood in pounds — dried wood, buffalo chips on the plains,
+  // sagebrush in the desert, driftwood by rivers. Consumed by the
+  // nightly fire (5 lb/night). Gathered passively on travel days and
+  // actively via the Gather Firewood camp action.
+  firewood?: number;
 }
 
 export type ItemId = string; // item catalog IDs — catalog ships in Plan 3

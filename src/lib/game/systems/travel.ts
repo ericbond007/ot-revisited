@@ -4,6 +4,7 @@ import { oxenSpeedFactor } from './oxen';
 import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../content/landmarks';
 import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
+import { gatherFirewoodOnTravel } from './fire';
 
 const PACE_BASE_MILES: Record<Pace, number> = {
   slow: 12,
@@ -73,7 +74,7 @@ export function milesPerDay(state: GameState): number {
 // Scenic landmarks just flavor-log and keep rolling.
 const STOP_WORTHY_KINDS = new Set<string>(['trading_post', 'river', 'end']);
 
-export function applyTravel(state: GameState, _rng: Rng): GameState {
+export function applyTravel(state: GameState, rng: Rng): GameState {
   if (state.completed) return state;
 
   // If we were parked at a landmark from a previous day, "depart" before moving.
@@ -92,6 +93,12 @@ export function applyTravel(state: GameState, _rng: Rng): GameState {
     ...startState,
     location: { ...startState.location, milesTraveled }
   };
+  // Passive firewood gather on any day that actually moved. Terrain
+  // sets the mean — cottonwood groves by rivers, sage + chips on the
+  // plains, scarce fuel in the desert.
+  if (miles > 0) {
+    next = gatherFirewoodOnTravel(next, rng);
+  }
 
   const nextLandmark = getLandmark(startState.location.nextLandmarkId);
   const targetMiles = runningMilesTo(nextLandmark.id);

@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, tickDay } from '../../src/lib/game/engine';
 import { rest } from '../../src/lib/game/actions/rest';
+import type { GameState } from '../../src/lib/game/types';
 
-function newGame() {
+function newGame(): GameState {
   const s = createInitialState({
     seed: 'trail',
     leader: { name: 'Ezra', profession: 'farmer' },
@@ -14,9 +15,9 @@ function newGame() {
     startDate: { year: 1848, month: 4, day: 15 }
   });
   // No-interaction 150-day simulation never fords or refills, so
-  // dehydration (#135) kills the party. Large reservoir so this test
-  // measures smoke-level progress, not thirst.
-  return { ...s, resources: { water: 2000, waterCap: 2000 } };
+  // dehydration (#135) and cold-camp (#15) would kill the party.
+  // Large reservoirs so this test measures smoke-level progress.
+  return { ...s, resources: { water: 2000, waterCap: 2000, firewood: 2000 } };
 }
 
 describe('full-trail smoke', () => {

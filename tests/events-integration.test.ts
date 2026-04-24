@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, tickDay } from '../src/lib/game/engine';
 import { rest } from '../src/lib/game/actions/rest';
+import type { GameState } from '../src/lib/game/types';
 
-function newGame(seed = 'events-integration') {
+function newGame(seed = 'events-integration'): GameState {
   const s = createInitialState({
     seed,
     leader: { name: 'Ezra', profession: 'farmer' },
@@ -13,9 +14,9 @@ function newGame(seed = 'events-integration') {
     ],
     startDate: { year: 1848, month: 4, day: 15 }
   });
-  // Big water cushion so dehydration (#135) doesn't kill the party
-  // across a 100-day no-interaction simulation.
-  return { ...s, resources: { water: 1000, waterCap: 1000 } };
+  // Big water + firewood cushions so dehydration (#135) and fire (#15)
+  // don't kill the party across a 100-day no-interaction simulation.
+  return { ...s, resources: { water: 1000, waterCap: 1000, firewood: 1000 } };
 }
 
 describe('100-day run with events', () => {
@@ -53,8 +54,8 @@ describe('100-day run with events', () => {
         companions: [{ name: 'B', profession: 'doctor' }],
         startDate: { year, month: 4, day: 15 }
       });
-      // Oversize water for a 60-day no-interaction simulation (see #135).
-      s = { ...s, resources: { water: 500, waterCap: 500 } };
+      // Oversize water + firewood for a 60-day no-interaction simulation.
+      s = { ...s, resources: { water: 500, waterCap: 500, firewood: 500 } };
       for (let d = 0; d < 60; d++) s = tickDay(s);
       return s.eventLog.filter((e) => e.text.includes('1852')).length;
     }

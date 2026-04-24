@@ -127,9 +127,11 @@ export function createInitialState(opts: NewGameOptions): GameState {
     // Water cap starts at wagon baseline + any starter-kit skins.
     // Trade and outfit flows call recomputeWaterCap() whenever the
     // wagon or water_skin count changes.
+    // Firewood starts stocked (~4 nights' worth) so the first week of
+    // travel isn't a cold-camp cascade.
     resources: (() => {
       const cap = computeWaterCap(wagonModelId, kit.inventory);
-      return { water: cap, waterCap: cap };
+      return { water: cap, waterCap: cap, firewood: 20 };
     })(),
     morale: 70,
     pace: 'moderate',
