@@ -13,6 +13,7 @@ import { fireEvent } from './systems/events';
 import { reapDead } from './systems/death';
 import { buildStarterKit } from './content/starter-kit';
 import { computeWaterCap } from './systems/water-cap';
+import { applyDehydration } from './systems/dehydration';
 
 export interface PartyPick {
   name: string;
@@ -152,6 +153,10 @@ const DAILY_STEPS: TickStep[] = [
   applyTravel,
   fireEvent,        // <-- new step between travel and fire
   attemptFire,
+  // Dehydration runs late — after any step that might have gained water
+  // (events, fire attempts with cooking). Any drop of water resets the
+  // counter; zero water at this point counts as a dry day.
+  (s) => applyDehydration(s),
   reapDead
 ];
 

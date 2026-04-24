@@ -19,7 +19,10 @@ function freshParty(): GameState {
     fatigue: 0,
     shod: true
   }));
-  return { ...s, oxen };
+  // No-interaction journey simulation never fords a river or finds
+  // water, so dehydration (#135) would kill the party mid-way. Oversize
+  // the reservoir so this test measures miles, not thirst.
+  return { ...s, oxen, resources: { water: 500, waterCap: 500 } };
 }
 
 describe('full journey: Independence → Fort Kearny', () => {

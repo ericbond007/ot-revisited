@@ -3,7 +3,7 @@ import { createInitialState, tickDay } from '../src/lib/game/engine';
 import { rest } from '../src/lib/game/actions/rest';
 
 function newGame(seed = 'events-integration') {
-  return createInitialState({
+  const s = createInitialState({
     seed,
     leader: { name: 'Ezra', profession: 'farmer' },
     companions: [
@@ -13,6 +13,9 @@ function newGame(seed = 'events-integration') {
     ],
     startDate: { year: 1848, month: 4, day: 15 }
   });
+  // Big water cushion so dehydration (#135) doesn't kill the party
+  // across a 100-day no-interaction simulation.
+  return { ...s, resources: { water: 1000, waterCap: 1000 } };
 }
 
 describe('100-day run with events', () => {
@@ -50,6 +53,8 @@ describe('100-day run with events', () => {
         companions: [{ name: 'B', profession: 'doctor' }],
         startDate: { year, month: 4, day: 15 }
       });
+      // Oversize water for a 60-day no-interaction simulation (see #135).
+      s = { ...s, resources: { water: 500, waterCap: 500 } };
       for (let d = 0; d < 60; d++) s = tickDay(s);
       return s.eventLog.filter((e) => e.text.includes('1852')).length;
     }

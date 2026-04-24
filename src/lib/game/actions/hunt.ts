@@ -7,6 +7,7 @@ import { progressConditions } from '../systems/conditions';
 import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
 import { applySpoilage, computeSpoilDay } from '../systems/spoilage';
+import { applyDehydration } from '../systems/dehydration';
 
 export type HuntTarget = 'small' | 'medium' | 'big' | 'gather';
 export type AmmoBand = 'light' | 'moderate' | 'heavy';
@@ -190,6 +191,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
    // JSON save/load.
   s = { ...s, flags: { ...s.flags, _huntHaul: haul as unknown as Record<string, unknown> } };
 
+  s = applyDehydration(s);
   s = reapDead(s, rng);
   s = { ...s, day: s.day + 1, date: advanceOneDay(s.date) };
   return s;

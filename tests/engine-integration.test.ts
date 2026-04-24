@@ -18,7 +18,15 @@ function freshGameWithOxen() {
     fatigue: 0,
     shod: true
   }));
-  return { ...s, oxen };
+  // Pure no-interaction simulations never ford rivers or find water,
+  // so dehydration (#135) would kill the party within 2 weeks. Give the
+  // test fixture a large water cushion so the tick pipeline is what
+  // these integration tests measure, not the water subsystem.
+  return {
+    ...s,
+    oxen,
+    resources: { water: 500, waterCap: 500 }
+  };
 }
 
 describe('30-day deterministic simulation', () => {

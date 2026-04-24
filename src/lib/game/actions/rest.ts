@@ -9,6 +9,7 @@ import { adjustMorale, healingMultiplier } from '../systems/morale';
 import { recoverOxenFatigue } from '../systems/oxen';
 import { attemptFire } from '../systems/fire';
 import { reapDead } from '../systems/death';
+import { applyDehydration } from '../systems/dehydration';
 import {
   getCampAction,
   hourCostFor,
@@ -162,6 +163,10 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
         s = action.apply(s, rng);
       }
     }
+
+    // Dehydration runs AFTER camp actions so dig_well water refills
+    // clear the dry-day counter the same tick they're earned.
+    s = applyDehydration(s);
 
     s = reapDead(s, rng);
 

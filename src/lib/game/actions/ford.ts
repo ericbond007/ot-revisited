@@ -5,6 +5,7 @@ import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
+import { applyDehydration } from '../systems/dehydration';
 
 export interface RiverState {
   depthFt: number;
@@ -51,6 +52,7 @@ function passiveDay(state: GameState, seedSuffix: string): GameState {
   let s = progressConditions(state, rng);
   s = applyDailyConsumption(s);
   s = adjustMorale(s, rng);
+  s = applyDehydration(s);
   s = reapDead(s, rng);
   return { ...s, day: s.day + 1, date: advanceOneDay(s.date) };
 }
