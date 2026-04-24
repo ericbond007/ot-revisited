@@ -17,6 +17,19 @@ export interface HuntOptions {
   hunters: number;
 }
 
+// Structured haul summary written to flags._huntHaul by hunt(). Consumed
+// by PostHuntModal; cleared by the ?/ackHunt action after the player
+// acknowledges. Kept JSON-serializable — goes through the save format.
+export interface HuntHaul {
+  target: HuntTarget;
+  meat: number;       // lb of fresh game_meat added
+  berries: number;    // lb of wild berries gathered
+  liver: boolean;     // organ eaten fresh — morale/health already applied
+  bullets: number;    // bullets spent
+  injured: string | null; // name of injured member, if any
+  spoilDay: number | null; // day meat pile spoils; null when no meat
+}
+
 const AMMO_BY_BAND: Record<AmmoBand, number> = {
   light: 5,
   moderate: 10,
@@ -81,30 +94,66 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     ? rawYield
     : Math.round(rawYield * yieldMultiplier * carryMultiplier * (spentBullets / AMMO_BY_BAND.moderate));
 
-  // Hunts produce fresh game meat (perishable); gather still routes to
-  // flour as a catch-all berries/roots proxy until the gather-output
-  // rework (#123). Fresh meat adds to any existing pile and refreshes the
-  // spoil clock — a newer kill delays the whole pile's rot by design, a
-  // simplification over per-lb aging.
-  const key = isGather ? 'flour' : 'game_meat';
-  const gain = Math.max(0, meatLbs);
-  const current = s.inventory[key] ?? 0;
-  const nextInventory = {
+  // Gather yields berries + a few foraged herbs (routed through `berries`
+  // as a generic wild-food proxy). Hunts yield fresh game meat and often
+  // additional berries dressed from the kill site. Meat refreshes the
+  // spoil clock on the whole pile — newer kill delays rot on everything,
+  // a simplification over per-lb aging.
+  const meatGain = isGather ? 0 : Math.max(0, meatLbs);
+
+  // Berries: gather produces the yield itself; hunts get a 20% bonus
+  // sprinkle from the processing area (3–8 lb).
+  const berriesGain = isGather
+    ? Math.max(0, meatLbs)
+    : rng.chance(0.2)
+      ? rng.int(3, 8)
+      : 0;
+
+  // Liver: large-game kills nearly always yield an organ eaten fresh
+  // that night — morale + small health bump. Not inventoried; it's
+  // consumed on the spot by convention. Roll chance scales with target.
+  //   small: 0 — rabbits and birds don't produce a trail-worthy liver.
+  //   medium: 55% — deer, antelope.
+  //   big:    85% — buffalo, bear, elk.
+  const liverChance = opts.target === 'big' ? 0.85 : opts.target === 'medium' ? 0.55 : 0;
+  const liverFound = !isGather && meatGain > 0 && liverChance > 0 && rng.chance(liverChance);
+
+  // Liver effect: adult party gets +3 morale and +2 health (capped at
+  // their existing max). Iron-rich organ, shared raw or seared.
+  if (liverFound) {
+    s = {
+      ...s,
+      morale: Math.min(100, s.morale + 3),
+      party: s.party.map((m) =>
+        !m.dead && m.kind === 'adult'
+          ? { ...m, health: Math.min(100, m.health + 2) }
+          : m
+      )
+    };
+  }
+
+  const nextInventory: Record<string, number> = {
     ...s.inventory,
-    [key]: current + gain,
     bullets: availableBullets - spentBullets
   };
-  const nextFlags =
-    !isGather && gain > 0
-      ? { ...s.flags, _gameMeatSpoilDay: computeSpoilDay(s.day) }
-      : s.flags;
+  if (meatGain > 0) {
+    nextInventory.game_meat = (s.inventory.game_meat ?? 0) + meatGain;
+  }
+  if (berriesGain > 0) {
+    nextInventory.berries = (s.inventory.berries ?? 0) + berriesGain;
+  }
+  const nextFlags = meatGain > 0
+    ? { ...s.flags, _gameMeatSpoilDay: computeSpoilDay(s.day) }
+    : { ...s.flags };
   s = { ...s, inventory: nextInventory, flags: nextFlags };
 
+  let injuredName: string | null = null;
   if (profile.injuryRisk > 0 && rng.chance(profile.injuryRisk)) {
     // Only adults hunt, so only adults take hunting injuries.
     const alive = s.party.filter((m) => !m.dead && m.kind === 'adult');
     if (alive.length > 0) {
       const victim = alive[rng.int(0, alive.length - 1)];
+      injuredName = victim.name;
       s = {
         ...s,
         party: s.party.map((m) =>
@@ -118,11 +167,28 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   }
 
   const logText = isGather
-    ? `Gathered ${meatLbs} lb of berries and roots.`
+    ? `Gathered ${berriesGain} lb of berries and herbs.`
     : meatLbs > 0
       ? `Hunt returned ${meatLbs} lb of fresh game meat (${spentBullets} bullets). Eat it or cure it before it spoils.`
       : `Hunt returned empty-handed (${spentBullets} bullets).`;
   s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: logText }] };
+
+  // Stash a structured haul summary for the post-hunt modal. The UI reads
+  // this flag and renders a "here's your haul" screen before the player
+  // returns to /play. Cleared by the ?/ackHunt action.
+  const haul: HuntHaul = {
+    target: opts.target,
+    meat: meatGain,
+    berries: berriesGain,
+    liver: liverFound,
+    bullets: spentBullets,
+    injured: injuredName,
+    spoilDay: meatGain > 0 ? computeSpoilDay(s.day) : null
+  };
+  // Cast required because HuntHaul is a named interface (stricter than
+   // the Record<string, unknown> branch of flags). Round-trips fine through
+   // JSON save/load.
+  s = { ...s, flags: { ...s.flags, _huntHaul: haul as unknown as Record<string, unknown> } };
 
   s = reapDead(s, rng);
   s = { ...s, day: s.day + 1, date: advanceOneDay(s.date) };

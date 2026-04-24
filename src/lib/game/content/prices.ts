@@ -16,6 +16,7 @@ export const PRICES: Record<string, PriceEntry> = {
   // Fresh game meat is highly perishable; kept here so the sell-what-you-got
   // path works but priced low (and posts won't usually stock it).
   game_meat:   { buy: 0.30, sell: 0.10 },
+  berries:     { buy: 0.40, sell: 0.20 },
   sugar:       { buy: 0.35, sell: 0.20 },
   coffee:      { buy: 1.50, sell: 0.80 },
   tea:         { buy: 1.00, sell: 0.60 },

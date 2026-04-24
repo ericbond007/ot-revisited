@@ -56,11 +56,13 @@ describe('hunt', () => {
     expect(() => hunt(s, { target: 'small', ammo: 'light', hunters: 1 })).toThrow(/rifle/i);
   });
 
-  it('allows gather-only (no rifles) to add small foraged food', () => {
+  it('allows gather-only (no rifles) to add wild berries', () => {
     const s = { ...newGame(), inventory: { flour: 500, shovel: 1, yoke: 1 } };
-    const startingFlour = s.inventory.flour ?? 0;
     const h = hunt(s, { target: 'gather', ammo: 'light', hunters: 1 });
-    expect(h.inventory.flour).toBeGreaterThan(startingFlour - 3);
+    // Gather now routes to berries instead of hijacking flour. Flour
+    // will still drop slightly from the hunt-day's normal consumption,
+    // but the gather yield lands in berries.
+    expect(h.inventory.berries ?? 0).toBeGreaterThan(0);
   });
 
   it('rejects a hunt with zero hunters when non-gather', () => {
@@ -82,6 +84,36 @@ describe('hunt', () => {
   it('logs the hunt outcome', () => {
     const s = newGame();
     const h = hunt(s, { target: 'small', ammo: 'light', hunters: 1 });
-    expect(h.eventLog[h.eventLog.length - 1].text.toLowerCase()).toMatch(/(hunt|game|meat|gather)/);
+    expect(h.eventLog[h.eventLog.length - 1].text.toLowerCase()).toMatch(/(hunt|game|meat|gather|berries)/);
+  });
+
+  it('stashes a _huntHaul flag with structured haul info', () => {
+    const s = newGame();
+    const h = hunt(s, { target: 'medium', ammo: 'moderate', hunters: 1 });
+    // PostHuntModal reads this flag to render the reveal step.
+    expect(h.flags._huntHaul).toBeTruthy();
+    const haul = h.flags._huntHaul as Record<string, unknown>;
+    expect(haul.target).toBe('medium');
+    expect(typeof haul.meat).toBe('number');
+    expect(typeof haul.berries).toBe('number');
+    expect(typeof haul.liver).toBe('boolean');
+    expect(typeof haul.bullets).toBe('number');
+  });
+
+  it('big-game hunt tends to produce a liver roll', () => {
+    // With an 85% liver chance on big game, at least one of 8 seeded runs
+    // (with meat) should yield liver:true. This guards against liver
+    // accidentally being hard-wired to false in a refactor.
+    let anyLiver = false;
+    let anyMeat = false;
+    for (let i = 0; i < 8; i++) {
+      const s = { ...newGame(), seed: `liver-${i}` };
+      const h = hunt(s, { target: 'big', ammo: 'heavy', hunters: 1 });
+      const haul = h.flags._huntHaul as Record<string, unknown>;
+      if ((haul.meat as number) > 0) anyMeat = true;
+      if (haul.liver === true) anyLiver = true;
+    }
+    expect(anyMeat).toBe(true);
+    expect(anyLiver).toBe(true);
   });
 });

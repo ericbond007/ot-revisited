@@ -26,6 +26,10 @@ export const ITEMS: Record<string, ItemMeta> = {
   // rots. The spoilage system (systems/spoilage.ts) zeroes out remaining
   // meat after a few days via flags._gameMeatSpoilDay.
   game_meat:   { id: 'game_meat',   name: 'Game meat',    category: 'food', weightLbPerUnit: 1, foodDrawOrder: 0, description: 'Fresh kill from the hunt. Eaten first — spoils in a few days without curing.' },
+  // Wild berries — foraged or dressed from a hunt site. Light, stackable,
+  // small morale bump when eaten. foodDrawOrder 0.5 = after fresh meat but
+  // before pantry staples.
+  berries:     { id: 'berries',     name: 'Wild berries', category: 'food', weightLbPerUnit: 0.5, foodDrawOrder: 0.5, description: 'Currants, chokecherries, wild plums. Eaten fresh — small morale bump.' },
   flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten after fresh meat.' },
   beans:       { id: 'beans',       name: 'Beans',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 2, description: 'Shelf-stable protein. Keeps indefinitely.' },
   bacon:       { id: 'bacon',       name: 'Bacon',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: 'Salted pork. High-calorie, slow to spoil.' },

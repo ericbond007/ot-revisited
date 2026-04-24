@@ -8,6 +8,7 @@
   import EndScreen from '$lib/ui/EndScreen.svelte';
   import EventModal from '$lib/ui/EventModal.svelte';
   import HuntModal from '$lib/ui/HuntModal.svelte';
+  import PostHuntModal from '$lib/ui/PostHuntModal.svelte';
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
   import VisitModal from '$lib/ui/VisitModal.svelte';
@@ -21,10 +22,12 @@
   import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
   import { getLandmark } from '$lib/game/content/landmarks';
   import type { GameState } from '$lib/game/types';
+  import type { HuntHaul } from '$lib/game/actions/hunt';
 
   let { data, form } = $props();
   const gs = $derived<GameState>(form?.state ?? data.state);
   const pendingEventId = $derived((gs.flags._pendingEventId as string | undefined));
+  const huntHaul = $derived((gs.flags._huntHaul as unknown as HuntHaul | undefined));
   const qp = $derived(encodeURIComponent(data.slot));
   const paceAction = $derived(`?/setPace&slot=${qp}`);
   const rationsAction = $derived(`?/setRations&slot=${qp}`);
@@ -210,6 +213,10 @@
 
 {#if showHunt && !gs.completed}
   <HuntModal state={gs} slot={data.slot} onclose={() => (showHunt = false)} />
+{/if}
+
+{#if huntHaul && !gs.completed}
+  <PostHuntModal haul={huntHaul} slot={data.slot} currentDay={gs.day} />
 {/if}
 
 {#if showFord && !gs.completed}

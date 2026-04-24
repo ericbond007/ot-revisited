@@ -115,7 +115,10 @@ export interface GameState {
   pace: Pace;
   rations: Rations;
   eventLog: LogEntry[];
-  flags: Record<string, boolean | number | string>;
+  // Widened to accept small JSON-serializable objects (e.g. _huntHaul
+   // from actions/hunt.ts). Still string-keyed and serialization-safe;
+   // consumers that expect primitives narrow at the read site.
+  flags: Record<string, boolean | number | string | Record<string, unknown> | null>;
   completed: boolean;
   outcome: Outcome;
 }
