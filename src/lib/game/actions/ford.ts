@@ -20,6 +20,21 @@ export interface FordOptions {
   waitDays?: number;
 }
 
+// Structured reveal written to flags._fordResult. Consumed by
+// FordSummaryModal; cleared by `?/ackFord`. JSON-serializable.
+export interface FordResult {
+  method: FordMethod;
+  daysElapsed: number;
+  crossed: boolean;
+  cashDelta: number;
+  wagonConditionBefore: number;
+  wagonConditionAfter: number;
+  // Per-item net inventory change during the attempt (negative = lost).
+  inventoryDelta: Array<{ id: string; delta: number }>;
+  // Free-form narrative lines — what happened during the crossing.
+  events: string[];
+}
+
 function advanceOneDay(d: { year: number; month: number; day: number }) {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   const leap = (d.year % 4 === 0 && d.year % 100 !== 0) || d.year % 400 === 0;
@@ -42,6 +57,15 @@ function passiveDay(state: GameState, seedSuffix: string): GameState {
 
 export function ford(state: GameState, opts: FordOptions): GameState {
   let s = upgradeState(state);
+  // Snapshot for the post-action reveal. We diff against final state to
+  // build `FordResult` (see bottom of this function).
+  const before = {
+    day: s.day,
+    cash: s.cash,
+    wagonCondition: s.wagon.condition,
+    inventory: { ...s.inventory }
+  };
+  const events: string[] = [];
 
   // After any ford method succeeds, we've crossed — clear the at-landmark flag
   // so travel can resume toward the next waypoint.
@@ -50,21 +74,31 @@ export function ford(state: GameState, opts: FordOptions): GameState {
     location: { ...st.location, atLandmarkId: null }
   });
 
+  let crossed = false;
+
   switch (opts.method) {
     case 'ferry': {
       if (s.cash < opts.river.ferryPrice) {
         throw new Error(`ford: not enough cash for ferry ($${s.cash} < $${opts.river.ferryPrice})`);
       }
       s = { ...s, cash: s.cash - opts.river.ferryPrice };
-      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: `Paid $${opts.river.ferryPrice} for ferry across the river.` }] };
-      return clearAtLandmark(passiveDay(s, 'ferry'));
+      const line = `Paid $${opts.river.ferryPrice} for ferry across the river.`;
+      events.push(line);
+      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };
+      s = clearAtLandmark(passiveDay(s, 'ferry'));
+      crossed = true;
+      break;
     }
 
     case 'caulk': {
-      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: 'Caulked the wagon and floated across the river.' }] };
+      const line = 'Caulked the wagon and floated across the river.';
+      events.push(line);
+      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };
       s = passiveDay(s, 'caulk-1');
       s = passiveDay(s, 'caulk-2');
-      return clearAtLandmark(s);
+      s = clearAtLandmark(s);
+      crossed = true;
+      break;
     }
 
     case 'wait': {
@@ -72,13 +106,15 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       if (!Number.isInteger(days) || days <= 0) {
         throw new Error('ford: waitDays must be a positive integer');
       }
-      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: `Waiting ${days} day${days === 1 ? '' : 's'} for the river to drop.` }] };
+      const line = `Waiting ${days} day${days === 1 ? '' : 's'} for the river to drop.`;
+      events.push(line);
+      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };
       for (let i = 0; i < days; i++) {
         s = passiveDay(s, `wait-${i}`);
       }
       // "Wait" alone doesn't cross the river — you still need to choose a method afterward.
       // So atLandmarkId stays. Player will click Ford/Caulk/Ferry later.
-      return s;
+      break;
     }
 
     case 'ford': {
@@ -87,10 +123,12 @@ export function ford(state: GameState, opts: FordOptions): GameState {
 
       if (rng.chance(Math.min(0.7, danger / 10))) {
         const dmg = Math.round(rng.int(5, 20) * danger);
+        const line = `Wagon took damage fording the river. Condition -${dmg}.`;
+        events.push(line);
         s = {
           ...s,
           wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - dmg) },
-          eventLog: [...s.eventLog, { day: s.day, text: `Wagon took damage fording the river. Condition -${dmg}.` }]
+          eventLog: [...s.eventLog, { day: s.day, text: line }]
         };
       }
 
@@ -98,16 +136,56 @@ export function ford(state: GameState, opts: FordOptions): GameState {
         const loss = rng.int(5, 20);
         const currentFlour = s.inventory.flour ?? 0;
         const taken = Math.min(currentFlour, loss);
-        s = {
-          ...s,
-          inventory: { ...s.inventory, flour: currentFlour - taken },
-          eventLog: [...s.eventLog, { day: s.day, text: `Lost ${taken} lb of supplies in the current.` }]
-        };
+        if (taken > 0) {
+          const line = `Lost ${taken} lb of supplies in the current.`;
+          events.push(line);
+          s = {
+            ...s,
+            inventory: { ...s.inventory, flour: currentFlour - taken },
+            eventLog: [...s.eventLog, { day: s.day, text: line }]
+          };
+        }
       }
 
-      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: 'Forded the river.' }] };
-      return clearAtLandmark(passiveDay(s, 'ford'));
+      const success = 'Forded the river.';
+      events.push(success);
+      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: success }] };
+      s = clearAtLandmark(passiveDay(s, 'ford'));
+      crossed = true;
+      break;
     }
   }
+
+  // Build the reveal summary — diff the inventory snapshot, compute
+  // elapsed days, record cash + wagon condition deltas. Stash on flags.
+  const invIds = new Set<string>([
+    ...Object.keys(before.inventory),
+    ...Object.keys(s.inventory)
+  ]);
+  const inventoryDelta: FordResult['inventoryDelta'] = [];
+  for (const id of invIds) {
+    const b = before.inventory[id] ?? 0;
+    const a = s.inventory[id] ?? 0;
+    if (a !== b) inventoryDelta.push({ id, delta: a - b });
+  }
+
+  const result: FordResult = {
+    method: opts.method,
+    daysElapsed: s.day - before.day,
+    crossed,
+    cashDelta: s.cash - before.cash,
+    wagonConditionBefore: before.wagonCondition,
+    wagonConditionAfter: s.wagon.condition,
+    inventoryDelta,
+    events
+  };
+
+  return {
+    ...s,
+    flags: {
+      ...s.flags,
+      _fordResult: result as unknown as Record<string, unknown>
+    }
+  };
 }
 

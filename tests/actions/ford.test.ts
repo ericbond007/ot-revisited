@@ -79,4 +79,26 @@ describe('ford', () => {
     const b = ford(newGame(), { method: 'ford', river: { ...RIVER, depthFt: 1.5 } });
     expect(a).toEqual(b);
   });
+
+  it('stashes a _fordResult flag with the method, days, and crossed state', () => {
+    const s: GameState = { ...newGame(), cash: 20 };
+    const f = ford(s, { method: 'ferry', river: RIVER });
+    const result = f.flags._fordResult as Record<string, unknown>;
+    expect(result).toBeTruthy();
+    expect(result.method).toBe('ferry');
+    expect(result.crossed).toBe(true);
+    expect(result.daysElapsed).toBe(1);
+    expect(result.cashDelta).toBe(-5);
+    const events = result.events as string[];
+    expect(events.length).toBeGreaterThan(0);
+  });
+
+  it('wait-method reveals crossed: false (still at river)', () => {
+    const s = newGame();
+    const f = ford(s, { method: 'wait', river: RIVER, waitDays: 2 });
+    const result = f.flags._fordResult as Record<string, unknown>;
+    expect(result.method).toBe('wait');
+    expect(result.crossed).toBe(false);
+    expect(result.daysElapsed).toBe(2);
+  });
 });

@@ -17,7 +17,11 @@
       "Bash(npx vitest *)",
       "Bash(git -C /home/eric/projects/hoosierTrail add src/lib/game/engine.ts src/lib/game/upgrade.ts)",
       "Bash(git -C /home/eric/projects/hoosierTrail add tests/morale.test.ts src/lib/game/systems/morale.ts src/lib/game/engine.ts)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(npx svelte-check *)",
+      "Bash(curl -s -o /dev/null -w \"landing %{http_code}\\\\n\" http://localhost:5187/)",
+      "Bash(pkill -f \"vite dev --port 5187\")",
+      "Bash(wait)"
     ]
   }
 }

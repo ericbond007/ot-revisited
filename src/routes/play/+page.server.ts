@@ -215,6 +215,28 @@ export const actions: Actions = {
     return { state: next };
   },
 
+  ackFord: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const state = await loadState(locals, slot);
+    const flags = { ...state.flags };
+    delete (flags as Record<string, unknown>)._fordResult;
+    const next = { ...state, flags };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
+  ackTrade: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const state = await loadState(locals, slot);
+    const flags = { ...state.flags };
+    delete (flags as Record<string, unknown>)._tradeResult;
+    const next = { ...state, flags };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
   ford: async ({ url, request, locals }) => {
     const slot = url.searchParams.get('slot');
     if (!slot) throw error(400, 'slot required');

@@ -14,6 +14,8 @@
   import VisitModal from '$lib/ui/VisitModal.svelte';
   import CampStage from '$lib/ui/CampStage.svelte';
   import CampSummaryModal from '$lib/ui/CampSummaryModal.svelte';
+  import FordSummaryModal from '$lib/ui/FordSummaryModal.svelte';
+  import TradeReceiptModal from '$lib/ui/TradeReceiptModal.svelte';
   import WagonModal from '$lib/ui/WagonModal.svelte';
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
   import PartyModal from '$lib/ui/PartyModal.svelte';
@@ -25,12 +27,16 @@
   import type { GameState } from '$lib/game/types';
   import type { HuntHaul } from '$lib/game/actions/hunt';
   import type { CampSummary } from '$lib/game/actions/rest';
+  import type { FordResult } from '$lib/game/actions/ford';
+  import type { TradeResult } from '$lib/game/actions/trade';
 
   let { data, form } = $props();
   const gs = $derived<GameState>(form?.state ?? data.state);
   const pendingEventId = $derived((gs.flags._pendingEventId as string | undefined));
   const huntHaul = $derived((gs.flags._huntHaul as unknown as HuntHaul | undefined));
   const campSummary = $derived((gs.flags._campSummary as unknown as CampSummary | undefined));
+  const fordResult = $derived((gs.flags._fordResult as unknown as FordResult | undefined));
+  const tradeResult = $derived((gs.flags._tradeResult as unknown as TradeResult | undefined));
   const qp = $derived(encodeURIComponent(data.slot));
   const paceAction = $derived(`?/setPace&slot=${qp}`);
   const rationsAction = $derived(`?/setRations&slot=${qp}`);
@@ -230,6 +236,14 @@
 
 {#if campSummary && !gs.completed}
   <CampSummaryModal summary={campSummary} slot={data.slot} />
+{/if}
+
+{#if fordResult && !gs.completed}
+  <FordSummaryModal result={fordResult} slot={data.slot} />
+{/if}
+
+{#if tradeResult && !gs.completed}
+  <TradeReceiptModal result={tradeResult} slot={data.slot} />
 {/if}
 
 {#if showFord && !gs.completed}

@@ -16,6 +16,8 @@ import { createInitialState } from '$lib/game/engine';
 import { LANDMARKS, getLandmark, nextLandmarkAfter } from '$lib/game/content/landmarks';
 import { computeSpoilDay } from '$lib/game/systems/spoilage';
 import { rest } from '$lib/game/actions/rest';
+import { ford } from '$lib/game/actions/ford';
+import { trade } from '$lib/game/actions/trade';
 
 export interface Scenario {
   id: string;
@@ -234,6 +236,36 @@ export const SCENARIOS: Scenario[] = [
         pemmican: 8, bullets: 4, quinine: 0, bandages: 1
       });
       return s;
+    }
+  },
+  {
+    id: 'post_ford_summary',
+    label: 'Post-ford receipt',
+    description: 'Just forded Kansas River — opens the FordSummaryModal.',
+    build: () => {
+      const base = atLandmark(baseState('post_ford'), 'kansas_river');
+      return ford(base, {
+        method: 'ford',
+        river: { depthFt: 3.0, currentMph: 2, ferryPrice: 3 }
+      });
+    }
+  },
+  {
+    id: 'post_trade_receipt',
+    label: 'Post-trade receipt',
+    description: 'Just traded at Fort Laramie — opens the TradeReceiptModal.',
+    build: () => {
+      let s = atLandmark(baseState('post_trade'), 'ft_laramie');
+      // Give some cash + a sell-able pile so both columns have content.
+      s = { ...s, cash: 200 };
+      s = setInventory(s, { ...s.inventory, bacon: 40 });
+      return trade(s, {
+        buys: [
+          { item: 'flour', qty: 30 },
+          { item: 'bullets', qty: 15 }
+        ],
+        sells: [{ item: 'bacon', qty: 10 }]
+      });
     }
   },
   {

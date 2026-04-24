@@ -48,4 +48,34 @@ describe('trade', () => {
     const t = trade(s, { buys: [] });
     expect(t.day).toBe(s.day);
   });
+
+  it('stashes a _tradeResult flag with line items and profession-bonus math', () => {
+    const s: GameState = {
+      ...newGame(),
+      cash: 200,
+      inventory: { ...newGame().inventory, bacon: 40 }
+    };
+    const t = trade(s, {
+      buys: [{ item: 'flour', qty: 50 }],
+      sells: [{ item: 'bacon', qty: 5 }]
+    });
+    const result = t.flags._tradeResult as Record<string, unknown>;
+    expect(result).toBeTruthy();
+
+    const bought = result.bought as Array<{ id: string; qty: number }>;
+    expect(bought).toEqual([{ id: 'flour', qty: 50, lineTotal: expect.any(Number) }]);
+
+    const sold = result.sold as Array<{ id: string; qty: number }>;
+    expect(sold[0].id).toBe('bacon');
+    expect(sold[0].qty).toBe(5);
+
+    expect(result.cashBefore).toBe(200);
+    expect(result.cashAfter).toBe(t.cash);
+
+    // Merchant present → estimatedSavings should be > 0 (baseline would
+    // have been more expensive / less revenue).
+    const bonus = result.professionBonus as Record<string, unknown>;
+    expect(bonus.merchant).toBe(true);
+    expect(bonus.estimatedSavings as number).toBeGreaterThan(0);
+  });
 });
