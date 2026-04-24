@@ -142,9 +142,10 @@
   </header>
 
   <div class="main-row">
-    <!-- Left column: stage (camp / landmark / trail map) + action bar.
-         The event log used to live here but it ate vertical real estate
-         and was too wide for its content; moved into the side rail. -->
+    <!-- Left column: stage (camp / landmark / trail) + action bar +
+         event log strip at the bottom. Log is width-capped via .log-wrap
+         so long lines don't stretch full-column, and height-capped in
+         EventLog itself so it doesn't push the stage off-viewport. -->
     <div class="left-col">
       {#if showCamp && !gs.completed}
         <CampStage state={gs} slot={data.slot} onleave={() => (showCamp = false)} />
@@ -169,14 +170,17 @@
           />
         {/if}
       </div>
+
+      <div class="log-wrap">
+        <EventLog state={gs} />
+      </div>
     </div>
 
-    <!-- Right rail: party + wagon + inventory + event log -->
+    <!-- Right rail: party + wagon + inventory -->
     <div class="side-rail">
       <PartyPanel state={gs} onopen={() => (showParty = true)} />
       <WagonPanel state={gs} onopen={() => (showWagon = true)} />
       <InventoryPanel state={gs} onopen={() => (showInventory = true)} />
-      <EventLog state={gs} />
     </div>
   </div>
 </div>
@@ -297,6 +301,19 @@
     flex-direction: column;
     gap: 0.5em;
     min-width: 0;
+    min-height: 0;
+  }
+  /* Event log strip — narrow cap so lines don't stretch the full
+     column width. Left-aligns, leaves the right side of the left
+     column as visual breathing room. */
+  .log-wrap {
+    max-width: 520px;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+  }
+  .log-wrap > :global(.event-log) {
+    flex: 1;
     min-height: 0;
   }
   .side-rail {
