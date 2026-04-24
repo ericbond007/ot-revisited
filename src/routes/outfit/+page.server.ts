@@ -3,6 +3,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { trade } from '$lib/game/actions/trade';
 import { OUTFITTER_BUYABLES } from '$lib/game/content/outfitter';
 import { WAGONS, getWagon, DEFAULT_WAGON_MODEL, type WagonModelId } from '$lib/game/content/wagons';
+import { recomputeWaterCap } from '$lib/game/systems/water-cap';
 import type { GameState, Ox } from '$lib/game/types';
 
 const OX_PRICE = 20;
@@ -85,6 +86,16 @@ export const actions: Actions = {
 
     // 1. Apply wagon swap (adjusts cash by model price diff).
     state = applyWagonSwap(state, wagonModel);
+    // Wagon model sets the water-keg baseline; recompute waterCap so
+    // swapping to a larger rig lifts the player's water ceiling right
+    // away (trade() would do this too but only fires when there are
+    // supplies to buy). Top water up to the new cap — at Independence
+    // the quartermaster fills the kegs before the party rolls out.
+    state = recomputeWaterCap(state);
+    state = {
+      ...state,
+      resources: { ...state.resources, water: state.resources.waterCap }
+    };
 
     // 2. Buy extra oxen before supplies so the capacity check reflects the
     //    final team. Cash gets deducted here too.

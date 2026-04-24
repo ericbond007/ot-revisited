@@ -12,6 +12,7 @@ import { attemptFire } from './systems/fire';
 import { fireEvent } from './systems/events';
 import { reapDead } from './systems/death';
 import { buildStarterKit } from './content/starter-kit';
+import { computeWaterCap } from './systems/water-cap';
 
 export interface PartyPick {
   name: string;
@@ -121,7 +122,13 @@ export function createInitialState(opts: NewGameOptions): GameState {
     oxen,
     inventory: kit.inventory,
     cash: kit.cash,
-    resources: { water: 20, waterCap: 20 },
+    // Water cap starts at wagon baseline + any starter-kit skins.
+    // Trade and outfit flows call recomputeWaterCap() whenever the
+    // wagon or water_skin count changes.
+    resources: (() => {
+      const cap = computeWaterCap(wagonModelId, kit.inventory);
+      return { water: cap, waterCap: cap };
+    })(),
     morale: 70,
     pace: 'moderate',
     rations: 'normal',

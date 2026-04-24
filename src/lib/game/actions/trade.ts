@@ -3,6 +3,7 @@ import { getPrice } from '../content/prices';
 import { ITEMS } from '../content/items';
 import { getLandmark } from '../content/landmarks';
 import { hasLiveMerchant, hasLiveBanker } from '../professions/predicates';
+import { computeWaterCap } from '../systems/water-cap';
 
 // Structured reveal written to flags._tradeResult. Consumed by
 // TradeReceiptModal; cleared by `?/ackTrade`. JSON-serializable.
@@ -157,10 +158,21 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
     }
   };
 
+  // Water-carrying cap scales with water_skin count. Recompute after
+  // every trade in case the player bought or sold skins; keep current
+  // water level, clamped to the new cap (rare — cap rarely shrinks
+  // mid-game, but sells can do it).
+  const newWaterCap = computeWaterCap(state.wagon.model, inventory);
+
   return {
     ...state,
     cash: newCash,
     inventory,
+    resources: {
+      ...state.resources,
+      waterCap: newWaterCap,
+      water: Math.min(state.resources.water, newWaterCap)
+    },
     eventLog: [...state.eventLog, { day: state.day, text: logText }],
     flags: {
       ...state.flags,

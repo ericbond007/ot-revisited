@@ -18,6 +18,12 @@ export interface WagonModel {
   // minTeam the wagon can't move at all.
   optimalTeam: number;
   minTeam: number;
+  // Base water-carrying capacity in gallons, reflecting how many wooden
+  // kegs / casks can strap to the wagon. Historically: light ~10 gal
+  // (one small keg), prairie schooner ~20 gal (one or two kegs),
+  // heavy Conestoga ~30 gal (a full shanty barrel). Water skins stack
+  // +5 gal each on top of this baseline.
+  baseWaterCapGal: number;
 }
 
 export const WAGONS: Record<WagonModelId, WagonModel> = {
@@ -31,7 +37,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     carryCapacity: 1500,
     baseSpeedMult: 1.10,
     optimalTeam: 2,
-    minTeam: 1
+    minTeam: 1,
+    baseWaterCapGal: 15
   },
   prairie_schooner: {
     id: 'prairie_schooner',
@@ -43,7 +50,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     carryCapacity: 2500,
     baseSpeedMult: 1.00,
     optimalTeam: 4,
-    minTeam: 2
+    minTeam: 2,
+    baseWaterCapGal: 20
   },
   heavy: {
     id: 'heavy',
@@ -55,7 +63,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     carryCapacity: 3500,
     baseSpeedMult: 0.85,
     optimalTeam: 6,
-    minTeam: 4
+    minTeam: 4,
+    baseWaterCapGal: 25
   }
 };
 
