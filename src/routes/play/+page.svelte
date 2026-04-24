@@ -142,7 +142,9 @@
   </header>
 
   <div class="main-row">
-    <!-- Left column (wide): map OR landmark stage + actions + event log -->
+    <!-- Left column: stage (camp / landmark / trail map) + action bar.
+         The event log used to live here but it ate vertical real estate
+         and was too wide for its content; moved into the side rail. -->
     <div class="left-col">
       {#if showCamp && !gs.completed}
         <CampStage state={gs} slot={data.slot} onleave={() => (showCamp = false)} />
@@ -167,15 +169,14 @@
           />
         {/if}
       </div>
-
-      <EventLog state={gs} />
     </div>
 
-    <!-- Right rail: party + wagon + inventory -->
+    <!-- Right rail: party + wagon + inventory + event log -->
     <div class="side-rail">
       <PartyPanel state={gs} onopen={() => (showParty = true)} />
       <WagonPanel state={gs} onopen={() => (showWagon = true)} />
       <InventoryPanel state={gs} onopen={() => (showInventory = true)} />
+      <EventLog state={gs} />
     </div>
   </div>
 </div>
