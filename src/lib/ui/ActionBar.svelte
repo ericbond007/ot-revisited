@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
-  import { getLandmark } from '$lib/game/content/landmarks';
+  import { getLandmark, isLandmarkAbandoned } from '$lib/game/content/landmarks';
   import { enhance } from '$app/forms';
   import NumberStepper from './NumberStepper.svelte';
 
@@ -22,7 +22,12 @@
   );
   // Any landmark kind that has a Visit hub. For now that's just trading
   // posts; later this widens to Indian trading posts, road ranches, etc.
-  const atVisitable = $derived(atLandmark?.kind === 'trading_post');
+  // Abandoned posts (Fort Hall 1857+) pass through as empty stockades —
+  // no Visit button, nothing to trade.
+  const atVisitable = $derived(
+    atLandmark?.kind === 'trading_post'
+      && !isLandmarkAbandoned(atLandmark, gameState.date.year)
+  );
   const atRiver = $derived(atLandmark?.kind === 'river');
   const travelBlocked = $derived(atRiver);
 

@@ -1,23 +1,32 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import type { Landmark } from '$lib/game/content/landmarks';
+  import { isLandmarkAbandoned } from '$lib/game/content/landmarks';
 
   let { state, landmark }: { state: GameState; landmark: Landmark } = $props();
 
+  // Trading posts can be shuttered by the time the party arrives (Fort
+  // Hall was abandoned by HBC in 1856). Surface this as an "abandoned"
+  // variant of the stage — no Visit action, empty-stockade flavor.
+  const abandoned = $derived(isLandmarkAbandoned(landmark, state.date.year));
+
   const icon = $derived(
-    landmark.kind === 'trading_post' ? '🏛️'
+    abandoned ? '🏚️'
+    : landmark.kind === 'trading_post' ? '🏛️'
     : landmark.kind === 'river'       ? '🌊'
     : landmark.kind === 'end'         ? '🏁'
     : '📍'
   );
   const kindLabel = $derived(
-    landmark.kind === 'trading_post' ? 'TRADING POST'
+    abandoned ? 'ABANDONED POST'
+    : landmark.kind === 'trading_post' ? 'TRADING POST'
     : landmark.kind === 'river'       ? 'RIVER CROSSING'
     : landmark.kind === 'end'         ? "JOURNEY'S END"
     : 'STOPPED AT'
   );
   const prompt = $derived(
-    landmark.kind === 'trading_post' ? 'You may trade supplies, rest, hunt, or continue when ready.'
+    abandoned ? "An empty stockade. The gates swing open to nothing. Rest and press on."
+    : landmark.kind === 'trading_post' ? 'You may trade supplies, rest, hunt, or continue when ready.'
     : landmark.kind === 'river'       ? 'The river blocks your path. Ford, caulk & float, hire a ferry, or wait it out.'
     : landmark.kind === 'end'         ? "The trail ends here. Your journey is complete."
     : 'You have arrived.'
@@ -33,7 +42,13 @@
     ft_walla_walla: 'A lonely outpost by the Columbia. The final stretch begins.',
     oregon_city: 'The end of the trail. Wagons gather in the willow bottoms along the Willamette.'
   };
-  const flavor = $derived(FLAVOR[landmark.id] ?? null);
+  // Replace the normal flavor line with the landmark's own blurb when
+  // the post is closed — "empty stockade" reads, not the old hub flavor.
+  const flavor = $derived(
+    abandoned
+      ? (landmark.blurb ? `Once: ${landmark.blurb}` : null)
+      : (FLAVOR[landmark.id] ?? null)
+  );
 
   // Miles remaining along the trail
   const remainingMiles = $derived(

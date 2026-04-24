@@ -42,6 +42,21 @@ export interface Landmark {
   // `native_post` landmark kind will also use this when relations are
   // hostile (task #121).
   buysFromEmigrants?: boolean;
+  // Year after which the post is no longer open (exclusive). Fort Hall
+  // was abandoned by the HBC in 1856; parties arriving in 1857+ find
+  // an empty stockade instead of a trading post. Consumers should check
+  // `isLandmarkAbandoned(landmark, year)` rather than comparing directly.
+  abandonedAfterYear?: number;
+}
+
+/**
+ * True if the landmark's trading post has been abandoned by the time
+ * the party arrives. Visit/Trade UI should gate on this; the stage
+ * view switches flavor text.
+ */
+export function isLandmarkAbandoned(landmark: Landmark, year: number): boolean {
+  return typeof landmark.abandonedAfterYear === 'number'
+    && year > landmark.abandonedAfterYear;
 }
 
 export const LANDMARKS: readonly Landmark[] = [
@@ -114,7 +129,11 @@ export const LANDMARKS: readonly Landmark[] = [
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
     // wool blankets, manufactured goods). California Trail splits here.
+    // Historically HBC abandoned the post in 1856; parties arriving after
+    // find an empty stockade. (Later briefly held by the US Army, but for
+    // game purposes we treat it as closed.)
     postKind: 'hbc',
+    abandonedAfterYear: 1856,
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',

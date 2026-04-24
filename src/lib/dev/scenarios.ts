@@ -219,6 +219,25 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'abandoned_hall_1857',
+    label: 'Fort Hall (abandoned, 1857)',
+    description: 'Party arrives at Fort Hall in 1857 — HBC has left. Empty stockade, no trade, no Visit.',
+    build: () => {
+      let s = createInitialState({
+        seed: 'abandoned-hall',
+        leader: { name: 'Dave', profession: 'farmer', sex: 'male' },
+        companions: [
+          { name: 'Ellen',  profession: 'doctor',  sex: 'female' },
+          { name: 'Samuel', profession: 'hunter',  sex: 'male' }
+        ],
+        // 1857: a year after HBC abandoned the post.
+        startDate: { year: 1857, month: 4, day: 15 }
+      });
+      s = atLandmark(s, 'ft_hall');
+      return s;
+    }
+  },
+  {
     id: 'near_end',
     label: 'Near the end',
     description: 'At Blue Mountains — one landmark from The Dalles, thin supplies, high fatigue.',
