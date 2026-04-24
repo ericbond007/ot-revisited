@@ -1,6 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error } from '@sveltejs/kit';
-import { rest, type ShovelAction } from '$lib/game/actions/rest';
+import { rest } from '$lib/game/actions/rest';
+import { CAMP_ACTIONS_BY_ID, type CampActionId } from '$lib/game/actions/camp-actions';
 import { getLandmark } from '$lib/game/content/landmarks';
 import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
 import { EVENTS } from '$lib/game/content/events';
@@ -160,9 +161,16 @@ export const actions: Actions = {
     if (!slot) throw error(400, 'slot required');
     const fd = await request.formData();
     const days = Math.max(1, Math.min(7, parseInt(fd.get('days')?.toString() ?? '1', 10)));
-    const shovelActions = fd.getAll('shovelAction').map((v) => v.toString() as ShovelAction);
+    const rawCamp = fd.getAll('campAction').map((v) => v.toString());
+    // Whitelist against the registry — unknown ids become 400 rather
+    // than bubbling up as a generic runtime error from rest().
+    const campActions: CampActionId[] = [];
+    for (const id of rawCamp) {
+      if (id in CAMP_ACTIONS_BY_ID) campActions.push(id as CampActionId);
+      else throw error(400, `unknown camp action: ${id}`);
+    }
     let state = await loadState(locals, slot);
-    state = rest(state, days, shovelActions.length > 0 ? { shovelActions } : {});
+    state = rest(state, days, campActions.length > 0 ? { campActions } : {});
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },
