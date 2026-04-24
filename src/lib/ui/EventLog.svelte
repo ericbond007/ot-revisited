@@ -37,12 +37,11 @@
   .event-log {
     display: flex;
     flex-direction: column;
-    /* Fixed-size strip in the left column — no flex-grow (don't push
-       the stage off-viewport), no full-row width (lines shouldn't
-       stretch 1000-px across for 40 characters of text). Parent sets
-       the actual bounds via its own max-width. */
+    /* Flex-grows to the bottom of the viewport — the parent .log-wrap
+       caps the width, so "grow to fit" is safe here. Internal scroll
+       handles long logs. */
     min-height: 0;
-    max-height: 180px;
+    flex: 1;
   }
   .event-log-scroll {
     font-size: 0.9em;

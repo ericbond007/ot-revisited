@@ -303,14 +303,15 @@
     min-width: 0;
     min-height: 0;
   }
-  /* Event log strip — narrow cap so lines don't stretch the full
-     column width. Left-aligns, leaves the right side of the left
-     column as visual breathing room. */
+  /* Event log strip — capped width so lines don't stretch the full
+     column width. Flex-grows vertically to the bottom of the left
+     column (the stage and action bar take their own heights first). */
   .log-wrap {
-    max-width: 520px;
+    max-width: 680px;
     width: 100%;
     min-height: 0;
     display: flex;
+    flex: 1;
   }
   .log-wrap > :global(.event-log) {
     flex: 1;
