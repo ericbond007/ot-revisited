@@ -106,7 +106,7 @@
         <p class="advice">
           The meat will spoil in <strong>{daysUntilSpoil} day{daysUntilSpoil === 1 ? '' : 's'}</strong>.
           The party eats it first at every meal. To preserve it, make camp and
-          pick <strong>Cure meat into jerky</strong> — salt halves the cure time and raises the yield.
+          pick <strong>Cure meat into jerky</strong> — <strong>salt</strong> halves the cure time and raises the yield.
         </p>
       {/if}
     {:else}
