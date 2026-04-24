@@ -31,11 +31,24 @@ describe('hunt', () => {
     expect(h.inventory.bullets).toBeLessThan(startingBullets);
   });
 
-  it('adds meat to inventory on a successful hunt', () => {
+  it('adds fresh game meat to inventory on a successful hunt', () => {
     const s = newGame();
     const h = hunt(s, { target: 'small', ammo: 'moderate', hunters: 1 });
-    const hadBefore = s.inventory.bacon ?? 0;
-    expect((h.inventory.bacon ?? 0)).toBeGreaterThanOrEqual(hadBefore);
+    const hadBefore = s.inventory.game_meat ?? 0;
+    expect((h.inventory.game_meat ?? 0)).toBeGreaterThanOrEqual(hadBefore);
+  });
+
+  it('sets a spoil-day flag on the meat pile after a kill', () => {
+    const s = newGame();
+    const h = hunt(s, { target: 'medium', ammo: 'moderate', hunters: 1 });
+    // Only assert if the hunt actually produced meat (deterministic seed
+    // should, but be defensive for future seed changes).
+    if ((h.inventory.game_meat ?? 0) > 0) {
+      expect(typeof h.flags._gameMeatSpoilDay).toBe('number');
+      // Spoil day is in the future relative to the hunt tick. Hunt advances
+      // the day by 1, so the flag set at hunt-day should still be ≥ h.day.
+      expect(h.flags._gameMeatSpoilDay as number).toBeGreaterThanOrEqual(h.day);
+    }
   });
 
   it('rejects a hunt when target is non-gather and no rifles are owned', () => {

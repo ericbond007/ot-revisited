@@ -21,9 +21,17 @@ export interface ItemMeta {
 }
 
 export const ITEMS: Record<string, ItemMeta> = {
-  flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten first each day.' },
+  // Fresh game meat spoils fast — foodDrawOrder 0 puts it ahead of every
+  // other food in consumption so the party naturally eats it before it
+  // rots. The spoilage system (systems/spoilage.ts) zeroes out remaining
+  // meat after a few days via flags._gameMeatSpoilDay.
+  game_meat:   { id: 'game_meat',   name: 'Game meat',    category: 'food', weightLbPerUnit: 1, foodDrawOrder: 0, description: 'Fresh kill from the hunt. Eaten first — spoils in a few days without curing.' },
+  flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten after fresh meat.' },
   beans:       { id: 'beans',       name: 'Beans',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 2, description: 'Shelf-stable protein. Keeps indefinitely.' },
   bacon:       { id: 'bacon',       name: 'Bacon',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: 'Salted pork. High-calorie, slow to spoil.' },
+  // Jerky sits at 3.5 so it reads between bacon and hardtack — a durable
+  // staple meat protein. Cured from game_meat + salt (camp action TBD).
+  jerky:       { id: 'jerky',       name: 'Jerky',        category: 'food', weightLbPerUnit: 0.5, foodDrawOrder: 3.5, description: 'Dried strips of cured meat. Lean, salty, lasts indefinitely.' },
   hardtack:    { id: 'hardtack',    name: 'Hardtack',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 4, description: 'Indestructible biscuit. Fills bellies, drags morale.' },
   dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Cures scurvy. Small morale boost when eaten.' },
   pemmican:    { id: 'pemmican',    name: 'Pemmican',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6, description: 'Native-prepared dried meat + fat. Never spoils.' },
@@ -54,6 +62,7 @@ export const ITEMS: Record<string, ItemMeta> = {
   cookware: { id: 'cookware', name: 'Cookware', category: 'tool', weightLbPerUnit: 15, description: 'Required to boil water (post-1854). Meals taste better, small morale bump.' },
   rope: { id: 'rope', name: 'Rope', category: 'tool', weightLbPerUnit: 8, description: 'Lower wagons down steep grades, secure loads, rescue fallen oxen.' },
   shovel: { id: 'shovel', name: 'Shovel', category: 'tool', weightLbPerUnit: 5, description: 'Enables well-digging, grave-digging, wagon extraction. Auto-digs firepit + latrine each camp.' },
+  salt: { id: 'salt', name: 'Salt', category: 'tool', weightLbPerUnit: 1, description: 'Preserves fresh game meat. Multiplies curing speed, reduces spoilage loss during the jerk process.' },
   compass: { id: 'compass', name: 'Compass', category: 'tool', weightLbPerUnit: 0.5, description: 'Reduces the chance of being lost in storms or fog.' },
   water_skin: { id: 'water_skin', name: 'Water skin', category: 'tool', weightLbPerUnit: 2, description: 'Increases water carry capacity. A buffer for dry stretches.' },
   ox_shoes: { id: 'ox_shoes', name: 'Ox shoes', category: 'tool', weightLbPerUnit: 2, description: 'Replace shoes oxen throw on rocky terrain. A Blacksmith or Teamster re-shoes them.' },

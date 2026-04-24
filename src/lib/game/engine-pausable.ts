@@ -10,6 +10,7 @@ import { applyTravel } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
 import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
+import { applySpoilage } from './systems/spoilage';
 import type { GameEvent } from './content/events';
 import { pickText } from './content/text-pools';
 
@@ -34,6 +35,9 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
 
   let s = progressConditions(normalized, rng);
+  // Spoilage runs BEFORE consumption so the party can't eat rotten meat
+  // on its spoil-day. Any remaining fresh game_meat is zeroed out first.
+  s = applySpoilage(s);
   s = applyDailyConsumption(s);
   s = tickOxen(s, rng);
   s = tickWagon(s, rng);

@@ -76,11 +76,11 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'frontier',
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
-      'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'coffee', 'tea',
+      'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'ox_shoes',
-      'shovel', 'rope', 'cookware', 'compass', 'water_skin',
+      'shovel', 'salt', 'rope', 'cookware', 'compass', 'water_skin',
       'tobacco', 'whiskey', 'bible',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
@@ -117,11 +117,11 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'hbc',
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
-      'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
+      'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes',
-      'tobacco', 'whiskey', 'harmonica'
+      'salt', 'tobacco', 'whiskey', 'harmonica'
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
     river: { depthFt: 5.0, currentMph: 3, ferryPrice: 6 } },
@@ -156,11 +156,11 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'end_of_trail',
     blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",
     stock: [
-      'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
+      'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas',
-      'cookware', 'rope',
+      'cookware', 'rope', 'salt',
       'tobacco', 'whiskey', 'bible', 'harmonica', 'fiddle'
     ] },
   { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 50,  terrain: 'mountains', kind: 'landmark' },

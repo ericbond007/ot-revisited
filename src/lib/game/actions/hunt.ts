@@ -6,6 +6,7 @@ import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
+import { applySpoilage, computeSpoilDay } from '../systems/spoilage';
 
 export type HuntTarget = 'small' | 'medium' | 'big' | 'gather';
 export type AmmoBand = 'light' | 'moderate' | 'heavy';
@@ -56,6 +57,8 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   const rng = makeRng(`${s.seed}:action:hunt:${s.day}:0`);
 
   s = progressConditions(s, rng);
+  // Spoilage fires before consumption so rotten meat is purged, not eaten.
+  s = applySpoilage(s);
   s = applyDailyConsumption(s);
   s = adjustMorale(s, rng);
 
@@ -78,16 +81,24 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     ? rawYield
     : Math.round(rawYield * yieldMultiplier * carryMultiplier * (spentBullets / AMMO_BY_BAND.moderate));
 
-  const key = isGather ? 'flour' : 'bacon';
+  // Hunts produce fresh game meat (perishable); gather still routes to
+  // flour as a catch-all berries/roots proxy until the gather-output
+  // rework (#123). Fresh meat adds to any existing pile and refreshes the
+  // spoil clock — a newer kill delays the whole pile's rot by design, a
+  // simplification over per-lb aging.
+  const key = isGather ? 'flour' : 'game_meat';
+  const gain = Math.max(0, meatLbs);
   const current = s.inventory[key] ?? 0;
-  s = {
-    ...s,
-    inventory: {
-      ...s.inventory,
-      [key]: current + Math.max(0, meatLbs),
-      bullets: availableBullets - spentBullets
-    }
+  const nextInventory = {
+    ...s.inventory,
+    [key]: current + gain,
+    bullets: availableBullets - spentBullets
   };
+  const nextFlags =
+    !isGather && gain > 0
+      ? { ...s.flags, _gameMeatSpoilDay: computeSpoilDay(s.day) }
+      : s.flags;
+  s = { ...s, inventory: nextInventory, flags: nextFlags };
 
   if (profile.injuryRisk > 0 && rng.chance(profile.injuryRisk)) {
     // Only adults hunt, so only adults take hunting injuries.
@@ -109,7 +120,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   const logText = isGather
     ? `Gathered ${meatLbs} lb of berries and roots.`
     : meatLbs > 0
-      ? `Hunt returned ${meatLbs} lb of meat (${spentBullets} bullets).`
+      ? `Hunt returned ${meatLbs} lb of fresh game meat (${spentBullets} bullets). Eat it or cure it before it spoils.`
       : `Hunt returned empty-handed (${spentBullets} bullets).`;
   s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: logText }] };
 

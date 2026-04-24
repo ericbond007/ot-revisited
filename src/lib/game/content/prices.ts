@@ -11,6 +11,11 @@ export const PRICES: Record<string, PriceEntry> = {
   hardtack:    { buy: 0.15, sell: 0.08 },
   dried_fruit: { buy: 0.60, sell: 0.35 },
   pemmican:    { buy: 0.80, sell: 0.45 },
+  // Jerky is premium shelf-stable meat — priced between bacon and pemmican.
+  jerky:       { buy: 0.65, sell: 0.40 },
+  // Fresh game meat is highly perishable; kept here so the sell-what-you-got
+  // path works but priced low (and posts won't usually stock it).
+  game_meat:   { buy: 0.30, sell: 0.10 },
   sugar:       { buy: 0.35, sell: 0.20 },
   coffee:      { buy: 1.50, sell: 0.80 },
   tea:         { buy: 1.00, sell: 0.60 },
@@ -41,6 +46,7 @@ export const PRICES: Record<string, PriceEntry> = {
   cookware:     { buy: 8.00,  sell: 4.00 },
   rope:         { buy: 2.50,  sell: 1.20 },
   shovel:       { buy: 4.00,  sell: 2.00 },
+  salt:         { buy: 1.50,  sell: 0.60 },
   compass:      { buy: 8.00,  sell: 4.00 },
   water_skin:   { buy: 2.00,  sell: 1.00 },
   ox_shoes:     { buy: 1.00,  sell: 0.50 },
