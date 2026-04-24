@@ -27,6 +27,8 @@ export const PRICES: Record<string, PriceEntry> = {
   // A live laying hen — cheap at Independence, trickier to stock
   // mid-trail. Sell side low because posts rarely want more poultry.
   chicken:     { buy: 0.50, sell: 0.20 },
+  // Feed
+  grain:       { buy: 0.15, sell: 0.06 },
 
   // Wagon parts
   wheel:       { buy: 10.00, sell: 6.00 },

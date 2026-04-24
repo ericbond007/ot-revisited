@@ -57,11 +57,19 @@ export interface PartyMember {
   deathDay?: number;
 }
 
+export type DraftKind = 'ox' | 'mule';
+
+// Historically the interface was named Ox and type-narrow to oxen.
+// Widened with `kind` so a team can be oxen or mules. Field name kept
+// `Ox` for backward compatibility with tests and save files; new code
+// should treat this as a DraftAnimal and inspect `kind` to branch.
 export interface Ox {
   id: string;
   health: number; // 0..100
   fatigue: number; // 0..100
   shod: boolean;
+  // Defaults to 'ox' when missing (legacy saves, older test fixtures).
+  kind?: DraftKind;
 }
 
 export interface Wagon {

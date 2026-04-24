@@ -20,6 +20,20 @@ const TERRAIN_MULTIPLIER: Record<Terrain, number> = {
   river: 0.0
 };
 
+// Mules do better on rough terrain than oxen — surer-footed, lighter
+// on descents. Applied as a per-terrain multiplier on top of the base
+// terrain modifier when the team is all mules. Mixed teams average.
+const MULE_TERRAIN_BONUS: Partial<Record<Terrain, number>> = {
+  mountains: 1.25,
+  forest: 1.10,
+  desert: 1.05
+};
+
+// Speed bonus per mule vs ox in the team. Historical rule of thumb
+// was "mules move ~25% faster than oxen". We apply it as a fraction
+// of the team ratio so a mixed team scales linearly.
+const MULE_SPEED_BONUS = 0.25;
+
 function runningMilesTo(id: string): number {
   let sum = 0;
   for (const l of LANDMARKS) {
@@ -31,15 +45,28 @@ function runningMilesTo(id: string): number {
 
 export function milesPerDay(state: GameState): number {
   const wagon = getWagon(state.wagon.model);
-  const aliveOxen = state.oxen.filter((o) => o.health > 0).length;
+  const aliveTeam = state.oxen.filter((o) => o.health > 0);
   // Hard gate: under wagon's minTeam, the wagon simply can't be pulled.
-  if (aliveOxen < wagon.minTeam) return 0;
+  if (aliveTeam.length < wagon.minTeam) return 0;
 
   const base = PACE_BASE_MILES[state.pace];
-  const terrain = TERRAIN_MULTIPLIER[state.location.terrain];
+  let terrain = TERRAIN_MULTIPLIER[state.location.terrain];
   const oxen = oxenSpeedFactor(state.oxen, wagon.optimalTeam);
+
+  // Team-kind multiplier. Mule ratio scales both the speed bonus and
+  // the terrain bonus (so a pure mule team gets full mountain grip,
+  // a half-mule team gets half, an all-ox team gets none).
+  const muleCount = aliveTeam.filter((a) => a.kind === 'mule').length;
+  const muleRatio = aliveTeam.length > 0 ? muleCount / aliveTeam.length : 0;
+  const teamSpeedMult = 1 + MULE_SPEED_BONUS * muleRatio;
+  const terrainBonus = MULE_TERRAIN_BONUS[state.location.terrain];
+  if (terrainBonus !== undefined && muleRatio > 0) {
+    // Lerp between base terrain and mule-adjusted terrain by mule ratio.
+    terrain = terrain + (terrain * terrainBonus - terrain) * muleRatio;
+  }
+
   const load = loadSpeedMult(state);
-  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * load);
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.

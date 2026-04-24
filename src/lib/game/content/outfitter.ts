@@ -7,6 +7,8 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
   // Livestock
   'yoke', 'chicken',
+  // Feed
+  'grain',
   // Wagon parts
   'wheel', 'axle', 'tongue', 'canvas', 'spare_plank',
   // Weapons

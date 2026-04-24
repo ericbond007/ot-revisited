@@ -6,6 +6,7 @@
 
   const CATEGORY_ORDER: ItemCategory[] = [
     'food',
+    'feed',
     'medicine',
     'tool',
     'wagon_part',
@@ -18,6 +19,7 @@
   ];
   const CATEGORY_LABEL: Record<ItemCategory, string> = {
     food: 'Food',
+    feed: 'Feed',
     medicine: 'Medicine',
     weapon: 'Weapons',
     ammo: 'Ammo',
@@ -30,6 +32,7 @@
   };
   const CATEGORY_ICON: Record<ItemCategory, string> = {
     food: '🍖',
+    feed: '🌾',
     medicine: '💊',
     weapon: '🔫',
     ammo: '🎯',

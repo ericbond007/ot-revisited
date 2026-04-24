@@ -1182,3 +1182,57 @@ const chicken_predator: GameEvent = {
 };
 
 EVENTS.push(chicken_predator);
+
+// --- Mule events (task #14) --------------------------------------------
+// Mules were stolen more often than oxen — easier to lead away, more
+// valuable per head. Dog presence halves the roll (barks at intruders).
+
+const mule_theft: GameEvent = {
+  id: 'mule_theft',
+  category: 'encounter',
+  title: 'A mule is missing at dawn',
+  body: 'The picket line is one short. Tracks lead into the brush — someone worked the hitch loose in the night.',
+  weight: 2,
+  gate: (s) => s.oxen.some((a) => a.kind === 'mule' && a.health > 0),
+  choices: [
+    {
+      id: 'track_thief',
+      label: 'Track the thief at first light',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const recovered = rng.chance(s.dog ? 0.7 : 0.4);
+        if (recovered) {
+          return logLine(
+            s,
+            s.dog
+              ? `${s.dog.name} found the scent — you caught up with the thief by noon. Mule recovered.`
+              : 'You caught up with the thief by noon. Mule recovered, knuckles bruised.'
+          );
+        }
+        // Lost a mule.
+        const muleIdx = s.oxen.findIndex((a) => a.kind === 'mule' && a.health > 0);
+        const next = muleIdx === -1 ? s : { ...s, oxen: s.oxen.filter((_, i) => i !== muleIdx) };
+        return logLine(
+          { ...next, morale: Math.max(0, s.morale - 4) },
+          'The tracks vanished into a creekbed. The mule was gone for good. Morale −4.'
+        );
+      }
+    },
+    {
+      id: 'press_on',
+      label: "Press on — can't afford the delay",
+      silentLog: true,
+      apply: (s) => {
+        const muleIdx = s.oxen.findIndex((a) => a.kind === 'mule' && a.health > 0);
+        const next = muleIdx === -1 ? s : { ...s, oxen: s.oxen.filter((_, i) => i !== muleIdx) };
+        return logLine(
+          { ...next, morale: Math.max(0, s.morale - 2) },
+          'You hitched up with one less mule and rolled out. Morale −2.'
+        );
+      }
+    }
+  ]
+};
+
+EVENTS.push(mule_theft);

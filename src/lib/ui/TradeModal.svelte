@@ -98,16 +98,16 @@
   // Group ids by item category so the list reads like a store shelf rather
   // than a flat alphabetical dump.
   const CATEGORY_ORDER: ItemCategory[] = [
-    'food', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo',
+    'food', 'feed', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo',
     'clothing', 'livestock', 'comfort', 'native_trade'
   ];
   const CATEGORY_LABEL: Record<ItemCategory, string> = {
-    food: 'Food', medicine: 'Medicine', weapon: 'Weapons', ammo: 'Ammunition',
+    food: 'Food', feed: 'Feed', medicine: 'Medicine', weapon: 'Weapons', ammo: 'Ammunition',
     tool: 'Tools', wagon_part: 'Wagon parts', livestock: 'Livestock',
     clothing: 'Clothing', comfort: 'Comfort', native_trade: 'Trade goods'
   };
   const CATEGORY_ICON: Record<ItemCategory, string> = {
-    food: '🍖', medicine: '💊', weapon: '🔫', ammo: '🎯', tool: '🔨',
+    food: '🍖', feed: '🌾', medicine: '💊', weapon: '🔫', ammo: '🎯', tool: '🔨',
     wagon_part: '🛠️', livestock: '🐂', clothing: '🧥', comfort: '🎁',
     native_trade: '🪶'
   };

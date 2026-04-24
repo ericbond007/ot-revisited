@@ -228,6 +228,20 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'with_mules',
+    label: 'Party with mules + grain',
+    description: 'Fort Laramie with a 4-mule team, 100 lb grain stocked, dog to deter thieves.',
+    build: () => {
+      const base = atLandmark(baseState('mules'), 'ft_laramie');
+      return {
+        ...base,
+        dog: { name: 'Jasper' },
+        oxen: base.oxen.map((o) => ({ ...o, kind: 'mule' as const })),
+        inventory: { ...base.inventory, grain: 100 }
+      };
+    }
+  },
+  {
     id: 'with_chickens',
     label: 'Party with chickens',
     description: 'Fort Laramie with 4 hens in the coop, a dog, and a growing egg pile.',

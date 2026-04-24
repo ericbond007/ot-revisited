@@ -6,7 +6,7 @@ import { WAGONS, getWagon, DEFAULT_WAGON_MODEL, type WagonModelId } from '$lib/g
 import { recomputeWaterCap } from '$lib/game/systems/water-cap';
 import { randomDogName } from '$lib/game/content/dog-names';
 import { makeRng } from '$lib/game/rng';
-import type { GameState, Ox } from '$lib/game/types';
+import type { DraftKind, GameState, Ox } from '$lib/game/types';
 
 const OX_PRICE = 20;
 const MAX_EXTRA_OXEN = 8;
@@ -61,13 +61,37 @@ function applyWagonSwap(state: GameState, newModelId: WagonModelId): GameState {
   };
 }
 
-function addOxen(state: GameState, count: number): GameState {
+const MULE_PRICE_SURCHARGE = 10; // matches the client-side constant
+
+function addOxen(state: GameState, count: number, kind: DraftKind): GameState {
   if (count <= 0) return state;
   const next: Ox[] = [...state.oxen];
   for (let i = 0; i < count; i++) {
-    next.push({ id: `ox-extra-${state.oxen.length + i}`, health: 100, fatigue: 0, shod: true });
+    next.push({
+      id: `ox-extra-${state.oxen.length + i}`,
+      health: 100,
+      fatigue: 0,
+      shod: true,
+      kind
+    });
   }
-  return { ...state, oxen: next, cash: state.cash - count * OX_PRICE };
+  const perHead = OX_PRICE + (kind === 'mule' ? MULE_PRICE_SURCHARGE : 0);
+  return { ...state, oxen: next, cash: state.cash - count * perHead };
+}
+
+/** Convert every existing team animal to the given kind + charge the
+ *  surcharge on swap. The starter team is all oxen by default; a mule
+ *  party pays $10/head to outfit mules instead.
+ */
+function setTeamKind(state: GameState, kind: DraftKind): GameState {
+  const currentKind: DraftKind = state.oxen[0]?.kind ?? 'ox';
+  if (currentKind === kind) return state;
+  const surcharge = kind === 'mule' ? state.oxen.length * MULE_PRICE_SURCHARGE : -state.oxen.length * MULE_PRICE_SURCHARGE;
+  return {
+    ...state,
+    oxen: state.oxen.map((a) => ({ ...a, kind })),
+    cash: state.cash - surcharge
+  };
 }
 
 export const actions: Actions = {
@@ -79,6 +103,8 @@ export const actions: Actions = {
     const wagonModel = parseWagonId(fd.get('wagonModel')?.toString());
     const extraOxenRaw = parseInt(fd.get('extraOxen')?.toString() ?? '0', 10);
     const extraOxen = Math.max(0, Math.min(MAX_EXTRA_OXEN, Number.isFinite(extraOxenRaw) ? extraOxenRaw : 0));
+    const rawKind = fd.get('teamKind')?.toString();
+    const teamKind: DraftKind = rawKind === 'mule' ? 'mule' : 'ox';
 
     // Dog — unchecked checkboxes don't submit, so presence of `bringDog`
     // in the form means "yes". Name falls back to the suggested one if
@@ -111,12 +137,16 @@ export const actions: Actions = {
       resources: { ...state.resources, water: state.resources.waterCap }
     };
 
-    // 2. Buy extra oxen before supplies so the capacity check reflects the
-    //    final team. Cash gets deducted here too.
-    if (state.cash - extraOxen * OX_PRICE < 0) {
-      return fail(400, { error: `Not enough cash for ${extraOxen} extra oxen.` });
+    // 2. Set team kind (applies surcharge for mule team) then buy
+    //    extras at the per-head rate. Cash deducted here.
+    state = setTeamKind(state, teamKind);
+    const perHead = OX_PRICE + (teamKind === 'mule' ? MULE_PRICE_SURCHARGE : 0);
+    if (state.cash - extraOxen * perHead < 0) {
+      return fail(400, {
+        error: `Not enough cash for ${extraOxen} extra ${teamKind === 'mule' ? 'mules' : 'oxen'}.`
+      });
     }
-    state = addOxen(state, extraOxen);
+    state = addOxen(state, extraOxen, teamKind);
 
     // 3. Buy supplies via the trade action. Throws if overdrawn.
     if (buys.length > 0) {

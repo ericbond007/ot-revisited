@@ -49,6 +49,15 @@
   let selectedWagon = $state<WagonModelId>(gs.wagon.model);
   let extraOxen = $state(0);
 
+  // Team kind: 'ox' or 'mule'. Historically mules cost more but moved
+  // faster and climbed better. Mules also need grain — we recommend a
+  // default stock when the player picks mule.
+  // svelte-ignore state_referenced_locally
+  let teamKind = $state<'ox' | 'mule'>(
+    gs.oxen.find((o) => o.kind === 'mule') ? 'mule' : 'ox'
+  );
+  const MULE_PRICE_SURCHARGE = 10; // per head vs oxen
+
   const defaultWagonPrice = $derived(data.wagons[data.defaultWagon].price);
   const selectedWagonModel = $derived(getWagon(selectedWagon));
   const wagonCashDiff = $derived(getWagon(gs.wagon.model).price - selectedWagonModel.price);
@@ -62,7 +71,13 @@
     Object.entries(buyQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.buy ?? 0) * buyMult, 0)
   );
   const oxenCost = $derived(extraOxen * data.oxPrice);
-  const totalCost = $derived(suppliesCost + oxenCost - wagonCashDiff);
+  // Mules cost more per head than oxen — the surcharge applies to the
+  // starter team as well as any extras the player buys. Using a flat
+  // per-head adjustment reads cleanly in the totals bar.
+  const teamSurcharge = $derived(
+    teamKind === 'mule' ? (gs.oxen.length + extraOxen) * MULE_PRICE_SURCHARGE : 0
+  );
+  const totalCost = $derived(suppliesCost + oxenCost + teamSurcharge - wagonCashDiff);
   const canAfford = $derived(Math.ceil(totalCost) <= gs.cash);
 
   // Weight of supplies being bought (independent of starter inventory weight,
@@ -208,6 +223,7 @@
 
   const CATEGORY_LABEL: Record<ItemCategory, string> = {
     food: 'Food',
+    feed: 'Feed',
     medicine: 'Medicine',
     weapon: 'Weapons',
     ammo: 'Ammunition',
@@ -220,6 +236,7 @@
   };
   const CATEGORY_ICON: Record<ItemCategory, string> = {
     food: '🍖',
+    feed: '🌾',
     medicine: '💊',
     weapon: '🔫',
     ammo: '🎯',
@@ -236,13 +253,23 @@
   const DEFAULT_OPEN: ItemCategory[] = ['food', 'medicine', 'tool'];
   let openCats = $state<Record<ItemCategory, boolean>>(
     {
-      food: true, medicine: true, weapon: false, ammo: false, tool: true,
+      food: true, feed: false, medicine: true, weapon: false, ammo: false, tool: true,
       wagon_part: false, livestock: false, clothing: false, comfort: false, native_trade: false
     }
   );
   function toggleCat(c: ItemCategory) {
     openCats[c] = !openCats[c];
   }
+
+  // Auto-open the feed section when the player picks mules, so they
+  // can't miss the grain stock. Leave it alone once they've touched it.
+  let feedAutoOpened = $state(false);
+  $effect(() => {
+    if (teamKind === 'mule' && !feedAutoOpened) {
+      openCats.feed = true;
+      feedAutoOpened = true;
+    }
+  });
 
   // Subtotal per group — helps the player see where the spend is going
   // without expanding every category.
@@ -482,15 +509,36 @@
         />
       </section>
 
-      <!-- Oxen -->
+      <!-- Team -->
       <section class="oxen-section panel">
         <div class="panel-head">
-          OXEN
-          <span class="hint">${data.oxPrice} each at Independence. Extras are insurance.</span>
+          TEAM
+          <span class="hint">${data.oxPrice} per ox. Mules are +${MULE_PRICE_SURCHARGE}/head but faster and grain-fed.</span>
         </div>
+
+        <!-- Kind picker: oxen (default) or mules -->
+        <div class="team-kind-row">
+          <label class="kind-card" class:selected={teamKind === 'ox'}>
+            <input type="radio" name="teamKind" value="ox" bind:group={teamKind} />
+            <span class="kind-glyph">🐂</span>
+            <span class="kind-body">
+              <span class="kind-label">Oxen</span>
+              <span class="kind-sub">Graze the prairie · no grain needed · durable</span>
+            </span>
+          </label>
+          <label class="kind-card" class:selected={teamKind === 'mule'}>
+            <input type="radio" name="teamKind" value="mule" bind:group={teamKind} />
+            <span class="kind-glyph">🐴</span>
+            <span class="kind-body">
+              <span class="kind-label">Mules <span class="surcharge">+${MULE_PRICE_SURCHARGE}/head</span></span>
+              <span class="kind-sub">+25% speed · better on mountains · 1 lb grain/day each</span>
+            </span>
+          </label>
+        </div>
+
         <div class="oxen-row">
           <div class="oxen-counts">
-            <span class="oxen-glyph">🐂</span>
+            <span class="oxen-glyph">{teamKind === 'mule' ? '🐴' : '🐂'}</span>
             <span class="oxen-have">Starter: <strong>{startingOxenCount}</strong></span>
             <span class="oxen-plus">+</span>
             <NumberStepper
@@ -498,11 +546,17 @@
               bind:value={extraOxen}
               min={0}
               max={data.maxExtraOxen}
-              ariaLabel="Extra oxen to buy"
+              ariaLabel="Extra {teamKind === 'mule' ? 'mules' : 'oxen'} to buy"
             />
-            <span class="oxen-total">= <strong>{totalOxen}</strong> oxen</span>
+            <span class="oxen-total">= <strong>{totalOxen}</strong> {teamKind === 'mule' ? 'mules' : 'oxen'}</span>
           </div>
           <div class="team-status tone-{teamStatus.tone}">{teamStatus.text}</div>
+          {#if teamKind === 'mule'}
+            <div class="grain-hint">
+              Mules need grain: {totalOxen * 1} lb/day. Stock some in Supplies below —
+              a full trip to Oregon (~150 days) is {totalOxen * 150} lb.
+            </div>
+          {/if}
         </div>
       </section>
 
@@ -973,6 +1027,54 @@
   }
   .wagon-section .panel-head, .oxen-section .panel-head {
     margin-bottom: 0.5em;
+  }
+
+  .team-kind-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.5em;
+    margin-bottom: 0.6em;
+  }
+  .kind-card {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    padding: 0.6em 0.8em;
+    background: var(--c-bg-raised);
+    border: 2px solid var(--c-wood);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .kind-card:hover { border-color: var(--c-rust); }
+  .kind-card.selected {
+    background: var(--c-rust-dark);
+    border-color: var(--c-rust);
+  }
+  .kind-card input[type='radio'] {
+    margin: 0;
+    accent-color: var(--c-rust);
+  }
+  .kind-glyph { font-size: 1.8em; line-height: 1; }
+  .kind-body { display: flex; flex-direction: column; gap: 0.1em; }
+  .kind-label { color: var(--c-tan-bright); font-weight: 700; }
+  .kind-sub { font-size: 0.82em; color: var(--c-wood); }
+  .kind-card.selected .kind-sub { color: var(--c-tan); }
+  .surcharge {
+    font-size: 0.8em;
+    color: #c96a2a;
+    font-weight: 700;
+    margin-left: 0.3em;
+  }
+  .grain-hint {
+    font-size: 0.82em;
+    color: var(--c-tan);
+    padding: 0.35em 0.5em;
+    background: rgba(201, 106, 42, 0.1);
+    border-left: 3px solid var(--c-rust);
+    border-radius: 0 3px 3px 0;
+    margin-top: 0.4em;
+    line-height: 1.4;
   }
 
   .oxen-row {

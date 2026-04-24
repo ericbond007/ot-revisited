@@ -17,6 +17,11 @@ const OVERWORK_HEALTH_DRAIN = 2;
 export const TEAMSTER_FATIGUE_MULT = 0.85;
 export const TEAMSTER_RECOVERY_MULT = 1.20;
 
+// Mules can't subsist on prairie grass alone. 1 lb grain per live
+// mule per day. Without grain, fatigue climbs 2× on unfed mules.
+export const GRAIN_LB_PER_MULE = 1;
+const MULE_UNFED_FATIGUE_MULT = 2.0;
+
 // Max team-factor bonus from spare oxen above the wagon's optimal team.
 // Spares provide insurance (one dies, next keeps pulling) with a small
 // speed bonus — not a farmable advantage.
@@ -26,17 +31,48 @@ export function tickOxen(state: GameState, _rng: Rng): GameState {
   const base = FATIGUE_PER_DAY_BY_PACE[state.pace];
   const teamsterMult = hasLiveTeamster(state) ? TEAMSTER_FATIGUE_MULT : 1;
   const overloadMult = loadFatigueMult(state);
+
+  // Feed the mules before they tick fatigue — 1 lb grain per live
+  // mule. If the grain runs out mid-day, the unfed mules tick with
+  // a 2× fatigue multiplier that day.
+  const liveMules = state.oxen.filter((a) => a.health > 0 && a.kind === 'mule');
+  const need = liveMules.length * GRAIN_LB_PER_MULE;
+  const haveGrain = state.inventory.grain ?? 0;
+  const ateGrain = Math.min(need, haveGrain);
+  const unfed = need - ateGrain;
+  const inventory = ateGrain > 0
+    ? { ...state.inventory, grain: haveGrain - ateGrain }
+    : state.inventory;
+
   const oxen = state.oxen.map((ox) => {
     if (ox.health === 0) return ox;
+    const mulePenalty =
+      ox.kind === 'mule' && unfed > 0 ? MULE_UNFED_FATIGUE_MULT : 1;
     const fatigueGain = Math.round(
-      base * (ox.shod ? 1 : SHOELESS_FATIGUE_MULTIPLIER) * teamsterMult * overloadMult
+      base * (ox.shod ? 1 : SHOELESS_FATIGUE_MULTIPLIER) * teamsterMult * overloadMult * mulePenalty
     );
     const fatigue = Math.min(100, ox.fatigue + fatigueGain);
     const healthDrain = fatigue >= HIGH_FATIGUE_THRESHOLD ? OVERWORK_HEALTH_DRAIN : 0;
     const health = Math.max(0, ox.health - healthDrain);
     return { ...ox, fatigue, health };
   });
-  return { ...state, oxen };
+
+  let nextState: GameState = { ...state, oxen, inventory };
+
+  if (unfed > 0 && liveMules.length > 0) {
+    nextState = {
+      ...nextState,
+      eventLog: [
+        ...nextState.eventLog,
+        {
+          day: state.day,
+          text: `${unfed} ${unfed === 1 ? 'mule went' : 'mules went'} without feed today. Fatigue climbing fast.`
+        }
+      ]
+    };
+  }
+
+  return nextState;
 }
 
 /**

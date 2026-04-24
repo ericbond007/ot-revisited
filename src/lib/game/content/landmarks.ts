@@ -77,7 +77,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon', 'hardtack',
       'bullets', 'bandages', 'quinine',
       'coat', 'blanket',
-      'spare_plank', 'ox_shoes', 'rope', 'chicken'
+      'spare_plank', 'ox_shoes', 'rope', 'chicken', 'grain'
     ] },
   { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 120, terrain: 'prairie',   kind: 'landmark' },
   { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 60, terrain: 'river', kind: 'river',
@@ -95,7 +95,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'ox_shoes',
-      'shovel', 'salt', 'rope', 'cookware', 'compass', 'water_skin', 'chicken',
+      'shovel', 'salt', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'grain',
       'tobacco', 'whiskey', 'bible',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
