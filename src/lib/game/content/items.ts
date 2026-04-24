@@ -73,9 +73,9 @@ export const ITEMS: Record<string, ItemMeta> = {
   bullets: { id: 'bullets', name: 'Bullets', category: 'ammo', weightLbPerUnit: 0.1, description: 'Consumed on every hunt. Runs out faster than you expect.' },
   rifle_cleaning_kit: { id: 'rifle_cleaning_kit', name: 'Rifle cleaning kit', category: 'tool', weightLbPerUnit: 2, description: 'Keeps rifles firing in rain / wet weather.' },
 
-  coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Reduces cold-weather health loss.' },
-  boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3, description: 'Reduces party fatigue on rough terrain.' },
-  blanket: { id: 'blanket', name: 'Blanket', category: 'clothing', weightLbPerUnit: 5, description: 'Wards off night chill during winter camps.' },
+  coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Warmth +25 per person (one per body). Cuts ford-chill damage and cold-camp health loss.' },
+  boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3, description: 'Warmth +15 per person. Helps most when wading into cold rivers.' },
+  blanket: { id: 'blanket', name: 'Blanket', category: 'clothing', weightLbPerUnit: 5, description: 'Warmth +25 per person. Night chill mitigation when the fire goes out.' },
 
   iron_toolkit: { id: 'iron_toolkit', name: 'Iron toolkit', category: 'tool', weightLbPerUnit: 20, description: 'Unlocks proper wagon repairs. Without it, repairs cost 2× the spare parts.' },
   cookware: { id: 'cookware', name: 'Cookware', category: 'tool', weightLbPerUnit: 15, description: 'Required to boil water (post-1854). Meals taste better, small morale bump.' },
@@ -100,8 +100,8 @@ export const ITEMS: Record<string, ItemMeta> = {
   fiddle: { id: 'fiddle', name: 'Fiddle', category: 'comfort', weightLbPerUnit: 3, description: 'Larger morale bump than a harmonica. Keeps spirits up on long nights.' },
   bible: { id: 'bible', name: 'Bible', category: 'comfort', weightLbPerUnit: 2, description: '+2 passive morale while owned. Enables Preacher\'s camp service.' },
 
-  moccasins: { id: 'moccasins', name: 'Moccasins', category: 'native_trade', weightLbPerUnit: 1, description: 'Quieter travel — reduces bandit-alert rolls. +cold protection.' },
-  buffalo_robe: { id: 'buffalo_robe', name: 'Buffalo robe', category: 'native_trade', weightLbPerUnit: 8, description: 'Best cold protection. Warm, heavy, indispensable in winter.' },
+  moccasins: { id: 'moccasins', name: 'Moccasins', category: 'native_trade', weightLbPerUnit: 1, description: 'Warmth +10 per person. Lightweight cold mitigation; pairs well with a coat.' },
+  buffalo_robe: { id: 'buffalo_robe', name: 'Buffalo robe', category: 'native_trade', weightLbPerUnit: 8, description: 'Warmth +25 per person. Heavy but the warmest single item — indispensable in winter.' },
   beads: { id: 'beads', name: 'Trade beads / calico', category: 'native_trade', weightLbPerUnit: 2, description: 'Currency for trading with Native tribes.' }
 };
 

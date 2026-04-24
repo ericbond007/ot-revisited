@@ -1,5 +1,5 @@
 import type { GameState } from '../types';
-import { makeRng } from '../rng';
+import { makeRng, type Rng } from '../rng';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
@@ -7,6 +7,7 @@ import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
 import { applyDehydration } from '../systems/dehydration';
 import { applyEggLay } from '../systems/eggs';
+import { exposureMult } from '../systems/warmth';
 
 export interface RiverState {
   depthFt: number;
@@ -46,6 +47,80 @@ function advanceOneDay(d: { year: number; month: number; day: number }) {
   if (day > cap) { day = 1; month += 1; }
   if (month > 12) { month = 1; year += 1; }
   return { year, month, day };
+}
+
+// Cold-season + terrain amplifier for ford-chill. Summer plains: 1.0.
+// Winter or mountains: substantially harsher.
+function chillSeasonMult(state: GameState): number {
+  const m = state.date.month;
+  const coldMonth = m <= 3 || m >= 10; // Oct–Mar
+  const mountains = state.location.terrain === 'mountains';
+  let mult = 1.0;
+  if (coldMonth) mult += 0.5;
+  if (mountains) mult += 0.25;
+  return mult;
+}
+
+// Apply a cold-water chill to everyone who went in. `baseHit` is the
+// naked-party-in-mild-weather ceiling; mitigated by clothing (via
+// `exposureMult`) and amplified by season/terrain. Severe chill
+// (warm-season, naked) can also inflict frostbite.
+function applyFordChill(
+  state: GameState,
+  baseHit: number,
+  rng: Rng,
+  events: string[]
+): GameState {
+  const exp = exposureMult(state);
+  const season = chillSeasonMult(state);
+  const perAdult = Math.round(baseHit * exp * season);
+  if (perAdult <= 0) return state;
+
+  let s = state;
+  let anyAffected = false;
+  s = {
+    ...s,
+    party: s.party.map((m) => {
+      if (m.dead) return m;
+      anyAffected = true;
+      const hit = m.kind === 'child' ? Math.max(1, Math.round(perAdult * 0.7)) : perAdult;
+      return { ...m, health: Math.max(0, m.health - hit) };
+    })
+  };
+  if (!anyAffected) return state;
+
+  const line = `Cold water chilled the party — about ${perAdult} HP each.`;
+  events.push(line);
+  s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };
+
+  // Severe exposure in cold weather: someone may come out frostbitten.
+  if (exp > 0.6 && season > 1.3 && rng.chance(0.25 * exp)) {
+    const alive = s.party.filter((m) => !m.dead);
+    if (alive.length > 0) {
+      const victim = alive[rng.int(0, alive.length - 1)];
+      const already = victim.conditions.some((c) => c.id === 'frostbite');
+      if (!already) {
+        s = {
+          ...s,
+          party: s.party.map((m) =>
+            m.id === victim.id
+              ? {
+                  ...m,
+                  conditions: [
+                    ...m.conditions,
+                    { id: 'frostbite' as const, daysSinceOnset: 0 }
+                  ]
+                }
+              : m
+          )
+        };
+        const fline = `${victim.name} came out with frostbite.`;
+        events.push(fline);
+        s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: fline }] };
+      }
+    }
+  }
+  return s;
 }
 
 function passiveDay(state: GameState, seedSuffix: string): GameState {
@@ -100,6 +175,10 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };
       s = passiveDay(s, 'caulk-1');
       s = passiveDay(s, 'caulk-2');
+      // Even with a floating wagon, feet, boots, and gear get wet.
+      // Lighter chill than a full ford — water spills over the bow.
+      const caulkRng = makeRng(`${s.seed}:action:ford:${s.day}:caulk-chill`);
+      s = applyFordChill(s, 4, caulkRng, events);
       s = clearAtLandmark(s);
       crossed = true;
       break;
@@ -183,6 +262,10 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       const success = 'Forded the river.';
       events.push(success);
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: success }] };
+      // Everyone got wet. Chill is heavy (10 HP base); clothing mitigates,
+      // cold season / mountains amplify. Deep + fast rivers chill harder.
+      const chillBase = Math.round(10 + Math.min(6, danger));
+      s = applyFordChill(s, chillBase, rng, events);
       s = clearAtLandmark(passiveDay(s, 'ford'));
       crossed = true;
       break;

@@ -1,5 +1,6 @@
 import type { GameState, Terrain } from '../types';
 import type { Rng } from '../rng';
+import { exposureMult } from './warmth';
 
 // Nightly fire. Wood is the gate — historically, emigrants with dry
 // fuel and a flint could light a fire; the real daily problem was
@@ -40,9 +41,13 @@ function isColdNight(state: GameState): boolean {
 
 function applyColdPenalty(state: GameState): GameState {
   const cold = isColdNight(state);
+  // Clothing takes the edge off a cold camp — a fully-kitted party loses
+  // ~20% of the health hit, a bare-shirt one takes the full dose.
+  const exp = exposureMult(state);
+  const hit = Math.max(1, Math.round(COLD_NIGHT_HEALTH_HIT * exp));
   const party = cold
     ? state.party.map((m) =>
-        m.dead ? m : { ...m, health: Math.max(0, m.health - COLD_NIGHT_HEALTH_HIT) }
+        m.dead ? m : { ...m, health: Math.max(0, m.health - hit) }
       )
     : state.party;
   return {

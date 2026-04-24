@@ -102,3 +102,60 @@ describe('ford', () => {
     expect(result.daysElapsed).toBe(2);
   });
 });
+
+describe('ford chill', () => {
+  it('naked party takes more chill damage than well-clothed one', () => {
+    const base = newGame();
+    const naked: GameState = { ...base, inventory: {} };
+    const clothed: GameState = {
+      ...base,
+      inventory: { coat: 2, blanket: 2, boots: 2, buffalo_robe: 2, moccasins: 2 }
+    };
+    const nakedFord = ford(naked, { method: 'ford', river: RIVER });
+    const clothedFord = ford(clothed, { method: 'ford', river: RIVER });
+    const nakedHp = nakedFord.party.reduce((a, m) => a + m.health, 0);
+    const clothedHp = clothedFord.party.reduce((a, m) => a + m.health, 0);
+    expect(clothedHp).toBeGreaterThan(nakedHp);
+  });
+
+  it('ferry method skips chill (dry crossing)', () => {
+    const s: GameState = { ...newGame(), cash: 20, inventory: {} };
+    const f = ford(s, { method: 'ferry', river: RIVER });
+    // Ferry applies passiveDay consumption but no chill line.
+    const events = (f.flags._fordResult as { events: string[] }).events;
+    expect(events.some((e) => /chilled/i.test(e))).toBe(false);
+  });
+
+  it('caulk method applies chill but lighter than full ford', () => {
+    const base = { ...newGame(), inventory: {} };
+    const fordResult = ford(base, { method: 'ford', river: RIVER });
+    const caulkResult = ford(base, { method: 'caulk', river: RIVER });
+    const fordHpLoss = base.party.reduce((a, m) => a + m.health, 0)
+      - fordResult.party.reduce((a, m) => a + m.health, 0);
+    const caulkHpLoss = base.party.reduce((a, m) => a + m.health, 0)
+      - caulkResult.party.reduce((a, m) => a + m.health, 0);
+    expect(caulkHpLoss).toBeLessThan(fordHpLoss);
+  });
+
+  it('winter ford in mountains hurts more than summer prairie', () => {
+    const summer: GameState = {
+      ...newGame(),
+      inventory: {},
+      date: { year: 1848, month: 7, day: 15 },
+      location: { ...newGame().location, terrain: 'prairie' as const }
+    };
+    const winter: GameState = {
+      ...newGame(),
+      inventory: {},
+      date: { year: 1848, month: 12, day: 15 },
+      location: { ...newGame().location, terrain: 'mountains' as const }
+    };
+    const summerFord = ford(summer, { method: 'ford', river: RIVER });
+    const winterFord = ford(winter, { method: 'ford', river: RIVER });
+    const summerLoss = summer.party.reduce((a, m) => a + m.health, 0)
+      - summerFord.party.reduce((a, m) => a + m.health, 0);
+    const winterLoss = winter.party.reduce((a, m) => a + m.health, 0)
+      - winterFord.party.reduce((a, m) => a + m.health, 0);
+    expect(winterLoss).toBeGreaterThan(summerLoss);
+  });
+});

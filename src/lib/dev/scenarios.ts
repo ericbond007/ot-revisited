@@ -306,6 +306,24 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'winter_ford_naked',
+    label: 'Winter ford, no clothes',
+    description: 'Forded a mountain river in December with no clothing — heavy chill + likely frostbite.',
+    build: () => {
+      let base = atLandmark(baseState('cold-ford'), 'kansas_river');
+      base = {
+        ...base,
+        date: { year: 1848, month: 12, day: 15 },
+        location: { ...base.location, terrain: 'mountains' as const },
+        inventory: {}
+      };
+      return ford(base, {
+        method: 'ford',
+        river: { depthFt: 3.5, currentMph: 3, ferryPrice: 5 }
+      });
+    }
+  },
+  {
     id: 'post_trade_receipt',
     label: 'Post-trade receipt',
     description: 'Just traded at Fort Laramie — opens the TradeReceiptModal.',
