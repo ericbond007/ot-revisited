@@ -1,10 +1,16 @@
 <script lang="ts">
   // Popover menu anchored to the cowboy-hat journey icon. Add new actions to
   // the `items` array below — each is just a {icon, label, href, danger?}.
+  import { SCENARIOS } from '$lib/dev/scenarios';
 
   let { open = $bindable(false), onclose }: { open?: boolean; onclose?: () => void } = $props();
 
   let root = $state<HTMLDivElement | undefined>(undefined);
+
+  // Dev-only: quick-load scenarios from the Journey menu. Vite inlines
+  // `import.meta.env.DEV` to a constant, so this block drops out of the
+  // production bundle entirely.
+  const isDev = import.meta.env.DEV;
 
   function close() {
     open = false;
@@ -54,6 +60,24 @@
         </span>
       </a>
     {/each}
+
+    {#if isDev}
+      <div class="menu-divider"></div>
+      <div class="menu-head dev-head">🧪 DEV SCENARIOS</div>
+      {#each SCENARIOS as sc}
+        <form method="POST" action="/?/loadScenario" class="dev-form">
+          <input type="hidden" name="scenario" value={sc.id} />
+          <button type="submit" class="item dev-item" role="menuitem" onclick={close}>
+            <span class="item-icon">🎯</span>
+            <span class="item-body">
+              <span class="item-label">{sc.label}</span>
+              <span class="item-sub">{sc.description}</span>
+            </span>
+          </button>
+        </form>
+      {/each}
+    {/if}
+
     <div class="menu-foot">Esc to close</div>
   </div>
 {/if}
@@ -80,6 +104,38 @@
     color: var(--c-wood);
     font-weight: 700;
     padding: 0.3em 0.5em 0.5em 0.5em;
+  }
+  .dev-head {
+    color: #8bb96a;
+  }
+  .menu-divider {
+    height: 1px;
+    background: rgba(138, 90, 42, 0.4);
+    margin: 0.4em 0.3em 0.1em;
+  }
+  .dev-form {
+    margin: 0;
+    padding: 0;
+    display: block;
+    width: 100%;
+  }
+  .dev-item {
+    width: 100%;
+    /* Override the theme button chrome so it matches the other menu
+       items visually — it's still a submit button, just styled as a row. */
+    background: var(--c-bg-raised);
+    color: var(--c-tan);
+    font-family: inherit;
+    font-weight: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    text-align: left;
+    border: 2px solid rgba(139, 185, 106, 0.35);
+  }
+  .dev-item:hover {
+    border-color: #8bb96a;
+    color: var(--c-tan-bright);
   }
   .menu-foot {
     font-size: 0.65em;
