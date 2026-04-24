@@ -29,6 +29,40 @@ export interface RestOptions {
   campActions?: CampActionId[];
 }
 
+// Structured reveal written to flags._campSummary by rest(). Consumed by
+// CampSummaryModal; cleared by the `?/ackCamp` server action after the
+// player acknowledges. JSON-serializable — goes through the save format.
+export interface CampSummary {
+  daysRested: number;
+  startDay: number;
+  morale: { before: number; after: number };
+  party: Array<{
+    id: string;
+    name: string;
+    healthBefore: number;
+    healthAfter: number;
+    dead: boolean;
+    diedDuringRest: boolean;
+  }>;
+  oxen: {
+    avgFatigueBefore: number;
+    avgFatigueAfter: number;
+    alive: number;
+    total: number;
+  };
+  activities: Array<{ id: CampActionId; label: string; icon: string }>;
+  // Per-item net change in inventory during the rest. Positive = gained,
+  // negative = consumed. The modal filters to "interesting" items; raw
+  // data lives here so the surface can evolve without rest.ts changes.
+  inventoryDelta: Array<{ id: string; delta: number }>;
+  water: { before: number; after: number };
+}
+
+function avg(nums: number[]): number {
+  if (nums.length === 0) return 0;
+  return Math.round(nums.reduce((s, n) => s + n, 0) / nums.length);
+}
+
 const OX_FATIGUE_RECOVERY_PER_REST_DAY = 25;
 const BASE_HEAL_PER_REST_DAY = 8;
 const FARMER_FORAGE_AT_REST = 3;
@@ -52,6 +86,17 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
 
   let s = upgradeState(state);
   const startDay = s.day;
+  // Snapshot pre-rest state for the post-rest summary. Deep-enough for
+  // what the summary needs (primitives + arrays of primitives inside
+  // structs are already re-created by the reducers, so references
+  // stay stable).
+  const before = {
+    morale: s.morale,
+    inventory: { ...s.inventory },
+    water: s.resources.water,
+    party: s.party.map((m) => ({ id: m.id, health: m.health, dead: m.dead })),
+    oxen: s.oxen.map((o) => ({ id: o.id, fatigue: o.fatigue, health: o.health }))
+  };
 
   for (let i = 0; i < days; i++) {
     const rng = makeRng(`${s.seed}:action:rest:${s.day}:0`);
@@ -126,6 +171,63 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
   s = {
     ...s,
     eventLog: [...s.eventLog, { day: startDay, text: `Rested for ${days} day${days === 1 ? '' : 's'}.` }]
+  };
+
+  // Build the post-rest summary by diffing the snapshot against final
+  // state. Party + oxen are keyed by id so re-ordering doesn't confuse
+  // the delta; inventory is a full-keyspace walk so new items are
+  // surfaced.
+  const invIds = new Set<string>([
+    ...Object.keys(before.inventory),
+    ...Object.keys(s.inventory)
+  ]);
+  const inventoryDelta: CampSummary['inventoryDelta'] = [];
+  for (const id of invIds) {
+    const b = before.inventory[id] ?? 0;
+    const a = s.inventory[id] ?? 0;
+    if (a !== b) inventoryDelta.push({ id, delta: a - b });
+  }
+
+  const partyDelta: CampSummary['party'] = s.party.map((m) => {
+    const b = before.party.find((p) => p.id === m.id);
+    return {
+      id: m.id,
+      name: m.name,
+      healthBefore: b?.health ?? m.health,
+      healthAfter: m.health,
+      dead: m.dead,
+      diedDuringRest: m.dead && !(b?.dead ?? false)
+    };
+  });
+
+  const oxAliveBefore = before.oxen.filter((o) => o.health > 0);
+  const oxAliveAfter = s.oxen.filter((o) => o.health > 0);
+
+  const summary: CampSummary = {
+    daysRested: days,
+    startDay,
+    morale: { before: before.morale, after: s.morale },
+    party: partyDelta,
+    oxen: {
+      avgFatigueBefore: avg(oxAliveBefore.map((o) => o.fatigue)),
+      avgFatigueAfter: avg(oxAliveAfter.map((o) => o.fatigue)),
+      alive: oxAliveAfter.length,
+      total: s.oxen.length
+    },
+    activities: (opts.campActions ?? []).map((id) => {
+      const a = getCampAction(id);
+      return { id: a.id, label: a.label, icon: a.icon };
+    }),
+    inventoryDelta,
+    water: { before: before.water, after: s.resources.water }
+  };
+
+  s = {
+    ...s,
+    flags: {
+      ...s.flags,
+      _campSummary: summary as unknown as Record<string, unknown>
+    }
   };
 
   return s;

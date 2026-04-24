@@ -13,6 +13,7 @@
   import TradeModal from '$lib/ui/TradeModal.svelte';
   import VisitModal from '$lib/ui/VisitModal.svelte';
   import CampStage from '$lib/ui/CampStage.svelte';
+  import CampSummaryModal from '$lib/ui/CampSummaryModal.svelte';
   import WagonModal from '$lib/ui/WagonModal.svelte';
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
   import PartyModal from '$lib/ui/PartyModal.svelte';
@@ -23,11 +24,13 @@
   import { getLandmark } from '$lib/game/content/landmarks';
   import type { GameState } from '$lib/game/types';
   import type { HuntHaul } from '$lib/game/actions/hunt';
+  import type { CampSummary } from '$lib/game/actions/rest';
 
   let { data, form } = $props();
   const gs = $derived<GameState>(form?.state ?? data.state);
   const pendingEventId = $derived((gs.flags._pendingEventId as string | undefined));
   const huntHaul = $derived((gs.flags._huntHaul as unknown as HuntHaul | undefined));
+  const campSummary = $derived((gs.flags._campSummary as unknown as CampSummary | undefined));
   const qp = $derived(encodeURIComponent(data.slot));
   const paceAction = $derived(`?/setPace&slot=${qp}`);
   const rationsAction = $derived(`?/setRations&slot=${qp}`);
@@ -223,6 +226,10 @@
 
 {#if huntHaul && !gs.completed}
   <PostHuntModal haul={huntHaul} slot={data.slot} currentDay={gs.day} />
+{/if}
+
+{#if campSummary && !gs.completed}
+  <CampSummaryModal summary={campSummary} slot={data.slot} />
 {/if}
 
 {#if showFord && !gs.completed}

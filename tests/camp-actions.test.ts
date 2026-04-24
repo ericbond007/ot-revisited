@@ -122,4 +122,38 @@ describe('camp actions', () => {
     const log = out.eventLog.map((e) => e.text).join('\n');
     expect(log.toLowerCase()).toMatch(/grave/);
   });
+
+  it('stashes a _campSummary flag with structured before/after data', () => {
+    const s = {
+      ...newGame(),
+      inventory: { ...newGame().inventory, whiskey: 1, shovel: 1 },
+      morale: 40
+    };
+    const out = rest(s, 2, { campActions: ['pass_whiskey', 'dig_well'] });
+
+    expect(out.flags._campSummary).toBeTruthy();
+    const summary = out.flags._campSummary as Record<string, unknown>;
+
+    expect(summary.daysRested).toBe(2);
+    expect(summary.startDay).toBe(s.day);
+
+    const morale = summary.morale as { before: number; after: number };
+    expect(morale.before).toBe(40);
+    expect(typeof morale.after).toBe('number');
+
+    // Activities should list both picked actions.
+    const activities = summary.activities as Array<{ id: string }>;
+    expect(activities.map((a) => a.id).sort()).toEqual(['dig_well', 'pass_whiskey']);
+
+    // Party + oxen + inventoryDelta are populated.
+    const party = summary.party as Array<{ name: string }>;
+    expect(party.length).toBe(s.party.length);
+    expect((summary.oxen as { alive: number }).alive).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(summary.inventoryDelta)).toBe(true);
+
+    // Whiskey was consumed — it should show up as a negative delta.
+    const invDelta = summary.inventoryDelta as Array<{ id: string; delta: number }>;
+    const whiskeyRow = invDelta.find((r) => r.id === 'whiskey');
+    expect(whiskeyRow?.delta).toBe(-1);
+  });
 });

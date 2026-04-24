@@ -203,6 +203,18 @@ export const actions: Actions = {
     return { state: next };
   },
 
+  // Same shape as ackHunt — clears the post-rest CampSummary flag.
+  ackCamp: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const state = await loadState(locals, slot);
+    const flags = { ...state.flags };
+    delete (flags as Record<string, unknown>)._campSummary;
+    const next = { ...state, flags };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
   ford: async ({ url, request, locals }) => {
     const slot = url.searchParams.get('slot');
     if (!slot) throw error(400, 'slot required');

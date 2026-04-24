@@ -15,6 +15,7 @@ import type { HuntHaul } from '$lib/game/actions/hunt';
 import { createInitialState } from '$lib/game/engine';
 import { LANDMARKS, getLandmark, nextLandmarkAfter } from '$lib/game/content/landmarks';
 import { computeSpoilDay } from '$lib/game/systems/spoilage';
+import { rest } from '$lib/game/actions/rest';
 
 export interface Scenario {
   id: string;
@@ -233,6 +234,29 @@ export const SCENARIOS: Scenario[] = [
         pemmican: 8, bullets: 4, quinine: 0, bandages: 1
       });
       return s;
+    }
+  },
+  {
+    id: 'post_camp_summary',
+    label: 'Post-camp summary',
+    description: 'Just finished a 3-day rest with whiskey + dig-well + sing-along — opens the camp reveal.',
+    build: () => {
+      // Set up a party that can actually run all three activities, then
+      // run rest() so the summary flag is authentic (not hand-rolled).
+      let s = baseState('post_camp');
+      s = setInventory(s, {
+        ...s.inventory,
+        whiskey: 2, harmonica: 1, shovel: 1
+      });
+      // Bring morale and ox fatigue somewhere mid-range so the deltas
+      // in the modal read as meaningful.
+      s = {
+        ...s,
+        morale: 45,
+        oxen: s.oxen.map((o) => ({ ...o, fatigue: 55 })),
+        party: s.party.map((m, i) => i === 1 ? { ...m, health: 70 } : m)
+      };
+      return rest(s, 3, { campActions: ['pass_whiskey', 'dig_well', 'sing_along'] });
     }
   }
 ];
