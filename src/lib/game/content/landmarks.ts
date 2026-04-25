@@ -39,7 +39,7 @@ export interface Landmark {
   // Town services available at this post (#152). Hubs (Laramie, Hall,
   // Dalles) carry the full menu; outposts and road ranches carry
   // subsets. Empty / omitted = post is trade-only.
-  services?: readonly ('blacksmith' | 'inn' | 'gambling' | 'brothel')[];
+  services?: readonly ('blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip')[];
   // Per-post inn rate override (USD/person/night). Defaults to the
   // global INN_DOLLARS_PER_PERSON_PER_NIGHT — only set on luxury posts.
   innNightlyRate?: number;
@@ -83,7 +83,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // now, just a handful of prairie staples and a few luxuries.
     postKind: 'frontier',
     stockScale: 0.5,
-    services: ['inn', 'gambling', 'brothel'],
+    services: ['gossip', 'inn', 'gambling', 'brothel'],
     blurb: "A sod-and-timber road ranch on Cottonwood Creek. A private store run by a German emigrant — prairie staples, a little whiskey, and whatever the last train didn't buy.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack',
@@ -99,7 +99,7 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'us_army',
     buysFromEmigrants: false,
     stockScale: 1.0,
-    services: ['blacksmith'],
+    services: ['gossip', 'blacksmith'],
     blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries, and he will not buy from you.',
     stock: [
       'flour', 'beans', 'bacon', 'hardtack',
@@ -119,7 +119,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // and whatever furs he's willing to spare.
     postKind: 'mountain',
     stockScale: 0.4,
-    services: ['blacksmith'],
+    services: ['gossip', 'blacksmith'],
     blurb: "Joseph Robidoux's trading post at the pass south of Scotts Bluff. A fur-trader outfit with a working forge — moccasins, beads, and a few hard-won comforts.",
     stock: [
       'flour', 'bacon', 'jerky',
@@ -134,7 +134,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // trail — and famously the highest prices.
     postKind: 'frontier',
     stockScale: 1.5,
-    services: ['blacksmith', 'inn', 'gambling', 'brothel'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel'],
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
@@ -164,7 +164,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
     stockScale: 0.45,
-    services: ['blacksmith'],
+    services: ['gossip', 'blacksmith'],
     blurb: "Jim Bridger's stockade is famously thin on stock. Moccasins, buffalo robes, and whatever the mountain men happened to bring in this week. Take what you can get.",
     stock: [
       'flour', 'bacon',
@@ -186,7 +186,7 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'hbc',
     abandonedAfterYear: 1856,
     stockScale: 1.1,
-    services: ['blacksmith', 'inn', 'gambling', 'brothel'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel'],
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
@@ -201,7 +201,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // Small HBC station. Modest stock, not a major resupply.
     postKind: 'hbc',
     stockScale: 0.6,
-    services: ['blacksmith'],
+    services: ['gossip', 'blacksmith'],
     blurb: 'A small HBC station by the Boise River. Cottonwoods, worn travelers, and a modest stock — not a major resupply, but the water is good.',
     stock: [
       'flour', 'bacon', 'dried_fruit',
@@ -218,7 +218,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // specialty here (Walla Walla / Cayuse trade networks).
     postKind: 'hbc',
     stockScale: 0.7,
-    services: ['blacksmith'],
+    services: ['gossip', 'blacksmith'],
     blurb: 'A lonely HBC outpost by the Columbia. Basic but reliable stock, and a specialty in Native trade goods — Walla Walla and Cayuse networks run through here.',
     stock: [
       'flour', 'beans', 'bacon',
@@ -232,7 +232,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
     stockScale: 1.3,
-    services: ['blacksmith', 'inn', 'gambling', 'brothel'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel'],
     innNightlyRate: 2,
     blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",
     stock: [

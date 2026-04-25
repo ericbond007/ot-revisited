@@ -392,6 +392,28 @@ export const actions: Actions = {
     return { state };
   },
 
+  townGossip: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    if (!state.location.atLandmarkId) throw error(409, 'not at a landmark');
+    const here = getLandmark(state.location.atLandmarkId);
+    if (!(here.services ?? []).includes('gossip')) throw error(409, 'no gossip here');
+    const COST = 1;
+    if (state.cash < COST) throw error(409, "need $1 for a round of drinks");
+    // Charge cash, then pull a fresh news item via the existing generator.
+    state = { ...state, cash: state.cash - COST };
+    const rng = makeRng(`${state.seed}:gossip:${here.id}:${state.day}:${state.cash}`);
+    const item = generatePostGossip(state, rng, here.name);
+    if (item) state = addNews(state, item);
+    else state = {
+      ...state,
+      eventLog: [...state.eventLog, { day: state.day, text: `Bought a round at ${here.name} but heard nothing new.` }]
+    };
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
   townBrothel: async ({ url, locals }) => {
     const slot = url.searchParams.get('slot');
     if (!slot) throw error(400, 'slot required');

@@ -144,9 +144,12 @@ describe('per-post service availability', () => {
     expect(laramie.services).toContain('brothel');
   });
 
-  it('Fort Bridger has only the blacksmith', () => {
+  it('Fort Bridger has gossip + blacksmith only', () => {
     const bridger = getLandmark('ft_bridger');
-    expect(bridger.services).toEqual(['blacksmith']);
+    expect(bridger.services).toContain('blacksmith');
+    expect(bridger.services).toContain('gossip');
+    expect(bridger.services).not.toContain('inn');
+    expect(bridger.services).not.toContain('brothel');
   });
 
   it('Hollenberg Ranch covers inn + gambling + brothel but no smith', () => {

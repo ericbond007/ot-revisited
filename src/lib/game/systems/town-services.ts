@@ -10,7 +10,7 @@ import type { Rng } from '../rng';
 // All three are pure functions that return a new GameState. The play
 // route's server actions wrap them in form-handler shells.
 
-export type TownServiceKind = 'blacksmith' | 'inn' | 'gambling' | 'brothel';
+export type TownServiceKind = 'blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip';
 
 // --- Blacksmith ---
 

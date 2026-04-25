@@ -95,6 +95,29 @@
         </button>
       {/if}
 
+      <!-- Ask around — $1 for a round of drinks, get a fresh rumor. -->
+      {#if services.includes('gossip')}
+        <form
+          method="POST"
+          action="?/townGossip&slot={qp}"
+          use:enhance={() => () => {}}
+          class="svc-form"
+        >
+          <button
+            type="submit"
+            class="action-card"
+            disabled={gameState.cash < 1}
+            title={gameState.cash < 1 ? 'Need $1 for a round' : ''}
+          >
+            <span class="action-icon">📢</span>
+            <span class="action-body">
+              <span class="action-label">Ask around for news</span>
+              <span class="action-sub">$1 (round of drinks) · pulls a fresh rumor</span>
+            </span>
+          </button>
+        </form>
+      {/if}
+
       <!-- Blacksmith — adjustable points to repair. -->
       {#if services.includes('blacksmith')}
         <form
