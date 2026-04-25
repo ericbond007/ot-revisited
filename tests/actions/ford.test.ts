@@ -137,6 +137,21 @@ describe('ford chill', () => {
     expect(caulkHpLoss).toBeLessThan(fordHpLoss);
   });
 
+  it('summer prairie ford causes zero chill damage even naked', () => {
+    const summer: GameState = {
+      ...newGame(),
+      inventory: {},
+      date: { year: 1848, month: 7, day: 15 },
+      location: { ...newGame().location, terrain: 'prairie' as const }
+    };
+    const fordResult = ford(summer, { method: 'ford', river: RIVER });
+    const before = summer.party.reduce((a, m) => a + m.health, 0);
+    const after = fordResult.party.reduce((a, m) => a + m.health, 0);
+    expect(after).toBe(before);
+    const events = (fordResult.flags._fordResult as { events: string[] }).events;
+    expect(events.some((e) => /chilled/i.test(e))).toBe(false);
+  });
+
   it('winter ford in mountains hurts more than summer prairie', () => {
     const summer: GameState = {
       ...newGame(),

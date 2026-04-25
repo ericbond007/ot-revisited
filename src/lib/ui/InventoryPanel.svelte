@@ -2,6 +2,7 @@
   import type { GameState } from '$lib/game/types';
   import { ITEMS, type ItemCategory } from '$lib/game/content/items';
   import { foodConsumedToday } from '$lib/game/systems/consumption';
+  import { warmthFor } from '$lib/game/systems/warmth';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
   const CATEGORY_ORDER: ItemCategory[] = [
@@ -81,6 +82,22 @@
     foodDays >= 7  ? '#c96a2a' : '#e85a4a'
   );
 
+  // Warmth — aggregate clothing score (0-100). Each item warms one
+  // body, so a party of N needs N of each warmth item to max it out.
+  const warmth = $derived(warmthFor(state));
+  const aliveCount = $derived(state.party.filter((m) => !m.dead).length);
+  const warmthColor = $derived(
+    warmth >= 75 ? '#8bb96a' :
+    warmth >= 50 ? '#f5c96a' :
+    warmth >= 25 ? '#c96a2a' : '#e85a4a'
+  );
+  const warmthTip = $derived(
+    `Warmth: ${warmth}/100. Each item warms one body — for a party of ${aliveCount}, ` +
+    `buy ${aliveCount} coats, ${aliveCount} blankets, etc. ` +
+    `Mitigates cold-water ford chill and cold-camp HP loss when no fire. ` +
+    `Coat / blanket / buffalo robe = 25 each. Boots = 15. Moccasins = 10.`
+  );
+
   const totalWeight = $derived(
     Math.round(groups.reduce((s, g) => s + g.entries.reduce((a, e) => a + e.weight, 0), 0))
   );
@@ -121,6 +138,14 @@
       <div class="weight-fill" style="width: {weightPct}%; background: {weightColor};"></div>
     </div>
     <span class="weight-num" style="color: {weightColor};">{totalWeight}/{capacity}</span>
+  </div>
+
+  <div class="weight-row" title={warmthTip}>
+    <span class="weight-label">🧥 Warmth</span>
+    <div class="weight-bar">
+      <div class="weight-fill" style="width: {warmth}%; background: {warmthColor};"></div>
+    </div>
+    <span class="weight-num" style="color: {warmthColor};">{warmth}/100</span>
   </div>
 
   <!-- Category-grouped items. Short enough per-group that the panel is

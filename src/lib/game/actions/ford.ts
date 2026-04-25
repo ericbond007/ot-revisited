@@ -49,14 +49,17 @@ function advanceOneDay(d: { year: number; month: number; day: number }) {
   return { year, month, day };
 }
 
-// Cold-season + terrain amplifier for ford-chill. Summer plains: 1.0.
-// Winter or mountains: substantially harsher.
+// Season + terrain modifier for ford-chill. Wading a Kansas creek in
+// July shouldn't cost health — this returns 0 in summer non-mountain
+// terrain and ramps with the cold. Mountain rivers stay cold from
+// snowmelt year-round, so they always carry some chill.
 function chillSeasonMult(state: GameState): number {
   const m = state.date.month;
-  const coldMonth = m <= 3 || m >= 10; // Oct–Mar
   const mountains = state.location.terrain === 'mountains';
-  let mult = 1.0;
-  if (coldMonth) mult += 0.5;
+  let mult: number;
+  if (m >= 5 && m <= 9) mult = 0.0;          // May–Sep: warm
+  else if (m === 4 || m === 10) mult = 0.5;  // Apr, Oct: shoulder
+  else mult = 1.0;                           // Nov–Mar: cold
   if (mountains) mult += 0.25;
   return mult;
 }
@@ -178,7 +181,7 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       // Even with a floating wagon, feet, boots, and gear get wet.
       // Lighter chill than a full ford — water spills over the bow.
       const caulkRng = makeRng(`${s.seed}:action:ford:${s.day}:caulk-chill`);
-      s = applyFordChill(s, 4, caulkRng, events);
+      s = applyFordChill(s, 3, caulkRng, events);
       s = clearAtLandmark(s);
       crossed = true;
       break;
@@ -262,9 +265,10 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       const success = 'Forded the river.';
       events.push(success);
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: success }] };
-      // Everyone got wet. Chill is heavy (10 HP base); clothing mitigates,
-      // cold season / mountains amplify. Deep + fast rivers chill harder.
-      const chillBase = Math.round(10 + Math.min(6, danger));
+      // Everyone got wet. Chill scales with cold-water exposure: base
+      // ramp from danger, mitigated by clothing, gated by season — so
+      // a summer prairie ford does no health damage at all.
+      const chillBase = Math.round(6 + Math.min(6, danger));
       s = applyFordChill(s, chillBase, rng, events);
       s = clearAtLandmark(passiveDay(s, 'ford'));
       crossed = true;
