@@ -1,11 +1,11 @@
 <script lang="ts">
-  // Side-view of the wagon traveling along the current terrain. Renders
-  // under the trail map. Three horizontal bands — sky / horizon / ground
-  // — restyled per terrain. Custom CSS wagon (canvas top + body + two
-  // wheels) is pulled by an ox or mule glyph based on the team kind.
-  //
-  // For now, the wagon idles in place with a gentle bobbing animation.
-  // Eventually this slot will host real frame-by-frame travel.
+  // Day Travel Status view — a vertical split panel that goes under the
+  // trail map. Left half: side-view scene of the wagon on terrain (sky
+  // band, horizon row, ground band, custom CSS wagon pulled by ox/mule).
+  // Right half: text readouts for the current day — terrain, weather,
+  // season, miles. Eventually the left panel hosts real frame-by-frame
+  // travel; the right panel widens to include actual weather state
+  // (#153) and per-day mileage tracking.
 
   import type { GameState } from '$lib/game/types';
 
@@ -46,39 +46,133 @@
   // Sun / moon glyph — month-driven. December sun rides low, July high;
   // approximated visually with vertical position.
   const skyAccent = $derived(state.date.month >= 11 || state.date.month <= 2 ? '🌥️' : '☀️');
+
+  // --- Right-pane status readouts ---
+
+  // Pretty terrain label + glyph for the readout column.
+  const terrainLabel = $derived.by(() => {
+    if (terrain === 'mountains') return { glyph: '🏔️', name: 'Mountains' };
+    if (terrain === 'forest')    return { glyph: '🌲', name: 'Forest' };
+    if (terrain === 'desert')    return { glyph: '🌵', name: 'Desert' };
+    if (terrain === 'river')     return { glyph: '〰️', name: 'River' };
+    return { glyph: '🌾', name: 'Prairie' };
+  });
+
+  // Stand-in weather flavor — derived from month + terrain until #153
+  // (real weather pass) lands. Two-word descriptors keep the column tight.
+  const weatherLabel = $derived.by(() => {
+    const m = state.date.month;
+    if (terrain === 'desert')   return { glyph: '☀️', text: 'Hot, arid' };
+    if (terrain === 'river')    return { glyph: '💧', text: 'Damp air' };
+    if (terrain === 'mountains') {
+      if (m >= 11 || m <= 2)    return { glyph: '❄️', text: 'Frozen' };
+      if (m >= 6 && m <= 8)     return { glyph: '🌤️', text: 'Cool, thin' };
+      return { glyph: '🌥️', text: 'Crisp' };
+    }
+    if (terrain === 'forest') {
+      if (m >= 11 || m <= 2)    return { glyph: '🌧️', text: 'Cold, wet' };
+      return { glyph: '🌳', text: 'Damp, shaded' };
+    }
+    // prairie default
+    if (m >= 11 || m <= 2) return { glyph: '❄️', text: 'Cold, frost' };
+    if (m >= 6 && m <= 8)  return { glyph: '☀️', text: 'Hot, dry' };
+    if (m === 3 || m === 4) return { glyph: '🌤️', text: 'Cool, breezy' };
+    return { glyph: '🍂', text: 'Brisk, windy' };
+  });
+
+  // Season label — flavor only.
+  const seasonLabel = $derived.by(() => {
+    const m = state.date.month;
+    if (m >= 3 && m <= 5)  return 'Spring';
+    if (m >= 6 && m <= 8)  return 'Summer';
+    if (m >= 9 && m <= 11) return 'Fall';
+    return 'Winter';
+  });
+
+  // Lifetime miles traveled — quick reference. Per-day mileage tracking
+  // would slot in here once the engine surfaces it.
+  const milesTraveled = $derived(Math.round(state.location.milesTraveled));
 </script>
 
-<div class="wagon-scene panel" aria-hidden="true">
-  <div class="sky" style="background: {skyGradient};">
-    <span class="sky-accent">{skyAccent}</span>
-  </div>
-  <div class="horizon">
-    <span class="horizon-row">{horizonGlyphs}</span>
-  </div>
-  <div class="ground" style="background: {groundGradient};"></div>
-
-  <!-- The rig: ox/mule pulling a custom CSS wagon. Bobbing animation
-       gives the impression of travel without committing to scrolling. -->
-  <div class="rig">
-    <span class="team">{teamGlyph}</span>
-    <div class="wagon">
-      <div class="canvas-top"></div>
-      <div class="body"></div>
-      <div class="wheel wheel-left"></div>
-      <div class="wheel wheel-right"></div>
+<div class="status panel">
+  <div class="status-head">DAY TRAVEL STATUS</div>
+  <div class="status-body">
+    <!-- Left pane: side-view scene. Sky / horizon / ground bands +
+         the wagon rig. Decorative — aria-hidden so screen readers
+         skip to the status readouts on the right. -->
+    <div class="scene" aria-hidden="true">
+      <div class="sky" style="background: {skyGradient};">
+        <span class="sky-accent">{skyAccent}</span>
+      </div>
+      <div class="horizon">
+        <span class="horizon-row">{horizonGlyphs}</span>
+      </div>
+      <div class="ground" style="background: {groundGradient};"></div>
+      <div class="rig">
+        <span class="team">{teamGlyph}</span>
+        <div class="wagon">
+          <div class="canvas-top"></div>
+          <div class="body"></div>
+          <div class="wheel wheel-left"></div>
+          <div class="wheel wheel-right"></div>
+        </div>
+      </div>
     </div>
+
+    <!-- Right pane: text readouts. Terrain / weather / season /
+         miles. Real weather state arrives with #153. -->
+    <dl class="readouts">
+      <div class="readout">
+        <dt>Terrain</dt>
+        <dd><span class="r-glyph">{terrainLabel.glyph}</span> {terrainLabel.name}</dd>
+      </div>
+      <div class="readout">
+        <dt>Weather</dt>
+        <dd><span class="r-glyph">{weatherLabel.glyph}</span> {weatherLabel.text}</dd>
+      </div>
+      <div class="readout">
+        <dt>Season</dt>
+        <dd>{seasonLabel}</dd>
+      </div>
+      <div class="readout">
+        <dt>Miles</dt>
+        <dd>{milesTraveled} mi</dd>
+      </div>
+    </dl>
   </div>
 </div>
 
 <style>
-  .wagon-scene {
-    position: relative;
-    height: 140px;
-    overflow: hidden;
-    padding: 0;
+  /* Outer panel — header + 2-column body. Same chrome as other panels. */
+  .status {
+    display: flex;
+    flex-direction: column;
+    padding: 0.4em 0.5em;
     border: 2px solid var(--c-wood);
     border-radius: 4px;
     background: var(--c-panel);
+    gap: 0.35em;
+  }
+  .status-head {
+    font-size: 0.7em;
+    letter-spacing: 0.18em;
+    color: var(--c-rust);
+    font-weight: 700;
+  }
+  .status-body {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 0.5em;
+    align-items: stretch;
+    min-height: 140px;
+  }
+
+  /* Left pane: side-view scene. */
+  .scene {
+    position: relative;
+    overflow: hidden;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.35);
   }
 
   .sky, .horizon, .ground {
@@ -195,5 +289,43 @@
 
   @media (prefers-reduced-motion: reduce) {
     .rig, .horizon-row { animation: none; }
+  }
+
+  /* Right pane: status readouts. */
+  .readouts {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.3em;
+  }
+  .readout {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    padding: 0.3em 0.5em;
+    background: var(--c-bg-raised);
+    border-radius: 3px;
+    border: 1px solid rgba(138, 90, 42, 0.25);
+  }
+  .readout dt {
+    font-size: 0.65em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-wood);
+    font-weight: 700;
+    margin: 0;
+    min-width: 4.5em;
+  }
+  .readout dd {
+    margin: 0;
+    color: var(--c-tan-bright);
+    font-size: 0.92em;
+    font-weight: 700;
+    flex: 1;
+  }
+  .r-glyph {
+    margin-right: 0.25em;
   }
 </style>
