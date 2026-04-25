@@ -3,7 +3,7 @@ import { makeRng } from '../rng';
 import { hasLiveFarmer, hasLiveTeamster, hasLivePreacher } from '../professions/predicates';
 import { TEAMSTER_RECOVERY_MULT } from '../systems/oxen';
 import { upgradeState } from '../upgrade';
-import { applyDailyConsumption } from '../systems/consumption';
+import { applyDailyConsumption, applyDirtyWaterRisk } from '../systems/consumption';
 import { applyStarvation } from '../systems/starvation';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale, healingMultiplier } from '../systems/morale';
@@ -111,6 +111,7 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     s = progressConditions(s, rng);
     s = applyEggLay(s);
     s = applyDailyConsumption(s);
+    s = applyDirtyWaterRisk(s, rng);
     s = applyStarvation(s);
     s = adjustMorale(s, rng);
 

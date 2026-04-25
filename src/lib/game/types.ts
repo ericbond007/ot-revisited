@@ -103,8 +103,13 @@ export interface Location {
 }
 
 export interface Resources {
-  water: number; // gallons on hand
+  water: number; // gallons of CLEAN, drinkable water
   waterCap: number;
+  // Dirty water collected from streams, ponds, sloughs — drinkable
+  // only if boiled first. Drinking dirty water risks waterborne
+  // disease. Capped at the same waterCap as clean water (sharing the
+  // same kegs / barrels). Default 0 / undefined for legacy saves.
+  dirtyWater?: number;
   // Firewood in pounds — dried wood, buffalo chips on the plains,
   // sagebrush in the desert, driftwood by rivers. Consumed by the
   // nightly fire (5 lb/night). Gathered passively on travel days and

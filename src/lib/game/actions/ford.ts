@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import { makeRng, type Rng } from '../rng';
 import { upgradeState } from '../upgrade';
-import { applyDailyConsumption } from '../systems/consumption';
+import { applyDailyConsumption, applyDirtyWaterRisk } from '../systems/consumption';
 import { applyStarvation } from '../systems/starvation';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale } from '../systems/morale';
@@ -132,6 +132,7 @@ function passiveDay(state: GameState, seedSuffix: string): GameState {
   let s = progressConditions(state, rng);
   s = applyEggLay(s);
   s = applyDailyConsumption(s);
+  s = applyDirtyWaterRisk(s, rng);
   s = applyStarvation(s);
   s = adjustMorale(s, rng);
   s = applyDehydration(s);

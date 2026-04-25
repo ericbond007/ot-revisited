@@ -3,6 +3,7 @@
   import { ITEMS, type ItemCategory } from '$lib/game/content/items';
   import { foodConsumedToday } from '$lib/game/systems/consumption';
   import { warmthFor } from '$lib/game/systems/warmth';
+  import { canBoilWater } from '$lib/game/systems/water-purity';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
   const CATEGORY_ORDER: ItemCategory[] = [
@@ -98,6 +99,13 @@
     `Coat / blanket / buffalo robe = 25 each. Boots = 15. Moccasins = 10.`
   );
 
+  // Water — clean + dirty. Pre-germ-theory parties (1848-1853 with no
+  // doctor) don't perceive the distinction; we collapse to total water
+  // for them. Once knowledge is unlocked, the breakdown shows.
+  const knowsBoiling = $derived(canBoilWater(state));
+  const dirtyGal = $derived(state.resources.dirtyWater ?? 0);
+  const totalGal = $derived(state.resources.water + dirtyGal);
+
   const totalWeight = $derived(
     Math.round(groups.reduce((s, g) => s + g.entries.reduce((a, e) => a + e.weight, 0), 0))
   );
@@ -118,7 +126,13 @@
 
   <div class="stats">
     <span class="cash">💵 ${state.cash}</span>
-    <span class="water">💧 {state.resources.water}/{state.resources.waterCap} gal</span>
+    {#if knowsBoiling && dirtyGal > 0}
+      <span class="water" title="Clean / dirty / capacity. Boil dirty before drinking.">
+        💧 {state.resources.water}<span class="water-dirty">+{dirtyGal}</span>/{state.resources.waterCap} gal
+      </span>
+    {:else}
+      <span class="water">💧 {totalGal}/{state.resources.waterCap} gal</span>
+    {/if}
   </div>
 
   <!-- At-a-glance food summary. Days remaining is the number the player
@@ -226,6 +240,7 @@
   }
   .cash { font-weight: 700; }
   .water { color: var(--c-tan); }
+  .water-dirty { color: #c96a2a; font-weight: 700; }
 
   /* Food summary — the at-a-glance "how long will we last?" chip. */
   .food-summary {

@@ -1,6 +1,6 @@
 import type { GameDate, GameState, PartyMember, ProfessionId, Sex } from './types';
 import { DEFAULT_WAGON_MODEL, getWagon, type WagonModelId } from './content/wagons';
-import { applyDailyConsumption } from './systems/consumption';
+import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { progressConditions } from './systems/conditions';
 import { adjustMorale } from './systems/morale';
 import { tickOxen } from './systems/oxen';
@@ -152,6 +152,7 @@ const DAILY_STEPS: TickStep[] = [
   progressConditions,
   (s) => applyEggLay(s), // eggs lay first so they're available to eat
   (s) => applyDailyConsumption(s), // consumption has no Rng param; wrap it
+  (s, rng) => applyDirtyWaterRisk(s, rng), // disease roll for dirty draw — silent pre-germ-theory
   (s) => applyStarvation(s),       // reads _lastFoodShortfall set above
   tickOxen,
   tickWagon,

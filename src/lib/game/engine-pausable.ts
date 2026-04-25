@@ -1,7 +1,7 @@
 import type { GameState } from './types';
 import { makeRng } from './rng';
 import { upgradeState } from './upgrade';
-import { applyDailyConsumption } from './systems/consumption';
+import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { applyStarvation } from './systems/starvation';
 import { progressConditions } from './systems/conditions';
 import { tickOxen } from './systems/oxen';
@@ -45,6 +45,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // on its spoil-day. Any remaining fresh game_meat is zeroed out first.
   s = applySpoilage(s);
   s = applyDailyConsumption(s);
+  s = applyDirtyWaterRisk(s, rng);
   s = applyStarvation(s);
   s = tickOxen(s, rng);
   s = tickWagon(s, rng);

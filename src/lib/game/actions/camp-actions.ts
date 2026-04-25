@@ -1,6 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { hasLivePreacher, hasLiveWhore } from '../professions/predicates';
+import { canBoilWater } from '../systems/water-purity';
 
 // Camp actions are one-shot activities the party can do during a rest
 // day (applied on day 1 of the rest, same as shovel actions). Each has
@@ -37,6 +38,8 @@ export type CampActionId =
   | 'read_bible'
   | 'share_the_whore'
   | 'cure_meat'
+  | 'find_water'
+  | 'boil_water'
   | 'dig_well'
   | 'dig_grave'
   | 'dig_out'
@@ -347,6 +350,96 @@ const gatherFirewood: CampAction = {
   }
 };
 
+// --- Water (#106) ---
+//
+// `find_water` is the no-shovel cousin of dig_well: forage along
+// streams, ponds, sloughs. Always returns DIRTY water — pre-1854
+// players don't know it's dirty, but the disease-risk mechanic in
+// consumption.ts catches them anyway. With knowledge (post-1854 OR a
+// Doctor in the party), they can also boil it via boil_water.
+
+const FIND_WATER_MIN = 12;
+const FIND_WATER_MAX = 24;
+const BOIL_GAL_PER_LB_FIREWOOD = 5;
+
+const findWater: CampAction = {
+  id: 'find_water',
+  label: 'Find water',
+  sub: '4 hr · 12-24 gal from a creek or pond',
+  icon: '💧',
+  hourCost: 4,
+  availability: (s) => {
+    const cap = s.resources.waterCap;
+    const total = s.resources.water + (s.resources.dirtyWater ?? 0);
+    return total >= cap
+      ? { available: false, reason: 'Water kegs are full' }
+      : { available: true };
+  },
+  apply: (s, rng) => {
+    const cap = s.resources.waterCap;
+    const total = s.resources.water + (s.resources.dirtyWater ?? 0);
+    const room = Math.max(0, cap - total);
+    if (room === 0) return s;
+    const drawn = Math.min(room, rng.int(FIND_WATER_MIN, FIND_WATER_MAX));
+    // Find returns dirty water — players who can perceive the
+    // distinction will see the dirtyWater pool grow; pre-knowledge
+    // players just see total water rise.
+    const knowsBoiling = canBoilWater(s);
+    const next: GameState = {
+      ...s,
+      resources: {
+        ...s.resources,
+        dirtyWater: (s.resources.dirtyWater ?? 0) + drawn
+      }
+    };
+    const line = knowsBoiling
+      ? `Found ${drawn} gal of water — looks suspect. Boil before drinking.`
+      : `Found ${drawn} gal of water from a nearby stream.`;
+    return logLine(next, line);
+  }
+};
+
+const boilWater: CampAction = {
+  id: 'boil_water',
+  label: 'Boil water',
+  sub: '2 hr · 1 lb firewood per 5 gal · purifies dirty water',
+  icon: '🔥',
+  hourCost: 2,
+  hidden: (s) => !canBoilWater(s), // pre-knowledge parties don't see this option
+  availability: (s) => {
+    if (!canBoilWater(s)) {
+      return { available: false, reason: 'Need a doctor in the party or post-1854 knowledge' };
+    }
+    const dirty = s.resources.dirtyWater ?? 0;
+    if (dirty <= 0) return { available: false, reason: 'No dirty water to boil' };
+    if ((s.resources.firewood ?? 0) < 1) return { available: false, reason: 'Need firewood for the fire' };
+    return { available: true };
+  },
+  apply: (s) => {
+    const dirty = s.resources.dirtyWater ?? 0;
+    if (dirty <= 0) return s;
+    const firewood = s.resources.firewood ?? 0;
+    if (firewood < 1) return s;
+    // Boil up to (firewood × 5) gal, capped at remaining clean room and dirty on hand.
+    const cleanRoom = Math.max(0, s.resources.waterCap - s.resources.water);
+    const max = Math.min(dirty, cleanRoom, firewood * BOIL_GAL_PER_LB_FIREWOOD);
+    if (max <= 0) return s;
+    const woodUsed = Math.ceil(max / BOIL_GAL_PER_LB_FIREWOOD);
+    return logLine(
+      {
+        ...s,
+        resources: {
+          ...s.resources,
+          water: s.resources.water + max,
+          dirtyWater: dirty - max,
+          firewood: firewood - woodUsed
+        }
+      },
+      `Boiled ${max} gal of water clean — burned ${woodUsed} lb firewood.`
+    );
+  }
+};
+
 // --- Cannibalism (desperation) ---
 
 /** True if the party has nothing left to eat. */
@@ -480,6 +573,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   cureMeat,
   // Practical
   gatherFirewood,
+  findWater,
+  boilWater,
   // Shovel work (gated on having a shovel)
   digWell,
   digGrave,
@@ -497,6 +592,8 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   share_the_whore: shareTheWhore,
   cure_meat: cureMeat,
   gather_firewood: gatherFirewood,
+  find_water: findWater,
+  boil_water: boilWater,
   dig_well: digWell,
   dig_grave: digGrave,
   dig_out: digOut,
