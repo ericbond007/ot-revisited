@@ -1,6 +1,6 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
-import { hasLivePreacher } from '../professions/predicates';
+import { hasLivePreacher, hasLiveWhore } from '../professions/predicates';
 
 // Camp actions are one-shot activities the party can do during a rest
 // day (applied on day 1 of the rest, same as shovel actions). Each has
@@ -31,6 +31,7 @@ export type CampActionId =
   | 'big_meal'
   | 'sing_along'
   | 'read_bible'
+  | 'share_the_whore'
   | 'cure_meat'
   | 'dig_well'
   | 'dig_grave'
@@ -166,6 +167,42 @@ const readBible: CampAction = {
       ? `The Preacher read scripture over supper. A settling presence — morale +${delta}.`
       : `Someone read a psalm aloud before bed. The camp quieted — morale +${delta}.`;
     return logLine({ ...s, morale: Math.min(100, s.morale + delta) }, line);
+  }
+};
+
+// Replaces the old passive Whore +1/male/night. One-shot per camp;
+// the punchier per-use yield (+2/male) lines up roughly with what a
+// 1-2 night rest gave previously, while putting it in the player's
+// hands as an explicit choice. A small chance of jealousy turns the
+// night sour — period-flavored squabble, not a hard punishment.
+const shareTheWhore: CampAction = {
+  id: 'share_the_whore',
+  label: 'Share the Whore',
+  sub: 'Whore · 2 hr · +2 morale per adult male',
+  icon: '💋',
+  hourCost: 2,
+  availability: (s) => {
+    if (!hasLiveWhore(s)) return { available: false, reason: 'No Whore in the party' };
+    const males = s.party.filter((m) => !m.dead && m.kind === 'adult' && m.sex === 'male').length;
+    if (males <= 0) return { available: false, reason: 'No adult men to take a turn' };
+    return { available: true };
+  },
+  apply: (s, rng) => {
+    const males = s.party.filter((m) => !m.dead && m.kind === 'adult' && m.sex === 'male').length;
+    const whore = s.party.find((m) => !m.dead && m.profession === 'whore');
+    const name = whore?.name ?? 'The Whore';
+    // 12% chance jealousy / argument breaks out — net -2 morale instead.
+    if (rng.chance(0.12)) {
+      return logLine(
+        { ...s, morale: Math.max(0, s.morale - 2) },
+        `Tempers flared when ${name}'s line got long. The night soured — morale −2.`
+      );
+    }
+    const delta = males * 2;
+    return logLine(
+      { ...s, morale: Math.min(100, s.morale + delta) },
+      `${name} entertained the men by lantern-light. Spirits high — morale +${delta}.`
+    );
   }
 };
 
@@ -311,6 +348,7 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   bigMeal,
   singAlong,
   readBible,
+  shareTheWhore,
   // Preservation
   cureMeat,
   // Practical
@@ -326,6 +364,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   big_meal: bigMeal,
   sing_along: singAlong,
   read_bible: readBible,
+  share_the_whore: shareTheWhore,
   cure_meat: cureMeat,
   gather_firewood: gatherFirewood,
   dig_well: digWell,

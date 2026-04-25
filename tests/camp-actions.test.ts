@@ -116,6 +116,36 @@ describe('camp actions', () => {
     ).toThrow(/budget/i);
   });
 
+  it('share_the_whore is unavailable without a Whore in the party', () => {
+    const s = newGame(); // farmer/doctor/hunter — no whore
+    expect(() => rest(s, 1, { campActions: ['share_the_whore'] })).toThrow(/whore/i);
+  });
+
+  it('share_the_whore is unavailable when there are no adult men', () => {
+    const s = newGame();
+    // All-female party including the whore.
+    s.party = s.party.map((m, i) =>
+      i === 0
+        ? { ...m, profession: 'whore' as const, sex: 'female' as const }
+        : { ...m, sex: 'female' as const }
+    );
+    expect(() => rest(s, 1, { campActions: ['share_the_whore'] })).toThrow(/men/i);
+  });
+
+  it('share_the_whore grants +2 morale per alive adult male (or -2 squabble)', () => {
+    const s = newGame();
+    // 3-person party: whore (female) + 2 male adults.
+    s.party[0] = { ...s.party[0], profession: 'whore', sex: 'female' };
+    s.party[1] = { ...s.party[1], sex: 'male' };
+    s.party[2] = { ...s.party[2], sex: 'male' };
+    // Baseline: rest with no camp actions captures the daily morale drift.
+    const baseline = rest({ ...s, seed: 'whore-camp' }, 1).morale;
+    const withAction = rest({ ...s, seed: 'whore-camp' }, 1, { campActions: ['share_the_whore'] }).morale;
+    // Either +4 (2 men × 2) on success or -2 on squabble (12% chance).
+    const delta = withAction - baseline;
+    expect([4, -2]).toContain(delta);
+  });
+
   it('shovel actions still work as camp actions (merged registry)', () => {
     const s = { ...newGame(), inventory: { ...newGame().inventory, shovel: 1 } };
     const out = rest(s, 1, { campActions: ['dig_grave'] });

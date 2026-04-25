@@ -110,47 +110,19 @@ describe('Whore', () => {
     expect(after.morale).toBeGreaterThanOrEqual(15);
   });
 
-  it('grants +1 per alive male adult per rest night (stacks with Preacher)', () => {
-    // Default mkMember party is all male adults (default in the test helper).
-    // 2 male adults (carpenter+doctor) → no whore = 0 night morale.
+  it('contributes no passive rest morale — replaced by share_the_whore camp action', () => {
+    // Previously: passive +1/male/night. Now: zero passive contribution
+    // — the player picks share_the_whore explicitly during camp.
     const plain = baseState(['carpenter', 'doctor']);
-    // 1 whore + 1 male adult (doctor) = +1 (whore is female, doctor is male).
-    const withWhoreOneMale = baseState(['whore', 'doctor']);
-    // 1 whore + 2 male adults = +2.
-    const withWhoreTwoMales = baseState(['whore', 'doctor', 'hunter']);
-    // 1 whore + 1 male + 1 preacher (also male in default helper) = +2 + 1 = +3.
-    const withWhorePreacher = baseState(['whore', 'preacher', 'doctor']);
-
-    // Force whore to female (default mkMember picks male) — adjust manually.
-    for (const s of [withWhoreOneMale, withWhoreTwoMales, withWhorePreacher]) {
-      const w = s.party.find((m) => m.profession === 'whore');
-      if (w) w.sex = 'female';
-    }
+    const withWhore = baseState(['whore', 'doctor']);
+    const w = withWhore.party.find((m) => m.profession === 'whore');
+    if (w) w.sex = 'female';
 
     const plainAfter = rest(plain, 1);
-    const oneAfter = rest(withWhoreOneMale, 1);
-    const twoAfter = rest(withWhoreTwoMales, 1);
-    const bothAfter = rest(withWhorePreacher, 1);
+    const whoreAfter = rest(withWhore, 1);
 
-    expect(oneAfter.morale - plainAfter.morale).toBe(1);
-    expect(twoAfter.morale - plainAfter.morale).toBe(2);
-    // Preacher contributes +1 on top.
-    expect(bothAfter.morale - plainAfter.morale).toBe(3);
-  });
-
-  it('skips children — only adult males contribute', () => {
-    const s = baseState(['whore', 'doctor']);
-    // Mark whore female; doctor male; add a male child who shouldn't count.
-    s.party[0].sex = 'female';
-    s.party.push({
-      id: 'kid', name: 'Tommy', sex: 'male', kind: 'child', isLeader: false,
-      age: 8, health: 100, conditions: [], dead: false
-    });
-    const plain = baseState(['carpenter', 'doctor']);
-    const after = rest(s, 1);
-    const plainAfter = rest(plain, 1);
-    // 1 alive male adult (doctor) only — child contributes 0.
-    expect(after.morale - plainAfter.morale).toBe(1);
+    // Both rest the same — no passive morale tilt.
+    expect(whoreAfter.morale).toBe(plainAfter.morale);
   });
 });
 
