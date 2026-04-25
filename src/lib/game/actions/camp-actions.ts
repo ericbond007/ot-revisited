@@ -24,6 +24,10 @@ export interface CampAction {
   hourCost: number;
   availability: (state: GameState) => CampActionAvailability;
   apply: (state: GameState, rng: Rng) => GameState;
+  /** When true, the camp grid omits this action entirely. Used for
+   *  desperation actions (e.g. cannibalism) that should stay invisible
+   *  until conditions arise. Defaults to never-hidden. */
+  hidden?: (state: GameState) => boolean;
 }
 
 export type CampActionId =
@@ -36,7 +40,9 @@ export type CampActionId =
   | 'dig_well'
   | 'dig_grave'
   | 'dig_out'
-  | 'gather_firewood';
+  | 'gather_firewood'
+  | 'cannibalism_corpse'
+  | 'cannibalism_straws';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -341,6 +347,127 @@ const gatherFirewood: CampAction = {
   }
 };
 
+// --- Cannibalism (desperation) ---
+
+/** True if the party has nothing left to eat. */
+function hasNoFood(state: GameState): boolean {
+  return totalFoodLb(state) === 0;
+}
+
+/** Recently-deceased adult still with the party — eligible to be eaten.
+ *  Not 'consumed' yet. Window of 5 days so very-old corpses don't apply. */
+function recentCorpse(state: GameState): GameState['party'][number] | null {
+  const fresh = state.party.filter((m) =>
+    m.dead
+    && m.kind === 'adult'
+    && !m.consumed
+    && typeof m.deathDay === 'number'
+    && state.day - m.deathDay <= 5
+  );
+  if (fresh.length === 0) return null;
+  // Most-recent first.
+  return fresh.sort((a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0))[0];
+}
+
+/** Lowest-HP alive adult — the one drawn-straws would target (or volunteer). */
+function weakestAdult(state: GameState): GameState['party'][number] | null {
+  const alive = state.party.filter((m) => !m.dead && m.kind === 'adult');
+  if (alive.length === 0) return null;
+  return alive.sort((a, b) => a.health - b.health)[0];
+}
+
+/** Bumps the cannibalism-guilt counter on flags. The morale system can
+ *  read this for a recurrent malus later (#149 follow-up). */
+function bumpGuilt(state: GameState, weight: number): GameState {
+  const prev = (state.flags._cannibalismCount as number | undefined) ?? 0;
+  return {
+    ...state,
+    flags: { ...state.flags, _cannibalismCount: prev + weight }
+  };
+}
+
+const cannibalism_corpse: CampAction = {
+  id: 'cannibalism_corpse',
+  label: 'Eat the dead',
+  sub: 'Recently fallen kin · 6 hr · grim, but better than dying',
+  icon: '🪦',
+  hourCost: 6,
+  hidden: (s) => !(hasNoFood(s) && recentCorpse(s) !== null),
+  availability: (s) =>
+    hasNoFood(s) && recentCorpse(s) !== null
+      ? { available: true }
+      : { available: false, reason: 'Only when starving and a body remains.' },
+  apply: (s) => {
+    const corpse = recentCorpse(s);
+    if (!corpse) return s; // hidden gate should prevent this
+    const meatLbs = 50;
+    // Clear pending burial — the body is being handled, not buried.
+    const flags = { ...s.flags };
+    delete (flags as Record<string, unknown>)._burialPending;
+    let next: GameState = {
+      ...s,
+      flags,
+      party: s.party.map((m) =>
+        m.id === corpse.id ? { ...m, consumed: true } : m
+      ),
+      inventory: { ...s.inventory, game_meat: (s.inventory.game_meat ?? 0) + meatLbs },
+      morale: Math.max(0, s.morale - 18)
+    };
+    next = bumpGuilt(next, 1);
+    return logLine(
+      next,
+      `Took ${corpse.name}'s body for meat — ${meatLbs} lb of fresh game. Nobody spoke. Morale -18.`
+    );
+  }
+};
+
+const cannibalism_straws: CampAction = {
+  id: 'cannibalism_straws',
+  label: 'Draw straws',
+  sub: 'No corpse, no food · 8 hr · the unthinkable',
+  icon: '🩸',
+  hourCost: 8,
+  hidden: (s) => {
+    const aliveAdultCount = s.party.filter((m) => !m.dead && m.kind === 'adult').length;
+    return !(hasNoFood(s) && recentCorpse(s) === null && aliveAdultCount >= 2);
+  },
+  availability: (s) => {
+    const aliveAdultCount = s.party.filter((m) => !m.dead && m.kind === 'adult').length;
+    if (!hasNoFood(s)) return { available: false, reason: 'Only when out of food.' };
+    if (recentCorpse(s) !== null) return { available: false, reason: 'A body is already at hand.' };
+    if (aliveAdultCount < 2) return { available: false, reason: 'Need at least two adults to draw straws.' };
+    return { available: true };
+  },
+  apply: (s) => {
+    const victim = weakestAdult(s);
+    if (!victim) return s;
+    const meatLbs = 60;
+    // The victim is consumed in-place — no burial event for them.
+    let next: GameState = {
+      ...s,
+      party: s.party.map((m) =>
+        m.id === victim.id
+          ? {
+              ...m,
+              dead: true,
+              consumed: true,
+              health: 0,
+              deathCause: 'Drew the short straw',
+              deathDay: s.day
+            }
+          : m
+      ),
+      inventory: { ...s.inventory, game_meat: (s.inventory.game_meat ?? 0) + meatLbs },
+      morale: Math.max(0, s.morale - 35)
+    };
+    next = bumpGuilt(next, 3);
+    return logLine(
+      next,
+      `Drew straws. ${victim.name} drew the short one. ${meatLbs} lb meat. The party cannot look at one another. Morale -35.`
+    );
+  }
+};
+
 /** Registry — order controls UI render order in CampStage. */
 export const CAMP_ACTIONS: readonly CampAction[] = [
   // Morale / comfort
@@ -356,7 +483,10 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   // Shovel work (gated on having a shovel)
   digWell,
   digGrave,
-  digOut
+  digOut,
+  // Desperation — hidden until starvation
+  cannibalism_corpse,
+  cannibalism_straws
 ];
 
 export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
@@ -369,7 +499,9 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   gather_firewood: gatherFirewood,
   dig_well: digWell,
   dig_grave: digGrave,
-  dig_out: digOut
+  dig_out: digOut,
+  cannibalism_corpse,
+  cannibalism_straws
 };
 
 export function getCampAction(id: CampActionId): CampAction {

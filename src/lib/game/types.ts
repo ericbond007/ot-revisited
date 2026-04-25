@@ -55,6 +55,10 @@ export interface PartyMember {
   dead: boolean;
   deathCause?: string;
   deathDay?: number;
+  /** Set when the body was eaten via the cannibalism camp action.
+   *  Burial events skip a consumed corpse; future cannibalism scans
+   *  exclude it. The party still remembers them in the party list. */
+  consumed?: boolean;
 }
 
 export type DraftKind = 'ox' | 'mule';

@@ -23,12 +23,16 @@
   let picked = $state<CampActionId[]>([]);
 
   const actionRows = $derived(
-    CAMP_ACTIONS.map((a) => ({
-      action: a,
-      availability: a.availability(gameState),
-      hours: hourCostFor(a, gameState),
-      selected: picked.includes(a.id)
-    }))
+    CAMP_ACTIONS
+      // Hidden actions (cannibalism, etc.) drop out of the grid entirely
+      // — only surface when their gating predicate says it's time.
+      .filter((a) => !a.hidden?.(gameState))
+      .map((a) => ({
+        action: a,
+        availability: a.availability(gameState),
+        hours: hourCostFor(a, gameState),
+        selected: picked.includes(a.id)
+      }))
   );
 
   const TIME_BUDGET_HOURS = 12;

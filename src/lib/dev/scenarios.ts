@@ -306,6 +306,27 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'starving_with_corpse',
+    label: 'Starving + recent corpse',
+    description: 'Party out of food, member 2 just died — opens both cannibalism camp actions.',
+    build: () => {
+      let s = baseState('starving');
+      s = setInventory(s, {});
+      // Mark Mary (companion[0]) as recently dead.
+      s = {
+        ...s,
+        party: s.party.map((m, i) =>
+          i === 1
+            ? { ...m, dead: true, deathDay: s.day, deathCause: 'Cholera' }
+            : m
+        ),
+        morale: 30,
+        cash: 0
+      };
+      return s;
+    }
+  },
+  {
     id: 'party_wiped',
     label: 'Party wiped (game over)',
     description: 'All four members dead — opens the tombstone end screen.',
