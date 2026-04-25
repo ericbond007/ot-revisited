@@ -10,6 +10,14 @@ import type { GameEvent } from './events';
 //
 // Each event mirrors the road-event shape (title, body, choices). The
 // engine treats them identically to trail events.
+//
+// Visual-only landmarks: scenic landmarks WITHOUT an entry in
+// LANDMARK_ARRIVAL_EVENTS (e.g. Guernsey Ruts, Farewell Bend,
+// Courthouse Rock, Blue Mountains) render on the map for flavor and
+// log "Passed X." when the party crosses them — no pause, no modal.
+// They're first-class map content; the decision to omit an arrival
+// event is editorial (minor geographic marker vs. moment-worthy stop),
+// not structural. Adding one later is just appending a record here.
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -203,12 +211,274 @@ const sodaSprings: GameEvent = {
   ]
 };
 
+const alcoveSpring: GameEvent = {
+  id: 'arrival_alcove_spring',
+  category: 'historical',
+  title: 'Alcove Spring',
+  body: 'A clear pool under a sandstone alcove, cottonwoods shading the water. Emigrants have carved their names into the soft rock above — the Donner party passed this way only two years ago, half of them dead now in the Sierras.',
+  weight: 1,
+  choices: [
+    {
+      id: 'carve',
+      label: 'Carve your name in the sandstone',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => logLine(
+        {
+          ...s,
+          morale: Math.min(100, s.morale + 4),
+          resources: {
+            ...s.resources,
+            water: Math.min(s.resources.waterCap, s.resources.water + 10)
+          }
+        },
+        'Carved your names at Alcove Spring. Water +10, morale +4.'
+      )
+    },
+    {
+      id: 'refill',
+      label: 'Refill water and press on',
+      silentLog: true,
+      apply: (s) => logLine(
+        {
+          ...s,
+          morale: Math.min(100, s.morale + 2),
+          resources: {
+            ...s.resources,
+            water: Math.min(s.resources.waterCap, s.resources.water + 15)
+          }
+        },
+        'Filled the barrels at Alcove Spring. Water +15, morale +2.'
+      )
+    }
+  ]
+};
+
+const ashHollow: GameEvent = {
+  id: 'arrival_ash_hollow',
+  category: 'historical',
+  title: 'Windlass Hill & Ash Hollow',
+  body: 'The trail drops 300 feet down Windlass Hill — the first serious descent since Independence. At the bottom, Ash Hollow: a grove of cedar and ash, spring water, the first real shade in weeks.',
+  weight: 1,
+  choices: [
+    {
+      id: 'rope_down',
+      label: 'Lower the wagons carefully with rope',
+      isDefault: true,
+      silentLog: true,
+      requires: { itemId: 'rope', icon: '🪢', reason: 'Need rope to belay the wagons' },
+      apply: (s) => logLine(
+        {
+          ...s,
+          morale: Math.min(100, s.morale + 5),
+          resources: {
+            ...s.resources,
+            water: Math.min(s.resources.waterCap, s.resources.water + 15)
+          }
+        },
+        'Roped the wagons down Windlass Hill and camped in Ash Hollow. Water +15, morale +5.'
+      )
+    },
+    {
+      id: 'brake',
+      label: 'Lock the wheels and skid down',
+      silentLog: true,
+      apply: (s, rng) => {
+        const mishap = rng.chance(0.35);
+        if (mishap) {
+          const dmg = rng.int(8, 18);
+          return logLine(
+            {
+              ...s,
+              morale: Math.max(0, s.morale - 1),
+              wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - dmg) },
+              resources: {
+                ...s.resources,
+                water: Math.min(s.resources.waterCap, s.resources.water + 10)
+              }
+            },
+            `Skidded down Windlass Hill — a wheel took a beating. Wagon -${dmg}, water +10, morale -1.`
+          );
+        }
+        return logLine(
+          {
+            ...s,
+            morale: Math.min(100, s.morale + 2),
+            resources: {
+              ...s.resources,
+              water: Math.min(s.resources.waterCap, s.resources.water + 10)
+            }
+          },
+          'Braked the wheels and slid down Windlass Hill. No damage. Water +10, morale +2.'
+        );
+      }
+    }
+  ]
+};
+
+const scottsBluff: GameEvent = {
+  id: 'arrival_scotts_bluff',
+  category: 'historical',
+  title: 'Scotts Bluff',
+  body: 'Eight hundred feet of weathered sandstone — the largest bluff you\'ve seen on the trail. The wagon road winds through Mitchell Pass beneath its shadow.',
+  weight: 1,
+  choices: [
+    {
+      id: 'climb',
+      label: 'Climb up for the view',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 4) },
+        'Climbed Scotts Bluff. The plains stretch out forever. Morale +4.'
+      )
+    },
+    {
+      id: 'press',
+      label: 'Admire it from the wagon seat',
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 2) },
+        'Passed through Mitchell Pass in Scotts Bluff\'s shadow. Morale +2.'
+      )
+    }
+  ]
+};
+
+const registerCliff: GameEvent = {
+  id: 'arrival_register_cliff',
+  category: 'historical',
+  title: 'Register Cliff',
+  body: 'A long sandstone face covered in names — hundreds of emigrants have left their mark here. The earliest dates back to the fur-trade days, twenty years before the wagon trains.',
+  weight: 1,
+  choices: [
+    {
+      id: 'sign',
+      label: 'Sign in axle grease',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 3) },
+        'Signed the cliff. A small mark on a big rock. Morale +3.'
+      )
+    },
+    {
+      id: 'carve',
+      label: 'Chisel your names deep',
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 5) },
+        'Chiseled your names into Register Cliff — meant to last. Morale +5.'
+      )
+    },
+    {
+      id: 'pass',
+      label: 'Press on without stopping',
+      silentLog: true,
+      apply: (s) => logLine(s, 'Passed Register Cliff without leaving a mark.')
+    }
+  ]
+};
+
+const pacificSprings: GameEvent = {
+  id: 'arrival_pacific_springs',
+  category: 'historical',
+  title: 'Pacific Springs',
+  body: 'The first water you\'ve seen flowing west. From here every stream runs to the Pacific — the Atlantic is behind you for good.',
+  weight: 1,
+  choices: [
+    {
+      id: 'drink',
+      label: 'Drink deeply and fill the barrels',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => logLine(
+        {
+          ...s,
+          morale: Math.min(100, s.morale + 5),
+          resources: {
+            ...s.resources,
+            water: Math.min(s.resources.waterCap, s.resources.water + 20)
+          }
+        },
+        'Drank from the Pacific-bound waters. Water +20, morale +5.'
+      )
+    },
+    {
+      id: 'press',
+      label: 'Wet the oxen and press on',
+      silentLog: true,
+      apply: (s) => logLine(
+        {
+          ...s,
+          morale: Math.min(100, s.morale + 2),
+          resources: {
+            ...s.resources,
+            water: Math.min(s.resources.waterCap, s.resources.water + 10)
+          }
+        },
+        'Topped off water at Pacific Springs. Water +10, morale +2.'
+      )
+    }
+  ]
+};
+
+const laurelHill: GameEvent = {
+  id: 'arrival_laurel_hill',
+  category: 'historical',
+  title: 'Laurel Hill',
+  body: 'A descent so steep it\'s become legend — emigrants snubbed wagons to trees with rope, cut fresh brake saplings, sometimes just let them crash. Slick with mud when it rains.',
+  weight: 1,
+  choices: [
+    {
+      id: 'rope',
+      label: 'Snub the wagons to trees and lower carefully',
+      isDefault: true,
+      silentLog: true,
+      requires: { itemId: 'rope', icon: '🪢', reason: 'Need rope to belay the wagons' },
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 3) },
+        'Roped the wagons down Laurel Hill. Nobody hurt. Morale +3.'
+      )
+    },
+    {
+      id: 'brake',
+      label: 'Lock the wheels and ride it down',
+      silentLog: true,
+      apply: (s, rng) => {
+        const crash = rng.chance(0.45);
+        if (crash) {
+          const dmg = rng.int(12, 25);
+          return logLine(
+            {
+              ...s,
+              morale: Math.max(0, s.morale - 3),
+              wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - dmg) }
+            },
+            `Laurel Hill took a wheel — wagon -${dmg}, morale -3.`
+          );
+        }
+        return logLine(
+          { ...s, morale: Math.min(100, s.morale + 1) },
+          'Rode the brakes down Laurel Hill. Made it in one piece. Morale +1.'
+        );
+      }
+    }
+  ]
+};
+
 export const LANDMARK_ARRIVAL_EVENTS: Record<string, GameEvent> = {
+  alcove_spring: alcoveSpring,
+  ash_hollow: ashHollow,
   chimney_rock: chimneyRock,
+  scotts_bluff: scottsBluff,
+  register_cliff: registerCliff,
   independence_rock: independenceRock,
   devils_gate: devilsGate,
   south_pass: southPass,
-  soda_springs: sodaSprings
+  pacific_springs: pacificSprings,
+  soda_springs: sodaSprings,
+  laurel_hill: laurelHill
 };
 
 export function getLandmarkArrivalEvent(landmarkId: string): GameEvent | undefined {

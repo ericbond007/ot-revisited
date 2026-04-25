@@ -51,15 +51,24 @@ function justBefore(state: GameState, landmarkId: string): GameState {
 
 describe('landmark arrival events', () => {
   it('catalog covers the iconic scenic landmarks', () => {
+    expect(getLandmarkArrivalEvent('alcove_spring')).toBeTruthy();
+    expect(getLandmarkArrivalEvent('ash_hollow')).toBeTruthy();
     expect(getLandmarkArrivalEvent('chimney_rock')).toBeTruthy();
+    expect(getLandmarkArrivalEvent('scotts_bluff')).toBeTruthy();
+    expect(getLandmarkArrivalEvent('register_cliff')).toBeTruthy();
     expect(getLandmarkArrivalEvent('independence_rock')).toBeTruthy();
     expect(getLandmarkArrivalEvent('devils_gate')).toBeTruthy();
     expect(getLandmarkArrivalEvent('south_pass')).toBeTruthy();
+    expect(getLandmarkArrivalEvent('pacific_springs')).toBeTruthy();
     expect(getLandmarkArrivalEvent('soda_springs')).toBeTruthy();
+    expect(getLandmarkArrivalEvent('laurel_hill')).toBeTruthy();
   });
 
   it('returns undefined for landmarks without an arrival event', () => {
-    expect(getLandmarkArrivalEvent('alcove_spring')).toBeUndefined();
+    // Visual-only landmarks — render on the map, log "Passed X.", no modal.
+    expect(getLandmarkArrivalEvent('guernsey_ruts')).toBeUndefined();
+    expect(getLandmarkArrivalEvent('courthouse_rock')).toBeUndefined();
+    expect(getLandmarkArrivalEvent('farewell_bend')).toBeUndefined();
     expect(getLandmarkArrivalEvent('ft_kearny')).toBeUndefined(); // trading post — no arrival event
   });
 
