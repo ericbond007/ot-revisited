@@ -21,7 +21,11 @@
     wait: '⏳'
   };
 
-  const wagonDelta = $derived(result.wagonConditionAfter - result.wagonConditionBefore);
+  // Round to integer for display — the underlying condition can carry
+  // a one-decimal tail from accumulated tick decay (#155-era).
+  const wagonBefore = $derived(Math.round(result.wagonConditionBefore));
+  const wagonAfter  = $derived(Math.round(result.wagonConditionAfter));
+  const wagonDelta  = $derived(wagonAfter - wagonBefore);
   const lost = $derived(result.inventoryDelta.filter((e) => e.delta < 0));
   const gained = $derived(result.inventoryDelta.filter((e) => e.delta > 0));
 
@@ -61,9 +65,9 @@
       <div class="stat">
         <span class="stat-label">WAGON</span>
         <span class="stat-val">
-          {result.wagonConditionBefore}
+          {wagonBefore}
           <span class="arrow">→</span>
-          <strong>{result.wagonConditionAfter}</strong>
+          <strong>{wagonAfter}</strong>
           {#if wagonDelta !== 0}
             <span class="delta" class:down={wagonDelta < 0} class:up={wagonDelta > 0}>
               {wagonDelta > 0 ? '+' : ''}{wagonDelta}

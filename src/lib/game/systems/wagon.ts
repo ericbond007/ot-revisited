@@ -20,6 +20,10 @@ export function tickWagon(state: GameState, _rng: Rng): GameState {
   const base = PACE_DECAY[state.pace];
   const terrain = TERRAIN_MULTIPLIER[state.location.terrain];
   const decay = base * terrain;
-  const condition = Math.max(0, state.wagon.condition - decay);
+  // Round to one decimal so successive float subtractions don't drift
+  // into 95.80000000000004-style noise across many ticks. The condition
+  // is still effectively a 0-100 integer for display purposes — call
+  // sites Math.round() it.
+  const condition = Math.max(0, Math.round((state.wagon.condition - decay) * 10) / 10);
   return { ...state, wagon: { ...state.wagon, condition } };
 }
