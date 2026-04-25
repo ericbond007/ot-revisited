@@ -47,19 +47,24 @@ describe('100-day run with events', () => {
   });
 
   it('1852 game sees the cholera-peak event at higher rates than 1848', () => {
-    function runYear(year: number): number {
+    function runYear(year: number, seedSuffix: string): number {
       let s = createInitialState({
-        seed: `year-${year}`,
+        seed: `year-${year}-${seedSuffix}`,
         leader: { name: 'A', profession: 'farmer' },
         companions: [{ name: 'B', profession: 'doctor' }],
         startDate: { year, month: 4, day: 15 }
       });
-      // Oversize water + firewood for a 60-day no-interaction simulation.
-      s = { ...s, resources: { water: 500, waterCap: 500, firewood: 500 } };
-      for (let d = 0; d < 60; d++) s = tickDay(s);
+      // Oversize water + firewood for a 120-day no-interaction simulation.
+      s = { ...s, resources: { water: 1000, waterCap: 1000, firewood: 1000 } };
+      for (let d = 0; d < 120; d++) s = tickDay(s);
       return s.eventLog.filter((e) => e.text.includes('1852')).length;
     }
-    expect(runYear(1852)).toBeGreaterThan(0);
-    expect(runYear(1848)).toBe(0);
+    // Sample several seeds — the cholera-peak event has weight 6 in a
+    // pool of ~50 weight, so over 120 days at least one seed should hit
+    // it at least once. The 1848 run must never fire it (year-gated).
+    let any1852 = 0;
+    for (const suffix of ['a', 'b', 'c']) any1852 += runYear(1852, suffix);
+    expect(any1852).toBeGreaterThan(0);
+    expect(runYear(1848, 'a')).toBe(0);
   });
 });

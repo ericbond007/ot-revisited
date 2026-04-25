@@ -1242,3 +1242,8 @@ EVENTS.push(mule_theft);
 // single EVENTS registry.
 import { ENCOUNTER_EVENTS } from './encounters';
 EVENTS.push(...ENCOUNTER_EVENTS);
+
+// #129 inter-party drama — quarrels, fistfights, reconciliation,
+// romance. Same registry-merge pattern as encounters.
+import { PARTY_EVENTS } from './party-events';
+EVENTS.push(...PARTY_EVENTS);
