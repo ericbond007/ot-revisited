@@ -5,6 +5,7 @@ import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../content/landmarks'
 import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
 import { gatherFirewoodOnTravel } from './fire';
+import { hasLiveScout } from '../professions/predicates';
 
 const PACE_BASE_MILES: Record<Pace, number> = {
   slow: 12,
@@ -73,7 +74,11 @@ export function milesPerDay(state: GameState): number {
   const guideUntil = (state.flags._guideUntilDay as number | undefined) ?? 0;
   const guideMult = guideUntil > state.day ? 1.15 : 1.0;
 
-  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult);
+  // Scout profession (#154) — knows the country, picks shortcuts.
+  // +8% travel speed while alive in the party.
+  const scoutMult = hasLiveScout(state) ? 1.08 : 1.0;
+
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.

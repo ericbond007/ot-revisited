@@ -171,10 +171,12 @@ const broken_wheel: GameEvent = {
       apply: (s, rng) => {
         const have = s.inventory.wheel ?? 0;
         if (have > 0) {
-          const { state: after, saved } = consumeWagonPart(s, rng, 'wheel');
+          const { state: after, saved, salvaged } = consumeWagonPart(s, rng, 'wheel');
           const log = saved
             ? 'The carpenter pieced the old wheel back together — the spare was kept.'
-            : 'Mounted a spare wheel. Wagon condition +10.';
+            : salvaged
+              ? 'Mounted a spare wheel. The blacksmith hammered iron scrap from the broken hub. Wagon condition +10, +1 iron scrap.'
+              : 'Mounted a spare wheel. Wagon condition +10.';
           return logLine(
             { ...after, wagon: { ...after.wagon, condition: Math.min(100, after.wagon.condition + 10) } },
             log

@@ -8,6 +8,7 @@ import {
   adjustTribeAttitude
 } from '../systems/tribe-relations';
 import { addNews, effectHuntBonus, effectCholeraScare } from '../systems/news';
+import { hasLiveIndianTrader } from '../professions/predicates';
 
 // Random trail encounters — wagon trains, soldiers, traders, natives.
 // These fire through the same rollEvent pipeline as weather / wagon
@@ -288,13 +289,19 @@ const native_trading_party: GameEvent = {
         const inventory = { ...s.inventory };
         if (hasTobacco) inventory.tobacco = (inventory.tobacco ?? 0) - 1;
         else inventory.beads = (inventory.beads ?? 0) - 1;
-        inventory.pemmican = (inventory.pemmican ?? 0) + 8;
-        // Good trade improves relations slightly.
+        // Indian Trader (#154) gets a 50% better trade — knows the
+        // exchange rates, the dialect, the gestures. Plain emigrants
+        // get the standard 8 lb of pemmican.
+        const pemmican = hasLiveIndianTrader(s) ? 12 : 8;
+        inventory.pemmican = (inventory.pemmican ?? 0) + pemmican;
+        // Good trade improves relations — Indian Trader's familiarity
+        // adds a touch more goodwill on top.
+        const relGain = hasLiveIndianTrader(s) ? 4 : 2;
         let next: GameState = { ...s, inventory };
-        next = adjustTribeAttitude(next, tribe.id, 2);
+        next = adjustTribeAttitude(next, tribe.id, relGain);
         next = logLine(
           next,
-          `Traded with the ${tribe.name} — 8 lb pemmican for ${hasTobacco ? 'tobacco' : 'beads'}. Relations +2.`
+          `Traded with the ${tribe.name} — ${pemmican} lb pemmican for ${hasTobacco ? 'tobacco' : 'beads'}. Relations +${relGain}.`
         );
         // Tribal news — they know the country well.
         return addNews(next, {

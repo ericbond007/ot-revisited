@@ -13,6 +13,8 @@ import {
   applyWhoreTradingPostEarnings
 } from '../src/lib/game/professions/bonuses';
 import { makeRng } from '../src/lib/game/rng';
+import { milesPerDay } from '../src/lib/game/systems/travel';
+import { progressConditions } from '../src/lib/game/systems/conditions';
 
 function mkMember(id: string, profession: ProfessionId, name = id): PartyMember {
   // Default to male adults; tests that care about sex override inline.
@@ -175,5 +177,87 @@ describe('Whore trading-post earnings', () => {
     s.party[1].name = 'Mae';
     const after = applyWhoreTradingPostEarnings(s, makeRng('ft:1'), 'Fort Kearny');
     expect(after.eventLog[0].text).toContain('Jenny');
+  });
+});
+
+describe('Doctor (#154)', () => {
+  it('reduces daily condition health damage by ~30%', () => {
+    const noDoc = baseState(['carpenter']);
+    noDoc.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
+    const after1 = progressConditions(noDoc, makeRng('d:1'));
+    expect(after1.party[0].health).toBe(90); // 100 - 10
+
+    const doc = baseState(['doctor']);
+    doc.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
+    const after2 = progressConditions(doc, makeRng('d:2'));
+    expect(after2.party[0].health).toBe(93); // 100 - round(10 * 0.7) = 93
+  });
+});
+
+describe('Blacksmith (#154)', () => {
+  it('rolls a 40% iron-scrap salvage when a metal part is consumed', () => {
+    const s = baseState(['blacksmith'], { inventory: { flour: 0, bacon: 0, wheel: 1 } });
+    let salvages = 0;
+    for (let i = 0; i < 50; i++) {
+      const r = consumeWagonPart({ ...s, inventory: { ...s.inventory, wheel: 1 } }, makeRng(`b-${i}`), 'wheel');
+      if (r.salvaged) salvages++;
+    }
+    // ~40% expected — over 50 rolls we should see well above 0 and well below 50.
+    expect(salvages).toBeGreaterThan(5);
+    expect(salvages).toBeLessThan(45);
+  });
+
+  it('never salvages when no Blacksmith is in the party', () => {
+    const s = baseState(['carpenter'], { inventory: { flour: 0, bacon: 0, wheel: 1 } });
+    for (let i = 0; i < 10; i++) {
+      const r = consumeWagonPart({ ...s, inventory: { ...s.inventory, wheel: 1 } }, makeRng(`b-${i}`), 'wheel');
+      expect(r.salvaged).toBe(false);
+    }
+  });
+
+  it('skips salvage on non-metal parts (canvas, plank)', () => {
+    const s = baseState(['blacksmith'], { inventory: { flour: 0, bacon: 0, canvas: 1 } });
+    for (let i = 0; i < 10; i++) {
+      const r = consumeWagonPart({ ...s, inventory: { ...s.inventory, canvas: 1 } }, makeRng(`b-${i}`), 'canvas');
+      expect(r.salvaged).toBe(false);
+    }
+  });
+});
+
+describe('Scout (#154)', () => {
+  it('grants +8% travel speed', () => {
+    const noScout = baseState(['carpenter']);
+    const withScout = baseState(['scout']);
+    expect(milesPerDay(withScout)).toBeGreaterThan(milesPerDay(noScout));
+  });
+});
+
+describe('Farmer (#154)', () => {
+  it('forages 4 lb berries per rest day in season (Apr-Sep)', () => {
+    const s = baseState(['farmer'], {
+      date: { year: 1848, month: 6, day: 1 },
+      inventory: { flour: 200, bacon: 100, berries: 0 }
+    });
+    const after = rest(s, 1);
+    expect(after.inventory.berries).toBe(4);
+  });
+
+  it('does not forage off-season (Oct-Mar)', () => {
+    const s = baseState(['farmer'], {
+      date: { year: 1848, month: 1, day: 1 },
+      inventory: { flour: 200, bacon: 100, berries: 0 }
+    });
+    const after = rest(s, 1);
+    expect(after.inventory.berries ?? 0).toBe(0);
+  });
+
+  it('reduces food consumption by 10% when alive', () => {
+    // Farmer eats less — visible in foodConsumedToday output.
+    // (Direct calc tested in consumption.test.ts; this is a sanity stack.)
+    const s = baseState(['farmer'], { inventory: { flour: 200, bacon: 100 } });
+    const after = rest(s, 1);
+    const foodEaten = (200 + 100) - ((after.inventory.flour ?? 0) + (after.inventory.bacon ?? 0));
+    // 1 adult * 2 lb/day * 0.9 = 1.8, floored to 1 lb.
+    expect(foodEaten).toBeLessThan(2);
   });
 });

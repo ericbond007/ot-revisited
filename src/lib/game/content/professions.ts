@@ -17,19 +17,19 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   banker: {
     id: 'banker',
     name: 'Banker',
-    bonusSummary: 'Starts with extra cash. −10% buy / +10% sell at posts. Halves cash loss from theft events.',
+    bonusSummary: 'Starts with $800. −10% buy / +10% sell at posts.',
     starterGear: [{ item: 'cash', qty: 800 }]
   },
   farmer: {
     id: 'farmer',
     name: 'Farmer',
-    bonusSummary: '−5% food consumed/day. Auto-forages at rest/camp.',
+    bonusSummary: '−10% food consumed/day. Forages 4 lb berries per rest day Apr–Sep.',
     starterGear: [{ item: 'flour', qty: 100 }]
   },
   carpenter: {
     id: 'carpenter',
     name: 'Carpenter',
-    bonusSummary: 'Wagon repairs faster and use fewer spare parts.',
+    bonusSummary: '50% chance to save the spare part during wagon repairs.',
     starterGear: [
       { item: 'axle', qty: 2 },
       { item: 'wheel', qty: 2 }
@@ -38,7 +38,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   doctor: {
     id: 'doctor',
     name: 'Doctor',
-    bonusSummary: 'Lower disease onset, faster recovery. Safe buffalo-liver prep. Unlocks water boiling pre-1854.',
+    bonusSummary: 'Conditions deal 30% less daily damage. Unlocks water boiling pre-1854.',
     starterGear: [
       { item: 'quinine', qty: 2 },
       { item: 'laudanum', qty: 4 },
@@ -48,7 +48,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   blacksmith: {
     id: 'blacksmith',
     name: 'Blacksmith',
-    bonusSummary: 'Quality re-shoeing (2× duration). Salvages iron scrap from broken metal items.',
+    bonusSummary: '40% chance to salvage iron scrap when a metal wagon part is consumed.',
     starterGear: [
       { item: 'iron_toolkit', qty: 1 },
       { item: 'ox_shoes', qty: 10 }
@@ -66,7 +66,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   teamster: {
     id: 'teamster',
     name: 'Teamster',
-    bonusSummary: 'Oxen fatigue slower. Can re-shoe without a Blacksmith.',
+    bonusSummary: 'Oxen recover fatigue 50% faster on rest days.',
     starterGear: [
       { item: 'ox', qty: 1 },
       { item: 'yoke', qty: 1 },
@@ -85,7 +85,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   whore: {
     id: 'whore',
     name: 'Whore',
-    bonusSummary: '+15% morale floor. +1 morale per rest night. Earns $5–15 per trading-post stop. Picks up trail rumors.',
+    bonusSummary: '+15 morale floor. Earns $5–15 per trading-post stop. Unlocks the Share-the-Whore camp action.',
     femaleOnly: true,
     starterGear: [
       { item: 'cash', qty: 100 },
@@ -97,7 +97,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   scout: {
     id: 'scout',
     name: 'Scout',
-    bonusSummary: 'Reveals landmarks further ahead. Better river-ford outcomes. Weather prediction 1-2 days out.',
+    bonusSummary: '+8% travel speed — knows the country and finds shortcuts.',
     starterGear: [
       { item: 'compass', qty: 1 },
       { item: 'water_skin', qty: 2 },
@@ -107,7 +107,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   preacher: {
     id: 'preacher',
     name: 'Preacher',
-    bonusSummary: 'Reduces death morale hit. Camp service fires every camp. Converts bad events to minor morale gains.',
+    bonusSummary: 'Halves death-event morale hits. Adds bonuses to bible-reading + sing-along camp actions.',
     starterGear: [
       { item: 'bible', qty: 1 },
       { item: 'shovel', qty: 1 },
@@ -117,7 +117,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   indian_trader: {
     id: 'indian_trader',
     name: 'Indian Trader',
-    bonusSummary: 'Native encounters become tradeable. Unlocks Native trade menu at select posts.',
+    bonusSummary: '+50% pemmican on native trade encounters; +2 extra relations per favorable trade.',
     starterGear: [
       { item: 'beads', qty: 30 },
       { item: 'pemmican', qty: 2 }
@@ -126,7 +126,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   gunsmith: {
     id: 'gunsmith',
     name: 'Gunsmith',
-    bonusSummary: "Rifles don't fail in wet weather. +20% to Hunter's yield. Better outcomes in defense events.",
+    bonusSummary: "+20% on hunt yield (stacks with Hunter).",
     starterGear: [
       { item: 'rifle_cleaning_kit', qty: 1 },
       { item: 'bullets', qty: 15 },

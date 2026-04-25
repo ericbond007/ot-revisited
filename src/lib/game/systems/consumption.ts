@@ -13,7 +13,7 @@ const FOOD_PER_ADULT: Record<Rations, number> = {
 const CHILD_FOOD_MULT = 0.6;
 const CHILD_WATER_MULT = 0.7;
 const WATER_PER_ADULT_GAL = 1;
-const FARMER_FOOD_MULT = 0.95;
+const FARMER_FOOD_MULT = 0.9;
 
 export function aliveCount(state: GameState): number {
   return state.party.filter((m) => !m.dead).length;

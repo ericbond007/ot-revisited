@@ -5,10 +5,13 @@ import { createInitialState } from '../src/lib/game/engine';
 import type { GameState } from '../src/lib/game/types';
 
 function newGame(): GameState {
+  // No doctor — doctor relief (#154) would dampen the daily damage
+  // and confuse these condition-system tests. Doctor-specific
+  // behavior is covered separately at the bottom of this file.
   return createInitialState({
     seed: 't',
     leader: { name: 'A', profession: 'farmer' },
-    companions: [{ name: 'B', profession: 'doctor' }],
+    companions: [{ name: 'B', profession: 'carpenter' }],
     startDate: { year: 1848, month: 4, day: 15 }
   });
 }
@@ -76,5 +79,24 @@ describe('progressConditions', () => {
     const snap = JSON.stringify(s);
     progressConditions(s, makeRng('t:1'));
     expect(JSON.stringify(s)).toBe(snap);
+  });
+
+  it('Doctor profession dampens condition damage by 30%', () => {
+    const noDoctor = newGame();
+    noDoctor.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
+    const noDocAfter = progressConditions(noDoctor, makeRng('t:nd'));
+
+    const withDoctor = createInitialState({
+      seed: 't',
+      leader: { name: 'A', profession: 'farmer' },
+      companions: [{ name: 'Doc', profession: 'doctor' }],
+      startDate: { year: 1848, month: 4, day: 15 }
+    });
+    withDoctor.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
+    const docAfter = progressConditions(withDoctor, makeRng('t:d'));
+
+    // Cholera = -10/day. Without doctor: 100→90. With doctor: 100→93 (-7 rounded).
+    expect(noDocAfter.party[0].health).toBe(90);
+    expect(docAfter.party[0].health).toBe(93);
   });
 });

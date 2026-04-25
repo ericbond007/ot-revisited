@@ -68,7 +68,11 @@ function avg(nums: number[]): number {
 
 const OX_FATIGUE_RECOVERY_PER_REST_DAY = 25;
 const BASE_HEAL_PER_REST_DAY = 8;
-const FARMER_FORAGE_AT_REST = 3;
+// Berries the Farmer rounds up at rest — wild blackberry / chokeberry /
+// serviceberry / currant on the prairie or forest, frozen out in winter.
+// Realistic wild-edibles forage; bonus to a profession that knows the
+// land. (Old design: +3 lb flour/day from thin air — replaced.)
+const FARMER_FORAGE_BERRIES = 4;
 const TIME_BUDGET_HOURS = 12;
 
 function advanceOneDay(d: { year: number; month: number; day: number }) {
@@ -127,9 +131,19 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
 
     s = attemptFire(s, rng);
 
+    // Farmer foraging — wild berries Apr–Sep when plants are bearing.
+    // Off-season (Oct–Mar) the farmer's bonus is just the food efficiency
+    // multiplier in consumption.ts — nothing to forage from frozen ground.
     if (hasLiveFarmer(s)) {
-      const currentFlour = s.inventory.flour ?? 0;
-      s = { ...s, inventory: { ...s.inventory, flour: currentFlour + FARMER_FORAGE_AT_REST } };
+      const month = s.date.month;
+      const inSeason = month >= 4 && month <= 9;
+      if (inSeason) {
+        const currentBerries = s.inventory.berries ?? 0;
+        s = {
+          ...s,
+          inventory: { ...s.inventory, berries: currentBerries + FARMER_FORAGE_BERRIES }
+        };
+      }
     }
 
     // Preacher +1 morale per rest night. (Whore's contribution is the
