@@ -6,13 +6,13 @@
   import EventLog from '$lib/ui/EventLog.svelte';
   import ActionBar from '$lib/ui/ActionBar.svelte';
   import WagonScene from '$lib/ui/WagonScene.svelte';
+  import TownStage from '$lib/ui/TownStage.svelte';
   import EndScreen from '$lib/ui/EndScreen.svelte';
   import EventModal from '$lib/ui/EventModal.svelte';
   import HuntModal from '$lib/ui/HuntModal.svelte';
   import PostHuntModal from '$lib/ui/PostHuntModal.svelte';
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
-  import VisitModal from '$lib/ui/VisitModal.svelte';
   import CampStage from '$lib/ui/CampStage.svelte';
   import CampSummaryModal from '$lib/ui/CampSummaryModal.svelte';
   import FordSummaryModal from '$lib/ui/FordSummaryModal.svelte';
@@ -159,6 +159,14 @@
     <div class="left-col">
       {#if showCamp && !gs.completed}
         <CampStage state={gs} slot={data.slot} onleave={() => (showCamp = false)} />
+      {:else if showVisit && atLandmark && atLandmark.kind === 'trading_post' && !gs.completed}
+        <TownStage
+          state={gs}
+          landmark={atLandmark}
+          slot={data.slot}
+          onleave={() => (showVisit = false)}
+          ontrade={() => (showTrade = true)}
+        />
       {:else if atLandmark}
         <LandmarkStage state={gs} landmark={atLandmark} />
       {:else}
@@ -252,15 +260,6 @@
 
 {#if showFord && !gs.completed}
   <FordModal state={gs} slot={data.slot} onclose={() => (showFord = false)} />
-{/if}
-
-{#if showVisit && atLandmark && !gs.completed}
-  <VisitModal
-    state={gs}
-    landmark={atLandmark}
-    onclose={() => (showVisit = false)}
-    ontrade={() => (showTrade = true)}
-  />
 {/if}
 
 {#if showTrade && !gs.completed}
