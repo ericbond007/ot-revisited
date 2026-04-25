@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { EventCategory } from '$lib/game/content/events';
   import { EVENTS } from '$lib/game/content/events';
+  import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-events';
   import type { GameState } from '$lib/game/types';
   import { enhance } from '$app/forms';
 
@@ -10,7 +11,12 @@
     gameState: GameState;
     body?: string;
   } = $props();
-  const event = $derived(EVENTS.find((e) => e.id === eventId));
+  // Look in both trail-event and landmark-arrival registries — same modal,
+  // same flow, regardless of which kind of event paused the tick.
+  const event = $derived(
+    EVENTS.find((e) => e.id === eventId)
+      ?? Object.values(LANDMARK_ARRIVAL_EVENTS).find((e) => e.id === eventId)
+  );
   const qp = $derived(encodeURIComponent(slot));
   // Engine-resolved body variant takes precedence over the inline body string
   // when an event has bodyKey + a registered pool.

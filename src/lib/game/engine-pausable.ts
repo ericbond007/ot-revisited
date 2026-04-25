@@ -14,6 +14,7 @@ import { applySpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
 import type { GameEvent } from './content/events';
+import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickText } from './content/text-pools';
 
 function advanceDate(d: { year: number; month: number; day: number }) {
@@ -46,15 +47,39 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = tickOxen(s, rng);
   s = tickWagon(s, rng);
   s = adjustMorale(s, rng);
+
+  // Snapshot which landmark we'd already passed before today's travel —
+  // used below to detect a fresh arrival.
+  const prevLandmarkBefore = s.location.previousLandmarkId;
   s = applyTravel(s, rng);
+
+  const arrivedAtLandmark = s.location.atLandmarkId !== null && s.location.atLandmarkId !== undefined;
+
+  // Landmark arrival events fire when we cross a scenic landmark (one
+  // that doesn't already pause for a Visit/Ford/End screen). Detected by
+  // a change in previousLandmarkId during this tick. Skipped at
+  // stop-worthy landmarks so the post/river/end UI is the moment.
+  const prevLandmarkAfter = s.location.previousLandmarkId;
+  if (
+    !arrivedAtLandmark
+    && prevLandmarkAfter
+    && prevLandmarkAfter !== prevLandmarkBefore
+    && s.flags._lastEventDay !== s.day
+  ) {
+    const arrival = getLandmarkArrivalEvent(prevLandmarkAfter);
+    if (arrival) {
+      if (arrival.bodyKey) {
+        const resolvedBody = pickText(arrival.bodyKey, rng, arrival.body);
+        s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
+      }
+      return { state: s, pendingEvent: arrival };
+    }
+  }
 
   // Travel events fire only on the road, never on arrival at a landmark
   // (trading post, river, end). If the day's travel just parked us at a
   // stop-worthy landmark, the player gets the landmark stage first; any
   // on-road event from today would arrive on top of the trading-post UI.
-  // Landmark-scoped arrival events are a separate system (see task #115).
-  const arrivedAtLandmark = s.location.atLandmarkId !== null && s.location.atLandmarkId !== undefined;
-
   // Check event WITHOUT resolving. If cooldown allows, roll; if one fires, pause here.
   if (!arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
     const pending = rollEvent(s, rng);

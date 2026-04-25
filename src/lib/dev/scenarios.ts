@@ -306,6 +306,30 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'arrival_chimney_rock',
+    label: 'Arriving at Chimney Rock',
+    description: 'Party one mile shy of Chimney Rock — next travel tick fires the arrival event.',
+    build: () => {
+      const base = baseState('chimney');
+      // Sum miles to chimney_rock from the catalog.
+      let miles = 0;
+      for (const l of LANDMARKS) {
+        miles += l.milesFromPrevious;
+        if (l.id === 'chimney_rock') break;
+      }
+      return {
+        ...base,
+        location: {
+          ...base.location,
+          milesTraveled: miles - 1,
+          nextLandmarkId: 'chimney_rock',
+          terrain: 'prairie' as const
+        },
+        day: Math.max(1, Math.ceil((miles - 1) / 18))
+      };
+    }
+  },
+  {
     id: 'winter_ford_naked',
     label: 'Winter ford, no clothes',
     description: 'Forded a mountain river in December with no clothing — heavy chill + likely frostbite.',

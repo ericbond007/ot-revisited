@@ -5,6 +5,7 @@ import { CAMP_ACTIONS_BY_ID, type CampActionId } from '$lib/game/actions/camp-ac
 import { getLandmark } from '$lib/game/content/landmarks';
 import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
 import { EVENTS } from '$lib/game/content/events';
+import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-events';
 import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
@@ -123,7 +124,9 @@ export const actions: Actions = {
     if (!eventId || !choiceId) throw error(400, 'eventId and choiceId required');
 
     let state = await loadState(locals, slot);
-    const event = EVENTS.find((e) => e.id === eventId);
+    // Look in both registries — trail events and landmark arrival events.
+    const event = EVENTS.find((e) => e.id === eventId)
+      ?? Object.values(LANDMARK_ARRIVAL_EVENTS).find((e) => e.id === eventId);
     if (!event) throw error(400, `Unknown event ${eventId}`);
     state = applyPendingChoice(state, event, choiceId);
 
