@@ -16,6 +16,13 @@ export function inTerrain(...terrain: GameState['location']['terrain'][]): (s: G
   return (s) => terrain.includes(s.location.terrain);
 }
 
+export function milesBetween(fromMile: number, toMile: number): (s: GameState) => boolean {
+  return (s) => {
+    const m = s.location.milesTraveled;
+    return m >= fromMile && m <= toMile;
+  };
+}
+
 export function hasFlag(flag: string): (s: GameState) => boolean {
   return (s) => !!s.flags[flag];
 }

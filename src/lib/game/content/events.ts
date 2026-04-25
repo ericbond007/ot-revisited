@@ -1236,3 +1236,9 @@ const mule_theft: GameEvent = {
 };
 
 EVENTS.push(mule_theft);
+
+// #127 random-encounter batch — wagon trains, natives, abandoned camps.
+// Kept in a sibling file for readability; spread in here so we stay the
+// single EVENTS registry.
+import { ENCOUNTER_EVENTS } from './encounters';
+EVENTS.push(...ENCOUNTER_EVENTS);
