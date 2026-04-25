@@ -306,6 +306,28 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'party_wiped',
+    label: 'Party wiped (game over)',
+    description: 'All four members dead — opens the tombstone end screen.',
+    build: () => {
+      let s = atLandmark(baseState('wiped'), 'chimney_rock');
+      const causes = ['Cholera', 'Dysentery', 'Exposure', 'Typhoid'];
+      s = {
+        ...s,
+        completed: true,
+        outcome: 'wiped',
+        party: s.party.map((m, i) => ({
+          ...m,
+          health: 0,
+          dead: true,
+          deathCause: causes[i % causes.length],
+          deathDay: s.day - (i * 2)
+        }))
+      };
+      return s;
+    }
+  },
+  {
     id: 'arrival_chimney_rock',
     label: 'Arriving at Chimney Rock',
     description: 'Party one mile shy of Chimney Rock — next travel tick fires the arrival event.',
