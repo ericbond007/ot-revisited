@@ -7,6 +7,7 @@ import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
 import { EVENTS } from '$lib/game/content/events';
 import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-events';
 import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
+import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -86,6 +87,9 @@ async function runTravelLoop(
       if (here.kind === 'trading_post') {
         const whoreRng = makeRng(`${state.seed}:whore:${here.id}:${state.day}`);
         state = applyWhoreTradingPostEarnings(state, whoreRng, here.name);
+        // Monthly restock: if we haven't seen this post in 30 days (or
+        // ever), freight has come through and the shelves are full again.
+        state = restockPostIfDue(state, here);
       }
       break;
     }
@@ -313,6 +317,17 @@ export const actions: Actions = {
     }
     let state = await loadState(locals, slot);
     state = trade(state, { buys, sells });
+    // Decrement post stock for each purchase so future visits see the
+    // shelves emptier. Only applies at trading posts (skipped silently
+    // for any other trade context).
+    if (state.location.atLandmarkId) {
+      const here = getLandmark(state.location.atLandmarkId);
+      if (here.kind === 'trading_post') {
+        const purchaseMap: Record<string, number> = {};
+        for (const b of buys) purchaseMap[b.item] = (purchaseMap[b.item] ?? 0) + b.qty;
+        state = recordPostPurchases(state, here, purchaseMap);
+      }
+    }
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   }

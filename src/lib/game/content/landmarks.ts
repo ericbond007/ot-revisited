@@ -32,6 +32,10 @@ export interface Landmark {
   // post had its own character (quartermaster basics at Kearny, HBC imports at
   // Hall, sparse at Bridger, end-of-trail luxuries at The Dalles, etc.).
   stock?: readonly string[];
+  // Quantity multiplier on top of the per-category DEFAULT_STOCK_QTY —
+  // a small mountain outpost like Bridger carries a fraction of what the
+  // Laramie hub keeps in stock. Defaults to 1.0 when omitted.
+  stockScale?: number;
   // Post flavor — a narrow kind tag + a prose blurb shown at the top of the
   // Visit / Trade screens. Only populated on trading posts (today).
   postKind?: PostKind;
@@ -71,6 +75,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // run by a German emigrant (Gerat Hollenberg). Mail stop later — for
     // now, just a handful of prairie staples and a few luxuries.
     postKind: 'frontier',
+    stockScale: 0.5,
     blurb: "A sod-and-timber road ranch on Cottonwood Creek. A private store run by a German emigrant — prairie staples, a little whiskey, and whatever the last train didn't buy.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack',
@@ -85,6 +90,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // not buy goods from emigrants. Kearny is sell-only (for the player).
     postKind: 'us_army',
     buysFromEmigrants: false,
+    stockScale: 1.0,
     blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries, and he will not buy from you.',
     stock: [
       'flour', 'beans', 'bacon', 'hardtack',
@@ -103,6 +109,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // A small fur-trader outfit — blacksmith services, moccasins, beads,
     // and whatever furs he's willing to spare.
     postKind: 'mountain',
+    stockScale: 0.4,
     blurb: "Joseph Robidoux's trading post at the pass south of Scotts Bluff. A fur-trader outfit with a working forge — moccasins, beads, and a few hard-won comforts.",
     stock: [
       'flour', 'bacon', 'jerky',
@@ -116,6 +123,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // Fur-trade origin turned emigrant hub. The broadest selection on the
     // trail — and famously the highest prices.
     postKind: 'frontier',
+    stockScale: 1.5,
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
@@ -144,6 +152,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 65,  terrain: 'mountains', kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
+    stockScale: 0.45,
     blurb: "Jim Bridger's stockade is famously thin on stock. Moccasins, buffalo robes, and whatever the mountain men happened to bring in this week. Take what you can get.",
     stock: [
       'flour', 'bacon',
@@ -164,6 +173,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // game purposes we treat it as closed.)
     postKind: 'hbc',
     abandonedAfterYear: 1856,
+    stockScale: 1.1,
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
@@ -177,6 +187,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 130, terrain: 'desert',    kind: 'trading_post',
     // Small HBC station. Modest stock, not a major resupply.
     postKind: 'hbc',
+    stockScale: 0.6,
     blurb: 'A small HBC station by the Boise River. Cottonwoods, worn travelers, and a modest stock — not a major resupply, but the water is good.',
     stock: [
       'flour', 'bacon', 'dried_fruit',
@@ -192,6 +203,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // HBC river post. Basic but reliable stock. Native trade goods are a
     // specialty here (Walla Walla / Cayuse trade networks).
     postKind: 'hbc',
+    stockScale: 0.7,
     blurb: 'A lonely HBC outpost by the Columbia. Basic but reliable stock, and a specialty in Native trade goods — Walla Walla and Cayuse networks run through here.',
     stock: [
       'flour', 'beans', 'bacon',
@@ -204,6 +216,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
+    stockScale: 1.3,
     blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',

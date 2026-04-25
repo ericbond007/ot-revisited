@@ -5,6 +5,7 @@
   import { getLandmark, type PostKind } from '$lib/game/content/landmarks';
   import { getProfession } from '$lib/game/content/professions';
   import { getWagon } from '$lib/game/content/wagons';
+  import { postRemainingQty } from '$lib/game/systems/post-stock';
   import ItemTooltip from './ItemTooltip.svelte';
   import NumberStepper from './NumberStepper.svelte';
 
@@ -324,6 +325,7 @@
                   {@const afterOwned = owned + buying - selling}
                   {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo'}
                   {@const canSell = buysFromEmigrants && owned > 0}
+                  {@const stockLeft = inStock && here ? postRemainingQty(gameState, here, id) : 0}
                   <div class="item-row" class:out-of-stock={!inStock && owned === 0}>
                     <div class="item-label">
                       <ItemTooltip {id}>
@@ -335,6 +337,9 @@
                         {#if inStock}
                           <span class="price buy-price">
                             buy ${(PRICES[id].buy * buyMult).toFixed(2)}
+                          </span>
+                          <span class="price stock-left" class:low={stockLeft <= 3} class:out={stockLeft === 0}>
+                            {stockLeft === 0 ? 'out of stock' : `${stockLeft} left`}
                           </span>
                         {/if}
                         {#if canSell}
@@ -350,14 +355,15 @@
                     </div>
                     <div class="item-controls">
                       {#if inStock}
-                        {@const chickenMax = id === 'chicken' ? chickenRoom : (isBulkCat ? 999 : 99)}
+                        {@const wagonCap = id === 'chicken' ? chickenRoom : (isBulkCat ? 999 : 99)}
+                        {@const buyMax = Math.min(wagonCap, stockLeft)}
                         <div class="control-col">
                           <span class="control-tag buy">BUY</span>
                           <NumberStepper
                             name="buy_{id}"
                             bind:value={buyQty[id]}
                             min={0}
-                            max={chickenMax}
+                            max={buyMax}
                             bulkSteps={isBulkCat ? [10, 50] : []}
                             ariaLabel="Buy {ITEMS[id].name}"
                             hideValue
@@ -703,6 +709,13 @@
   .price { color: var(--c-wood); }
   .buy-price::before { content: ''; }
   .sell-price { color: #8bb96a; }
+  .stock-left {
+    font-size: 0.85em;
+    color: var(--c-tan);
+    font-style: italic;
+  }
+  .stock-left.low { color: #c96a2a; font-weight: 700; }
+  .stock-left.out { color: #e85a4a; font-weight: 700; font-style: normal; }
   .sell-price.disabled {
     color: var(--c-wood);
     text-decoration: line-through;
