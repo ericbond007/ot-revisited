@@ -7,6 +7,16 @@
 
   let root = $state<HTMLDivElement | undefined>(undefined);
 
+  // Measured on open so the menu can fill the viewport below the
+  // anchor button, regardless of where the parent ends up rendering.
+  let availableHeight = $state<string>('80vh');
+  function measureHeight() {
+    if (!root) return;
+    const rect = root.getBoundingClientRect();
+    // Subtract a tiny floor margin so we don't clip against the bottom edge.
+    availableHeight = `${Math.max(200, window.innerHeight - rect.top - 16)}px`;
+  }
+
   // Dev-only: quick-load scenarios from the Journey menu. Vite inlines
   // `import.meta.env.DEV` to a constant, so this block drops out of the
   // production bundle entirely.
@@ -33,6 +43,15 @@
     };
   });
 
+  // Recompute available height whenever the menu opens or the viewport
+  // resizes — keeps the dev list's scroll region sized to the viewport.
+  $effect(() => {
+    if (!open || typeof window === 'undefined') return;
+    measureHeight();
+    window.addEventListener('resize', measureHeight);
+    return () => window.removeEventListener('resize', measureHeight);
+  });
+
   interface MenuItem {
     icon: string;
     label: string;
@@ -49,7 +68,7 @@
 </script>
 
 {#if open}
-  <div class="menu" bind:this={root} role="menu">
+  <div class="menu" bind:this={root} role="menu" style="height: {availableHeight};">
     <div class="menu-head">JOURNEY MENU</div>
     {#each items as it}
       <a class="item" class:danger={it.danger} href={it.href} role="menuitem" onclick={close}>
@@ -95,6 +114,10 @@
     left: 0;
     z-index: 60;
     min-width: 240px;
+    /* Height comes from the inline `style="height: <px>"` on the menu —
+       set in JS to fill the viewport from the menu's top down to a small
+       floor margin. The dev-list flex-grows into whatever's left after
+       the static rows. */
     padding: 0.4em;
     background: var(--c-panel);
     border: 2px solid var(--c-rust);
@@ -123,9 +146,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.2em;
-    /* Cap the dev list so the rest of the menu (foot/head) stays visible
-       even with 20+ scenarios. Roughly 5-6 items before scrolling. */
-    max-height: 280px;
+    /* Take whatever vertical space the menu has left after the static
+       items above + foot. Scrolls inside that. */
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     /* Reserve space for the scrollbar so rows don't shift. */
     padding-right: 4px;
