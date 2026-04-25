@@ -65,20 +65,20 @@
     value = clamp(value + n);
   }
   function onInputInput(e: Event) {
-    // Keep the bound value within [min, max] on every keystroke so it can
-    // never go blank / NaN / out-of-range mid-edit. Empty input → min.
+    // Update `value` only when the input parses cleanly — let the field
+    // briefly hold an empty / partial string while the user is typing.
+    // Final coercion happens on blur. (Trying to slam the DOM mid-edit
+    // races with reactive writes and produces a blanking field.)
     const raw = (e.target as HTMLInputElement).value;
-    if (raw === '') {
-      value = min;
-      (e.target as HTMLInputElement).value = String(min);
-      return;
-    }
+    if (raw === '') return;
     const n = parseFloat(raw);
-    value = clamp(n);
+    if (Number.isFinite(n)) value = clamp(n);
   }
   function onInputBlur(e: Event) {
-    // Final sweep on blur in case reactivity got confused.
-    value = clamp(value);
+    // Coerce on blur — handles empty, NaN, out-of-range.
+    const raw = (e.target as HTMLInputElement).value;
+    const parsed = raw === '' ? min : parseFloat(raw);
+    value = clamp(Number.isFinite(parsed) ? parsed : min);
     (e.target as HTMLInputElement).value = String(value);
   }
 </script>
@@ -103,10 +103,14 @@
     <span class="value-chip" aria-hidden="true">{displayValue ?? value}</span>
     <input type="hidden" {name} {value} />
   {:else}
+    <!-- One-way value binding instead of `bind:value` — bind: races with
+         oninput on number inputs, producing a blanking field when the
+         user types or backspaces. We update `value` from oninput/onblur
+         and let Svelte reactively write `value={value}` back to the DOM. -->
     <input
       type="number"
       {name}
-      bind:value
+      value={value}
       {min}
       {max}
       {step}
