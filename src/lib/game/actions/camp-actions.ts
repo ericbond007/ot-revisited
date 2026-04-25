@@ -414,11 +414,10 @@ const cannibalism_corpse: CampAction = {
       morale: Math.max(0, s.morale - 18)
     };
     next = bumpGuilt(next, 1);
-    const starved = corpse.deathCause === 'Starvation';
-    const flavor = starved
-      ? `${corpse.name} starved trying to spare the rest. The party took the body for meat — ${meatLbs} lb. Morale -18.`
-      : `Took ${corpse.name}'s body for meat — ${meatLbs} lb of fresh game. Nobody spoke. Morale -18.`;
-    return logLine(next, flavor);
+    return logLine(
+      next,
+      `Took ${corpse.name}'s body for meat — ${meatLbs} lb of fresh game. Nobody spoke. Morale -18.`
+    );
   }
 };
 

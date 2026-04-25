@@ -50,6 +50,22 @@ export function reapDead(state: GameState, _rng: Rng): GameState {
     ? state.morale
     : Math.max(0, state.morale + immediateMorale);
 
+  // If anyone just died of Starvation AND the food pile is still empty
+  // AND the party isn't fully wiped, surface a pointed call-to-action:
+  // the survivors must rest and consider what cannot be spoken aloud.
+  const newlyStarved = party.filter(
+    (m, i) => !state.party[i].dead && m.dead && m.deathCause === 'Starvation'
+  );
+  const totalFoodLb = ['game_meat','berries','flour','beans','bacon','jerky','hardtack','dried_fruit','pemmican']
+    .reduce((sum, id) => sum + (state.inventory[id] ?? 0), 0);
+  const starvationCallout =
+    newlyStarved.length > 0 && totalFoodLb === 0 && !allDead
+      ? [{
+          day: state.day,
+          text: `With ${newlyStarved[0].name} gone and the food pile bare, the survivors must rest in camp and do the unthinkable — or share the same fate.`
+        }]
+      : [];
+
   return {
     ...state,
     party,
@@ -66,7 +82,8 @@ export function reapDead(state: GameState, _rng: Rng): GameState {
           text: m.kind === 'child'
             ? `${m.name}, a child, has died. Cause: ${m.deathCause}. The party is shattered (morale −8).`
             : `${m.name} has died. Cause: ${m.deathCause}.`
-        }))
+        })),
+      ...starvationCallout
     ]
   };
 }
