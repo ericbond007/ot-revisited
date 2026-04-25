@@ -5,6 +5,7 @@
   import InventoryPanel from '$lib/ui/InventoryPanel.svelte';
   import EventLog from '$lib/ui/EventLog.svelte';
   import ActionBar from '$lib/ui/ActionBar.svelte';
+  import WagonScene from '$lib/ui/WagonScene.svelte';
   import EndScreen from '$lib/ui/EndScreen.svelte';
   import EventModal from '$lib/ui/EventModal.svelte';
   import HuntModal from '$lib/ui/HuntModal.svelte';
@@ -162,6 +163,9 @@
         <LandmarkStage state={gs} landmark={atLandmark} />
       {:else}
         <TrailMap state={gs} />
+        <!-- Side view of the wagon traveling. Reflects current
+             terrain; eventually will host real animation. -->
+        <WagonScene state={gs} />
       {/if}
 
       <div class="actions-row">

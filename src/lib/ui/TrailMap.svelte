@@ -151,8 +151,8 @@
     background: var(--c-parchment);
     color: var(--c-ink);
     position: relative;
-    min-height: 340px;
-    padding: 1em 1em 5.5em 1em;
+    min-height: 260px;
+    padding: 1em 1em 4.5em 1em;
   "
 >
   <h4 class="map-head">
