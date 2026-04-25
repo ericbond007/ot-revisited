@@ -67,7 +67,13 @@ export function milesPerDay(state: GameState): number {
   }
 
   const load = loadSpeedMult(state);
-  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load);
+
+  // Hired-guide bonus (#152) — +15% travel speed while the guide
+  // window is open. Set by hireGuide() at hub posts.
+  const guideUntil = (state.flags._guideUntilDay as number | undefined) ?? 0;
+  const guideMult = guideUntil > state.day ? 1.15 : 1.0;
+
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.

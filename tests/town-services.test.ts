@@ -5,9 +5,11 @@ import {
   stayAtInn,
   gamble,
   visitBrothel,
+  hireGuide,
   REPAIR_DOLLARS_PER_POINT,
   INN_DOLLARS_PER_PERSON_PER_NIGHT,
-  BROTHEL_DOLLARS_PER_MAN
+  BROTHEL_DOLLARS_PER_MAN,
+  GUIDE_DOLLARS_PER_DAY
 } from '../src/lib/game/systems/town-services';
 import { getLandmark } from '../src/lib/game/content/landmarks';
 import { makeRng } from '../src/lib/game/rng';
@@ -147,6 +149,31 @@ describe('brothel', () => {
     // 8% per man × 2 men = ~16% any-infected per visit. Across 8 seeds
     // we expect to see both outcomes.
     expect(everInfected || everSpared).toBe(true);
+  });
+});
+
+describe('hire a guide', () => {
+  it('sets _guideUntilDay flag and charges day rate', () => {
+    const s0 = { ...newGame(), cash: 100 };
+    const r = hireGuide(s0, 20);
+    expect(r.days).toBe(5);
+    expect(r.cost).toBe(5 * GUIDE_DOLLARS_PER_DAY);
+    expect(r.state.cash).toBe(100 - r.cost);
+    expect(r.state.flags._guideUntilDay).toBe(s0.day + 5);
+  });
+
+  it('rounds dollars down to whole-day chunks', () => {
+    const s0 = { ...newGame(), cash: 100 };
+    // $7 / $4-per-day = 1 day, leftover $3 stays in pocket.
+    const r = hireGuide(s0, 7);
+    expect(r.days).toBe(1);
+    expect(r.cost).toBe(4);
+    expect(r.state.cash).toBe(96);
+  });
+
+  it('throws if not enough cash', () => {
+    const s0 = { ...newGame(), cash: 1 };
+    expect(() => hireGuide(s0, 20)).toThrow(/cash/i);
   });
 });
 

@@ -9,7 +9,7 @@ import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-even
 import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
 import { addNews, generatePostGossip } from '$lib/game/systems/news';
-import { repairWagon, stayAtInn, gamble, visitBrothel } from '$lib/game/systems/town-services';
+import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide } from '$lib/game/systems/town-services';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -387,6 +387,21 @@ export const actions: Actions = {
     }
     const rng = makeRng(`${state.seed}:gamble:${here.id}:${state.day}:${state.cash}`);
     const result = gamble(state, rng, stake);
+    state = result.state;
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  townGuide: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const dollars = parseInt(fd.get('dollars')?.toString() ?? '0', 10);
+    let state = await loadState(locals, slot);
+    if (!state.location.atLandmarkId) throw error(409, 'not at a landmark');
+    const here = getLandmark(state.location.atLandmarkId);
+    if (!(here.services ?? []).includes('guide')) throw error(409, 'no guide here');
+    const result = hireGuide(state, dollars);
     state = result.state;
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };

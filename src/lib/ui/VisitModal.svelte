@@ -6,7 +6,8 @@
   import {
     REPAIR_DOLLARS_PER_POINT,
     INN_DOLLARS_PER_PERSON_PER_NIGHT,
-    BROTHEL_DOLLARS_PER_MAN
+    BROTHEL_DOLLARS_PER_MAN,
+    GUIDE_DOLLARS_PER_DAY
   } from '$lib/game/systems/town-services';
 
   // The Visit hub for any landmark interaction. Trading posts now offer
@@ -53,10 +54,12 @@
   let nights = $state(1);
   let repairPoints = $state(20);
   let stake = $state(5);
+  let guideDays = $state(5);
 
   const innCost = $derived(aliveCount * nights * innRate);
   const repairCost = $derived(Math.ceil(repairPoints * REPAIR_DOLLARS_PER_POINT));
   const brothelCost = $derived(adultMales * BROTHEL_DOLLARS_PER_MAN);
+  const guideCost = $derived(guideDays * GUIDE_DOLLARS_PER_DAY);
 
   const wagonRoom = $derived(Math.max(1, 100 - Math.round(gameState.wagon.condition)));
   const wagonNeedsRepair = $derived(gameState.wagon.condition < 100);
@@ -219,6 +222,41 @@
                 disabled={gameState.cash < stake}
                 title={gameState.cash < stake ? 'Not enough cash' : ''}
               >Wager ${stake}</button>
+            </div>
+          </div>
+        </form>
+      {/if}
+
+      <!-- Hire a guide — pay $/day for travel speed bonus. -->
+      {#if services.includes('guide')}
+        <form
+          method="POST"
+          action="?/townGuide&slot={qp}"
+          use:enhance={() => () => {}}
+          class="svc-form"
+        >
+          <input type="hidden" name="dollars" value={guideCost} />
+          <div class="svc-card" class:disabled={gameState.cash < guideCost}>
+            <span class="action-icon">🧭</span>
+            <div class="svc-body">
+              <span class="action-label">Hire a guide</span>
+              <span class="action-sub">{guideDays} days · ${guideCost} (${GUIDE_DOLLARS_PER_DAY}/day) · +15% travel speed while along</span>
+            </div>
+            <div class="svc-controls">
+              <NumberStepper
+                bind:value={guideDays}
+                min={1}
+                max={30}
+                ariaLabel="Days to hire guide"
+                hideValue
+                displayValue={guideDays}
+              />
+              <button
+                type="submit"
+                class="svc-go"
+                disabled={gameState.cash < guideCost}
+                title={gameState.cash < guideCost ? 'Not enough cash' : ''}
+              >Pay ${guideCost}</button>
             </div>
           </div>
         </form>

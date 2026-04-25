@@ -10,7 +10,7 @@ import type { Rng } from '../rng';
 // All three are pure functions that return a new GameState. The play
 // route's server actions wrap them in form-handler shells.
 
-export type TownServiceKind = 'blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip';
+export type TownServiceKind = 'blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide';
 
 // --- Blacksmith ---
 
@@ -212,6 +212,48 @@ export function visitBrothel(state: GameState, rng: Rng): BrothelResult {
     eventLog: log
   };
   return { state: next, men: men.length, cost, moraleGain, infected };
+}
+
+// --- Hire a guide ---
+//
+// Mountain men, ex-fur-trappers, and Native scouts hung around the
+// hubs offering paid guidance for short stretches of trail. The
+// player pays cash, and for a window of days the wagon moves faster
+// (read by travel.ts via the _guideUntilDay flag). Negative side-
+// effect: the guide eats from your stores while present (handled
+// implicitly — they're an extra mouth for the day-tick).
+
+export const GUIDE_DOLLARS_PER_DAY = 4;
+export const GUIDE_SPEED_MULT = 1.15;
+
+export interface GuideResult {
+  state: GameState;
+  days: number;
+  cost: number;
+}
+
+/** Pay `dollars` to hire a guide for floor(dollars / GUIDE_DOLLARS_PER_DAY)
+ *  days. Sets _guideUntilDay so travel.ts can read the bonus. */
+export function hireGuide(state: GameState, dollars: number): GuideResult {
+  const want = Math.max(0, Math.floor(dollars));
+  if (want < GUIDE_DOLLARS_PER_DAY) {
+    return { state, days: 0, cost: 0 };
+  }
+  if (state.cash < want) {
+    throw new Error(`hireGuide: not enough cash ($${state.cash} < $${want})`);
+  }
+  const days = Math.floor(want / GUIDE_DOLLARS_PER_DAY);
+  const cost = days * GUIDE_DOLLARS_PER_DAY;
+  const next: GameState = {
+    ...state,
+    cash: state.cash - cost,
+    flags: { ...state.flags, _guideUntilDay: state.day + days },
+    eventLog: [
+      ...state.eventLog,
+      { day: state.day, text: `Hired a local guide for ${days} days. The wagon moves quicker with him along.` }
+    ]
+  };
+  return { state: next, days, cost };
 }
 
 // --- Helpers ---

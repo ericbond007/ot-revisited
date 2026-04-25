@@ -39,7 +39,7 @@ export interface Landmark {
   // Town services available at this post (#152). Hubs (Laramie, Hall,
   // Dalles) carry the full menu; outposts and road ranches carry
   // subsets. Empty / omitted = post is trade-only.
-  services?: readonly ('blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip')[];
+  services?: readonly ('blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide')[];
   // Per-post inn rate override (USD/person/night). Defaults to the
   // global INN_DOLLARS_PER_PERSON_PER_NIGHT — only set on luxury posts.
   innNightlyRate?: number;
@@ -134,7 +134,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // trail — and famously the highest prices.
     postKind: 'frontier',
     stockScale: 1.5,
-    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide'],
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
@@ -186,7 +186,7 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'hbc',
     abandonedAfterYear: 1856,
     stockScale: 1.1,
-    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide'],
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
@@ -232,7 +232,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
     stockScale: 1.3,
-    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide'],
     innNightlyRate: 2,
     blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",
     stock: [
