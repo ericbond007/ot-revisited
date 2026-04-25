@@ -74,7 +74,10 @@
     use:enhance={() => {
       traveling = true;
       return async ({ update }) => {
-        await update();
+        // `reset: false` keeps the user's typed travel-days in the
+        // stepper. The default update() resets the form on success,
+        // which snaps the number input back to its SSR default.
+        await update({ reset: false });
         // Hold the "traveling" indicator for the full wagon-slide duration,
         // unless we've already arrived at a landmark — in which case the
         // atLandmark $effect above has already cleared the flag.
