@@ -8,6 +8,7 @@ import { EVENTS } from '$lib/game/content/events';
 import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-events';
 import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
+import { addNews, generatePostGossip } from '$lib/game/systems/news';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -90,6 +91,12 @@ async function runTravelLoop(
         // Monthly restock: if we haven't seen this post in 30 days (or
         // ever), freight has come through and the shelves are full again.
         state = restockPostIfDue(state, here);
+        // Trail gossip — 60% chance the clerk has something to say.
+        const newsRng = makeRng(`${state.seed}:news:${here.id}:${state.day}`);
+        if (newsRng.chance(0.6)) {
+          const item = generatePostGossip(state, newsRng, here.name);
+          if (item) state = addNews(state, item);
+        }
       }
       break;
     }

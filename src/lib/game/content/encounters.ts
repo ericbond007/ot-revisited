@@ -7,6 +7,7 @@ import {
   getTribeAttitude,
   adjustTribeAttitude
 } from '../systems/tribe-relations';
+import { addNews, effectHuntBonus, effectCholeraScare } from '../systems/news';
 
 // Random trail encounters — wagon trains, soldiers, traders, natives.
 // These fire through the same rollEvent pipeline as weather / wagon
@@ -74,10 +75,19 @@ const eastbound_turnaround: GameEvent = {
       id: 'listen',
       label: 'Just hear their stories',
       silentLog: true,
-      apply: (s) => logLine(
-        { ...s, morale: Math.max(0, s.morale - 2) },
-        'Heard their tale of misfortune. The party is quiet for a while. Morale -2.'
-      )
+      apply: (s) => {
+        let next = { ...s, morale: Math.max(0, s.morale - 2) };
+        next = logLine(next, 'Heard their tale of misfortune. The party is quiet for a while. Morale -2.');
+        // The eastbounders bring word from the road ahead — and a
+        // cholera scare with mechanical bite.
+        return addNews(next, {
+          text: 'Cholera was thick in the train ahead — boil your water.',
+          source: 'eastbound emigrants',
+          topic: 'hazard',
+          day: s.day,
+          applyEffect: effectCholeraScare
+        });
+      }
     },
     {
       id: 'pass',
@@ -195,10 +205,20 @@ const mail_rider: GameEvent = {
         const line = positive
           ? `A letter from home — the family is well. Morale +6.`
           : `A letter from home — grim news. Morale -3.`;
-        return logLine(
+        let next = logLine(
           { ...s, morale: Math.max(0, Math.min(100, s.morale + delta)) },
           line
         );
+        // The mail rider also carried trail news.
+        next = addNews(next, {
+          text: rng.chance(0.5)
+            ? 'A new ferry has opened on the Green River — west crossing only.'
+            : 'Buffalo herds were sighted thick on the prairie last week.',
+          source: 'mail rider',
+          topic: rng.chance(0.5) ? 'opportunity' : 'opportunity',
+          day: s.day
+        });
+        return next;
       }
     },
     {
@@ -272,10 +292,19 @@ const native_trading_party: GameEvent = {
         // Good trade improves relations slightly.
         let next: GameState = { ...s, inventory };
         next = adjustTribeAttitude(next, tribe.id, 2);
-        return logLine(
+        next = logLine(
           next,
           `Traded with the ${tribe.name} — 8 lb pemmican for ${hasTobacco ? 'tobacco' : 'beads'}. Relations +2.`
         );
+        // Tribal news — they know the country well.
+        return addNews(next, {
+          text: rng.chance(0.5)
+            ? `The ${tribe.name} say buffalo are thick to the south.`
+            : `The ${tribe.name} say a band of warriors is hunting up the trail.`,
+          source: `${tribe.name} traders`,
+          topic: rng.chance(0.5) ? 'opportunity' : 'hazard',
+          day: s.day
+        });
       }
     },
     {

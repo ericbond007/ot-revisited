@@ -1,0 +1,212 @@
+import type { GameState } from '../types';
+import type { Rng } from '../rng';
+import { LANDMARKS, type Landmark } from '../content/landmarks';
+import { TRIBES, attitudeLevel } from '../content/tribes';
+import { getTribeAttitude } from './tribe-relations';
+
+// Trail gossip — actionable hints the player picks up from encounters,
+// trading posts, and landmark arrivals. News surfaces in the event log
+// with a `📢 News:` prefix and is also stashed on `flags._news` so a
+// future journal panel can render the rolling list.
+//
+// Topics:
+//   tribe       — "Sioux are restless near Laramie"
+//   water       — "Sweetwater is running high" / "springs at X are dry"
+//   weather     — "early frost in the mountains"
+//   opportunity — "Bridger has good moccasins"
+//   hazard      — "cholera hit the train ahead of you"
+//
+// News is purely informational for now. The player reads it and
+// decides what to do. Mechanics (e.g. cholera-event probability bumps
+// after a "cholera ahead" rumor) can layer on later.
+
+export type NewsTopic = 'tribe' | 'water' | 'weather' | 'opportunity' | 'hazard';
+
+export interface NewsItem {
+  text: string;
+  /** Who told you. "Eastbound emigrant", "Fort Laramie clerk", "Mail rider", etc. */
+  source: string;
+  topic: NewsTopic;
+  /** In-game day the news was learned. */
+  day: number;
+  /** Optional world-effect hook — runs once when the news is added.
+   *  Lets gossip be mechanically real: a cholera rumor temporarily
+   *  boosts cholera event weight, a tribe rumor shifts attitude, a
+   *  buffalo-herd tip bumps the next week's hunt yield. */
+  applyEffect?: (state: GameState) => GameState;
+}
+
+const NEWS_CAP = 30;
+const NEWS_PREFIX = '📢 News:';
+
+function readNews(state: GameState): NewsItem[] {
+  // The flags type doesn't allow array values, so we round-trip through
+  // unknown — the news list is JSON-serializable so save/load handle it.
+  return (state.flags._news as unknown as NewsItem[] | undefined) ?? [];
+}
+
+function writeNews(state: GameState, items: NewsItem[]): GameState {
+  return {
+    ...state,
+    flags: { ...state.flags, _news: items as unknown as Record<string, unknown> }
+  };
+}
+
+/** Push a news item into both the event log and the journal flag. If
+ *  the item carries an `applyEffect` hook, it fires once here so the
+ *  rumor concretely shifts the world state. */
+export function addNews(state: GameState, item: NewsItem): GameState {
+  let next = state;
+  if (item.applyEffect) next = item.applyEffect(next);
+  const items = [...readNews(next), item].slice(-NEWS_CAP);
+  return {
+    ...writeNews(next, items),
+    eventLog: [
+      ...next.eventLog,
+      { day: next.day, text: `${NEWS_PREFIX} ${item.text} (— ${item.source})` }
+    ]
+  };
+}
+
+/** All currently-stashed news, oldest first. */
+export function recentNews(state: GameState): NewsItem[] {
+  return readNews(state);
+}
+
+// --- World-effect hooks ---
+
+/** Bumps cholera event weight for 14 days. Read by systems/events.ts. */
+export function effectCholeraScare(s: GameState): GameState {
+  return { ...s, flags: { ...s.flags, _choleraHintedUntilDay: s.day + 14 } };
+}
+
+/** Boosts hunt yield for 7 days. Read by actions/hunt.ts. */
+export function effectHuntBonus(s: GameState): GameState {
+  return { ...s, flags: { ...s.flags, _huntBonusUntilDay: s.day + 7 } };
+}
+
+/** Shifts a tribe's attitude by `delta` (clamped). Used by tribe-gossip news
+ *  so the rumor matches the (newly-shifted) world state. */
+export function effectTribeShift(tribeId: string, delta: number) {
+  return (s: GameState): GameState => {
+    const map = (s.flags._tribeAttitudes as Record<string, number> | undefined) ?? {};
+    const tribe = TRIBES.find((t) => t.id === tribeId);
+    const current = map[tribeId] ?? tribe?.baselineAttitude ?? 50;
+    const next = Math.max(0, Math.min(100, current + delta));
+    return {
+      ...s,
+      flags: { ...s.flags, _tribeAttitudes: { ...map, [tribeId]: next } }
+    };
+  };
+}
+
+// --- Generators ---
+
+/** Pick a tribe in any region the trail covers, weighted toward the
+ *  region the party is currently approaching. Returns the tribe + a
+ *  flavor word reflecting current attitude. */
+function pickTribeForRumor(state: GameState, rng: Rng) {
+  // Prefer tribes whose region the party is in or near.
+  const m = state.location.milesTraveled;
+  const candidates = TRIBES.filter(
+    (t) => Math.abs((t.region.fromMile + t.region.toMile) / 2 - m) < 600
+  );
+  const pool = candidates.length > 0 ? candidates : [...TRIBES];
+  const tribe = pool[rng.int(0, pool.length - 1)];
+  const level = attitudeLevel(getTribeAttitude(state, tribe.id));
+  return { tribe, level };
+}
+
+/** A river or scenic landmark up the trail to attribute water/weather rumors to. */
+function pickUpcomingLandmark(state: GameState, rng: Rng): Landmark | null {
+  const m = state.location.milesTraveled;
+  const ahead: Landmark[] = [];
+  let running = 0;
+  for (const l of LANDMARKS) {
+    running += l.milesFromPrevious;
+    if (running > m && running < m + 800 && (l.kind === 'river' || l.kind === 'landmark')) {
+      ahead.push(l);
+    }
+  }
+  if (ahead.length === 0) return null;
+  return ahead[rng.int(0, ahead.length - 1)];
+}
+
+/** Generate a single piece of gossip for a trading-post arrival. */
+export function generatePostGossip(
+  state: GameState,
+  rng: Rng,
+  postName: string
+): NewsItem | null {
+  // Five-way coin flip across topic templates.
+  const roll = rng.int(0, 4);
+  const source = `${postName} clerk`;
+  const day = state.day;
+
+  if (roll === 0) {
+    const { tribe, level } = pickTribeForRumor(state, rng);
+    const tone =
+      level === 'hostile' ? 'are out for blood'
+      : level === 'wary' ? 'are restless'
+      : level === 'neutral' ? 'are watching the trail closely'
+      : level === 'friendly' ? 'are open to trade'
+      : 'have been welcoming travelers';
+    // The rumor concretizes — a "restless" rumor nudges relations
+    // down, a "welcoming" rumor nudges them up.
+    const delta =
+      level === 'hostile' ? -3
+      : level === 'wary' ? -2
+      : level === 'neutral' ? 0
+      : level === 'friendly' ? 2
+      : 3;
+    return {
+      text: `The ${tribe.name} ${tone} this season.`,
+      source, topic: 'tribe', day,
+      applyEffect: delta === 0 ? undefined : effectTribeShift(tribe.id, delta)
+    };
+  }
+  if (roll === 1) {
+    const lm = pickUpcomingLandmark(state, rng);
+    if (!lm) return null;
+    if (lm.kind === 'river') {
+      const high = rng.chance(0.5);
+      return {
+        text: high
+          ? `${lm.name} is running high — fording is dangerous.`
+          : `${lm.name} is running shallow — easy crossing right now.`,
+        source, topic: 'water', day
+      };
+    }
+    return { text: `Word is the springs near ${lm.name} are running clean.`, source, topic: 'water', day };
+  }
+  if (roll === 2) {
+    const month = state.date.month;
+    const text =
+      month <= 3 || month >= 11
+        ? 'Heavy snow is in the high passes — wagons are turning back.'
+        : month >= 6 && month <= 8
+          ? 'A dry stretch ahead. Last train rationed water for three days.'
+          : 'Storms have been rolling in off the mountains the last few nights.';
+    return { text, source, topic: 'weather', day };
+  }
+  if (roll === 3) {
+    const buffalo = rng.chance(0.5);
+    return {
+      text: buffalo
+        ? 'Buffalo herds are running thick to the south — good hunting.'
+        : `${postName} is well stocked with bullets and bandages this week.`,
+      source, topic: 'opportunity', day,
+      // Buffalo tip is real — bumps hunt yield for a week.
+      applyEffect: buffalo ? effectHuntBonus : undefined
+    };
+  }
+  const cholera = rng.chance(0.5);
+  return {
+    text: cholera
+      ? 'Cholera struck the train just ahead — keep your water clean.'
+      : 'A wagon rolled off the trail two days back. Wheel snapped clean.',
+    source, topic: 'hazard', day,
+    // Cholera ahead — boosts cholera event weight for two weeks.
+    applyEffect: cholera ? effectCholeraScare : undefined
+  };
+}

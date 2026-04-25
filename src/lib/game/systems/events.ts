@@ -8,8 +8,15 @@ import { wagonHazardMult } from './load';
 // structural stress translates to higher breakdown odds. All other
 // categories keep their base weight.
 function effectiveWeight(ev: GameEvent, state: GameState): number {
-  if (ev.category === 'wagon') return ev.weight * wagonHazardMult(state);
-  return ev.weight;
+  let w = ev.weight;
+  if (ev.category === 'wagon') w *= wagonHazardMult(state);
+  // Cholera-scare news (#150) makes the cholera-scare event 50% more
+  // likely to fire while the rumor window is open.
+  if (ev.id === 'cholera_scare') {
+    const until = (state.flags._choleraHintedUntilDay as number | undefined) ?? 0;
+    if (until > state.day) w *= 1.5;
+  }
+  return w;
 }
 
 const BASE_FIRE_CHANCE = 0.30;

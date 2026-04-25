@@ -89,6 +89,10 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   // A dog retrieves, flushes, tracks — documented emigrant-party boost.
   // Small so it stacks under profession bonuses without dwarfing them.
   if (s.dog) yieldMultiplier += 0.15;
+  // News-driven herd tip (#150) — bumps yield while the rumor window
+  // is open. Lets gossip pay off when the player acts on it.
+  const huntBonusUntil = (s.flags._huntBonusUntilDay as number | undefined) ?? 0;
+  if (huntBonusUntil > s.day) yieldMultiplier += 0.25;
 
   let carryMultiplier = 1;
   if (opts.hunters === 2) {
