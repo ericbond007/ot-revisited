@@ -140,7 +140,7 @@
   };
   const starterGroups = $derived.by<StarterGroup[]>(() => {
     const order: ItemCategory[] = [
-      'food', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo', 'clothing', 'livestock', 'comfort', 'native_trade'
+      'food', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo', 'clothing', 'livestock', 'feed', 'comfort', 'native_trade'
     ];
     const byCat: Partial<Record<ItemCategory, StarterGroup['entries']>> = {};
     for (const [id, qty] of Object.entries(gs.inventory)) {
@@ -179,7 +179,7 @@
   };
   const liveGroups = $derived.by<LiveGroup[]>(() => {
     const order: ItemCategory[] = [
-      'food', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo', 'clothing', 'livestock', 'comfort', 'native_trade'
+      'food', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo', 'clothing', 'livestock', 'feed', 'comfort', 'native_trade'
     ];
     const byCat: Partial<Record<ItemCategory, LiveGroup['entries']>> = {};
     const ids = new Set<string>([
@@ -203,18 +203,23 @@
       }));
   });
 
+  // Buyables rendered in their own UI affordance instead of the generic
+  // supplies grid — keep them out of `groups` below.
+  const EXTRACTED_BUYABLES = new Set(['chicken']);
+
   // Group buyables by category — we render categories as collapsible sections
   // so the list isn't a wall of rows.
   type Group = { cat: ItemCategory; ids: string[] };
   const groups = $derived.by<Group[]>(() => {
     const byCat: Partial<Record<ItemCategory, string[]>> = {};
     for (const id of data.buyables) {
+      if (EXTRACTED_BUYABLES.has(id)) continue;
       const meta = ITEMS[id];
       if (!meta || !PRICES[id]) continue;
       (byCat[meta.category] ??= []).push(id);
     }
     const order: ItemCategory[] = [
-      'food', 'medicine', 'tool', 'wagon_part', 'clothing', 'weapon', 'ammo', 'livestock', 'comfort', 'native_trade'
+      'food', 'medicine', 'tool', 'wagon_part', 'clothing', 'weapon', 'ammo', 'livestock', 'feed', 'comfort', 'native_trade'
     ];
     return order
       .filter((c) => byCat[c] && byCat[c]!.length > 0)
@@ -557,6 +562,36 @@
               a full trip to Oregon (~150 days) is {totalOxen * 150} lb.
             </div>
           {/if}
+        </div>
+      </section>
+
+      <!-- Poultry — wagon-capped hens that lay uncapped eggs. Sits
+           next to the Team because the cap scales with wagon size. -->
+      <section class="oxen-section panel">
+        <div class="panel-head">
+          POULTRY
+          <span class="hint">Wagon-capped at {selectedWagonModel.chickenCap}. Uncapped eggs (~½ per hen per day).</span>
+        </div>
+        <div class="oxen-row">
+          <div class="oxen-counts">
+            <span class="oxen-glyph">🐔</span>
+            <span class="oxen-have">Starter: <strong>{gs.inventory.chicken ?? 0}</strong></span>
+            <span class="oxen-plus">+</span>
+            <NumberStepper
+              name="buy_chicken"
+              bind:value={buyQty.chicken}
+              min={0}
+              max={chickenRoom}
+              ariaLabel="Extra hens to buy"
+              hideValue
+              displayValue={(gs.inventory.chicken ?? 0) + (buyQty.chicken ?? 0)}
+              addedValue={buyQty.chicken ?? 0}
+            />
+            <span class="oxen-total">= <strong>{(gs.inventory.chicken ?? 0) + (buyQty.chicken ?? 0)}</strong> hens</span>
+            {#if (buyQty.chicken ?? 0) > 0}
+              <span class="oxen-total">· ${((buyQty.chicken ?? 0) * PRICES.chicken.buy * buyMult).toFixed(2)}</span>
+            {/if}
+          </div>
         </div>
       </section>
 

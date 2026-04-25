@@ -84,7 +84,7 @@ export const ITEMS: Record<string, ItemMeta> = {
   salt: { id: 'salt', name: 'Salt', category: 'tool', weightLbPerUnit: 1, description: 'Preserves fresh game meat. Multiplies curing speed, reduces spoilage loss during the jerk process.' },
   compass: { id: 'compass', name: 'Compass', category: 'tool', weightLbPerUnit: 0.5, description: 'Reduces the chance of being lost in storms or fog.' },
   water_skin: { id: 'water_skin', name: 'Water skin', category: 'tool', weightLbPerUnit: 2, description: '+5 gal water carry cap each. A buffer for dry stretches — base cap is 20 gal.' },
-  ox_shoes: { id: 'ox_shoes', name: 'Ox shoes', category: 'tool', weightLbPerUnit: 2, description: 'Replace shoes oxen throw on rocky terrain. A Blacksmith or Teamster re-shoes them.' },
+  ox_shoes: { id: 'ox_shoes', name: 'Ox / mule shoes', category: 'livestock', weightLbPerUnit: 2, description: 'Replace shoes that oxen or mules throw on rocky terrain. A Blacksmith or Teamster re-shoes them.' },
   spyglass: { id: 'spyglass', name: 'Spyglass', category: 'tool', weightLbPerUnit: 2, description: 'Reveals landmarks further ahead on the map. Helps with spotting game on hunts.' },
 
   quinine: { id: 'quinine', name: 'Quinine', category: 'medicine', weightLbPerUnit: 0.2, description: 'Treats fever, malaria, typhoid, cholera.' },
