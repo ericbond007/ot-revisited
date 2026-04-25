@@ -66,7 +66,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   teamster: {
     id: 'teamster',
     name: 'Teamster',
-    bonusSummary: 'Oxen recover fatigue 50% faster on rest days.',
+    bonusSummary: 'Oxen tire 15% slower on the road and recover 20% faster on rest days.',
     starterGear: [
       { item: 'ox', qty: 1 },
       { item: 'yoke', qty: 1 },
