@@ -63,23 +63,25 @@
 
     {#if isDev}
       <div class="menu-divider"></div>
-      <div class="menu-head dev-head">🧪 DEV SCENARIOS</div>
-      {#each SCENARIOS as sc}
-        <!-- No `onclick={close}` on the submit button — closing the menu
-             before submit unmounts the form, so the POST never fires.
-             Navigation to /play on the action's redirect will tear down
-             the menu naturally. -->
-        <form method="POST" action="/?/loadScenario" class="dev-form">
-          <input type="hidden" name="scenario" value={sc.id} />
-          <button type="submit" class="item dev-item" role="menuitem">
-            <span class="item-icon">🎯</span>
-            <span class="item-body">
-              <span class="item-label">{sc.label}</span>
-              <span class="item-sub">{sc.description}</span>
-            </span>
-          </button>
-        </form>
-      {/each}
+      <div class="menu-head dev-head">🧪 DEV SCENARIOS ({SCENARIOS.length})</div>
+      <div class="dev-list">
+        {#each SCENARIOS as sc}
+          <!-- No `onclick={close}` on the submit button — closing the menu
+               before submit unmounts the form, so the POST never fires.
+               Navigation to /play on the action's redirect will tear down
+               the menu naturally. -->
+          <form method="POST" action="/?/loadScenario" class="dev-form">
+            <input type="hidden" name="scenario" value={sc.id} />
+            <button type="submit" class="item dev-item" role="menuitem">
+              <span class="item-icon">🎯</span>
+              <span class="item-body">
+                <span class="item-label">{sc.label}</span>
+                <span class="item-sub">{sc.description}</span>
+              </span>
+            </button>
+          </form>
+        {/each}
+      </div>
     {/if}
 
     <div class="menu-foot">Esc to close</div>
@@ -116,6 +118,17 @@
     height: 1px;
     background: rgba(138, 90, 42, 0.4);
     margin: 0.4em 0.3em 0.1em;
+  }
+  .dev-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+    /* Cap the dev list so the rest of the menu (foot/head) stays visible
+       even with 20+ scenarios. Roughly 5-6 items before scrolling. */
+    max-height: 280px;
+    overflow-y: auto;
+    /* Reserve space for the scrollbar so rows don't shift. */
+    padding-right: 4px;
   }
   .dev-form {
     margin: 0;
