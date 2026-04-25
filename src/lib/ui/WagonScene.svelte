@@ -1,11 +1,10 @@
 <script lang="ts">
-  // Day Travel Status view — a vertical split panel that goes under the
-  // trail map. Left half: side-view scene of the wagon on terrain (sky
-  // band, horizon row, ground band, custom CSS wagon pulled by ox/mule).
-  // Right half: text readouts for the current day — terrain, weather,
-  // season, miles. Eventually the left panel hosts real frame-by-frame
-  // travel; the right panel widens to include actual weather state
-  // (#153) and per-day mileage tracking.
+  // Day Travel Status — a single landscape-painting view that combines
+  // the terrain side view, the wagon rig, weather visuals, and the
+  // status readouts as overlay captions. Replaces the previous
+  // 2-column split. Eventually this slot hosts real frame-by-frame
+  // travel; today it's a static painted scene that reflects current
+  // game state (terrain + season + derived weather).
 
   import type { GameState } from '$lib/game/types';
 
@@ -14,25 +13,50 @@
   const terrain = $derived(state.location.terrain);
   const teamKind = $derived(state.oxen[0]?.kind ?? 'ox');
   const teamGlyph = $derived(teamKind === 'mule' ? '🐴' : '🐂');
+  const month = $derived(state.date.month);
 
-  // Sky color shifts with month — late-fall / winter sky goes grey, summer
-  // is bright blue, shoulder months are a muted sky.
-  const skyGradient = $derived.by(() => {
-    const m = state.date.month;
-    if (terrain === 'desert') return 'linear-gradient(180deg, #e8b878 0%, #d99e5a 100%)';
-    if (m >= 5 && m <= 9) return 'linear-gradient(180deg, #6da7d4 0%, #b3d4e8 100%)';
-    if (m === 4 || m === 10) return 'linear-gradient(180deg, #8a9eb5 0%, #c3cfd9 100%)';
-    return 'linear-gradient(180deg, #5a6878 0%, #8a9aa8 100%)'; // winter grey
+  // --- Weather classification (drives both the readout chip + the
+  //     particle/cloud overlay). Stand-in until #153 ships real state. ---
+  type WeatherKind = 'sunny' | 'partly' | 'cloudy' | 'rainy' | 'snowy';
+
+  const weather = $derived.by<{ kind: WeatherKind; glyph: string; label: string }>(() => {
+    const m = month;
+    if (terrain === 'desert')   return { kind: 'sunny',  glyph: '☀️', label: 'Hot, arid' };
+    if (terrain === 'river')    return { kind: 'cloudy', glyph: '💧', label: 'Damp air' };
+    if (terrain === 'mountains') {
+      if (m >= 11 || m <= 2)    return { kind: 'snowy',  glyph: '❄️', label: 'Frozen' };
+      if (m >= 6 && m <= 8)     return { kind: 'cloudy', glyph: '🌤️', label: 'Cool, thin' };
+      return { kind: 'cloudy', glyph: '🌥️', label: 'Crisp' };
+    }
+    if (terrain === 'forest') {
+      if (m >= 11 || m <= 2)    return { kind: 'rainy', glyph: '🌧️', label: 'Cold, wet' };
+      return { kind: 'partly', glyph: '🌳', label: 'Damp, shaded' };
+    }
+    // prairie default
+    if (m >= 11 || m <= 2) return { kind: 'snowy',  glyph: '❄️', label: 'Cold, frost' };
+    if (m >= 6 && m <= 8)  return { kind: 'sunny',  glyph: '☀️', label: 'Hot, dry' };
+    if (m === 3 || m === 4) return { kind: 'partly', glyph: '🌤️', label: 'Cool, breezy' };
+    return { kind: 'partly', glyph: '🍂', label: 'Brisk, windy' };
   });
 
-  // Horizon glyphs and ground gradient vary by terrain. Strings concat'd
-  // so the silhouette reads as a "row of trees / peaks / cacti".
+  // --- Sky / horizon / ground per terrain ---
+
+  const skyGradient = $derived.by(() => {
+    const m = month;
+    if (terrain === 'desert') return 'linear-gradient(180deg, #e8b878 0%, #d99e5a 60%, #b88450 100%)';
+    if (weather.kind === 'rainy')   return 'linear-gradient(180deg, #4a5868 0%, #6a7888 60%, #8a98a8 100%)';
+    if (weather.kind === 'snowy')   return 'linear-gradient(180deg, #6a7888 0%, #98a8b8 60%, #c8d4e0 100%)';
+    if (m >= 5 && m <= 9) return 'linear-gradient(180deg, #6da7d4 0%, #b3d4e8 60%, #d8e4ee 100%)';
+    if (m === 4 || m === 10) return 'linear-gradient(180deg, #8a9eb5 0%, #b3c4d4 60%, #d4dce4 100%)';
+    return 'linear-gradient(180deg, #5a6878 0%, #8a9aa8 60%, #b8c0c8 100%)';
+  });
+
   const horizonGlyphs = $derived.by(() => {
-    if (terrain === 'mountains') return '🏔️ 🏔️ 🏔️ 🏔️ 🏔️ 🏔️';
-    if (terrain === 'forest')    return '🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲';
-    if (terrain === 'desert')    return '🌵     🌵         🌵      🌵';
-    if (terrain === 'river')     return '〰️〰️〰️〰️〰️〰️〰️〰️〰️';
-    return '🌾  🌾    🌾   🌾  🌾   🌾    🌾'; // prairie
+    if (terrain === 'mountains') return '🏔️ 🏔️ 🏔️ 🏔️ 🏔️ 🏔️ 🏔️';
+    if (terrain === 'forest')    return '🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲';
+    if (terrain === 'desert')    return '🌵       🌵            🌵        🌵';
+    if (terrain === 'river')     return '〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️';
+    return '🌾   🌾    🌾   🌾  🌾   🌾   🌾   🌾  🌾'; // prairie
   });
 
   const groundGradient = $derived.by(() => {
@@ -40,16 +64,28 @@
     if (terrain === 'forest')    return 'linear-gradient(180deg, #4a5d3a 0%, #2e3a23 100%)';
     if (terrain === 'desert')    return 'linear-gradient(180deg, #c9874a 0%, #8a5a2a 100%)';
     if (terrain === 'river')     return 'linear-gradient(180deg, #4a8bc9 0%, #2a5a8c 100%)';
-    return 'linear-gradient(180deg, #b8a05a 0%, #8a7a3a 100%)'; // prairie tan
+    return 'linear-gradient(180deg, #b8a05a 0%, #8a7a3a 100%)';
   });
 
-  // Sun / moon glyph — month-driven. December sun rides low, July high;
-  // approximated visually with vertical position.
-  const skyAccent = $derived(state.date.month >= 11 || state.date.month <= 2 ? '🌥️' : '☀️');
+  // Sun / moon positioning — rises higher in summer, sits lower in
+  // winter. Approximated by vertical offset.
+  const skyAccent = $derived.by(() => {
+    if (weather.kind === 'rainy' || weather.kind === 'snowy') return null; // hidden behind clouds
+    if (month >= 11 || month <= 2) return { glyph: '☀️', top: '30%', right: '8%' };
+    if (month >= 6 && month <= 8)  return { glyph: '☀️', top: '8%',  right: '12%' };
+    return { glyph: '☀️', top: '18%', right: '10%' };
+  });
 
-  // --- Right-pane status readouts ---
+  // Cloud cover — count varies by weather kind.
+  const cloudCount = $derived.by(() => {
+    if (weather.kind === 'sunny')  return 0;
+    if (weather.kind === 'partly') return 2;
+    if (weather.kind === 'cloudy') return 4;
+    return 5; // rainy / snowy — heavy cover
+  });
 
-  // Pretty terrain label + glyph for the readout column.
+  // --- Caption readouts ---
+
   const terrainLabel = $derived.by(() => {
     if (terrain === 'mountains') return { glyph: '🏔️', name: 'Mountains' };
     if (terrain === 'forest')    return { glyph: '🌲', name: 'Forest' };
@@ -58,92 +94,89 @@
     return { glyph: '🌾', name: 'Prairie' };
   });
 
-  // Stand-in weather flavor — derived from month + terrain until #153
-  // (real weather pass) lands. Two-word descriptors keep the column tight.
-  const weatherLabel = $derived.by(() => {
-    const m = state.date.month;
-    if (terrain === 'desert')   return { glyph: '☀️', text: 'Hot, arid' };
-    if (terrain === 'river')    return { glyph: '💧', text: 'Damp air' };
-    if (terrain === 'mountains') {
-      if (m >= 11 || m <= 2)    return { glyph: '❄️', text: 'Frozen' };
-      if (m >= 6 && m <= 8)     return { glyph: '🌤️', text: 'Cool, thin' };
-      return { glyph: '🌥️', text: 'Crisp' };
-    }
-    if (terrain === 'forest') {
-      if (m >= 11 || m <= 2)    return { glyph: '🌧️', text: 'Cold, wet' };
-      return { glyph: '🌳', text: 'Damp, shaded' };
-    }
-    // prairie default
-    if (m >= 11 || m <= 2) return { glyph: '❄️', text: 'Cold, frost' };
-    if (m >= 6 && m <= 8)  return { glyph: '☀️', text: 'Hot, dry' };
-    if (m === 3 || m === 4) return { glyph: '🌤️', text: 'Cool, breezy' };
-    return { glyph: '🍂', text: 'Brisk, windy' };
-  });
-
-  // Season label — flavor only.
   const seasonLabel = $derived.by(() => {
-    const m = state.date.month;
-    if (m >= 3 && m <= 5)  return 'Spring';
-    if (m >= 6 && m <= 8)  return 'Summer';
-    if (m >= 9 && m <= 11) return 'Fall';
+    if (month >= 3 && month <= 5)  return 'Spring';
+    if (month >= 6 && month <= 8)  return 'Summer';
+    if (month >= 9 && month <= 11) return 'Fall';
     return 'Winter';
   });
 
-  // Lifetime miles traveled — quick reference. Per-day mileage tracking
-  // would slot in here once the engine surfaces it.
   const milesTraveled = $derived(Math.round(state.location.milesTraveled));
 </script>
 
 <div class="status panel">
   <div class="status-head">DAY TRAVEL STATUS</div>
-  <div class="status-body">
-    <!-- Left pane: side-view scene. Sky / horizon / ground bands +
-         the wagon rig. Decorative — aria-hidden so screen readers
-         skip to the status readouts on the right. -->
-    <div class="scene" aria-hidden="true">
-      <div class="sky" style="background: {skyGradient};">
-        <span class="sky-accent">{skyAccent}</span>
+
+  <div class="landscape" style="background: {skyGradient};">
+    <!-- Sun / moon, hidden in heavy weather -->
+    {#if skyAccent}
+      <span class="sky-accent" style="top: {skyAccent.top}; right: {skyAccent.right};">
+        {skyAccent.glyph}
+      </span>
+    {/if}
+
+    <!-- Drifting clouds — opacity scales with cloud count -->
+    {#if cloudCount > 0}
+      <div class="clouds">
+        {#each Array(cloudCount) as _, i (i)}
+          <span
+            class="cloud"
+            style="left: {(i * 23 + 5) % 100}%; top: {(i * 17 + 8) % 30}%; animation-delay: {-i * 4}s; opacity: {weather.kind === 'partly' ? 0.7 : 0.9};"
+          >☁️</span>
+        {/each}
       </div>
-      <div class="horizon">
-        <span class="horizon-row">{horizonGlyphs}</span>
+    {/if}
+
+    <!-- Rain particles -->
+    {#if weather.kind === 'rainy'}
+      <div class="rain">
+        {#each Array(40) as _, i (i)}
+          <span class="raindrop" style="left: {(i * 7) % 100}%; animation-delay: {-(i * 0.07) % 1}s;"></span>
+        {/each}
       </div>
-      <div class="ground" style="background: {groundGradient};"></div>
-      <div class="rig">
-        <span class="team">{teamGlyph}</span>
-        <div class="wagon">
-          <div class="canvas-top"></div>
-          <div class="body"></div>
-          <div class="wheel wheel-left"></div>
-          <div class="wheel wheel-right"></div>
-        </div>
+    {/if}
+
+    <!-- Snow particles -->
+    {#if weather.kind === 'snowy'}
+      <div class="snow">
+        {#each Array(30) as _, i (i)}
+          <span class="snowflake" style="left: {(i * 11) % 100}%; animation-delay: {-(i * 0.2) % 4}s;">❄</span>
+        {/each}
+      </div>
+    {/if}
+
+    <!-- Distant horizon silhouettes -->
+    <div class="horizon">
+      <span class="horizon-row">{horizonGlyphs}</span>
+    </div>
+
+    <!-- Foreground ground -->
+    <div class="ground" style="background: {groundGradient};"></div>
+
+    <!-- Wagon rig — stays centered, gentle bob -->
+    <div class="rig">
+      <span class="team">{teamGlyph}</span>
+      <div class="wagon">
+        <div class="canvas-top"></div>
+        <div class="body"></div>
+        <div class="wheel wheel-left"></div>
+        <div class="wheel wheel-right"></div>
       </div>
     </div>
 
-    <!-- Right pane: text readouts. Terrain / weather / season /
-         miles. Real weather state arrives with #153. -->
-    <dl class="readouts">
-      <div class="readout">
-        <dt>Terrain</dt>
-        <dd><span class="r-glyph">{terrainLabel.glyph}</span> {terrainLabel.name}</dd>
-      </div>
-      <div class="readout">
-        <dt>Weather</dt>
-        <dd><span class="r-glyph">{weatherLabel.glyph}</span> {weatherLabel.text}</dd>
-      </div>
-      <div class="readout">
-        <dt>Season</dt>
-        <dd>{seasonLabel}</dd>
-      </div>
-      <div class="readout">
-        <dt>Miles</dt>
-        <dd>{milesTraveled} mi</dd>
-      </div>
-    </dl>
+    <!-- Caption readouts: corner overlays -->
+    <div class="cap cap-tl">
+      <span class="cap-glyph">{terrainLabel.glyph}</span>
+      {terrainLabel.name} · {seasonLabel}
+    </div>
+    <div class="cap cap-tr">
+      <span class="cap-glyph">{weather.glyph}</span>
+      {weather.label} · {milesTraveled} mi
+    </div>
   </div>
 </div>
 
 <style>
-  /* Outer panel — header + 2-column body. Same chrome as other panels. */
   .status {
     display: flex;
     flex-direction: column;
@@ -159,34 +192,85 @@
     color: var(--c-rust);
     font-weight: 700;
   }
-  .status-body {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 0.5em;
-    align-items: stretch;
-    min-height: 140px;
-  }
 
-  /* Left pane: side-view scene. */
-  .scene {
+  /* The landscape painting — single full-width scene. */
+  .landscape {
     position: relative;
+    height: 180px;
     overflow: hidden;
     border-radius: 3px;
     border: 1px solid rgba(0, 0, 0, 0.35);
   }
 
-  .sky, .horizon, .ground {
+  .sky-accent {
     position: absolute;
-    left: 0;
-    right: 0;
+    font-size: 1.7em;
+    line-height: 1;
+    filter: drop-shadow(0 0 6px rgba(255, 220, 120, 0.5));
   }
-  .sky {
-    top: 0;
-    height: 50%;
+
+  /* Cloud layer — drifts very slowly across the sky. */
+  .clouds {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
+  .cloud {
+    position: absolute;
+    font-size: 1.4em;
+    line-height: 1;
+    animation: drift-cloud 80s linear infinite;
+  }
+  @keyframes drift-cloud {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-120px); }
+  }
+
+  /* Rain — vertical streaks falling. */
+  .rain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .raindrop {
+    position: absolute;
+    top: -10px;
+    width: 1px;
+    height: 14px;
+    background: rgba(180, 200, 220, 0.7);
+    animation: rain-fall 0.9s linear infinite;
+  }
+  @keyframes rain-fall {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(190px); }
+  }
+
+  /* Snow — drifting flakes. */
+  .snow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .snowflake {
+    position: absolute;
+    top: -10px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.7em;
+    animation: snow-fall 5s linear infinite;
+  }
+  @keyframes snow-fall {
+    0%   { transform: translateY(0)    translateX(0); }
+    100% { transform: translateY(200px) translateX(15px); }
+  }
+
+  /* Distant horizon row of silhouettes. */
   .horizon {
-    top: 32%;
-    height: 30%;
+    position: absolute;
+    left: 0; right: 0;
+    top: 38%;
+    height: 32%;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -195,51 +279,51 @@
     line-height: 1;
     letter-spacing: 0.1em;
     pointer-events: none;
+    /* Slight haze blends silhouettes with the sky behind. */
+    filter: brightness(0.92);
   }
   .horizon-row {
     white-space: nowrap;
-    /* Gentle parallax — silhouettes drift slowly in the background. */
-    animation: drift 60s linear infinite;
+    animation: drift-horizon 60s linear infinite;
   }
+  @keyframes drift-horizon {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-15%); }
+  }
+
+  /* Ground band — fades into the horizon via a soft gradient on top. */
   .ground {
+    position: absolute;
+    left: 0; right: 0;
     bottom: 0;
-    height: 35%;
+    height: 32%;
   }
-  .ground::after {
-    /* Subtle texture line where the ground meets the horizon. */
+  .ground::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: rgba(0, 0, 0, 0.25);
+    top: -8px; left: 0; right: 0;
+    height: 8px;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.18) 100%);
   }
 
-  .sky-accent {
-    position: absolute;
-    top: 0.3em;
-    right: 1em;
-    font-size: 1.6em;
-    line-height: 1;
-  }
-
-  /* The rig — ox + wagon. Sits on the ground band, bobs gently. */
+  /* Wagon rig — centered, gentle bob. */
   .rig {
     position: absolute;
-    bottom: 0.4em;
+    bottom: 0.6em;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: flex-end;
     gap: 0.2em;
     animation: bob 2.4s ease-in-out infinite;
+    z-index: 2;
   }
   .team {
-    font-size: 2.2em;
+    font-size: 2.4em;
     line-height: 1;
     transform: translateY(-2px);
   }
 
-  /* Custom CSS wagon — canvas + body + two wheels. */
   .wagon {
     position: relative;
     width: 64px;
@@ -282,50 +366,28 @@
     0%, 100% { transform: translateX(-50%) translateY(0); }
     50%      { transform: translateX(-50%) translateY(-2px); }
   }
-  @keyframes drift {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-15%); }
+
+  /* Caption readouts — corner overlays. Translucent dark chips so they
+     read against any sky color without dominating the painting. */
+  .cap {
+    position: absolute;
+    top: 0.4em;
+    padding: 0.25em 0.55em;
+    background: rgba(20, 14, 8, 0.65);
+    color: var(--c-tan-bright);
+    border: 1px solid rgba(201, 106, 42, 0.4);
+    border-radius: 3px;
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(2px);
+    z-index: 3;
   }
+  .cap-tl { left: 0.4em; }
+  .cap-tr { right: 0.4em; }
+  .cap-glyph { margin-right: 0.25em; }
 
   @media (prefers-reduced-motion: reduce) {
-    .rig, .horizon-row { animation: none; }
-  }
-
-  /* Right pane: status readouts. */
-  .readouts {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 0.3em;
-  }
-  .readout {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5em;
-    padding: 0.3em 0.5em;
-    background: var(--c-bg-raised);
-    border-radius: 3px;
-    border: 1px solid rgba(138, 90, 42, 0.25);
-  }
-  .readout dt {
-    font-size: 0.65em;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--c-wood);
-    font-weight: 700;
-    margin: 0;
-    min-width: 4.5em;
-  }
-  .readout dd {
-    margin: 0;
-    color: var(--c-tan-bright);
-    font-size: 0.92em;
-    font-weight: 700;
-    flex: 1;
-  }
-  .r-glyph {
-    margin-right: 0.25em;
+    .rig, .horizon-row, .cloud, .raindrop, .snowflake { animation: none; }
   }
 </style>
