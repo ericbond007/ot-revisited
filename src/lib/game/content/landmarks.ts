@@ -66,7 +66,20 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'alcove_spring',       name: 'Alcove Spring',       milesFromPrevious: 40,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 30,  terrain: 'river',     kind: 'river',
     river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
-  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 120, terrain: 'prairie',   kind: 'trading_post',
+  { id: 'hollenberg_ranch',    name: 'Hollenberg Ranch',    milesFromPrevious: 40,  terrain: 'prairie',   kind: 'trading_post',
+    // Private road ranch on Cottonwood Creek. Small sod-and-timber store
+    // run by a German emigrant (Gerat Hollenberg). Mail stop later — for
+    // now, just a handful of prairie staples and a few luxuries.
+    postKind: 'frontier',
+    blurb: "A sod-and-timber road ranch on Cottonwood Creek. A private store run by a German emigrant — prairie staples, a little whiskey, and whatever the last train didn't buy.",
+    stock: [
+      'flour', 'beans', 'bacon', 'hardtack',
+      'bullets', 'bandages',
+      'blanket',
+      'ox_shoes', 'rope', 'spare_plank',
+      'tobacco', 'whiskey'
+    ] },
+  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 80,  terrain: 'prairie',   kind: 'trading_post',
     // U.S. Army post. Quartermaster-issue basics — no luxuries.
     // Historical note: Army quartermasters issued to soldiers; they did
     // not buy goods from emigrants. Kearny is sell-only (for the player).
@@ -85,7 +98,21 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 70, terrain: 'prairie', kind: 'landmark' },
   { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 25,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 30,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'robidoux_post',       name: 'Robidoux Trading Post', milesFromPrevious: 10, terrain: 'prairie',  kind: 'trading_post',
+    // Joseph Robidoux's post at Robidoux Pass, just south of Scotts Bluff.
+    // A small fur-trader outfit — blacksmith services, moccasins, beads,
+    // and whatever furs he's willing to spare.
+    postKind: 'mountain',
+    blurb: "Joseph Robidoux's trading post at the pass south of Scotts Bluff. A fur-trader outfit with a working forge — moccasins, beads, and a few hard-won comforts.",
+    stock: [
+      'flour', 'bacon', 'jerky',
+      'bullets', 'bandages',
+      'coat', 'blanket',
+      'ox_shoes', 'iron_scrap', 'rope',
+      'moccasins', 'buffalo_robe', 'beads',
+      'tobacco'
+    ] },
+  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 40,  terrain: 'prairie',   kind: 'trading_post',
     // Fur-trade origin turned emigrant hub. The broadest selection on the
     // trail — and famously the highest prices.
     postKind: 'frontier',
@@ -103,13 +130,16 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'guernsey_ruts',       name: 'Guernsey Ruts',       milesFromPrevious: 5,   terrain: 'prairie',   kind: 'landmark' },
   { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 75, terrain: 'river', kind: 'river',
     river: { depthFt: 4.0, currentMph: 3, ferryPrice: 5 } },
-  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 80,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 45,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 35,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 6,   terrain: 'mountains', kind: 'landmark' },
   { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 40, terrain: 'river',    kind: 'river',
     river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
-  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 90,  terrain: 'mountains', kind: 'landmark' },
+  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 70,  terrain: 'mountains', kind: 'landmark' },
   { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
-  { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 90, terrain: 'river',    kind: 'river',
+  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 15,  terrain: 'mountains', kind: 'landmark' },
+  { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 75, terrain: 'river',    kind: 'river',
     river: { depthFt: 4.5, currentMph: 4, ferryPrice: 8 } },
   { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 65,  terrain: 'mountains', kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
@@ -157,7 +187,8 @@ export const LANDMARKS: readonly Landmark[] = [
     ] },
   { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 95,  terrain: 'desert',    kind: 'landmark' },
   { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 120, terrain: 'mountains', kind: 'landmark' },
-  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 70,  terrain: 'mountains', kind: 'trading_post',
+  { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 30,  terrain: 'forest',    kind: 'landmark' },
+  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 40,  terrain: 'mountains', kind: 'trading_post',
     // HBC river post. Basic but reliable stock. Native trade goods are a
     // specialty here (Walla Walla / Cayuse trade networks).
     postKind: 'hbc',
