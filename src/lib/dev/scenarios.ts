@@ -306,6 +306,21 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
+    id: 'town_services_at_laramie',
+    label: 'Fort Laramie services demo',
+    description: 'Parked at Laramie with $200 cash, beat-up wagon, and morale 40 — exercise blacksmith / inn / gambling / brothel.',
+    build: () => {
+      let s = atLandmark(baseState('town-svcs'), 'ft_laramie');
+      s = {
+        ...s,
+        cash: 200,
+        morale: 40,
+        wagon: { ...s.wagon, condition: 60 }
+      };
+      return s;
+    }
+  },
+  {
     id: 'starving_with_corpse',
     label: 'Starving + recent corpse',
     description: 'Party out of food, member 2 just died — opens both cannibalism camp actions.',
