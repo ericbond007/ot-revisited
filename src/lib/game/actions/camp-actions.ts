@@ -163,9 +163,9 @@ const singAlong: CampAction = {
 const readBible: CampAction = {
   id: 'read_bible',
   label: 'Read the Bible',
-  sub: 'Bible · +2 morale (+4 with Preacher)',
+  sub: 'Bible · 2 hr · +2 morale (+4 with Preacher)',
   icon: '📖',
-  hourCost: 1,
+  hourCost: 2,
   availability: (s) =>
     (s.inventory.bible ?? 0) > 0
       ? { available: true }
@@ -268,9 +268,9 @@ const WELL_SUCCESS_CHANCE = 0.4;
 const digWell: CampAction = {
   id: 'dig_well',
   label: 'Dig a well',
-  sub: 'Shovel · 5 hr · 40% chance to find water',
+  sub: 'Shovel · 6 hr · 40% chance to find water',
   icon: '🪣',
-  hourCost: 5,
+  hourCost: 6,
   availability: (s) =>
     (s.inventory.shovel ?? 0) > 0
       ? { available: true }
@@ -365,9 +365,9 @@ const BOIL_GAL_PER_LB_FIREWOOD = 5;
 const findWater: CampAction = {
   id: 'find_water',
   label: 'Find water',
-  sub: '4 hr · 12-24 gal from a creek or pond',
+  sub: '3 hr · 12-24 gal from a creek or pond',
   icon: '💧',
-  hourCost: 4,
+  hourCost: 3,
   availability: (s) => {
     const cap = s.resources.waterCap;
     const total = s.resources.water + (s.resources.dirtyWater ?? 0);
