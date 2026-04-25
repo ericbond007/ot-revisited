@@ -3,6 +3,8 @@ import { createInitialState } from '../src/lib/game/engine';
 import { rest } from '../src/lib/game/actions/rest';
 import { applyDailyConsumption, applyDirtyWaterRisk } from '../src/lib/game/systems/consumption';
 import { canBoilWater } from '../src/lib/game/systems/water-purity';
+import { resolveEvent } from '../src/lib/game/systems/events';
+import { WATER_EVENTS } from '../src/lib/game/content/water-events';
 import { makeRng } from '../src/lib/game/rng';
 import type { GameState } from '../src/lib/game/types';
 
@@ -86,6 +88,77 @@ describe('UI knowledge gate', () => {
 
   it('1848 doctor party CAN boil water (medical knowledge)', () => {
     expect(canBoilWater(newGame({ profession: 'doctor', year: 1848 }))).toBe(true);
+  });
+});
+
+describe('water events (#136)', () => {
+  it('foul-water "press on" moves clean → dirty', () => {
+    const ev = WATER_EVENTS.find((e) => e.id === 'water_foul')!;
+    const s0: GameState = {
+      ...newGame(),
+      resources: { water: 30, waterCap: 60, dirtyWater: 0, firewood: 0 }
+    };
+    const after = resolveEvent(s0, ev, 'press_on', makeRng('foul-1'));
+    expect(after.resources.water).toBeLessThan(30);
+    expect(after.resources.dirtyWater).toBeGreaterThan(0);
+  });
+
+  it('foul-water "dump" loses water without gaining dirty', () => {
+    const ev = WATER_EVENTS.find((e) => e.id === 'water_foul')!;
+    const s0: GameState = {
+      ...newGame(),
+      resources: { water: 30, waterCap: 60, dirtyWater: 0, firewood: 0 }
+    };
+    const after = resolveEvent(s0, ev, 'dump', makeRng('dump-1'));
+    expect(after.resources.water).toBeLessThan(30);
+    expect(after.resources.dirtyWater).toBe(0);
+  });
+
+  it('alkali "pull back" only mildly tires the lead ox', () => {
+    const ev = WATER_EVENTS.find((e) => e.id === 'water_alkali')!;
+    const s0: GameState = {
+      ...newGame(),
+      location: { ...newGame().location, terrain: 'desert' }
+    };
+    const before = s0.oxen[0].fatigue;
+    const after = resolveEvent(s0, ev, 'pull_them_back', makeRng('alk-1'));
+    expect(after.oxen[0].fatigue).toBeGreaterThan(before);
+    expect(after.oxen[0].health).toBe(s0.oxen[0].health);
+  });
+
+  it('alkali "too late" hits multiple oxen', () => {
+    const ev = WATER_EVENTS.find((e) => e.id === 'water_alkali')!;
+    const s0: GameState = {
+      ...newGame(),
+      location: { ...newGame().location, terrain: 'desert' }
+    };
+    const after = resolveEvent(s0, ev, 'too_late', makeRng('alk-2'));
+    for (let i = 0; i < s0.oxen.length; i++) {
+      expect(after.oxen[i].fatigue).toBeGreaterThan(s0.oxen[i].fatigue);
+      expect(after.oxen[i].health).toBeLessThan(s0.oxen[i].health);
+    }
+  });
+
+  it('keg-breaks loses ~40% of clean water', () => {
+    const ev = WATER_EVENTS.find((e) => e.id === 'water_keg_breaks')!;
+    const s0: GameState = {
+      ...newGame(),
+      resources: { water: 30, waterCap: 60, dirtyWater: 0, firewood: 0 }
+    };
+    const after = resolveEvent(s0, ev, 'salvage', makeRng('keg'));
+    expect(after.resources.water).toBeLessThan(30);
+    expect(after.resources.water).toBeGreaterThanOrEqual(10); // not catastrophic
+  });
+
+  it('clear-spring tops off clean water (capped)', () => {
+    const ev = WATER_EVENTS.find((e) => e.id === 'water_clear_spring')!;
+    const s0: GameState = {
+      ...newGame(),
+      resources: { water: 5, waterCap: 30, dirtyWater: 0, firewood: 0 }
+    };
+    const after = resolveEvent(s0, ev, 'drink', makeRng('spring'));
+    expect(after.resources.water).toBeGreaterThan(5);
+    expect(after.resources.water).toBeLessThanOrEqual(30);
   });
 });
 

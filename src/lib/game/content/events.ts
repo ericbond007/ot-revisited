@@ -1249,3 +1249,8 @@ EVENTS.push(...ENCOUNTER_EVENTS);
 // romance. Same registry-merge pattern as encounters.
 import { PARTY_EVENTS } from './party-events';
 EVENTS.push(...PARTY_EVENTS);
+
+// #136 water hazards — foul stream, alkali pond, keg breaks, spill,
+// clear spring bonus.
+import { WATER_EVENTS } from './water-events';
+EVENTS.push(...WATER_EVENTS);
