@@ -14,6 +14,7 @@ import { reapDead } from './systems/death';
 import { buildStarterKit } from './content/starter-kit';
 import { computeWaterCap } from './systems/water-cap';
 import { applyDehydration } from './systems/dehydration';
+import { applyStarvation } from './systems/starvation';
 import { applyEggLay } from './systems/eggs';
 
 export interface PartyPick {
@@ -151,6 +152,7 @@ const DAILY_STEPS: TickStep[] = [
   progressConditions,
   (s) => applyEggLay(s), // eggs lay first so they're available to eat
   (s) => applyDailyConsumption(s), // consumption has no Rng param; wrap it
+  (s) => applyStarvation(s),       // reads _lastFoodShortfall set above
   tickOxen,
   tickWagon,
   adjustMorale,

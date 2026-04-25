@@ -4,11 +4,12 @@ import type { ConditionId } from '../src/lib/game/types';
 
 const EXPECTED_IDS: ConditionId[] = [
   'cholera', 'dysentery', 'typhoid', 'measles',
-  'exhaustion', 'broken_leg', 'snakebite', 'frostbite', 'scurvy'
+  'exhaustion', 'broken_leg', 'snakebite', 'frostbite', 'scurvy',
+  'starvation'
 ];
 
 describe('condition catalog', () => {
-  it('has all 9 conditions from the spec', () => {
+  it('has all 10 conditions from the spec', () => {
     const ids = Object.keys(CONDITIONS).sort();
     expect(ids).toEqual([...EXPECTED_IDS].sort());
   });

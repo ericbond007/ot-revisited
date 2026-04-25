@@ -62,9 +62,14 @@ export function applyDailyConsumption(state: GameState): GameState {
     water: Math.max(0, state.resources.water - waterNeeded)
   };
 
+  // Surface today's food shortfall so applyStarvation (next in the
+  // pipeline) can read it. `remaining` is what couldn't be drawn.
+  const flags = { ...state.flags, _lastFoodShortfall: remaining };
+
   return {
     ...state,
     inventory,
-    resources
+    resources,
+    flags
   };
 }

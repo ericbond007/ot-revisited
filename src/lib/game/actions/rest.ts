@@ -4,6 +4,7 @@ import { hasLiveFarmer, hasLiveTeamster, hasLivePreacher } from '../professions/
 import { TEAMSTER_RECOVERY_MULT } from '../systems/oxen';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption } from '../systems/consumption';
+import { applyStarvation } from '../systems/starvation';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale, healingMultiplier } from '../systems/morale';
 import { recoverOxenFatigue } from '../systems/oxen';
@@ -106,6 +107,7 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     s = progressConditions(s, rng);
     s = applyEggLay(s);
     s = applyDailyConsumption(s);
+    s = applyStarvation(s);
     s = adjustMorale(s, rng);
 
     const mult = healingMultiplier(s.morale);

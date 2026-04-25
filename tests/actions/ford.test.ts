@@ -119,7 +119,8 @@ describe('ford chill', () => {
   });
 
   it('ferry method skips chill (dry crossing)', () => {
-    const s: GameState = { ...newGame(), cash: 20, inventory: {} };
+    // Keep food in the pile so starvation doesn't muddy the chill check.
+    const s: GameState = { ...newGame(), cash: 20, inventory: { flour: 50 } };
     const f = ford(s, { method: 'ferry', river: RIVER });
     // Ferry applies passiveDay consumption but no chill line.
     const events = (f.flags._fordResult as { events: string[] }).events;
@@ -127,7 +128,10 @@ describe('ford chill', () => {
   });
 
   it('caulk method applies chill but lighter than full ford', () => {
-    const base = { ...newGame(), inventory: {} };
+    // Naked party (no clothing) but well-fed — caulk runs 2 passive days
+    // vs. ford's 1, so without food they'd starve more on the caulk side
+    // and confound the chill-only comparison.
+    const base = { ...newGame(), inventory: { flour: 50 } };
     const fordResult = ford(base, { method: 'ford', river: RIVER });
     const caulkResult = ford(base, { method: 'caulk', river: RIVER });
     const fordHpLoss = base.party.reduce((a, m) => a + m.health, 0)
@@ -140,7 +144,8 @@ describe('ford chill', () => {
   it('summer prairie ford causes zero chill damage even naked', () => {
     const summer: GameState = {
       ...newGame(),
-      inventory: {},
+      // Food in the pile so starvation can't sneak HP loss past the chill check.
+      inventory: { flour: 50 },
       date: { year: 1848, month: 7, day: 15 },
       location: { ...newGame().location, terrain: 'prairie' as const }
     };

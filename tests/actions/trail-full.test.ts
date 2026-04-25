@@ -15,9 +15,14 @@ function newGame(): GameState {
     startDate: { year: 1848, month: 4, day: 15 }
   });
   // No-interaction 150-day simulation never fords or refills, so
-  // dehydration (#135) and cold-camp (#15) would kill the party.
-  // Large reservoirs so this test measures smoke-level progress.
-  return { ...s, resources: { water: 2000, waterCap: 2000, firewood: 2000 } };
+  // dehydration (#135), cold-camp (#15), and starvation (#155) would
+  // kill the party. Large reservoirs so this test measures smoke-level
+  // engine progress, not the survival subsystems.
+  return {
+    ...s,
+    resources: { water: 2000, waterCap: 2000, firewood: 2000 },
+    inventory: { ...s.inventory, flour: 5000 }
+  };
 }
 
 describe('full-trail smoke', () => {

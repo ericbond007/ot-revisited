@@ -68,6 +68,16 @@ export const CONDITIONS: Record<ConditionId, ConditionMeta> = {
     dailyHealthDelta: -1,
     dailyMoraleDelta: -1,
     resolvedByItems: ['dried_fruit']
+  },
+  // Marker condition for starving members. The bulk of the HP damage
+  // comes from systems/starvation.ts on its own curve; the condition
+  // itself ticks a small extra drain and — crucially — gives reapDead
+  // a deathCause to show ("Starvation") if a starving member dies.
+  starvation: {
+    id: 'starvation',
+    name: 'Starvation',
+    dailyHealthDelta: -1,
+    dailyMoraleDelta: -1
   }
 };
 
