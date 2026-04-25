@@ -423,7 +423,8 @@ export const actions: Actions = {
     if (!(here.services ?? []).includes('brothel')) {
       throw error(409, 'no brothel here');
     }
-    const result = visitBrothel(state);
+    const rng = makeRng(`${state.seed}:brothel:${here.id}:${state.day}:${state.cash}`);
+    const result = visitBrothel(state, rng);
     state = result.state;
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };

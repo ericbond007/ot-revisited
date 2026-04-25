@@ -31,7 +31,8 @@ export type ConditionId =
   | 'snakebite'
   | 'frostbite'
   | 'scurvy'
-  | 'starvation';
+  | 'starvation'
+  | 'pox';
 
 export interface Condition {
   id: ConditionId;

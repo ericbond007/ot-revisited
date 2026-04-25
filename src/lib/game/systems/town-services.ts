@@ -147,42 +147,71 @@ export function gamble(state: GameState, rng: Rng, stake: number): GambleResult 
 
 export const BROTHEL_DOLLARS_PER_MAN = 5;
 export const BROTHEL_MORALE_PER_MAN = 4;
+export const BROTHEL_POX_CHANCE_PER_MAN = 0.08;
 
 export interface BrothelResult {
   state: GameState;
   men: number;
   cost: number;
   moraleGain: number;
+  infected: string[];
 }
 
 /** Adult men in the party visit the cribs. Cost scales by the number
  *  of men (party-wide gesture, even if not literally everyone goes).
- *  No-op for parties without an adult male. */
-export function visitBrothel(state: GameState): BrothelResult {
+ *  No-op for parties without an adult male. Each man has an 8% chance
+ *  of contracting the pox (era name for syphilis) — daily morale +
+ *  HP drain that lingers for the rest of the journey. */
+export function visitBrothel(state: GameState, rng: Rng): BrothelResult {
   const men = state.party.filter(
     (m) => !m.dead && m.kind === 'adult' && m.sex === 'male'
-  ).length;
-  if (men === 0) {
-    return { state, men: 0, cost: 0, moraleGain: 0 };
+  );
+  if (men.length === 0) {
+    return { state, men: 0, cost: 0, moraleGain: 0, infected: [] };
   }
-  const cost = men * BROTHEL_DOLLARS_PER_MAN;
+  const cost = men.length * BROTHEL_DOLLARS_PER_MAN;
   if (state.cash < cost) {
     throw new Error(`visitBrothel: not enough cash ($${state.cash} < $${cost})`);
   }
-  const moraleGain = Math.min(100 - state.morale, men * BROTHEL_MORALE_PER_MAN);
+
+  // Roll per-man for the pox. Skip men who already have it.
+  const infected: string[] = [];
+  const party = state.party.map((m) => {
+    const isCandidate = men.some((c) => c.id === m.id);
+    if (!isCandidate) return m;
+    const alreadyHas = m.conditions.some((c) => c.id === 'pox');
+    if (alreadyHas) return m;
+    if (rng.chance(BROTHEL_POX_CHANCE_PER_MAN)) {
+      infected.push(m.name);
+      return {
+        ...m,
+        conditions: [...m.conditions, { id: 'pox' as const, daysSinceOnset: 0 }]
+      };
+    }
+    return m;
+  });
+
+  const moraleGain = Math.min(100 - state.morale, men.length * BROTHEL_MORALE_PER_MAN);
+  const baseLine = `Spent $${cost} at the cribs out back. The men returned in good cheer — morale +${moraleGain}.`;
+  const log = [
+    ...state.eventLog,
+    { day: state.day, text: baseLine }
+  ];
+  if (infected.length > 0) {
+    log.push({
+      day: state.day,
+      text: `Days later, ${infected.join(' and ')} ${infected.length === 1 ? 'shows' : 'show'} the first signs of the pox.`
+    });
+  }
+
   const next: GameState = {
     ...state,
     cash: state.cash - cost,
     morale: state.morale + moraleGain,
-    eventLog: [
-      ...state.eventLog,
-      {
-        day: state.day,
-        text: `Spent $${cost} at the cribs out back. The men returned in good cheer — morale +${moraleGain}.`
-      }
-    ]
+    party,
+    eventLog: log
   };
-  return { state: next, men, cost, moraleGain };
+  return { state: next, men: men.length, cost, moraleGain, infected };
 }
 
 // --- Helpers ---

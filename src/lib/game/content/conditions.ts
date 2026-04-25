@@ -78,6 +78,18 @@ export const CONDITIONS: Record<ConditionId, ConditionMeta> = {
     name: 'Starvation',
     dailyHealthDelta: -1,
     dailyMoraleDelta: -1
+  },
+  // The pox — period name for syphilis. Slow daily drain, no
+  // auto-resolve (mercury treatment was the era's "cure" and
+  // calomel is in the item catalog as a treatment for dysentery).
+  // For now, the condition just persists; future event/system
+  // could surface "treat the pox at a doctor" when a doctor + the
+  // right item are present.
+  pox: {
+    id: 'pox',
+    name: 'The Pox',
+    dailyHealthDelta: -1,
+    dailyMoraleDelta: -1
   }
 };
 

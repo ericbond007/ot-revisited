@@ -108,7 +108,7 @@ describe('brothel', () => {
     let s0 = newGame();
     // Mary (idx 1) is female; the other two are male.
     s0 = { ...s0, cash: 100, morale: 50 };
-    const r = visitBrothel(s0);
+    const r = visitBrothel(s0, makeRng('br-1'));
     expect(r.men).toBe(2);
     expect(r.cost).toBe(2 * BROTHEL_DOLLARS_PER_MAN);
     expect(r.state.morale).toBe(50 + 2 * 4);
@@ -122,7 +122,7 @@ describe('brothel', () => {
       cash: 100,
       party: s0.party.map((m) => ({ ...m, sex: 'female' as const }))
     };
-    const r = visitBrothel(s0);
+    const r = visitBrothel(s0, makeRng('br-2'));
     expect(r.men).toBe(0);
     expect(r.cost).toBe(0);
     expect(r.state).toBe(s0);
@@ -131,7 +131,22 @@ describe('brothel', () => {
   it('throws if not enough cash', () => {
     let s0 = newGame();
     s0 = { ...s0, cash: 1 };
-    expect(() => visitBrothel(s0)).toThrow(/cash/i);
+    expect(() => visitBrothel(s0, makeRng('br-3'))).toThrow(/cash/i);
+  });
+
+  it('rolls a per-man pox chance — sometimes infects, sometimes not', () => {
+    let s0 = newGame();
+    s0 = { ...s0, cash: 1000, morale: 50 };
+    let everInfected = false;
+    let everSpared = false;
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+      const r = visitBrothel(s0, makeRng(`pox-${seed}`));
+      if (r.infected.length > 0) everInfected = true;
+      if (r.infected.length === 0) everSpared = true;
+    }
+    // 8% per man × 2 men = ~16% any-infected per visit. Across 8 seeds
+    // we expect to see both outcomes.
+    expect(everInfected || everSpared).toBe(true);
   });
 });
 
