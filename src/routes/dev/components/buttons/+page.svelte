@@ -16,7 +16,7 @@
   <section class="row">
     <div class="eyebrow">PRIMARY · default · hover · disabled</div>
     <button>Rest</button>
-    <button onmouseover={() => {}} class="hover-sim">Rest · Hover</button>
+    <button class="hover-sim">Rest · Hover</button>
     <button disabled>Disabled</button>
   </section>
 

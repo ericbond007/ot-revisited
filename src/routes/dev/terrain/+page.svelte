@@ -76,7 +76,7 @@
             </defs>
             <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill={`url(#sky-${terrain})`} />
             <SkyAccent kind={weatherKind} x={SCENE_W * 0.85} y={SCENE_H * 0.15} {t} />
-            <CloudLayer kind={weatherKind} {t} w={SCENE_W} skyH={HORIZON_Y} />
+            <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} />
             <FarLayer {terrain} {scrollX} horizonY={HORIZON_Y} />
             <LandmarkLayer {terrain} {scrollX} horizonY={HORIZON_Y} />
             <MidLayer {terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
