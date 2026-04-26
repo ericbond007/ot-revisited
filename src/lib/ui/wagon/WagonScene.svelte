@@ -83,9 +83,12 @@
   // Per the brief's animation-model section. scrollX is negated so
   // parallax tiles slide LEFT→RIGHT past the camera — that reads as
   // the wagon traveling WEST (right-to-left through the world).
+  // Parallax + wheels freeze at their last value when paused. Gait
+  // and bounce snap to a "standing at rest" pose so the oxen aren't
+  // caught mid-stride and the wagon sits flat on the ground.
   const scrollX = $derived(-tEff * 60);
-  const gaitPhase = $derived((tEff * 1.6) % 1);
-  const bounce = $derived(Math.sin(tEff * 4) * 0.5);
+  const gaitPhase = $derived(paused ? 0 : (tEff * 1.6) % 1);
+  const bounce = $derived(paused ? 0 : Math.sin(tEff * 4) * 0.5);
   // Negative wheel angle so wheels roll the same direction the
   // wagon is heading (counter-clockwise from viewer = westward).
   const wheelAngle = $derived((-tEff * 90) % 360);
