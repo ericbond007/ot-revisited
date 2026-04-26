@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style data-omelette-injected>html,body{background:transparent}</style><script data-omelette-injected>(()=>{var A=["https://claude.ai","https://preview.claude.ai","https://eap-omelette.claude.ai"];var L=30000;var u=3000;document.addEventListener("DOMContentLoaded",()=>{const V=window.Babel;const $="om-src-id";if(V&&V.registerPlugin&&!(V.availablePlugins&&V.availablePlugins[$])){V.registerPlugin($,({types:Q})=>({visitor:{JSXOpeningElement(W,X){const K=W.node;if(K.name&&K.name.type==="JSXMemberExpression")return;for(let J=0;J<K.attributes.length;J++){const w=K.attributes[J];if(w.type==="JSXAttribute"&&w.name&&w.name.name==="data-om-id")return}const z=X.file&&X.file.opts&&X.file.opts.filename||"?";const k=K.loc&&K.loc.start;const C=`jsx:${z}:${K.start??0}:${k?k.line:0}:${k?k.column+1:0}`;K.attributes.push(Q.jsxAttribute(Q.jsxIdentifier("data-om-id"),Q.stringLiteral(C)))}}}))}const Z=["transform-react-jsx-source",$];document.querySelectorAll('script[type="text/babel"],script[type="text/jsx"]').forEach((Q,W)=>{const X=Q.getAttribute("data-plugins")||"";const K=Z.filter((z)=>X.indexOf(z)<0);if(K.length){Q.setAttribute("data-plugins",X?`${X},${K.join(",")}`:K.join(","))}if(!Q.hasAttribute("data-filename")){Q.setAttribute("data-filename",Q.getAttribute("src")||`inline-${W}`)}})});var b=window.parent;if(b&&b!==window){const V=(z,k)=>{try{b.postMessage({__omelette_log:true,type:z,data:k},"*")}catch{}};["log","warn","error"].forEach((z)=>{const k=console[z];console[z]=(...C)=>{const J=C.map((w)=>{try{return typeof w==="object"?JSON.stringify(w):String(w)}catch{try{return String(w)}catch{return"[unstringifiable]"}}}).join(" ");V(z,J);k.apply(console,C)}});window.addEventListener("error",(z)=>{const k=z.target;if(k&&k!==window&&k.tagName){const C=k.src||k.href||"";V("resource_error",`${k.tagName} failed to load: ${C}`)}else{V("error",`${z.message||"Unknown error"} at ${z.filename||"?"}:${z.lineno||0}:${z.colno||0}`)}},true);window.addEventListener("unhandledrejection",(z)=>{const k=z.reason;const C=k instanceof Error?`${k.message} ${k.stack}`:String(k);V("error",`Unhandled rejection: ${C}`)});const $=()=>{try{b.postMessage({type:"omelette:height",height:document.documentElement.scrollHeight},"*")}catch{}};if(document.readyState==="complete")$();else window.addEventListener("load",$);if(window.ResizeObserver)new ResizeObserver($).observe(document.documentElement);const Z={};let Q=0;window.claude={complete(z){return new Promise((k,C)=>{if(!A.length){C(new Error("claude.complete: no parent origin"));return}const J=`c${++Q}`;const w=()=>setTimeout(()=>{delete Z[J];C(new Error(`claude.complete: no data for ${L/1000}s`))},L);const Y=w();Z[J]={resolve:k,reject:C,text:"",t:Y,arm:w};try{for(const F of A){b.postMessage({__om_api:true,id:J,body:z},F)}}catch(F){clearTimeout(Y);delete Z[J];C(F)}})}};const W={};let X=0;window.omelette={writeFile:(z,k)=>new Promise((C,J)=>{if(!A.length){C();return}const w=`f${++X}`;const Y=setTimeout(()=>{delete W[w];C()},u);W[w]={resolve:C,reject:J,t:Y};try{for(const F of A){b.postMessage({__om_file:true,id:w,op:"write",path:z,content:k},F)}}catch{clearTimeout(Y);delete W[w];C()}})};const K=(z)=>{try{return JSON.stringify(z)}catch{return JSON.stringify(String(z))}};window.addEventListener("message",(z)=>{if(A.indexOf(z.origin)<0)return;if(z.source!==b)return;const k=z.data;if(!k)return;if(k.__om_file_r){const w=W[k.id];if(!w)return;clearTimeout(w.t);delete W[k.id];if(k.ok)w.resolve();else w.reject(new Error(k.error||"write failed"));return}if(k.__om_api_r){const w=Z[k.id];if(!w)return;if(k.error!=null){clearTimeout(w.t);delete Z[k.id];w.reject(new Error(k.error));return}if(k.chunk!=null){clearTimeout(w.t);w.t=w.arm();w.text+=k.chunk;return}if(k.done){clearTimeout(w.t);delete Z[k.id];w.resolve(k.text!=null?k.text:w.text);return}return}if(!k.__om_eval)return;const C=k;const J=(w)=>{z.source.postMessage({...w,__om_eval_r:1,id:C.id},z.origin)};try{const w=(0,eval)(C.code);if(w&&typeof w.then==="function"){w.then((Y)=>J({ok:1,v:K(Y)}),(Y)=>J({ok:0,e:String(Y)}))}else{J({ok:1,v:K(w)})}}catch(w){J({ok:0,e:String(w)})}})}})();
+</script>
+
+  <meta charset="utf-8" />
+  <title>OT.IO — Wagon Showcase</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Rye&display=swap');
+    @import url('./colors_and_type.css');
+
+    body {
+      background: var(--c-bg);
+      color: var(--c-tan);
+      padding: 32px clamp(16px, 4vw, 64px);
+      min-height: 100vh;
+    }
+
+    .wrap { max-width: 1240px; margin: 0 auto; }
+
+    header { margin-bottom: 28px; }
+    .eyebrow-mark {
+      font-family: var(--f-mono);
+      font-size: var(--fs-xs);
+      letter-spacing: var(--ls-loose);
+      color: var(--c-rust);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    h1.brand-title {
+      font-family: var(--f-display);
+      font-weight: 900;
+      font-size: clamp(32px, 4vw, 52px);
+      letter-spacing: 0.05em;
+      color: var(--c-tan-bright);
+      margin: 0;
+    }
+    .subhead {
+      font-family: var(--f-body);
+      font-style: italic;
+      color: var(--c-wood);
+      margin-top: 6px;
+      font-size: var(--fs-md);
+    }
+
+    /* Cards */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    @media (min-width: 1080px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .card.wide { grid-column: 1 / -1; }
+    }
+
+    .card {
+      background: var(--c-panel);
+      border: var(--bw-2) solid var(--c-border);
+      border-radius: var(--r-sm);
+      padding: 18px 22px 22px;
+      box-shadow: var(--sh-card);
+    }
+    .card-eyebrow {
+      font-family: var(--f-mono);
+      font-size: var(--fs-xs);
+      letter-spacing: var(--ls-loose);
+      color: var(--c-rust);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .card-title {
+      font-family: var(--f-display);
+      font-weight: 700;
+      font-size: var(--fs-2xl);
+      color: var(--c-tan-bright);
+      margin: 0 0 4px;
+      letter-spacing: 0.04em;
+    }
+    .card-meta {
+      font-family: var(--f-body);
+      font-style: italic;
+      color: var(--c-wood);
+      font-size: var(--fs-sm);
+      margin-bottom: 12px;
+    }
+    .stage {
+      background: linear-gradient(180deg, #d8c89a 0%, #d8c89a 75%, #b89868 75%, #a07848 100%);
+      border: 1px solid var(--c-ink);
+      border-radius: var(--r-xs);
+      position: relative;
+      overflow: hidden;
+    }
+    .stage svg { display: block; width: 100%; height: auto; }
+
+    /* Specs strip */
+    .specs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--c-border);
+    }
+    .spec-label {
+      font-family: var(--f-mono);
+      font-size: 10px;
+      letter-spacing: var(--ls-loose);
+      color: var(--c-wood);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .spec-value {
+      font-family: var(--f-body);
+      color: var(--c-tan-bright);
+      font-size: var(--fs-md);
+    }
+
+    /* Damage panel */
+    .damage-panel { padding: 18px 22px 22px; }
+    .damage-panel h2 {
+      font-family: var(--f-display);
+      font-size: var(--fs-2xl);
+      color: var(--c-tan-bright);
+      margin: 0 0 4px;
+      letter-spacing: 0.04em;
+    }
+    .damage-panel .desc {
+      font-family: var(--f-body);
+      font-style: italic;
+      color: var(--c-wood);
+      font-size: var(--fs-sm);
+      margin-bottom: 16px;
+    }
+    .damage-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .damage-cell .stage { padding: 0; }
+    .damage-cell .health-tag {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-top: 8px;
+    }
+    .health-num {
+      font-family: var(--f-mono);
+      font-size: var(--fs-lg);
+      letter-spacing: 0.08em;
+      color: var(--c-tan-bright);
+    }
+    .health-state {
+      font-family: var(--f-mono);
+      font-size: 10px;
+      letter-spacing: var(--ls-loose);
+      text-transform: uppercase;
+    }
+    .s-100 { color: var(--c-good); }
+    .s-75  { color: var(--c-good); }
+    .s-50  { color: var(--c-warn); }
+    .s-25  { color: var(--c-rust); }
+    .s-0   { color: var(--c-danger); }
+
+    @media (max-width: 880px) {
+      .damage-row { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+
+    <header>
+      <div class="eyebrow-mark">OT.IO · Vehicles</div>
+      <h1 class="brand-title">Wagon Showcase</h1>
+      <p class="subhead">Three historical models in profile, animated. Hover or wait — the wheels keep turning.</p>
+    </header>
+
+    <div class="grid">
+
+      <!-- ── LIGHT WAGON ─────────────────────────────────────────────── -->
+      <div class="card">
+        <div class="card-eyebrow">Light Wagon</div>
+        <h2 class="card-title">Express cart</h2>
+        <p class="card-meta">Two‑wheel buckboard for short hauls and quick scouts. Smallest team, smallest cargo.</p>
+        <div class="stage" id="stage-light"></div>
+        <div class="specs">
+          <div><div class="spec-label">Optimal team</div><div class="spec-value">2 oxen</div></div>
+          <div><div class="spec-label">Cargo</div><div class="spec-value">~600 lb</div></div>
+          <div><div class="spec-label">Cost</div><div class="spec-value">$45</div></div>
+        </div>
+      </div>
+
+      <!-- ── PRAIRIE SCHOONER ────────────────────────────────────────── -->
+      <div class="card">
+        <div class="card-eyebrow">Prairie Schooner</div>
+        <h2 class="card-title">The classic</h2>
+        <p class="card-meta">The iconic four‑wheel covered wagon. Balanced team and cargo — the right pick for most parties.</p>
+        <div class="stage" id="stage-prairie"></div>
+        <div class="specs">
+          <div><div class="spec-label">Optimal team</div><div class="spec-value">4 oxen</div></div>
+          <div><div class="spec-label">Cargo</div><div class="spec-value">~2,000 lb</div></div>
+          <div><div class="spec-label">Cost</div><div class="spec-value">$80</div></div>
+        </div>
+      </div>
+
+      <!-- ── HEAVY FREIGHTER ─────────────────────────────────────────── -->
+      <div class="card wide">
+        <div class="card-eyebrow">Heavy Freighter</div>
+        <h2 class="card-title">Conestoga</h2>
+        <p class="card-meta">Reinforced bed, big rear wheels, sloped sides. Carries the most — but you'll need six head of stock to move it.</p>
+        <div class="stage" id="stage-heavy"></div>
+        <div class="specs">
+          <div><div class="spec-label">Optimal team</div><div class="spec-value">6 oxen</div></div>
+          <div><div class="spec-label">Cargo</div><div class="spec-value">~3,500 lb</div></div>
+          <div><div class="spec-label">Cost</div><div class="spec-value">$140</div></div>
+        </div>
+      </div>
+
+      <!-- ── DAMAGE PROGRESSION ──────────────────────────────────────── -->
+      <div class="card wide damage-panel">
+        <div class="card-eyebrow">Health states</div>
+        <h2>Damage progression</h2>
+        <p class="desc">Prairie Schooner shown across the wagon‑health gradient. Canvas tears, spokes break, the bed cracks.</p>
+        <div class="damage-row" id="damage-row"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="src/wagon-svg.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ── shared spinning hook
+    function useSpin(rate = 1) {
+      const [t, setT] = useState(0);
+      useEffect(() => {
+        let raf, t0 = performance.now();
+        const tick = (now) => {
+          setT((now - t0) / 1000);
+          raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+      }, []);
+      return t * rate;
+    }
+
+    // ── Frame around a wagon: nice ground line + sky gradient + slight bounce
+    function WagonFrame({ Comp, viewBox, scale = 1, offsetY = 0, health = 100, addons = {}, rate = 1.4 }) {
+      const t = useSpin(rate);
+      const angle = (t * 90) % 360;
+      const bounce = Math.sin(t * Math.PI * 2.3) * 0.08;
+      // viewBox width/height for layout; we draw ground inside it
+      const [vx, vy, vw, vh] = viewBox;
+      return (
+        <svg viewBox={`${vx} ${vy} ${vw} ${vh}`} preserveAspectRatio="xMidYMax meet">
+          {/* ground tone band (already in CSS gradient on the parent) — add a subtle ruts texture */}
+          <g opacity="0.42">
+            <line x1={vx + 1} y1={vy + vh - 0.4} x2={vx + vw - 1} y2={vy + vh - 0.4}
+                  stroke="#5a3a1a" strokeWidth="0.18" strokeDasharray="0.9 0.7" />
+            <line x1={vx + 1} y1={vy + vh - 0.1} x2={vx + vw - 1} y2={vy + vh - 0.1}
+                  stroke="#3a1a08" strokeWidth="0.14" strokeDasharray="0.6 1.1" />
+          </g>
+          {/* shadow under wagon */}
+          <ellipse cx="0" cy={offsetY + 0.4} rx={vw * 0.32} ry="0.55" fill="#3a1a08" opacity="0.32" />
+          <g transform={`translate(0 ${offsetY + bounce}) scale(${scale})`}>
+            <Comp angle={angle} bounce={0} health={health} addons={addons} />
+          </g>
+        </svg>
+      );
+    }
+
+    // ── Mount each card
+    function App() {
+      return null;
+    }
+
+    // Light wagon — small viewport, tighter frame
+    ReactDOM.createRoot(document.getElementById('stage-light')).render(
+      <WagonFrame
+        Comp={LightWagon}
+        viewBox={[-22, -16, 44, 22]}
+        scale={1}
+        offsetY={2}
+        addons={{ driver: true, kegs: 1, coop: 0 }}
+        rate={1.6}
+      />
+    );
+
+    // Prairie schooner — wider viewport (tongue extends further left, taller arch)
+    ReactDOM.createRoot(document.getElementById('stage-prairie')).render(
+      <WagonFrame
+        Comp={PrairieSchooner}
+        viewBox={[-34, -22, 64, 30]}
+        scale={1}
+        offsetY={1}
+        addons={{ driver: true, kegs: 2, coop: 1 }}
+        rate={1.4}
+      />
+    );
+
+    // Heavy freighter — wider viewport, bigger
+    ReactDOM.createRoot(document.getElementById('stage-heavy')).render(
+      <WagonFrame
+        Comp={HeavyFreighter}
+        viewBox={[-32, -22, 64, 28]}
+        scale={1}
+        offsetY={2}
+        addons={{ driver: true, kegs: 2, coop: 1 }}
+        rate={1.2}
+      />
+    );
+
+    // ── Damage progression row: 5 schooners at 100/75/50/25/0
+    function DamageRow() {
+      const states = [
+        { h: 100, label: "pristine", cls: "s-100" },
+        { h: 75,  label: "wear",     cls: "s-75"  },
+        { h: 50,  label: "patched",  cls: "s-50"  },
+        { h: 25,  label: "battered", cls: "s-25"  },
+        { h: 0,   label: "ruined",   cls: "s-0"   },
+      ];
+      return (
+        <>
+          {states.map(s => (
+            <div className="damage-cell" key={s.h}>
+              <div className="stage">
+                <WagonFrame
+                  Comp={PrairieSchooner}
+                  viewBox={[-34, -22, 64, 30]}
+                  scale={1}
+                  offsetY={1}
+                  health={s.h}
+                  addons={{ driver: true, kegs: s.h > 30 ? 1 : 0, coop: s.h > 50 ? 1 : 0 }}
+                  rate={1.0}
+                />
+              </div>
+              <div className="health-tag">
+                <span className="health-num">{s.h}%</span>
+                <span className={`health-state ${s.cls}`}>{s.label}</span>
+              </div>
+            </div>
+          ))}
+        </>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('damage-row')).render(<DamageRow />);
+  </script>
+</body>
+</html>
