@@ -34,6 +34,7 @@ As of 2026-04-26 (post-#161). 21 open.
 | #162 | Components revisit — StatBar bar retrofit, PartyPanel avatar designer pass |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call          |
 | #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)        |
+| #166 | BUG: trail-map snippet shows wagon past Ft. Kearny on day 1 — engine starts at milesTraveled=0 / previousLandmarkId=null but the snippet's visible window appears to scroll past Independence. Snippet framing or interpolation bug |
 | #147 | Success/arrival view rework — richer than the current score panel         |
 | #87  | Rich event visuals                                                        |
 | #89  | Rich trading post / landmark display                                      |
