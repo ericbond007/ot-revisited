@@ -55,13 +55,13 @@ function baseState(seed = 'dev-scenario'): GameState {
  * Teleport the party to a named landmark. Sets location.atLandmarkId,
  * previousLandmarkId, nextLandmarkId, milesTraveled, and terrain.
  * Advances the in-game day/date proportional to the miles traveled
- * (assuming ~18 mi/day — close enough for a test harness).
+ * (assuming ~20 mi/day — close enough for a test harness).
  */
 function atLandmark(state: GameState, landmarkId: string): GameState {
   const landmark = getLandmark(landmarkId);
   const after = nextLandmarkAfter(landmarkId);
   const miles = runningMilesTo(landmarkId);
-  const days = Math.max(1, Math.ceil(miles / 18));
+  const days = Math.max(1, Math.ceil(miles / 20));
 
   // Advance date day-by-day so month/year rollovers stay correct.
   const date = { ...state.date };
@@ -383,7 +383,7 @@ export const SCENARIOS: Scenario[] = [
           nextLandmarkId: 'chimney_rock',
           terrain: 'prairie' as const
         },
-        day: Math.max(1, Math.ceil((miles - 1) / 18))
+        day: Math.max(1, Math.ceil((miles - 1) / 20))
       };
     }
   },
