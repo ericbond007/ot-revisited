@@ -44,6 +44,22 @@
   const next = $derived(milesToNext(marked, currentMileage));
   const nextFort = $derived(milesToNextOfKind(marked, currentMileage, 'trading_post'));
 
+  // The snippet's SVG art is hardcoded to the Ft. Kearny → Ft. Laramie
+  // leg (per docs/handoff/trail-map/src/trail-snippet.html). Until the
+  // per-leg interpolation lookup lands (#160), the wagon glyph and the
+  // rust "trail traveled" overlay only make sense when the party is
+  // actually within that range. Outside it, hide them and show a small
+  // banner so the snippet doesn't lie about position. Full per-leg
+  // truth is one click away via the Full Map button.
+  const windowStartMile = $derived(marked.find((m) => m.id === 'ft_kearny')?.mile ?? 0);
+  const windowEndMile = $derived(marked.find((m) => m.id === 'ft_laramie')?.mile ?? Infinity);
+  const inWindow = $derived(
+    currentMileage >= windowStartMile && currentMileage <= windowEndMile
+  );
+  const aheadOfWindow = $derived(currentMileage < windowStartMile);
+  const milesToWindow = $derived(Math.max(0, Math.round(windowStartMile - currentMileage)));
+  const milesPastWindow = $derived(Math.max(0, Math.round(currentMileage - windowEndMile)));
+
   // HUD strings.
   const fromTo = $derived(
     leg.last && leg.next
@@ -196,23 +212,35 @@
                  S 555 230, 520 215" />
       </defs>
       <use href="#trail-curve-z" stroke="#c96a2a" stroke-width="9" stroke-linecap="round" fill="none" opacity="0.10" />
-      <use href="#trail-curve-z" stroke="#c96a2a" stroke-width="3.6" stroke-linecap="round" fill="none" />
-      <!-- dashed remaining -->
-      <path d="M 700 270
-               C 670 258, 650 252, 630 252
-               S 605 244, 588 245
-               S 555 230, 520 215"
-            fill="none" stroke="#5a3a1a" stroke-width="2.6" stroke-linecap="round"
-            stroke-dasharray="6 5" />
+      {#if inWindow}
+        <!-- The "traveled" overlay only makes sense when the party is
+             inside the snippet's hardcoded window. Outside it, the
+             whole curve is "ahead" and rendered dashed below. -->
+        <use href="#trail-curve-z" stroke="#c96a2a" stroke-width="3.6" stroke-linecap="round" fill="none" />
+        <!-- dashed remaining (from the wagon's reference position to Ft. Laramie) -->
+        <path d="M 700 270
+                 C 670 258, 650 252, 630 252
+                 S 605 244, 588 245
+                 S 555 230, 520 215"
+              fill="none" stroke="#5a3a1a" stroke-width="2.6" stroke-linecap="round"
+              stroke-dasharray="6 5" />
+      {:else}
+        <!-- Whole curve dashed — nothing in this view has been traveled yet
+             (or the party has already passed the window). -->
+        <use href="#trail-curve-z" stroke="#5a3a1a" stroke-width="2.6" stroke-linecap="round" fill="none" stroke-dasharray="6 5" />
+      {/if}
 
       <!-- landmarks -->
       <g transform="translate(770,282)">
-        <LandmarkPin kind="fort" label="FT. KEARNY" subLabel="passed · day 32"
+        <LandmarkPin kind="fort" label="FT. KEARNY"
+                     subLabel={inWindow ? 'passed' : aheadOfWindow ? `~ ${milesToWindow} mi ahead` : 'behind'}
                      leaderTo={-52} subLabelColor="#6a4a1a" labelSize={10.5} />
       </g>
-      <g transform="translate(700,270)">
-        <WagonGlyph size="lg" />
-      </g>
+      {#if inWindow}
+        <g transform="translate(700,270)">
+          <WagonGlyph size="lg" />
+        </g>
+      {/if}
       <g transform="translate(630,252)">
         <LandmarkPin kind="landmark" label="COURTHOUSE ROCK" subLabel="~ 130 mi"
                      leaderTo={-38} />
@@ -231,6 +259,16 @@
                      leaderTo={-32} labelSize={11} />
       </g>
     </svg>
+
+    {#if !inWindow}
+      <div class="oow-banner">
+        {#if aheadOfWindow}
+          ~ {milesToWindow} mi back from this view · open Full Map for live position
+        {:else}
+          ~ {milesPastWindow} mi past this view · open Full Map for live position
+        {/if}
+      </div>
+    {/if}
 
     <!-- scale + legend + expand button -->
     <div class="scale-badge"><span class="bar"></span> ~ 75 MI</div>
@@ -301,6 +339,27 @@
   }
   .hud-left  { top: 10px; left: 10px; }
   .hud-right { top: 10px; right: 10px; text-align: right; align-items: flex-end; }
+
+  /* Banner shown when the party isn't within the snippet's hardcoded
+     Ft. Kearny → Ft. Laramie window (#166). Centered, low-priority,
+     non-blocking — the Full Map button is the real escape hatch. */
+  .oow-banner {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(232, 217, 184, 0.92);
+    border: 1px solid #c96a2a;
+    color: #3a1a08;
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-family: 'Special Elite', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
 
   .compass-host {
     position: absolute;

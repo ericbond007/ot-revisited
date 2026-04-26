@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#161). 21 open.
+As of 2026-04-26 (post-#166). 20 open.
 
 ## New mechanics
 
@@ -34,7 +34,6 @@ As of 2026-04-26 (post-#161). 21 open.
 | #162 | Components revisit — StatBar bar retrofit, PartyPanel avatar designer pass |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call          |
 | #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)        |
-| #166 | BUG: trail-map snippet shows wagon past Ft. Kearny on day 1 — engine starts at milesTraveled=0 / previousLandmarkId=null but the snippet's visible window appears to scroll past Independence. Snippet framing or interpolation bug |
 | #147 | Success/arrival view rework — richer than the current score panel         |
 | #87  | Rich event visuals                                                        |
 | #89  | Rich trading post / landmark display                                      |
@@ -58,6 +57,7 @@ As of 2026-04-26 (post-#161). 21 open.
 
 ## Recently shipped
 
+- **#166** trail-map snippet day-1 lie — snippet's SVG art is hardcoded to the Ft. Kearny → Ft. Laramie leg (per the design handoff). Hide the wagon glyph + rust "traveled" overlay when `currentMileage` is outside that window; show a small "X mi back from this view" banner instead. Full per-leg interpolation still tracked under #160.
 - **starter-kit audit** — BASE_KIT trimmed to a sensible day-1 floor: 300 flour + 50 beans + 30 bacon (variety unlocks #110), 2 coffee + 2 salt + 4 bandages + 1 cookware (brew/cure/triage paths all reachable), bullets dropped (useless without rifle — Hunter/Gunsmith bring one), water_skin dropped (wagons declare their own keg cap). Wagon spare parts no longer pre-loaded (player buys at outfit). Banker $800→$600. Preacher's duplicate shovel removed. Coffee/tea consumption now scales with adult count (1 oz/adult/day, 16 oz/lb) — 2 adults: 8 days/lb, 4 adults: 4 days/lb, children skip the brew.
 - **#161B** BrandLockup SSR flicker — auto-variant SSR default flipped from mark to wordmark via `null`-sentinel for unmeasured `clientWidth`. Common case (wide containers) now renders correctly first paint, no hydration reflow. Narrow contexts pass `variant="mark"` explicitly.
 - **#161A** icon-dictionary expansion — added 9 new categories (post_kinds, professions, town_services, fauna, ford_methods, journey_menu, end_screen, status, trend) covering ~50 emojis the brand pass left as literals. Consumers (ProfessionPicker, post-theme, HuntModal, PostHuntModal, FordModal, FordSummaryModal, TownStage, JourneyMenu, EndScreen, party-related modals, /new) all route through the typed dictionary now.
