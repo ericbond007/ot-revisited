@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#160). 20 open.
+As of 2026-04-26 (post-#160). 22 open.
 
 ## New mechanics
 
@@ -28,7 +28,8 @@ As of 2026-04-26 (post-#160). 20 open.
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow feel                                                                                                |
 | #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring                                                                                                 |
-| #167 | Trail-map snippet polish — clustered-landmark label collisions (Courthouse/Chimney/Ft. Laramie); left/right HUD panels overlap the map at the snippet's tight zoom |
+| #167 | Trail-map cluster label collisions — Courthouse/Chimney/Scotts Bluff/Ft. Laramie/Robidoux all sit within ~60 modal-px of each other; labels overlap at modal tier 1 even with LABEL_BELOW staggering |
+| #168 | Party Card hover too colorful — match the calmer Wagon/Inventory card hover styling |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call                                                                                                   |
 | #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)                                                                                                 |
 | #147 | Success/arrival view rework — richer than the current score panel                                                                                                  |
@@ -92,5 +93,4 @@ As of 2026-04-26 (post-#160). 20 open.
 
 ## TODO
 
-when not moving, i.e. right after travel has stopped, the wagon should not be animating. it looks like the wagon is still moving, but we are not.
-Party Card: on hover, too much color. stick with the other card hover styles, like wagon and inventory
+_(empty — items moved into the sections above)_
