@@ -158,13 +158,12 @@
 <div class="status panel">
   <div class="status-head">DAY TRAVEL STATUS</div>
   <div class="landscape">
-    <!-- Cropped viewBox tuned so the wagon (scene y 456..540) is
-         the centerpiece — ~48% of the strip's vertical band, with
-         a thin sky strip above and a small ground sliver below.
-         Container CSS aspect-ratio matches the viewBox ratio so
-         the SVG scales cleanly with no slice cropping at any
-         column width. -->
-    <svg viewBox="0 415 {SCENE_W} 175" preserveAspectRatio="xMidYMid meet">
+    <!-- Cropped viewBox: wagon (y 456..540) stays the centerpiece
+         while sky takes a larger share than ground. Vertical band:
+         sky 42% / wagon 47% / ground 11%. Container CSS aspect-ratio
+         matches the viewBox so the SVG scales cleanly with no slice
+         or letterbox at any column width. -->
+    <svg viewBox="0 380 {SCENE_W} 180" preserveAspectRatio="xMidYMid meet">
       <defs>
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
@@ -251,16 +250,15 @@
     color: var(--c-rust);
     font-weight: 700;
   }
-  /* Horizontal strip at 1280:175 ≈ 7.3:1 — matches the cropped
-     viewBox so the SVG content scales cleanly without slice or
-     letterbox at any column width. Wagon dominates the vertical
-     band (~48%), with a thin sky strip and a small ground sliver
-     for context. max-height keeps the strip short enough that
+  /* Horizontal strip at 1280:180 ≈ 7.1:1 — matches the cropped
+     viewBox. Wagon dominates the vertical band (~47%), sky now
+     gets a meaningful share (~42%) while ground stays a small
+     sliver (~11%). max-height keeps the strip short enough that
      EventLog stays in view. */
   .landscape {
     position: relative;
     width: 100%;
-    aspect-ratio: 1280 / 175;
+    aspect-ratio: 1280 / 180;
     max-height: 180px;
     margin: 0 auto;
     overflow: hidden;
