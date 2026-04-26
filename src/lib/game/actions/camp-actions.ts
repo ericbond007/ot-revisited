@@ -2,6 +2,7 @@ import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { hasLivePreacher, hasLiveWhore } from '../professions/predicates';
 import { canBoilWater } from '../systems/water-purity';
+import { deathMoralePenalty } from '../professions/bonuses';
 
 // Camp actions are one-shot activities the party can do during a rest
 // day (applied on day 1 of the rest, same as shovel actions). Each has
@@ -293,17 +294,45 @@ const digWell: CampAction = {
   }
 };
 
+// Bury a body that died on the trail (#151). Hidden until reapDead has
+// set `_burialPending`, then mirrors the burial-event "dig grave"
+// choice (#118): clears the flag and applies +2 morale with a shovel,
+// or the rock-cairn morale penalty without one. Lets the player handle
+// the burial deliberately during a rest instead of being interrupted
+// mid-march by the burial event modal.
 const digGrave: CampAction = {
   id: 'dig_grave',
-  label: 'Dig a grave',
-  sub: 'Shovel · 2 hr · prepared in advance',
+  label: 'Bury the dead',
+  sub: 'Shovel · 2 hr · proper farewell',
   icon: '⚰️',
   hourCost: 2,
+  hidden: (s) => !s.flags._burialPending,
   availability: (s) =>
     (s.inventory.shovel ?? 0) > 0
       ? { available: true }
       : { available: false, reason: 'Need a shovel' },
-  apply: (s) => logLine(s, 'Dug a grave in advance.')
+  apply: (s) => {
+    // Defensive: if invoked with no burial pending (dev tools, scenarios,
+    // legacy save), no-op with a flavor line so we can't grant unearned
+    // morale. The UI hides the action otherwise.
+    if (!s.flags._burialPending) {
+      return logLine(s, 'Turned earth at camp — nothing to bury yet.');
+    }
+    const flags = { ...s.flags };
+    delete (flags as Record<string, unknown>)._burialPending;
+    const hasShovel = (s.inventory.shovel ?? 0) > 0;
+    if (hasShovel) {
+      return logLine(
+        { ...s, flags, morale: Math.min(100, s.morale + 2) },
+        'A grave was dug at camp. The party said their farewells with some comfort. Morale +2.'
+      );
+    }
+    const penalty = deathMoralePenalty(s, 4);
+    return logLine(
+      { ...s, flags, morale: Math.max(0, s.morale - penalty) },
+      `Without a shovel, the body was covered with stones at camp. A hard farewell. Morale −${penalty}.`
+    );
+  }
 };
 
 const digOut: CampAction = {

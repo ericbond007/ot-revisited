@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#143). 23 open.
+As of 2026-04-26 (post-#151). 22 open.
 
 ## New mechanics
 
@@ -20,7 +20,7 @@ As of 2026-04-26 (post-#143). 23 open.
 
 | #    | |
 | ---- | -------------------------------------------------------------- |
-| #151 | Rework dig-grave camp action — situational, not preemptive     |
+| _(none open)_ | |
 
 ## UI / UX polish
 
@@ -58,6 +58,7 @@ As of 2026-04-26 (post-#143). 23 open.
 
 ## Recently shipped
 
+- **#151** dig-grave camp action — hidden until `_burialPending` is set, then handles the burial (clears flag, +2 morale w/ shovel). No more preemptive flavor click.
 - **#143** wet firewood — rain/snow/storm cuts the day's gather (×0.5 / ×0.6 / ×0.2); wagon canvas keeps stockpiled wood dry. Multi-day wet weather drains the pile and the existing no-wood cold camp triggers naturally. Log line on noticeably-wet days.
 - **#148** scoring system — miles + 200/survivor + 1000 arrival + luxury bonus on delivery. New `grandfather_clock` item (100 lb, $50, +1000 score) is the headline luxury — at Independence outfit + Ft. Laramie. Score breakdown surfaces on EndScreen.
 - **#119** travel calibration audit — 8 high-plain landmarks reclassed mountains→prairie, Laurel Hill mountains→forest, mountain mult 0.55→0.65, base pace +2 mi/day. Realistic moderate-pace journey now hits ~150-day historical median.
