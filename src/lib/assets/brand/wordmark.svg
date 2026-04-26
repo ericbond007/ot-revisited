@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96" role="img" aria-label="OT.IO wordmark">
+  <defs>
+    
+  </defs>
+  <text x="6" y="68" class="ot" fill="#c96a2a">OT</text>
+  <text x="148" y="68" class="ot" fill="#f5e6c8">.</text>
+  <text x="170" y="68" class="ot" fill="#c96a2a">IO</text>
+  <text x="8" y="90" class="sub" fill="#8a5a2a">OREGON TRAIL · REVISITED</text>
+  <line x1="6" y1="14" x2="314" y2="14" stroke="#5a3a1a" stroke-width="1" stroke-dasharray="4 3"></line>
+</svg>

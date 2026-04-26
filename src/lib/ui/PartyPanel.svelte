@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { GameState, PartyMember } from '$lib/game/types';
+  import { icon } from '$lib/data/icon-dictionary';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
   function statusLabel(m: PartyMember): string {
-    if (m.dead) return `✝ dead (${m.deathCause ?? 'unknown'})`;
+    if (m.dead) return `${icon('people', 'dead')} dead (${m.deathCause ?? 'unknown'})`;
     if (m.conditions.length > 0) return m.conditions.map((c) => c.id).join(', ');
     if (m.health < 50) return 'hurting';
     if (m.health < 80) return 'tired';
@@ -13,8 +14,8 @@
   // Glyph per (kind, sex). Using the same family of figure emoji so widths
   // match. Dead members get the same glyph but rendered muted.
   function personGlyph(m: PartyMember): string {
-    if (m.kind === 'child') return m.sex === 'female' ? '👧' : '👦';
-    return m.sex === 'female' ? '👩' : '👨';
+    if (m.kind === 'child') return icon('people', m.sex === 'female' ? 'child_female' : 'child_male');
+    return icon('people', m.sex === 'female' ? 'adult_female' : 'adult_male');
   }
 
   const moraleColor = $derived(
@@ -49,7 +50,7 @@
     {#if state.dog}
       <div class="person dog-row">
         <span class="pn">
-          <span class="glyph" title="Dog">🐕</span>
+          <span class="glyph" title="Dog">{icon('people', 'dog')}</span>
           <strong>{state.dog.name}</strong>
         </span>
         <span class="prof">(dog)</span>

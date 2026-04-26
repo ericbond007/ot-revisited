@@ -3,6 +3,7 @@
   import { getProfession } from '$lib/game/content/professions';
   import { getCondition } from '$lib/game/content/conditions';
   import { ITEMS } from '$lib/game/content/items';
+  import { icon } from '$lib/data/icon-dictionary';
 
   let { member, onclose }: { member: PartyMember; onclose: () => void } = $props();
 
@@ -24,8 +25,8 @@
 
   const glyph = $derived(
     member.kind === 'child'
-      ? (member.sex === 'female' ? '👧' : '👦')
-      : (member.sex === 'female' ? '👩' : '👨')
+      ? icon('people', member.sex === 'female' ? 'child_female' : 'child_male')
+      : icon('people', member.sex === 'female' ? 'adult_female' : 'adult_male')
   );
 
   const roleLine = $derived.by(() => {
@@ -59,7 +60,7 @@
       <div class="section-head">HEALTH</div>
       {#if member.dead}
         <div class="dead-line">
-          ✝ Died{member.deathDay ? ` on day ${member.deathDay}` : ''}{member.deathCause ? ` — ${member.deathCause}` : ''}.
+          {icon('people', 'dead')} Died{member.deathDay ? ` on day ${member.deathDay}` : ''}{member.deathCause ? ` — ${member.deathCause}` : ''}.
         </div>
       {:else}
         <div class="bar-row">

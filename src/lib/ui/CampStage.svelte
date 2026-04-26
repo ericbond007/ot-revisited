@@ -11,6 +11,7 @@
   import type { GameState } from '$lib/game/types';
   import NumberStepper from './NumberStepper.svelte';
   import { CAMP_ACTIONS, hourCostFor, type CampActionId } from '$lib/game/actions/camp-actions';
+  import { icon } from '$lib/data/icon-dictionary';
 
   let { state: gameState, slot, onleave }: {
     state: GameState;
@@ -86,11 +87,11 @@
        without using external assets. -->
   <div class="hero">
     <div class="scene" aria-hidden="true">
-      <span class="scene-glyph moon">🌙</span>
-      <span class="scene-glyph tent">⛺</span>
-      <span class="scene-glyph fire">🔥</span>
-      <span class="scene-glyph wagon">🛖</span>
-      <span class="scene-glyph ox">🐂</span>
+      <span class="scene-glyph moon">{icon('camp_scene', 'moon')}</span>
+      <span class="scene-glyph tent">{icon('camp_scene', 'tent')}</span>
+      <span class="scene-glyph fire">{icon('camp_scene', 'fire')}</span>
+      <span class="scene-glyph wagon">{icon('camp_scene', 'shelter')}</span>
+      <span class="scene-glyph ox">{icon('camp_scene', 'ox')}</span>
     </div>
     <div class="head-text">
       <div class="kind">MAKING CAMP · DAY {gameState.day}</div>
@@ -179,7 +180,7 @@
     <!-- Actions -->
     <div class="actions">
       <button type="submit" class="begin" disabled={overBudget}>
-        🔥 Begin Rest
+        {icon('camp_scene', 'fire')} Begin Rest
       </button>
       <button type="button" class="leave" onclick={onleave}>
         Leave camp

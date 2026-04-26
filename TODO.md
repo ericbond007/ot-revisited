@@ -33,6 +33,7 @@ As of 2026-04-25 (post-#107). 19 open.
 | #159 | WagonScene strip framing pass — viewBox crop, sky/wagon/ground proportions, sun/cloud y-anchoring, height behavior on wide columns. Current values were hand-tuned on Dave's setup |
 | #147 | Success/arrival view rework — pair with #148 scoring   |
 | #160 | Trail-map visual revisit — snippet framing, modal pan/zoom feel, route-coords interpolation per landmark; Phase 1 lifted snippet's hardcoded reference state for the Ft. Kearny → Ft. Laramie leg |
+| #161 | Brand handoff revisit — extend `icon-dictionary.ts` to cover decorative emojis we left in place (post kinds, profession glyphs, town services, hunt fauna, FordModal/FordSummary water+ferry, JourneyMenu items, EndScreen tombstone+tree, decorative status `★ ✕ ⚠ ⛔ ❤ ⚡`); designer call which to standardize and which to drop. Also: BrandLockup auto-variant SSR flicker (renders mark on first paint because clientWidth=0 before hydration). |
 | #87  | Rich event visuals                                     |
 | #89  | Rich trading post / landmark display                   |
 | #133 | EventModal polish — animations + glyphs                |

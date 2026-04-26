@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { ITEMS, type ItemCategory } from '$lib/game/content/items';
+  import { ICON } from '$lib/data/icon-dictionary';
   import ItemTooltip from './ItemTooltip.svelte';
 
   let { state, onclose }: { state: GameState; onclose: () => void } = $props();
@@ -31,19 +32,7 @@
     comfort: 'Comfort',
     native_trade: 'Trade goods'
   };
-  const CATEGORY_ICON: Record<ItemCategory, string> = {
-    food: '🍖',
-    feed: '🌾',
-    medicine: '💊',
-    weapon: '🔫',
-    ammo: '🎯',
-    tool: '🔨',
-    wagon_part: '🛠️',
-    livestock: '🐂',
-    clothing: '🧥',
-    comfort: '🎁',
-    native_trade: '🪶'
-  };
+  const CATEGORY_ICON = ICON.inventory_categories;
 
   type Group = {
     cat: ItemCategory;

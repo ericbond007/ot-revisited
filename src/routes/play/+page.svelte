@@ -25,6 +25,7 @@
   import InventoryModal from '$lib/ui/InventoryModal.svelte';
   import StatPicker from '$lib/ui/StatPicker.svelte';
   import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
+  import { ICON, icon } from '$lib/data/icon-dictionary';
   import { getLandmark } from '$lib/game/content/landmarks';
   import type { GameState } from '$lib/game/types';
   import type { HuntHaul } from '$lib/game/actions/hunt';
@@ -92,15 +93,15 @@
   });
 
   const paceOptions: Array<{ value: GameState['pace']; label: string; sublabel: string; icon: string }> = [
-    { value: 'slow',     label: 'Slow',     sublabel: '12 mi/day · easy on team',   icon: '🐢' },
-    { value: 'moderate', label: 'Moderate', sublabel: '18 mi/day · baseline',        icon: '🐂' },
-    { value: 'fast',     label: 'Fast',     sublabel: '24 mi/day · +fatigue',        icon: '🏃' },
-    { value: 'grueling', label: 'Grueling', sublabel: '30 mi/day · injury risk',     icon: '⚡' }
+    { value: 'slow',     label: 'Slow',     sublabel: '12 mi/day · easy on team',   icon: ICON.pace_options.slow },
+    { value: 'moderate', label: 'Moderate', sublabel: '18 mi/day · baseline',        icon: ICON.pace_options.moderate },
+    { value: 'fast',     label: 'Fast',     sublabel: '24 mi/day · +fatigue',        icon: ICON.pace_options.fast },
+    { value: 'grueling', label: 'Grueling', sublabel: '30 mi/day · injury risk',     icon: ICON.pace_options.grueling }
   ];
   const rationsOptions: Array<{ value: GameState['rations']; label: string; sublabel: string; icon: string }> = [
-    { value: 'meager',  label: 'Low',    sublabel: '1 lb/person · health drain', icon: '🥣' },
-    { value: 'normal',  label: 'Medium', sublabel: '2 lb/person · baseline',     icon: '🍽️' },
-    { value: 'filling', label: 'High',   sublabel: '3 lb/person · +morale',      icon: '🍖' }
+    { value: 'meager',  label: 'Low',    sublabel: '1 lb/person · health drain', icon: ICON.rations_options.meager },
+    { value: 'normal',  label: 'Medium', sublabel: '2 lb/person · baseline',     icon: ICON.rations_options.normal },
+    { value: 'filling', label: 'High',   sublabel: '3 lb/person · +morale',      icon: ICON.rations_options.filling }
   ];
 </script>
 
@@ -117,24 +118,24 @@
           title="Journey menu"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-        >🤠</button>
+        >{icon('actions', 'menu')}</button>
         <JourneyMenu bind:open={menuOpen} />
       </div>
       <h2 class="journey-title">{gs.party[0].name}'s Journey</h2>
     </div>
     <div class="date-readout {dayFlash ? 'pulse' : ''}">
       <span class="stat" title="Current day of the journey">
-        <span class="stat-icon">📅</span>
+        <span class="stat-icon">{icon('stats', 'day')}</span>
         <span class="stat-label">DAY</span>
         <span class="day-num">{gs.day}</span>
       </span>
       <span class="stat" title="In-game calendar date">
-        <span class="stat-icon">🗓️</span>
+        <span class="stat-icon">{icon('stats', 'date')}</span>
         <span class="stat-label">DATE</span>
         <span>{['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][gs.date.month - 1]} {gs.date.day}, {gs.date.year}</span>
       </span>
       <StatPicker
-        icon="🐂"
+        icon={ICON.stats.pace}
         label="PACE"
         name="pace"
         action={paceAction}
@@ -142,7 +143,7 @@
         options={paceOptions}
       />
       <StatPicker
-        icon="🍖"
+        icon={ICON.stats.rations}
         label="RATIONS"
         name="rations"
         action={rationsAction}

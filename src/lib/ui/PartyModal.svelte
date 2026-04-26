@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { GameState, PartyMember } from '$lib/game/types';
+  import { icon } from '$lib/data/icon-dictionary';
 
   let { state, onclose, onselect }: {
     state: GameState;
@@ -31,8 +32,8 @@
   }
 
   function personGlyph(m: PartyMember): string {
-    if (m.kind === 'child') return m.sex === 'female' ? '👧' : '👦';
-    return m.sex === 'female' ? '👩' : '👨';
+    if (m.kind === 'child') return icon('people', m.sex === 'female' ? 'child_female' : 'child_male');
+    return icon('people', m.sex === 'female' ? 'adult_female' : 'adult_male');
   }
   function personRoleLabel(m: PartyMember): string {
     if (m.kind === 'child') return 'CHILD';

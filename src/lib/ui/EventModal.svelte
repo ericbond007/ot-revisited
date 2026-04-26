@@ -4,6 +4,7 @@
   import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-events';
   import type { GameState } from '$lib/game/types';
   import { enhance } from '$app/forms';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   let { eventId, slot, gameState, body: bodyOverride }: {
     eventId: string;
@@ -37,17 +38,7 @@
   }
 
   // Category-based flavor
-  const categoryIcon: Record<EventCategory, string> = {
-    weather:    '🌩️',
-    health:     '🏥',
-    wagon:      '🛠️',
-    encounter:  '👋',
-    native:     '🪶',
-    bandit:     '🔫',
-    finds:      '🎯',
-    historical: '📜',
-    personal:   '💭'
-  };
+  const categoryIcon = ICON.event_categories;
 
   const categoryLabel: Record<EventCategory, string> = {
     weather:    'WEATHER',

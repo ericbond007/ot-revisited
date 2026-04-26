@@ -1,0 +1,187 @@
+/* ==========================================================================
+   OT.IO — Colors & Type
+   Sourced from src/lib/styles/theme.css in ericbond007/ot-revisited
+   Aesthetic: dusty 32-bit western — burnt-orange rust, deep wood, parchment.
+   ========================================================================== */
+
+:root {
+  /* ---------- BASE PALETTE (verbatim from the codebase) ---------- */
+  --c-bg:           #1a0f08;  /* deepest brown — viewport */
+  --c-bg-raised:   #2a1a10;  /* form/input backgrounds, raised tiles */
+  --c-panel:       #3d2817;  /* card / panel surface */
+  --c-border:      #5a3a1a;  /* subtle rule */
+  --c-wood:        #8a5a2a;  /* mid-tone — labels, secondary text */
+  --c-rust-dark:   #8a3a1a;  /* button rest, structural accent */
+  --c-rust:        #c96a2a;  /* primary action, headlines, focus */
+  --c-tan:         #e8c89a;  /* body text */
+  --c-tan-bright:  #f5e6c8;  /* high-emphasis text */
+  --c-ink:         #3a1a08;  /* outlines on lit surfaces */
+  --c-sage:        #6a7a4a;  /* prairie green accent */
+  --c-parchment:   #e8d9b8;  /* map / receipt surface */
+
+  /* ---------- SEMANTIC STATUS (extracted from PartyPanel/Inventory) ---------- */
+  --c-good:        #8bb96a;  /* healthy / safe / well-stocked */
+  --c-warn:        #f5c96a;  /* caution / yellow-band */
+  --c-danger:      #e85a4a;  /* health critical, broken, dead */
+  --c-river:       #4a8bc9;  /* river-crossing accents (panel-river) */
+  --c-river-pale:  #d6e2ec;  /* river dot fill on parchment */
+
+  /* ---------- BRIGHTER PARCHMENT VISITED STATES ---------- */
+  --c-parchment-visited: #f0e2c2;
+  --c-parchment-trade:   #f3dbb8;  /* trading-post dot fill */
+  --c-parchment-end:     #f5e0a8;  /* destination / Oregon City */
+
+  /* ---------- TYPOGRAPHY FAMILIES ---------- */
+  /* The codebase uses generic stacks. We pick worn period-appropriate
+     web fonts as the primary, falling back to those generics. */
+  --f-mono:    'Special Elite', 'Courier Prime', 'Courier New', ui-monospace, monospace;
+  --f-body:    'IM Fell English', 'Georgia', 'Times New Roman', serif;
+  --f-display: 'Rye', 'IM Fell English SC', 'Georgia', serif;
+  --f-pixel:   'VT323', 'Courier New', monospace;
+
+  /* ---------- TYPE SCALE ---------- */
+  --fs-xs:   12px;
+  --fs-sm:   13px;
+  --fs-md:   15px;
+  --fs-lg:   18px;
+  --fs-xl:   22px;
+  --fs-2xl:  30px;
+  --fs-3xl:  44px;
+  --fs-4xl:  64px;
+
+  --lh-tight: 1.18;
+  --lh-body:  1.55;
+
+  --ls-loose:  0.18em;  /* uppercase labels */
+  --ls-medium: 0.10em;  /* h1-h4 default */
+  --ls-tight:  0.04em;
+
+  /* ---------- SPACING (rem-ish on a 4px base) ---------- */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-8:  32px;
+  --s-10: 40px;
+
+  /* ---------- RADII (deliberately small — period-correct) ---------- */
+  --r-xs: 2px;
+  --r-sm: 3px;
+  --r-md: 4px;
+  --r-pill: 999px;
+
+  /* ---------- BORDERS ---------- */
+  --bw-1: 1px;
+  --bw-2: 2px;  /* default panel/button */
+  --bw-3: 3px;  /* hero card / event modal */
+
+  /* ---------- SHADOWS ---------- */
+  --sh-dot:   0 1px 3px rgba(0, 0, 0, 0.25);
+  --sh-card:  0 4px 14px rgba(0, 0, 0, 0.45);
+  --sh-modal: 0 12px 40px rgba(0, 0, 0, 0.7);
+  --sh-glow-rust:  0 0 14px rgba(201, 106, 42, 0.45);
+  --sh-glow-fire:  0 0 12px rgba(255, 180, 60, 0.55);
+  --sh-inset-lit:  inset 0 0 0 1px rgba(255, 180, 60, 0.5);
+
+  /* ---------- TIMINGS ---------- */
+  --t-fast:   0.12s;
+  --t-base:   0.2s;
+  --t-medium: 0.4s;
+  --t-wagon:  2.5s; /* wagon slide along trail */
+
+  --e-default: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --e-pop:     cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+/* ==========================================================================
+   SEMANTIC ELEMENT STYLES
+   ========================================================================== */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--c-bg);
+  color: var(--c-tan);
+  font-family: var(--f-mono);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  color: var(--c-tan-bright);
+  letter-spacing: var(--ls-medium);
+  margin: 0 0 0.5em 0;
+  font-family: var(--f-display);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+}
+h1 { font-size: var(--fs-3xl); }
+h2 { font-size: var(--fs-2xl); }
+h3 { font-size: var(--fs-xl); }
+h4 { font-size: var(--fs-md); letter-spacing: var(--ls-loose); color: var(--c-rust); }
+
+p { line-height: var(--lh-body); margin: 0 0 1em 0; }
+
+code, pre, kbd { font-family: var(--f-mono); }
+
+/* Headline brand mark (".brand") used on landing */
+.brand {
+  font-family: var(--f-display);
+  font-size: var(--fs-4xl);
+  letter-spacing: 0.08em;
+  color: var(--c-rust);
+  font-weight: 900;
+  margin: 0;
+}
+.brand .dot { color: var(--c-tan-bright); }
+
+/* Small uppercase label — "DAY", "PARTY", "AHEAD" — pervasive */
+.eyebrow {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-loose);
+  font-weight: 700;
+  color: var(--c-wood);
+  text-transform: uppercase;
+}
+
+/* The standard panel card */
+.panel {
+  background: var(--c-panel);
+  border: var(--bw-2) solid var(--c-wood);
+  padding: var(--s-4);
+  border-radius: var(--r-sm);
+}
+
+/* Buttons — the codebase's chunky uppercase rust block */
+button, .btn {
+  font-family: inherit;
+  background: var(--c-rust-dark);
+  color: var(--c-tan-bright);
+  border: var(--bw-2) solid var(--c-ink);
+  padding: 0.5em 1em;
+  cursor: pointer;
+  letter-spacing: var(--ls-medium);
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: var(--r-sm);
+  transition: background var(--t-fast), box-shadow var(--t-fast);
+}
+button:hover:not(:disabled), .btn:hover:not(:disabled) { background: var(--c-rust); }
+button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+input, select, textarea {
+  font-family: inherit;
+  background: var(--c-bg-raised);
+  color: var(--c-tan);
+  border: var(--bw-2) solid var(--c-wood);
+  padding: 0.4em 0.6em;
+  border-radius: var(--r-sm);
+}
+input:focus, select:focus, textarea:focus {
+  outline: 0;
+  border-color: var(--c-rust);
+  box-shadow: 0 0 0 2px rgba(201, 106, 42, 0.25);
+}

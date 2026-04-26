@@ -3,6 +3,7 @@
   import { getLandmark, isLandmarkAbandoned } from '$lib/game/content/landmarks';
   import { enhance } from '$app/forms';
   import NumberStepper from './NumberStepper.svelte';
+  import { icon } from '$lib/data/icon-dictionary';
 
   let { state: gameState, slot, onrest, onhunt, onford, onvisit }: {
     state: GameState;
@@ -92,7 +93,7 @@
   >
     <NumberStepper name="days" bind:value={travelDays} min={1} max={10} disabled={traveling || travelBlocked} ariaLabel="Travel days" />
     <button type="submit" class="action travel" disabled={traveling || travelBlocked} title={travelBlocked ? 'Ford the river first' : ''}>
-      <span class="action-icon">🚶</span>
+      <span class="action-icon">{icon('actions', 'travel')}</span>
       <span class="action-label">
         {#if traveling}
           Traveling…
@@ -108,12 +109,12 @@
   </form>
 
   <button type="button" class="action" onclick={onrest} disabled={traveling}>
-    <span class="action-icon">🏕️</span>
+    <span class="action-icon">{icon('actions', 'rest')}</span>
     <span class="action-label">Rest</span>
   </button>
 
   <button type="button" class="action" onclick={onhunt} disabled={traveling}>
-    <span class="action-icon">🏹</span>
+    <span class="action-icon">{icon('actions', 'hunt')}</span>
     <span class="action-label">Hunt</span>
   </button>
 
@@ -125,7 +126,7 @@
     disabled={traveling || !atVisitable}
     title={atVisitable ? '' : 'Only when stopped at a trading post'}
   >
-    <span class="action-icon">🏛️</span>
+    <span class="action-icon">{icon('actions', 'visit')}</span>
     <span class="action-label">Visit</span>
   </button>
 
@@ -137,7 +138,7 @@
     disabled={traveling || !atRiver}
     title={atRiver ? '' : 'Only when stopped at a river crossing'}
   >
-    <span class="action-icon">🛶</span>
+    <span class="action-icon">{icon('actions', 'ford')}</span>
     <span class="action-label">Ford</span>
   </button>
 </div>
