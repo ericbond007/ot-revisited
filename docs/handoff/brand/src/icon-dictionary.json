@@ -1,0 +1,107 @@
+{
+  "_comment": "Verbatim glyph dictionary lifted from src/lib/ui/*.svelte. Treat as canonical: when a concept appears, use this glyph.",
+  "actions": {
+    "travel": "🚶",
+    "rest": "🏕️",
+    "hunt": "🏹",
+    "ford": "🛶",
+    "visit": "🏛️",
+    "trade": "💰",
+    "camp": "⛺",
+    "menu": "🤠"
+  },
+  "stats": {
+    "day": "📅",
+    "date": "🗓️",
+    "pace": "🐂",
+    "rations": "🍖",
+    "morale": "🎵",
+    "health": "❤️",
+    "cash": "💵",
+    "water": "💧"
+  },
+  "pace_options": {
+    "slow": "🐢",
+    "moderate": "🐂",
+    "fast": "🏃",
+    "grueling": "⚡"
+  },
+  "rations_options": {
+    "meager": "🥣",
+    "normal": "🍽️",
+    "filling": "🍖"
+  },
+  "inventory_categories": {
+    "food": "🍖",
+    "feed": "🌾",
+    "medicine": "💊",
+    "weapon": "🔫",
+    "ammo": "🎯",
+    "tool": "🔨",
+    "wagon_part": "🛠️",
+    "livestock": "🐂",
+    "clothing": "🧥",
+    "comfort": "🎁",
+    "native_trade": "🪶"
+  },
+  "event_categories": {
+    "weather": "🌩️",
+    "health": "🏥",
+    "wagon": "🛠️",
+    "encounter": "👋",
+    "native": "🪶",
+    "bandit": "🔫",
+    "finds": "🎯",
+    "historical": "📜",
+    "personal": "💭"
+  },
+  "people": {
+    "adult_male": "👨",
+    "adult_female": "👩",
+    "child_male": "👦",
+    "child_female": "👧",
+    "dog": "🐕",
+    "dead": "✝"
+  },
+  "camp_scene": {
+    "moon": "🌙",
+    "tent": "⛺",
+    "fire": "🔥",
+    "shelter": "🛖",
+    "ox": "🐂"
+  },
+  "landmarks": {
+    "independence": "🏠",
+    "kansas_river": "🌊",
+    "alcove_spring": "💧",
+    "big_blue_river": "🌊",
+    "ft_kearny": "🏰",
+    "ash_hollow": "🌳",
+    "north_platte_1": "🌊",
+    "courthouse_rock": "🏛️",
+    "chimney_rock": "🗼",
+    "scotts_bluff": "🏔️",
+    "ft_laramie": "🏰",
+    "register_cliff": "📜",
+    "guernsey_ruts": "〰️",
+    "north_platte_2": "🌊",
+    "independence_rock": "🗿",
+    "devils_gate": "⛰️",
+    "sweetwater_1": "🌊",
+    "south_pass": "⛰️",
+    "pacific_springs": "💧",
+    "green_river": "🌊",
+    "ft_bridger": "🏰",
+    "bear_river": "🌊",
+    "soda_springs": "💧",
+    "ft_hall": "🏰",
+    "snake_three_island": "🌊",
+    "ft_boise": "🏰",
+    "farewell_bend": "🏞️",
+    "blue_mountains": "🏔️",
+    "ft_walla_walla": "🏰",
+    "the_dalles": "🏞️",
+    "laurel_hill": "🏔️",
+    "oregon_city": "🏁"
+  }
+}
