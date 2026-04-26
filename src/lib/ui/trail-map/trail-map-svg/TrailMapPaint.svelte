@@ -69,12 +69,12 @@
     return segs.join(' ');
   });
 
-  /** Pin kind override per landmark (start/fort/landmark/end) — falls
-   *  back to a generic 'landmark' pin for anything not specially-cased. */
-  function pinKind(l: Landmark): 'start' | 'fort' | 'landmark' | 'end' {
+  /** Pin kind override per landmark. */
+  function pinKind(l: Landmark): 'start' | 'fort' | 'landmark' | 'river' | 'end' {
     if (l.kind === 'start') return 'start';
     if (l.kind === 'end') return 'end';
     if (l.kind === 'trading_post') return 'fort';
+    if (l.kind === 'river') return 'river';
     return 'landmark';
   }
 
@@ -82,6 +82,18 @@
   function pinLabel(l: Landmark): string {
     return l.name.toUpperCase();
   }
+
+  /** Landmarks whose label should sit BELOW the pin instead of above —
+   *  these sit tight against another landmark and the default upward
+   *  label would collide. */
+  const LABEL_BELOW = new Set([
+    'robidoux_post',
+    'devils_gate',
+    'ft_walla_walla',
+    'laurel_hill',
+    'green_river',
+    'snake_three_island'
+  ]);
 </script>
 
 <defs>
@@ -216,6 +228,8 @@
         <text x="-8" y="18" text-anchor="end" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
       {:else if l.id === 'oregon_city'}
         <text x="0" y="-13" text-anchor="middle" class="lmk-text" style="font-size:{11 * ps}px;letter-spacing:0.15em">{pinLabel(l)}</text>
+      {:else if LABEL_BELOW.has(l.id)}
+        <text x="0" y="14" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
       {:else}
         <text x="0" y="-10" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
       {/if}

@@ -21,14 +21,34 @@ export const TRAIL_VIEWBOX_H = 380;
 
 export const LANDMARK_COORDS: Record<string, readonly [number, number]> = {
   independence: [920, 305],
+  // Independence → Ft. Kearny segment
+  kansas_river: [861, 295],
+  hollenberg_ranch: [803, 282],
   ft_kearny: [760, 273],
+  // Ft. Kearny → Ft. Laramie cluster (~540–660 mi). Tight grouping
+  // because the trail bunches up here historically too.
   courthouse_rock: [625, 248],
   chimney_rock: [605, 244],
+  scotts_bluff: [590, 232],
+  robidoux_post: [585, 252],
   ft_laramie: [565, 234],
+  // Ft. Laramie → South Pass
   independence_rock: [470, 215],
+  devils_gate: [455, 222],
   south_pass: [405, 200],
+  // South Pass → Ft. Hall
+  green_river: [375, 190],
+  ft_bridger: [355, 183],
+  soda_springs: [310, 166],
   ft_hall: [290, 162],
+  // Ft. Hall → Ft. Boise
+  snake_three_island: [236, 153],
   ft_boise: [190, 140],
+  // Ft. Boise → The Dalles
+  blue_mountains: [148, 132],
+  ft_walla_walla: [128, 122],
   the_dalles: [115, 115],
+  // The Dalles → Oregon City
+  laurel_hill: [96, 98],
   oregon_city: [75, 80]
 };
