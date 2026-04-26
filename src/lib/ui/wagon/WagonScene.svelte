@@ -74,10 +74,15 @@
   // Holding `tEff` lets us pause the scene by snapping it to the
   // current `t` value at the moment of pause.
   const tEff = $derived(paused ? 0 : t);
-  // Per the brief's animation-model section.
-  const scrollX = $derived(tEff * 60);
+  // Per the brief's animation-model section. scrollX is negated so
+  // parallax tiles slide LEFT→RIGHT past the camera — that reads as
+  // the wagon traveling WEST (right-to-left through the world).
+  const scrollX = $derived(-tEff * 60);
   const gaitPhase = $derived((tEff * 1.6) % 1);
   const bounce = $derived(Math.sin(tEff * 4) * 0.5);
+  // Negative wheel angle so wheels roll the same direction the
+  // wagon is heading (counter-clockwise from viewer = westward).
+  const wheelAngle = $derived((-tEff * 90) % 360);
 
   // ---------- weather mapping ----------
   // Engine has 8 states; the brief's visual vocabulary has 6. The
@@ -153,7 +158,7 @@
 <div class="status panel">
   <div class="status-head">DAY TRAVEL STATUS</div>
   <div class="landscape">
-    <svg viewBox="0 0 {SCENE_W} {SCENE_H}" preserveAspectRatio="xMidYMid slice">
+    <svg viewBox="0 0 {SCENE_W} {SCENE_H}" preserveAspectRatio="xMidYMax slice">
       <defs>
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
@@ -201,7 +206,7 @@
       <!-- 10. wagon -->
       <g transform="translate({WAGON_X} {wagonY}) scale({SCENE_SCALE})">
         <WagonComponent
-          angle={(tEff * 90) % 360}
+          angle={wheelAngle}
           {bounce}
           health={gameState.wagon.condition}
           {addons}
@@ -240,17 +245,19 @@
     color: var(--c-rust);
     font-weight: 700;
   }
-  /* Horizontal strip at 4:1 (e.g. 1000×250) that fills the card's
-     full width. The SVG's intrinsic 16:9 viewBox gets scaled-to-fill
-     by `xMidYMax slice` and cropped to the bottom band, putting the
-     wagon and ox team center-stage. Sky/sun/clouds at the top of
-     the viewBox get cropped out — that's intentional, the wagon is
-     the centerpiece and everything else is decoration around it.
-     (#157 visual revisit can refine the framing.) */
+  /* Horizontal strip filling the card's full width. Height is
+     pinned by clamp(140px, 18vw, 200px) so the strip never bloats
+     past 200 px tall (which would push EventLog and ActionBar off
+     the fold). The SVG's intrinsic 16:9 viewBox is scaled-to-fill
+     by `xMidYMax slice` and cropped to the bottom of the viewBox,
+     putting the wagon + ox team center-stage. Sky/sun/clouds get
+     cropped — that's accepted; the wagon is the centerpiece. The
+     dev/terrain showcase keeps the full scene visible (different
+     route, different framing). */
   .landscape {
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 1;
+    height: clamp(140px, 18vw, 200px);
     overflow: hidden;
     border-radius: var(--r-xs);
     border: 1px solid rgba(0, 0, 0, 0.35);
