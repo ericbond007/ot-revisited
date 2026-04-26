@@ -23,11 +23,11 @@ function newGame() {
 }
 
 describe('milesPerDay', () => {
-  it('moderate pace on prairie with fresh team is around 18 mi/day', () => {
+  it('moderate pace on prairie with fresh team is around 20 mi/day', () => {
     const s = newGame();
     const mi = milesPerDay(s);
-    expect(mi).toBeGreaterThanOrEqual(17);
-    expect(mi).toBeLessThanOrEqual(19);
+    expect(mi).toBeGreaterThanOrEqual(19);
+    expect(mi).toBeLessThanOrEqual(21);
   });
 
   it('slow < moderate < fast < grueling on same terrain', () => {

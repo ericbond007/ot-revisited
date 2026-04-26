@@ -51,7 +51,7 @@ As of 2026-04-25 (post-#107). 19 open.
 
 | #    | |
 | ---- | --------------------------------- |
-| #119 | Travel distance / map scale audit |
+| _(none open)_ | |
 
 ## Known design-incoming
 
@@ -59,6 +59,7 @@ As of 2026-04-25 (post-#107). 19 open.
 
 ## Recently shipped
 
+- **#119** travel calibration audit — 8 high-plain landmarks reclassed mountains→prairie, Laurel Hill mountains→forest, mountain mult 0.55→0.65, base pace +2 mi/day. Realistic moderate-pace journey now hits ~150-day historical median.
 - **#165** wagon clouds parallax-couple to scrollX — same axis as terrain, far/near depth jitter
 - **#13** trail content — 2 road ranches + 4 scenic landmarks
 - **#120** trading-post stock quantities + monthly restock

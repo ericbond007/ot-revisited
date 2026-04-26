@@ -155,12 +155,16 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 40, terrain: 'river',    kind: 'river',
     river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
   { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 70,  terrain: 'mountains', kind: 'landmark' },
-  { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
-  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 15,  terrain: 'mountains', kind: 'landmark' },
+  // South Pass is the broad sage flat saddle of the Continental Divide
+  // — wagons rolled through, not over. Treat as prairie for travel
+  // pacing despite the elevation. Same for the rolling sage country
+  // out to Fort Bridger.
+  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 70,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 5,   terrain: 'prairie',   kind: 'landmark' },
+  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 15,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 75, terrain: 'river',    kind: 'river',
     river: { depthFt: 4.5, currentMph: 4, ferryPrice: 8 } },
-  { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 65,  terrain: 'mountains', kind: 'trading_post',
+  { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 65,  terrain: 'prairie',   kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
     stockScale: 0.45,
@@ -175,8 +179,8 @@ export const LANDMARKS: readonly Landmark[] = [
     ] },
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 100, terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
-  { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 35,  terrain: 'mountains', kind: 'landmark' },
-  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 70,  terrain: 'mountains', kind: 'trading_post',
+  { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 35,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 70,  terrain: 'prairie',   kind: 'trading_post',
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
     // wool blankets, manufactured goods). California Trail splits here.
@@ -213,7 +217,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 95,  terrain: 'desert',    kind: 'landmark' },
   { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 120, terrain: 'mountains', kind: 'landmark' },
   { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 30,  terrain: 'forest',    kind: 'landmark' },
-  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 40,  terrain: 'mountains', kind: 'trading_post',
+  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 40,  terrain: 'prairie',   kind: 'trading_post',
     // HBC river post. Basic but reliable stock. Native trade goods are a
     // specialty here (Walla Walla / Cayuse trade networks).
     postKind: 'hbc',
@@ -227,7 +231,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'canvas', 'tongue', 'grain',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
-  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 100, terrain: 'mountains', kind: 'trading_post',
+  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 100, terrain: 'prairie',   kind: 'trading_post',
     // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
@@ -243,7 +247,10 @@ export const LANDMARKS: readonly Landmark[] = [
       'cookware', 'rope', 'salt',
       'tobacco', 'whiskey', 'bible', 'harmonica', 'fiddle'
     ] },
-  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 50,  terrain: 'mountains', kind: 'landmark' },
+  // Laurel Hill is dense Cascades forest — the Barlow Road's worst
+  // stretch. Reclassed mountain → forest so the terrain descriptor
+  // matches the visual + the forest mult (0.85) gives it bite.
+  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 50,  terrain: 'forest',    kind: 'landmark' },
   { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 55,  terrain: 'forest',    kind: 'end' }
 ];
 

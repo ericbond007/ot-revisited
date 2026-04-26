@@ -93,10 +93,10 @@
   });
 
   const paceOptions: Array<{ value: GameState['pace']; label: string; sublabel: string; icon: string }> = [
-    { value: 'slow',     label: 'Slow',     sublabel: '12 mi/day · easy on team',   icon: ICON.pace_options.slow },
-    { value: 'moderate', label: 'Moderate', sublabel: '18 mi/day · baseline',        icon: ICON.pace_options.moderate },
-    { value: 'fast',     label: 'Fast',     sublabel: '24 mi/day · +fatigue',        icon: ICON.pace_options.fast },
-    { value: 'grueling', label: 'Grueling', sublabel: '30 mi/day · injury risk',     icon: ICON.pace_options.grueling }
+    { value: 'slow',     label: 'Slow',     sublabel: '14 mi/day · easy on team',   icon: ICON.pace_options.slow },
+    { value: 'moderate', label: 'Moderate', sublabel: '20 mi/day · baseline',        icon: ICON.pace_options.moderate },
+    { value: 'fast',     label: 'Fast',     sublabel: '26 mi/day · +fatigue',        icon: ICON.pace_options.fast },
+    { value: 'grueling', label: 'Grueling', sublabel: '32 mi/day · injury risk',     icon: ICON.pace_options.grueling }
   ];
   const rationsOptions: Array<{ value: GameState['rations']; label: string; sublabel: string; icon: string }> = [
     { value: 'meager',  label: 'Low',    sublabel: '1 lb/person · health drain', icon: ICON.rations_options.meager },

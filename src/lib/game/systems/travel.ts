@@ -8,18 +8,32 @@ import { gatherFirewoodOnTravel } from './fire';
 import { hasLiveScout } from '../professions/predicates';
 import { weatherTravelMult } from './weather';
 
+// Base mileage per pace, before terrain / oxen / weather modifiers.
+// Calibrated against the #119 audit: with these values + the (c) terrain
+// reclass, a moderate-pace journey lands at ~150 days realistic — the
+// historical median for an Oregon Trail wagon (1843–1869, range
+// 120–180 days, "took four to six months" was the proverb).
+//
+// Slow: ~200-day cautious slog. Moderate: ~150-day median. Fast: ~120-day
+// hard push. Grueling: ~95-day record-pace try.
 const PACE_BASE_MILES: Record<Pace, number> = {
-  slow: 12,
-  moderate: 18,
-  fast: 24,
-  grueling: 30
+  slow: 14,
+  moderate: 20,
+  fast: 26,
+  grueling: 32
 };
 
+// Travel-day multipliers per terrain. Real-world wagons did roughly
+// 8-12 mi/day in true mountains vs 15-18 on plains — a 0.55-0.70 ratio.
+// We sit at 0.65 (mid-range), paired with the #119 audit landmark
+// reclass that pulled the broad sage flats post-South Pass out of the
+// 'mountains' bucket and left only the actual climbs (Devil's Gate,
+// Blue Mountains).
 const TERRAIN_MULTIPLIER: Record<Terrain, number> = {
   prairie: 1.0,
   forest: 0.85,
   desert: 0.9,
-  mountains: 0.55,
+  mountains: 0.65,
   river: 0.0
 };
 
