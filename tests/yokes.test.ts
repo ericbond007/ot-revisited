@@ -110,11 +110,11 @@ describe('starter kit yokes per wagon', () => {
     expect(kit.inventory.yoke).toBe(2);
   });
 
-  it('heavy → 3 yokes + spare wheel + spare planks', () => {
+  it('heavy → 3 yokes (spares no longer pre-loaded; player buys at outfit)', () => {
     const kit = buildStarterKit([], 'heavy');
     expect(kit.inventory.yoke).toBe(3);
-    expect(kit.inventory.wheel).toBe(1);
-    expect(kit.inventory.spare_plank).toBe(2);
+    expect(kit.inventory.wheel ?? 0).toBe(0);
+    expect(kit.inventory.spare_plank ?? 0).toBe(0);
   });
 });
 

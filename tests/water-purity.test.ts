@@ -50,6 +50,8 @@ describe('canBoilWater', () => {
 describe('waterborneDiseaseModifier', () => {
   it('is 1.0 baseline (no reducer)', () => {
     const s = newGame();
+    // BASE_KIT now ships coffee — null it out for the no-reducer path.
+    s.inventory.coffee = 0;
     expect(waterborneDiseaseModifier(s)).toBeCloseTo(1.0);
   });
 
