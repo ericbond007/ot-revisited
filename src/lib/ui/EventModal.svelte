@@ -130,6 +130,7 @@
     width: 100%;
     padding: 1.5em 1.5em 1.3em;
     border: 3px solid var(--c-rust);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
     animation: card-slide 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
   }
   @keyframes card-slide {
@@ -159,13 +160,16 @@
   .event-title {
     color: var(--c-rust);
     margin: 0;
-    font-size: 1.5em;
+    font-family: var(--f-display);
+    font-size: 24px;
     line-height: 1.2;
+    letter-spacing: 0.04em;
   }
 
   .event-body {
+    font-family: var(--f-body);
     line-height: 1.55;
-    margin: 0 0 1.2em 0;
+    margin: 12px 0 16px 0;
     color: var(--c-tan);
     font-size: 1.02em;
   }

@@ -3,7 +3,10 @@
   import { getLandmark, isLandmarkAbandoned } from '$lib/game/content/landmarks';
   import { enhance } from '$app/forms';
   import NumberStepper from './NumberStepper.svelte';
-  import { icon } from '$lib/data/icon-dictionary';
+  // Action glyphs come from IconSprite (mounted in +layout.svelte). The
+  // sprite's symbol ids are gi-travel / gi-rest / gi-hunt / gi-visit /
+  // gi-ford. Travel paints itself in tan-bright; the others inherit
+  // currentColor from the button.
 
   let { state: gameState, slot, onrest, onhunt, onford, onvisit }: {
     state: GameState;
@@ -93,7 +96,7 @@
   >
     <NumberStepper name="days" bind:value={travelDays} min={1} max={10} disabled={traveling || travelBlocked} ariaLabel="Travel days" />
     <button type="submit" class="action travel" disabled={traveling || travelBlocked} title={travelBlocked ? 'Ford the river first' : ''}>
-      <span class="action-icon">{icon('actions', 'travel')}</span>
+      <svg class="gi gi-wide-travel" viewBox="0 0 64 40" aria-hidden="true"><use href="#gi-travel" /></svg>
       <span class="action-label">
         {#if traveling}
           Traveling…
@@ -109,12 +112,12 @@
   </form>
 
   <button type="button" class="action" onclick={onrest} disabled={traveling}>
-    <span class="action-icon">{icon('actions', 'rest')}</span>
+    <svg class="gi" viewBox="0 0 32 32" aria-hidden="true"><use href="#gi-rest" /></svg>
     <span class="action-label">Rest</span>
   </button>
 
   <button type="button" class="action" onclick={onhunt} disabled={traveling}>
-    <span class="action-icon">{icon('actions', 'hunt')}</span>
+    <svg class="gi gi-wide-hunt" viewBox="0 0 64 32" aria-hidden="true"><use href="#gi-hunt" /></svg>
     <span class="action-label">Hunt</span>
   </button>
 
@@ -126,7 +129,7 @@
     disabled={traveling || !atVisitable}
     title={atVisitable ? '' : 'Only when stopped at a trading post'}
   >
-    <span class="action-icon">{icon('actions', 'visit')}</span>
+    <svg class="gi" viewBox="0 0 32 32" aria-hidden="true"><use href="#gi-visit" /></svg>
     <span class="action-label">Visit</span>
   </button>
 
@@ -138,7 +141,7 @@
     disabled={traveling || !atRiver}
     title={atRiver ? '' : 'Only when stopped at a river crossing'}
   >
-    <span class="action-icon">{icon('actions', 'ford')}</span>
+    <svg class="gi gi-wide-ford" viewBox="0 0 64 40" aria-hidden="true"><use href="#gi-ford" /></svg>
     <span class="action-label">Ford</span>
   </button>
 </div>
@@ -182,12 +185,18 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
-  .action-icon {
-    font-size: 1.2em;
-    line-height: 1;
-    text-transform: none;
-    letter-spacing: normal;
+  /* Custom SVG glyph from IconSprite. The sprite's <symbol> intrinsic
+     viewBox preserves aspect; we control display size via CSS so the
+     icons line up next to the action label. The wider hunt/ford glyphs
+     get bumped width per the prototype. */
+  .gi {
+    width: 1.15em;
+    height: 1.15em;
+    display: block;
   }
+  .gi-wide-travel { width: 1.5em; }
+  .gi-wide-hunt   { width: 1.6em; }
+  .gi-wide-ford   { width: 1.5em; }
   .action.travel {
     /* Slightly wider label to accommodate dynamic text */
     min-width: 8em;

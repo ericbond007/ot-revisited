@@ -61,6 +61,13 @@
   --c-river:        #4a8bc9;
   --c-river-pale:   #d6e2ec;
 
+  /* Darker shades used by the components handoff for gradients
+     (HP bars, morale ribbon stripes). Naming follows the handoff
+     spec; values mirror the brand palette. */
+  --c-sage-dark:    #6a9a4a;
+  --c-ill-dark:     #a83a2a;
+  --c-amber-dark:   #d4a850;
+
   /* ---------- BRIGHTER PARCHMENT VARIANTS ---------- */
   --c-parchment-visited: #f0e2c2;
   --c-parchment-trade:   #f3dbb8;
@@ -181,6 +188,8 @@ a:hover { color: var(--c-tan-bright); text-decoration: underline; }
   text-transform: uppercase;
 }
 
+/* Default button — "primary" in the design system. Rust-dark surface,
+   tan-bright text, ink stroke; hover lifts to bright rust. */
 button {
   font-family: inherit;
   background: var(--c-rust-dark);
@@ -192,10 +201,35 @@ button {
   font-weight: 700;
   text-transform: uppercase;
   border-radius: var(--r-sm);
-  transition: background var(--t-fast), box-shadow var(--t-fast);
+  transition: background var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
 }
 button:hover:not(:disabled) { background: var(--c-rust); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Ghost — secondary CTAs, "Cancel" / "Back" / "Skip" affordances.
+   Transparent surface, wood stroke; hover warms the border to rust
+   without filling. */
+button.btn-ghost {
+  background: transparent;
+  color: var(--c-tan);
+  border-color: var(--c-wood);
+}
+button.btn-ghost:hover:not(:disabled) {
+  background: rgba(201, 106, 42, 0.08);
+  border-color: var(--c-rust);
+  color: var(--c-tan-bright);
+}
+
+/* Danger — irreversible actions (delete save, abandon journey).
+   Alarm fill, ink stroke; hover deepens. */
+button.btn-danger {
+  background: var(--c-danger);
+  border-color: var(--c-ink);
+  color: var(--c-tan-bright);
+}
+button.btn-danger:hover:not(:disabled) {
+  background: #c44a3a;
+}
 
 input, select, textarea {
   font-family: inherit;
