@@ -10,7 +10,6 @@
 
   let modalOpen = $state(false);
   let mileage = $state(580);
-  const day = 47;
 </script>
 
 <svelte:head>
@@ -38,7 +37,6 @@
     <div class="eyebrow">Snippet · 350-mi window</div>
     <TrailMapSnippet
       currentMileage={mileage}
-      {day}
       onExpand={() => (modalOpen = true)} />
   </section>
 </div>

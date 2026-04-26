@@ -24,21 +24,21 @@ As of 2026-04-26 (post-#160). 20 open.
 
 ## UI / UX polish
 
-| #    |                                                                     |
-| ---- | ------------------------------------------------------------------- |
-| #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow feel |
-| #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring  |
+| #    |                                                                                                                                                                    |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow feel                                                                                                |
+| #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring                                                                                                 |
 | #167 | Trail-map snippet polish — clustered-landmark label collisions (Courthouse/Chimney/Ft. Laramie); left/right HUD panels overlap the map at the snippet's tight zoom |
-| #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call    |
-| #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)  |
-| #147 | Success/arrival view rework — richer than the current score panel   |
-| #133 | EventModal polish — animations + glyphs                             |
-| #112 | Wagon modal visual redesign                                         |
-| #132 | Party view rework (denser / fullscreen)                             |
-| #86  | Expand hover tooltips across all data points                        |
-| #102 | Pre-made vs custom starter kit choice                               |
-| #134 | Water keg/barrel glyph next to water amount                         |
-| #145 | Camp view — eliminate laptop scroll                                 |
+| #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call                                                                                                   |
+| #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)                                                                                                 |
+| #147 | Success/arrival view rework — richer than the current score panel                                                                                                  |
+| #133 | EventModal polish — animations + glyphs                                                                                                                            |
+| #112 | Wagon modal visual redesign                                                                                                                                        |
+| #132 | Party view rework (denser / fullscreen)                                                                                                                            |
+| #86  | Expand hover tooltips across all data points                                                                                                                       |
+| #102 | Pre-made vs custom starter kit choice                                                                                                                              |
+| #134 | Water keg/barrel glyph next to water amount                                                                                                                        |
+| #145 | Camp view — eliminate laptop scroll                                                                                                                                |
 
 ## For Claude Design or another SVG animation generator
 
@@ -94,4 +94,4 @@ As of 2026-04-26 (post-#160). 20 open.
 
 when not moving, i.e. right after travel has stopped, the wagon should not be animating. it looks like the wagon is still moving, but we are not.
 Party Card: on hover, too much color. stick with the other card hover styles, like wagon and inventory
-update travel map view, move the From -> To Box to the lower left corner, shift the legend to its right. move the compass to the upper left corner.
+click to drag on map selects all text, get rid of this.

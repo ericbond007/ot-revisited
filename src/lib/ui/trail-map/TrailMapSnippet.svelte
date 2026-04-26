@@ -15,7 +15,6 @@
   import {
     accumulateMiles,
     currentLeg,
-    legOrdinal,
     milesToNext,
     milesToNextOfKind,
     interpolatePosition
@@ -28,19 +27,16 @@
   interface Props {
     /** Cumulative miles traveled by the wagon. */
     currentMileage: number;
-    /** Current game day. */
-    day: number;
     /** Override the LANDMARKS array (mostly for tests). */
     landmarks?: readonly Landmark[];
     /** Open-modal callback. */
     onExpand?: () => void;
   }
 
-  let { currentMileage, day, landmarks = LANDMARKS, onExpand }: Props = $props();
+  let { currentMileage, landmarks = LANDMARKS, onExpand }: Props = $props();
 
   const marked = $derived(accumulateMiles(landmarks));
   const leg = $derived(currentLeg(marked, currentMileage));
-  const ordinal = $derived(legOrdinal(marked, currentMileage));
   const next = $derived(milesToNext(marked, currentMileage));
   const nextFort = $derived(milesToNextOfKind(marked, currentMileage, 'trading_post'));
 
@@ -65,7 +61,9 @@
   );
   const viewBox = $derived(`${camX} ${camY} ${VB_W} ${VB_H}`);
 
-  // HUD strings.
+  // HUD strings — single combined readout. Leg ordinal + day moved
+  // to the play-page status bar; this HUD focuses on the upcoming
+  // landmark + nearest trading post.
   const fromTo = $derived(
     leg.last && leg.next
       ? `${leg.last.name.toUpperCase()} → ${leg.next.name.toUpperCase()}`
@@ -73,9 +71,10 @@
         ? `${leg.last.name.toUpperCase()} → END`
         : 'INDEPENDENCE → KANSAS RIVER'
   );
-  const subText = $derived(`Leg ${ordinal.current} of ${ordinal.total} · day ${day}`);
-  const nextLabel = $derived(next ? `${next.miles} mi · ${next.name}` : "TRAIL'S END");
-  const nextSub = $derived(nextFort ? `${nextFort.name} in ${nextFort.miles} mi` : 'no fort ahead');
+  const milesLabel = $derived(next ? `${next.miles} mi to ${next.name}` : "TRAIL'S END");
+  const postLabel = $derived(
+    nextFort ? `next post: ${nextFort.name} in ${nextFort.miles} mi` : 'no post ahead'
+  );
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -92,18 +91,12 @@
      onclick={() => onExpand?.()}
      onkeydown={handleKeydown}>
   <ParchmentBg>
-    <!-- HUD: leg name -->
+    <!-- Combined HUD: current leg + next landmark distance + nearest post -->
     <div class="hud hud-left">
-      <span class="hud-label">From → To</span>
+      <span class="hud-label">Heading West</span>
       <span class="hud-big">{fromTo}</span>
-      <span class="hud-sub">{subText}</span>
-    </div>
-
-    <!-- HUD: miles remaining -->
-    <div class="hud hud-right">
-      <span class="hud-label">Next landmark</span>
-      <span class="hud-big">{nextLabel}</span>
-      <span class="hud-sub">{nextSub}</span>
+      <span class="hud-sub">{milesLabel}</span>
+      <span class="hud-sub">{postLabel}</span>
     </div>
 
     <!-- compass -->
@@ -181,20 +174,21 @@
     font-size: 10.5px;
     font-style: italic;
   }
-  .hud-left  { top: 10px; left: 10px; }
-  .hud-right { top: 10px; right: 10px; text-align: right; align-items: flex-end; }
+  .hud-left { bottom: 10px; left: 10px; }
 
   .compass-host {
     position: absolute;
     top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 10px;
     z-index: 10;
   }
 
   .legend {
     position: absolute;
-    left: 10px;
+    /* Sits just right of the From→To HUD at bottom-left. The HUD's
+     * intrinsic width fluctuates with the leg name, so we leave a
+     * comfortable left offset rather than computing exactly. */
+    left: 240px;
     bottom: 10px;
     z-index: 10;
     background: rgba(232, 217, 184, 0.92);
