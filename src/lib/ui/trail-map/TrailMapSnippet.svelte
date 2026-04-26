@@ -91,14 +91,6 @@
      onclick={() => onExpand?.()}
      onkeydown={handleKeydown}>
   <ParchmentBg>
-    <!-- Combined HUD: current leg + next landmark distance + nearest post -->
-    <div class="hud hud-left">
-      <span class="hud-label">Heading West</span>
-      <span class="hud-big">{fromTo}</span>
-      <span class="hud-sub">{milesLabel}</span>
-      <span class="hud-sub">{postLabel}</span>
-    </div>
-
     <!-- compass -->
     <div class="compass-host">
       <Compass />
@@ -109,11 +101,19 @@
       <TrailMapPaint {landmarks} {currentMileage} wagonSize="sm" paintScale={0.4} />
     </svg>
 
-    <!-- legend + expand button -->
-    <div class="legend">
-      <div><svg width="22" height="6"><line x1="1" y1="3" x2="21" y2="3" stroke="#c96a2a" stroke-width="3" stroke-linecap="round"/></svg> trail traveled</div>
-      <div><svg width="22" height="6"><line x1="1" y1="3" x2="21" y2="3" stroke="#5a3a1a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3"/></svg> trail ahead</div>
-      <div><svg width="22" height="6"><path d="M1 3 q5 -2 10 0 t10 0" stroke="#2f5a8a" stroke-width="2" fill="none" stroke-linecap="round"/></svg> river</div>
+    <!-- bottom row: HUD + legend, flex-laid so they never overlap -->
+    <div class="bottom-row">
+      <div class="hud">
+        <span class="hud-label">Heading West</span>
+        <span class="hud-big">{fromTo}</span>
+        <span class="hud-sub">{milesLabel}</span>
+        <span class="hud-sub">{postLabel}</span>
+      </div>
+      <div class="legend">
+        <div><svg width="22" height="6"><line x1="1" y1="3" x2="21" y2="3" stroke="#c96a2a" stroke-width="3" stroke-linecap="round"/></svg> trail traveled</div>
+        <div><svg width="22" height="6"><line x1="1" y1="3" x2="21" y2="3" stroke="#5a3a1a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3"/></svg> trail ahead</div>
+        <div><svg width="22" height="6"><path d="M1 3 q5 -2 10 0 t10 0" stroke="#2f5a8a" stroke-width="2" fill="none" stroke-linecap="round"/></svg> river</div>
+      </div>
     </div>
 
     <button class="expand-btn" aria-label="View full map" onclick={(e) => { e.stopPropagation(); onExpand?.(); }}>
@@ -140,8 +140,21 @@
     height: 100%;
   }
 
-  .hud {
+  /* Bottom-row holder: HUD + legend laid side-by-side with a gap so
+   * they never overlap regardless of the HUD's text width. Right
+   * offset clears the Full Map button. */
+  .bottom-row {
     position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 100px;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  .hud {
     background: rgba(26, 15, 8, 0.86);
     color: #f5e6c8;
     border: 1px solid #c96a2a;
@@ -151,9 +164,9 @@
     font-size: 11px;
     line-height: 1.35;
     backdrop-filter: blur(2px);
-    z-index: 10;
     display: flex;
     flex-direction: column;
+    flex: 0 0 auto;
   }
   .hud-label {
     color: #c96a2a;
@@ -174,7 +187,6 @@
     font-size: 10.5px;
     font-style: italic;
   }
-  .hud-left { bottom: 10px; left: 10px; }
 
   .compass-host {
     position: absolute;
@@ -184,13 +196,6 @@
   }
 
   .legend {
-    position: absolute;
-    /* Sits just right of the From→To HUD at bottom-left. The HUD's
-     * intrinsic width fluctuates with the leg name, so we leave a
-     * comfortable left offset rather than computing exactly. */
-    left: 240px;
-    bottom: 10px;
-    z-index: 10;
     background: rgba(232, 217, 184, 0.92);
     border: 1px solid #5a3a1a;
     border-radius: 2px;
@@ -200,6 +205,7 @@
     color: #3a1a08;
     letter-spacing: 0.04em;
     line-height: 1.5;
+    flex: 0 0 auto;
   }
   .legend > div {
     display: flex;
