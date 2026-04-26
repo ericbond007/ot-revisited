@@ -153,7 +153,7 @@
 <div class="status panel">
   <div class="status-head">DAY TRAVEL STATUS</div>
   <div class="landscape">
-    <svg viewBox="0 0 {SCENE_W} {SCENE_H}" preserveAspectRatio="xMidYMax meet">
+    <svg viewBox="0 0 {SCENE_W} {SCENE_H}" preserveAspectRatio="xMidYMax slice">
       <defs>
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
@@ -237,12 +237,21 @@
     color: var(--c-rust);
     font-weight: 700;
   }
+  /* The scene is a 1280×720 viewBox internally but we render it as
+     a horizontal "strip" (~16:5) in the play layout so it doesn't
+     dominate the vertical space and shove TrailMap + ActionBar off
+     the fold. preserveAspectRatio="xMidYMax meet" on the SVG keeps
+     the wagon + ground at the bottom of the visible band, with the
+     sky/clouds peeking above. */
   .landscape {
     position: relative;
-    aspect-ratio: 1280 / 720;
+    height: 220px;
     overflow: hidden;
     border-radius: var(--r-xs);
     border: 1px solid rgba(0, 0, 0, 0.35);
+  }
+  @media (max-width: 900px) {
+    .landscape { height: 180px; }
   }
   .landscape svg { width: 100%; height: 100%; display: block; }
 
