@@ -23,7 +23,7 @@
             </form>
             <form method="POST" action="?/delete" onsubmit={(e) => { if (!confirm(`Delete "${save.slotName}"?`)) e.preventDefault(); }}>
               <input type="hidden" name="slotName" value={save.slotName} />
-              <button type="submit" style="background: var(--c-panel); color: var(--c-wood);">Delete</button>
+              <button type="submit" class="btn-danger">Delete</button>
             </form>
           </div>
         </div>

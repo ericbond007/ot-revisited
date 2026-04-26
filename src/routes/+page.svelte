@@ -7,16 +7,16 @@
 <div class="container landing">
   <h1 class="brand"><BrandLockup /></h1>
   <p class="subtitle">The OT: Oregon Trail Revisited</p>
-  <p style="color: var(--c-wood); font-size: 1.1em; margin-bottom: 2em;">
+  <p class="tagline">
     A single-player journey along the Oregon Trail, 1841–1869.
   </p>
 
-  <div style="display: flex; flex-direction: column; gap: 1em; max-width: 400px;">
+  <div class="cta-stack">
     <a href="/new">
-      <button style="width: 100%; padding: 1em;">Start a New Journey</button>
+      <button class="cta">Start a New Journey</button>
     </a>
     <a href="/load" aria-disabled={!hasSaves}>
-      <button style="width: 100%; padding: 1em;" disabled={!hasSaves}>
+      <button class="cta btn-ghost" disabled={!hasSaves}>
         Load a Saved Game {hasSaves ? `(${data.saves.length})` : ''}
       </button>
     </a>
@@ -40,5 +40,20 @@
     font-size: 1.1em;
     font-style: italic;
     letter-spacing: 0.04em;
+  }
+  .tagline {
+    color: var(--c-wood);
+    font-size: 1.1em;
+    margin: 0 0 var(--s-5) 0;
+  }
+  .cta-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    max-width: 400px;
+  }
+  .cta {
+    width: 100%;
+    padding: 1em;
   }
 </style>
