@@ -1,0 +1,155 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  @keyframes hpPulse { 0%,100% { opacity: 0.85 } 50% { opacity: 1 } }
+  @keyframes ill { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-1px) } 75% { transform: translateX(1px) } }
+  @keyframes drip { 0% { transform: translateY(-2px); opacity: 0 } 30% { opacity: 1 } 100% { transform: translateY(8px); opacity: 0 } }
+  @keyframes moralePulse { 0%,100% { transform: scaleY(1) } 50% { transform: scaleY(0.85) } }
+  @keyframes spark { 0%,100% { opacity: 0.4 } 50% { opacity: 1 } }
+  @keyframes spin { from { transform: rotate(0) } to { transform: rotate(360deg) } }
+  .party-row { transition: background 0.2s }
+  .party-row:hover { background: rgba(201,106,42,0.06) }
+  .ill-shake { animation: ill 0.4s infinite }
+  .hp-bar { transition: width 0.6s ease-out }
+  .morale-bar > div { animation: moralePulse 2.4s ease-in-out infinite }
+  .spark { animation: spark 1.6s ease-in-out infinite }
+  .drip { animation: drip 1.8s ease-in infinite }
+  .scaler { display:flex; justify-content:center; align-items:flex-start; padding: 16px 0; }
+  .scaler > .panel { transform-origin: top center; }
+  /* native size up to ~520px, then scale up */
+  @media (min-width: 520px) { .scaler > .panel { transform: scale(1.5) } }
+  @media (min-width: 720px) { .scaler > .panel { transform: scale(2) } }
+  @media (min-width: 960px) { .scaler > .panel { transform: scale(2.4) } }
+</style>
+</head><body><div class="card"><div class="scaler">
+<div class="panel" style="background:#3d2817;border:2px solid #8a5a2a;border-radius:3px;padding:12px 14px 14px;color:#e8c89a;display:flex;flex-direction:column;gap:8px;width:300px;font-family:'IM Fell English',Georgia,serif">
+
+  <!-- header w/ live counts + sparkline -->
+  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #5a3a1a;padding-bottom:6px;margin-bottom:2px">
+    <h4 style="color:#c96a2a;margin:0;font-size:10px;letter-spacing:0.18em;font-family:'Special Elite',monospace;font-weight:700">PARTY · 2 of 3 alive</h4>
+    <!-- 7-day morale sparkline -->
+    <svg width="48" height="14" viewBox="0 0 48 14" style="opacity:0.85">
+      <polyline fill="none" stroke="#f5c96a" stroke-width="1.2" points="0,8 8,5 16,7 24,4 32,6 40,9 48,7"/>
+      <circle cx="48" cy="7" r="1.6" fill="#f5c96a" class="spark"/>
+    </svg>
+  </div>
+
+  <!-- Ezra: leader, banker, ok -->
+  <div class="party-row" style="display:grid;grid-template-columns:24px 1fr auto;gap:6px;padding:4px;border-radius:2px;align-items:center">
+    <!-- Avatar with status ring -->
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="11" fill="none" stroke="#8bb96a" stroke-width="1.5" opacity="0.85"/>
+      <circle cx="12" cy="9" r="3.2" fill="#e8c89a"/>
+      <path d="M5 21 Q12 14 19 21" fill="#8a5a2a"/>
+      <!-- broad-brim hat -->
+      <path d="M4 7 L20 7 L18 6 L6 6 Z" fill="#3a1a08"/>
+      <ellipse cx="12" cy="6.5" rx="4" ry="1.5" fill="#3a1a08"/>
+    </svg>
+    <div style="font-size:13px;line-height:1.25">
+      <strong style="color:#f5e6c8">Ezra</strong>
+      <span style="color:#c96a2a" title="Party leader">★</span>
+      <span style="color:#8a5a2a;font-size:11px;font-style:italic">banker</span>
+      <!-- HP bar with hatch ticks -->
+      <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
+        <svg width="14" height="11" viewBox="0 0 14 11" style="flex-shrink:0">
+          <path d="M7 10 C2 6 1 3 4 2 C6 1 7 3 7 3 C7 3 8 1 10 2 C13 3 12 6 7 10 Z" fill="#8bb96a" stroke="#3a1a08" stroke-width="0.6"/>
+        </svg>
+        <div style="flex:1;height:6px;background:#2a1a10;border:1px solid #3a1a08;border-radius:1px;overflow:hidden;position:relative">
+          <div class="hp-bar" style="width:78%;height:100%;background:linear-gradient(90deg,#6a9a4a,#8bb96a)"></div>
+          <!-- tick marks at 25/50/75 -->
+          <div style="position:absolute;inset:0;background-image:linear-gradient(90deg,transparent 24%,#3a1a08 24%,#3a1a08 25%,transparent 25%,transparent 49%,#3a1a08 49%,#3a1a08 50%,transparent 50%,transparent 74%,#3a1a08 74%,#3a1a08 75%,transparent 75%);opacity:0.5"></div>
+        </div>
+        <span style="color:#8bb96a;font-size:10px;font-family:'Special Elite',monospace;font-weight:700;min-width:22px;text-align:right">78</span>
+      </div>
+    </div>
+    <span style="color:#8bb96a;font-size:14px" title="healthy">✓</span>
+  </div>
+
+  <!-- Mary: doctor, ok, mini-icon for prof -->
+  <div class="party-row" style="display:grid;grid-template-columns:24px 1fr auto;gap:6px;padding:4px;border-radius:2px;align-items:center">
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="11" fill="none" stroke="#8bb96a" stroke-width="1.5" opacity="0.85"/>
+      <circle cx="12" cy="9" r="3.2" fill="#e8c89a"/>
+      <path d="M5 21 Q12 14 19 21" fill="#5a3a1a"/>
+      <!-- bonnet -->
+      <path d="M7 7 Q12 3 17 7 L17 9 Q12 6 7 9 Z" fill="#c96a2a"/>
+      <!-- doctor cross icon -->
+      <g transform="translate(18 2)"><rect x="-2" y="-0.7" width="4" height="1.4" fill="#e85a4a"/><rect x="-0.7" y="-2" width="1.4" height="4" fill="#e85a4a"/></g>
+    </svg>
+    <div style="font-size:13px;line-height:1.25">
+      <strong style="color:#f5e6c8">Mary</strong>
+      <span style="color:#8a5a2a;font-size:11px;font-style:italic">doctor</span>
+      <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
+        <svg width="14" height="11" viewBox="0 0 14 11" style="flex-shrink:0">
+          <path d="M7 10 C2 6 1 3 4 2 C6 1 7 3 7 3 C7 3 8 1 10 2 C13 3 12 6 7 10 Z" fill="#8bb96a" stroke="#3a1a08" stroke-width="0.6"/>
+        </svg>
+        <div style="flex:1;height:6px;background:#2a1a10;border:1px solid #3a1a08;border-radius:1px;overflow:hidden;position:relative">
+          <div class="hp-bar" style="width:92%;height:100%;background:linear-gradient(90deg,#6a9a4a,#8bb96a)"></div>
+          <div style="position:absolute;inset:0;background-image:linear-gradient(90deg,transparent 24%,#3a1a08 24%,#3a1a08 25%,transparent 25%,transparent 49%,#3a1a08 49%,#3a1a08 50%,transparent 50%,transparent 74%,#3a1a08 74%,#3a1a08 75%,transparent 75%);opacity:0.5"></div>
+        </div>
+        <span style="color:#8bb96a;font-size:10px;font-family:'Special Elite',monospace;font-weight:700;min-width:22px;text-align:right">92</span>
+      </div>
+    </div>
+    <span style="color:#8bb96a;font-size:14px">✓</span>
+  </div>
+
+  <!-- Sarah: child, ill (animated illness) -->
+  <div class="party-row ill-shake" style="display:grid;grid-template-columns:24px 1fr auto;gap:6px;padding:4px;border-radius:2px;align-items:center;background:rgba(232,90,74,0.07)">
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="11" fill="none" stroke="#e85a4a" stroke-width="1.5" stroke-dasharray="2 1.5"/>
+      <circle cx="12" cy="10" r="3" fill="#e8c89a"/>
+      <path d="M6 21 Q12 15 18 21" fill="#6a7a4a"/>
+      <!-- fever droplets -->
+      <ellipse cx="8" cy="6" rx="0.8" ry="1.4" fill="#4a8bc9" class="drip" style="animation-delay:0s"/>
+      <ellipse cx="16" cy="6" rx="0.8" ry="1.4" fill="#4a8bc9" class="drip" style="animation-delay:0.6s"/>
+    </svg>
+    <div style="font-size:13px;line-height:1.25">
+      <strong style="color:#f5e6c8">Sarah</strong>
+      <span style="color:#8a5a2a;font-size:11px;font-style:italic">child</span>
+      <span style="color:#e85a4a;font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.08em;margin-left:4px">FEVER</span>
+      <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
+        <svg width="14" height="11" viewBox="0 0 14 11" style="flex-shrink:0;animation:hpPulse 1.4s ease-in-out infinite">
+          <path d="M7 10 C2 6 1 3 4 2 C6 1 7 3 7 3 C7 3 8 1 10 2 C13 3 12 6 7 10 Z" fill="#e85a4a" stroke="#3a1a08" stroke-width="0.6"/>
+        </svg>
+        <div style="flex:1;height:6px;background:#2a1a10;border:1px solid #3a1a08;border-radius:1px;overflow:hidden;position:relative">
+          <div class="hp-bar" style="width:34%;height:100%;background:linear-gradient(90deg,#a83a2a,#e85a4a)"></div>
+          <div style="position:absolute;inset:0;background-image:linear-gradient(90deg,transparent 24%,#3a1a08 24%,#3a1a08 25%,transparent 25%,transparent 49%,#3a1a08 49%,#3a1a08 50%,transparent 50%,transparent 74%,#3a1a08 74%,#3a1a08 75%,transparent 75%);opacity:0.5"></div>
+        </div>
+        <span style="color:#e85a4a;font-size:10px;font-family:'Special Elite',monospace;font-weight:700;min-width:22px;text-align:right">34</span>
+      </div>
+    </div>
+    <span style="color:#e85a4a;font-size:14px" title="ill">!</span>
+  </div>
+
+  <!-- Amos: dead -->
+  <div style="display:grid;grid-template-columns:24px 1fr auto;gap:6px;padding:4px;border-radius:2px;align-items:center;opacity:0.55">
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <!-- gravestone silhouette -->
+      <path d="M5 22 L5 12 Q5 8 12 8 Q19 8 19 12 L19 22 Z" fill="#5a3a1a" stroke="#3a1a08" stroke-width="0.7"/>
+      <text x="12" y="17" text-anchor="middle" font-size="7" fill="#3a1a08" font-family="'Special Elite',monospace" font-weight="700">RIP</text>
+    </svg>
+    <div style="font-size:13px;line-height:1.25;color:#8a5a2a">
+      <strong style="text-decoration:line-through;color:#8a5a2a">Amos</strong>
+      <span style="font-size:11px;font-style:italic">scout</span>
+      <div style="font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.05em;margin-top:2px;color:#8a5a2a">✝ day 41 · cholera</div>
+    </div>
+  </div>
+
+  <!-- Morale row with ribbon meter & trend -->
+  <div style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:11px;margin-top:4px;padding-top:6px;border-top:1px solid #5a3a1a">
+    <span style="color:#8a5a2a;font-family:'Special Elite',monospace;letter-spacing:0.1em">MORALE</span>
+    <div class="morale-bar" style="height:8px;background:#2a1a10;border:1px solid #3a1a08;border-radius:1px;overflow:hidden;display:flex;transform-origin:left">
+      <div style="width:64%;height:100%;background:repeating-linear-gradient(135deg,#f5c96a 0 4px,#d4a850 4px 8px)"></div>
+    </div>
+    <span style="display:flex;align-items:center;gap:3px"><span style="color:#f5c96a;font-weight:700;font-family:'Special Elite',monospace">64</span><span style="color:#e85a4a;font-size:10px" title="trending down">▼</span></span>
+  </div>
+
+  <!-- Quick stats row: rations / days food / pace icons -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.06em;color:#8a5a2a;text-align:center;background:#2a1a10;border:1px solid #3a1a08;border-radius:2px;padding:5px">
+    <div><div style="color:#f5e6c8;font-size:13px">🍖<span style="margin-left:2px">22d</span></div><div>FOOD</div></div>
+    <div><div style="color:#f5e6c8;font-size:13px">🐂×3</div><div>OXEN</div></div>
+    <div><div style="color:#f5e6c8;font-size:13px">⚡<span style="margin-left:1px">FAST</span></div><div>PACE</div></div>
+  </div>
+
+</div>
+</div></div></body></html>
