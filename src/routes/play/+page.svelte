@@ -372,7 +372,8 @@
   .date-readout {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3em 0.8em;
+    /* Match the prototype's tighter inline rhythm: 4px row gap × 16px column gap. */
+    gap: 4px 16px;
     align-items: center;
     color: var(--c-tan);
   }

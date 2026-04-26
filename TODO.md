@@ -34,6 +34,8 @@ As of 2026-04-25 (post-#107). 19 open.
 | #147 | Success/arrival view rework — pair with #148 scoring   |
 | #160 | Trail-map visual revisit — snippet framing, modal pan/zoom feel, route-coords interpolation per landmark; Phase 1 lifted snippet's hardcoded reference state for the Ft. Kearny → Ft. Laramie leg |
 | #161 | Brand handoff revisit — extend `icon-dictionary.ts` to cover decorative emojis we left in place (post kinds, profession glyphs, town services, hunt fauna, FordModal/FordSummary water+ferry, JourneyMenu items, EndScreen tombstone+tree, decorative status `★ ✕ ⚠ ⛔ ❤ ⚡`); designer call which to standardize and which to drop. Also: BrandLockup auto-variant SSR flicker (renders mark on first paint because clientWidth=0 before hydration). |
+| #162 | Components handoff revisit — retrofit existing custom bars (InventoryPanel weight/warmth, WagonModal condition, etc.) onto the new `StatBar.svelte` primitive once the visual diff is approved post-playtest. PartyPanel avatars are placeholder compositions (head/shoulders/hat); designer pass for richer per-profession portraits + animation pause-awareness when game is paused. |
+| #163 | PartyPanel mini-stats vs top-bar duplication — the panel footer (food days · oxen · pace) repeats data already in the top-bar stat cluster. Confirmed intentional in the handoff for at-a-glance scannability, but worth re-examining post-playtest: drop the duplication and reclaim vertical space, or keep and shrink the top-bar instead. |
 | #87  | Rich event visuals                                     |
 | #89  | Rich trading post / landmark display                   |
 | #133 | EventModal polish — animations + glyphs                |
