@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { GameState, PartyMember } from '$lib/game/types';
-  import { icon } from '$lib/data/icon-dictionary';
+  import { icon, ICON } from '$lib/data/icon-dictionary';
 
   let { state, onclose, onselect }: {
     state: GameState;
@@ -91,7 +91,7 @@
               <span class="person-glyph" title="{m.kind === 'child' ? 'Child' : 'Adult'} · {m.sex}">{personGlyph(m)}</span>
               <span class="person-name">
                 {m.name}
-                {#if m.isLeader}<span class="leader-star" title="Party leader">★</span>{/if}
+                {#if m.isLeader}<span class="leader-star" title="Party leader">{ICON.status.leader}</span>{/if}
               </span>
               <span class="person-profession">{personRoleLabel(m)}</span>
               <span class="person-age">age {m.age}</span>

@@ -2,6 +2,7 @@
   import type { GameState } from '$lib/game/types';
   import { LANDMARKS } from '$lib/game/content/landmarks';
   import { score } from '$lib/game/systems/scoring';
+  import { ICON } from '$lib/data/icon-dictionary';
   let { state }: { state: GameState } = $props();
   const result = $derived(score(state));
 
@@ -22,7 +23,7 @@
        can see where and when it all ended. -->
   <div class="panel tombstone-wrap">
     <div class="hero">
-      <div class="big-stone" aria-hidden="true">🪦</div>
+      <div class="big-stone" aria-hidden="true">{ICON.end_screen.tombstone}</div>
       <h2 class="head">Here lies {leaderName}'s party.</h2>
       <p class="epitaph">Perished on the trail — day {state.day} of {state.date.year}.</p>
     </div>
@@ -39,7 +40,7 @@
     <div class="graves">
       {#each dead as m}
         <div class="grave">
-          <div class="grave-stone">🪦</div>
+          <div class="grave-stone">{ICON.end_screen.tombstone}</div>
           <div class="grave-text">
             <div class="grave-name">{m.name}{m.isLeader ? ' (leader)' : ''}</div>
             <div class="grave-role">{m.profession ?? m.kind}</div>
@@ -50,15 +51,15 @@
     </div>
 
     <div class="cta-row">
-      <a href="/new" class="cta primary">🆕 New Journey</a>
-      <a href="/" class="cta">🏠 Home</a>
+      <a href="/new" class="cta primary">{ICON.journey_menu.new} New Journey</a>
+      <a href="/" class="cta">{ICON.journey_menu.home} Home</a>
     </div>
   </div>
 {:else if state.outcome === 'arrived'}
   <!-- Happy ending — party arrived at Oregon City. -->
   <div class="panel arrived-wrap">
     <div class="hero">
-      <div class="big-glyph" aria-hidden="true">🌲</div>
+      <div class="big-glyph" aria-hidden="true">{ICON.end_screen.tree}</div>
       <h2 class="head arrived-head">You made it to Oregon!</h2>
       <p class="epitaph">Arrived in Oregon City after {state.day} days and {Math.round(state.location.milesTraveled)} miles.</p>
     </div>
@@ -105,8 +106,8 @@
     </div>
 
     <div class="cta-row">
-      <a href="/new" class="cta primary">🆕 New Journey</a>
-      <a href="/" class="cta">🏠 Home</a>
+      <a href="/new" class="cta primary">{ICON.journey_menu.new} New Journey</a>
+      <a href="/" class="cta">{ICON.journey_menu.home} Home</a>
     </div>
   </div>
 {:else}
@@ -120,8 +121,8 @@
       {/each}
     </ul>
     <div class="cta-row">
-      <a href="/new" class="cta primary">🆕 New Journey</a>
-      <a href="/" class="cta">🏠 Home</a>
+      <a href="/new" class="cta primary">{ICON.journey_menu.new} New Journey</a>
+      <a href="/" class="cta">{ICON.journey_menu.home} Home</a>
     </div>
   </div>
 {/if}

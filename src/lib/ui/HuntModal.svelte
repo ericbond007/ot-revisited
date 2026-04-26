@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import CardRadio from './CardRadio.svelte';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
 
@@ -45,7 +46,7 @@
       value: 'small' as const,
       label: 'Small Game',
       sublabel: 'Rabbits, birds, prairie chickens',
-      icon: '🐇',
+      icon: ICON.fauna.small,
       disabled: noRifle || noBullets,
       disabledReason: noRifle ? 'Need a rifle' : noBullets ? 'Out of bullets' : undefined
     },
@@ -53,7 +54,7 @@
       value: 'medium' as const,
       label: 'Medium Game',
       sublabel: 'Deer, antelope — balanced',
-      icon: '🦌',
+      icon: ICON.fauna.medium,
       disabled: noRifle || noBullets,
       disabledReason: noRifle ? 'Need a rifle' : noBullets ? 'Out of bullets' : undefined
     },
@@ -61,7 +62,7 @@
       value: 'big' as const,
       label: 'Big Game',
       sublabel: 'Buffalo, bear — high yield, injury risk',
-      icon: '🦬',
+      icon: ICON.fauna.big,
       disabled: noRifle || noBullets,
       disabledReason: noRifle ? 'Need a rifle' : noBullets ? 'Out of bullets' : undefined
     },
@@ -69,7 +70,7 @@
       value: 'gather' as const,
       label: 'Forage',
       sublabel: 'Berries, roots, herbs — no rifle needed',
-      icon: '🌿'
+      icon: ICON.fauna.forage
     }
   ]);
 

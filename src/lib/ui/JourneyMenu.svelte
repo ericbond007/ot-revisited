@@ -2,6 +2,7 @@
   // Popover menu anchored to the cowboy-hat journey icon. Add new actions to
   // the `items` array below — each is just a {icon, label, href, danger?}.
   import { SCENARIOS } from '$lib/dev/scenarios';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   let { open = $bindable(false), onclose }: { open?: boolean; onclose?: () => void } = $props();
 
@@ -61,9 +62,9 @@
   }
 
   const items: MenuItem[] = [
-    { icon: '💾', label: 'Manage Saves', sub: 'Load or delete other journeys', href: '/load' },
-    { icon: '🆕', label: 'New Journey',  sub: 'Start a fresh party',           href: '/new', danger: true },
-    { icon: '🏠', label: 'Back to Home', sub: 'Title screen',                  href: '/' }
+    { icon: ICON.journey_menu.save, label: 'Manage Saves', sub: 'Load or delete other journeys', href: '/load' },
+    { icon: ICON.journey_menu.new,  label: 'New Journey',  sub: 'Start a fresh party',           href: '/new', danger: true },
+    { icon: ICON.journey_menu.home, label: 'Back to Home', sub: 'Title screen',                  href: '/' }
   ];
 </script>
 
@@ -82,7 +83,7 @@
 
     {#if isDev}
       <div class="menu-divider"></div>
-      <div class="menu-head dev-head">🧪 DEV SCENARIOS ({SCENARIOS.length})</div>
+      <div class="menu-head dev-head">{ICON.journey_menu.dev} DEV SCENARIOS ({SCENARIOS.length})</div>
       <div class="dev-list">
         {#each SCENARIOS as sc}
           <!-- No `onclick={close}` on the submit button — closing the menu
@@ -92,7 +93,7 @@
           <form method="POST" action="/?/loadScenario" class="dev-form">
             <input type="hidden" name="scenario" value={sc.id} />
             <button type="submit" class="item dev-item" role="menuitem">
-              <span class="item-icon">🎯</span>
+              <span class="item-icon">{ICON.journey_menu.scenario}</span>
               <span class="item-body">
                 <span class="item-label">{sc.label}</span>
                 <span class="item-sub">{sc.description}</span>

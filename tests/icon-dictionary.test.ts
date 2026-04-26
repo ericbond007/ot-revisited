@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ICON, icon } from '../src/lib/data/icon-dictionary';
 import { LANDMARKS } from '../src/lib/game/content/landmarks';
+import { PROFESSIONS } from '../src/lib/game/content/professions';
 
 describe('icon-dictionary', () => {
   it('declares every advertised category', () => {
@@ -13,7 +14,17 @@ describe('icon-dictionary', () => {
       'event_categories',
       'people',
       'camp_scene',
-      'landmarks'
+      'landmarks',
+      // #161 expansions
+      'post_kinds',
+      'professions',
+      'town_services',
+      'fauna',
+      'ford_methods',
+      'journey_menu',
+      'end_screen',
+      'status',
+      'trend'
     ] as const;
     for (const cat of required) {
       expect(ICON[cat]).toBeDefined();
@@ -34,6 +45,15 @@ describe('icon-dictionary', () => {
     const realIds = new Set(LANDMARKS.map((l) => l.id));
     for (const key of Object.keys(ICON.landmarks)) {
       expect(realIds.has(key), `landmark "${key}" is not a real LANDMARKS id`).toBe(true);
+    }
+  });
+
+  it('every profession has a glyph', () => {
+    for (const id of Object.keys(PROFESSIONS)) {
+      expect(
+        ICON.professions[id as keyof typeof ICON.professions],
+        `profession "${id}" missing a glyph`
+      ).toBeDefined();
     }
   });
 });
