@@ -594,7 +594,7 @@
         {@const qtyInGroup = groupQtyCount(g.ids)}
         {@const subtotal = groupSubtotal(g.ids)}
         {@const isOpen = openCats[g.cat]}
-        {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo'}
+        {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo' || g.cat === 'feed'}
         <section class="group" class:open={isOpen}>
           <button type="button" class="group-head" onclick={() => toggleCat(g.cat)}>
             <span class="group-icon">{CATEGORY_ICON[g.cat]}</span>
