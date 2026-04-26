@@ -45,7 +45,7 @@
       <div class="glyph">{glyph}</div>
       <div class="head-text">
         <div class="name-row">
-          <h2>{member.name}</h2>
+          <h2 class="modal-title">{member.name}</h2>
           {#if member.isLeader}<span class="leader" title="Party leader">★ LEADER</span>{/if}
         </div>
         <div class="role">{roleLine}</div>

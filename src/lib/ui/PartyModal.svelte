@@ -57,7 +57,7 @@
 
 <div class="modal-backdrop" onclick={onclose} role="presentation">
   <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
-    <h2 style="color: var(--c-rust);">🧑‍🤝‍🧑 The Party</h2>
+    <h2 class="modal-title">🧑‍🤝‍🧑 The Party</h2>
 
     <!-- Morale -->
     <section class="section">

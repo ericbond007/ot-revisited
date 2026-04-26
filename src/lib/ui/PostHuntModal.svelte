@@ -40,7 +40,7 @@
       <span class="head-glyph">{flavor.glyph}</span>
       <div class="head-titles">
         <span class="head-tag">{flavor.label.toUpperCase()}</span>
-        <h2>{successful ? 'The Haul' : 'Empty-handed'}</h2>
+        <h2 class="modal-title">{successful ? 'The Haul' : 'Empty-handed'}</h2>
       </div>
     </div>
 

@@ -282,6 +282,28 @@ select option {
   padding: var(--s-4);
   border-radius: var(--r-sm);
 }
+
+/* Universal modal-body chrome — every modal that wraps its content in
+   `.panel.modal-body` inherits these. Per-modal styles still set their
+   own max-width / padding tweaks; this just ensures the brand look
+   (rust border, deep elevation shadow) is consistent across all
+   modals without each one having to remember to set them. */
+.modal-body {
+  border: 3px solid var(--c-rust);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* Modal title — Rye serif, rust, slightly looser tracking. Apply
+   to the headline <h2> inside any modal so the typography is
+   coherent across the app without per-file overrides. */
+.modal-title {
+  font-family: var(--f-display);
+  font-size: 24px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: var(--c-rust);
+  margin: 0;
+}
 .container { max-width: 900px; margin: 0 auto; padding: var(--s-8) var(--s-4); }
 
 /* Responsive — Z Fold 4 unfolded is ~884px; breakpoint at 900px */

@@ -48,7 +48,7 @@
 
 <div class="modal-backdrop">
   <div class="panel modal-body">
-    <h2 style="color: #4a8bc9;">{riverName}</h2>
+    <h2 class="modal-title river-title">{riverName}</h2>
     <p style="color: var(--c-wood);">
       Depth {river.depthFt.toFixed(1)} ft · Current {river.currentMph} mph · Ferry ${river.ferryPrice}
     </p>
@@ -75,6 +75,9 @@
 </div>
 
 <style>
+  /* River-blue title accent — overrides the global .modal-title rust. */
+  .river-title { color: var(--c-river); }
+
   .modal-backdrop {
     position: fixed;
     inset: 0;

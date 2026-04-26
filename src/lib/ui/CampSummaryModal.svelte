@@ -46,7 +46,7 @@
       <span class="head-glyph">{icon('camp_scene', 'fire')}</span>
       <div class="head-titles">
         <span class="head-tag">CAMP · {summary.daysRested} day{summary.daysRested === 1 ? '' : 's'} rested</span>
-        <h2>Broke camp on day {summary.startDay + summary.daysRested}</h2>
+        <h2 class="modal-title">Broke camp on day {summary.startDay + summary.daysRested}</h2>
       </div>
     </div>
 

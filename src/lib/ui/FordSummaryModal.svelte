@@ -42,7 +42,7 @@
         <span class="head-tag">
           RIVER · {result.crossed ? 'CROSSED' : 'STILL WAITING'}
         </span>
-        <h2>{METHOD_LABEL[result.method]}</h2>
+        <h2 class="modal-title">{METHOD_LABEL[result.method]}</h2>
       </div>
     </div>
 
