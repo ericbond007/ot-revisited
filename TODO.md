@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#164). 21 open.
+As of 2026-04-26 (post-#164). 22 open.
 
 ## New mechanics
 
@@ -30,6 +30,7 @@ As of 2026-04-26 (post-#164). 21 open.
 | #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring                                                                                                 |
 | #167 | Trail-map cluster label collisions — Courthouse/Chimney/Scotts Bluff/Ft. Laramie/Robidoux all sit within ~60 modal-px of each other; labels overlap at modal tier 1 even with LABEL_BELOW staggering |
 | #168 | Party Card hover too colorful — match the calmer Wagon/Inventory card hover styling |
+| #169 | WagonScene paused state still reads as motion — rAF parked + gait/bounce snap to 0 weren't enough. Investigate: residual wheel-angle (held mid-rotation), parallax position frozen mid-scroll (no "at-rest" anchor), ox head/eye micro-details, weather-layer drift. Could need an explicit "at-rest pose" preset rather than just freezing animation drivers |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call                                                                                                   |
 | #147 | Success/arrival view rework — richer than the current score panel                                                                                                  |
 | #133 | EventModal polish — animations + glyphs                                                                                                                            |
