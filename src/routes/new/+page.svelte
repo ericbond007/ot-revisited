@@ -157,7 +157,7 @@
     </div>
 
     {#if members.length < 6}
-      <button type="button" onclick={addMember} style="margin-bottom: 1.5em;">+ Add companion</button>
+      <button type="button" class="btn-ghost add-companion" onclick={addMember}>+ Add companion</button>
     {/if}
 
     <h2>When do we set out?</h2>
@@ -209,6 +209,7 @@
 </div>
 
 <style>
+  .add-companion { margin-bottom: 1.5em; }
   /* Full-viewport layout with a tips + profession-ref sidebar. Matches the
      outfit screen's grid. Falls back to stacked flow below 900px. */
   .new-wrap {

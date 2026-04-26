@@ -102,7 +102,7 @@
 
 <div class="modal-backdrop">
   <div class="panel modal-body">
-    <h2 style="color: var(--c-rust);">Hunt or Gather</h2>
+    <h2 class="modal-title">Hunt or Gather</h2>
     <div class="stats">
       <span><strong>Rifles:</strong> {rifleCount}</span>
       <span><strong>Bullets:</strong> {bullets}</span>

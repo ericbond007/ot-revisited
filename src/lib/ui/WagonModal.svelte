@@ -39,7 +39,7 @@
 
 <div class="modal-backdrop" onclick={onclose} role="presentation">
   <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
-    <h2 style="color: var(--c-rust); display: flex; align-items: center; gap: 0.4em; margin-bottom: 0.2em;">
+    <h2 class="modal-title wagon-title">
       <WagonIcon size="1.1em" />
       <span>{wagonModel.name}</span>
     </h2>
@@ -119,6 +119,14 @@
 </div>
 
 <style>
+  /* Multi-element title — keep the icon + label on one line. */
+  .wagon-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-bottom: 0.2em;
+  }
+
   .modal-backdrop {
     position: fixed;
     inset: 0;

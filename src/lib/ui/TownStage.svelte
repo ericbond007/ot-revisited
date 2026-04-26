@@ -9,6 +9,7 @@
     BROTHEL_DOLLARS_PER_MAN,
     GUIDE_DOLLARS_PER_DAY
   } from '$lib/game/systems/town-services';
+  import { POST_THEME } from '$lib/data/post-theme';
 
   // Fullscreen Town view. Replaces the VisitModal — same service-card
   // grid rendered inline in the left-column stage slot, alongside the
@@ -30,15 +31,6 @@
   } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
-  // Per-post theming — same map used in the trade modal so the town
-  // stage feels consistent with the trade flow.
-  const POST_THEME: Record<PostKind, { accent: string; glyph: string; tag: string }> = {
-    us_army:      { accent: '#4a6a8c', glyph: '🎖️', tag: 'U.S. Army post' },
-    hbc:          { accent: '#1f5a3f', glyph: '🦫', tag: "Hudson's Bay Company" },
-    mountain:     { accent: '#8a5a2a', glyph: '⛰️', tag: 'Mountain outpost' },
-    frontier:     { accent: '#b86a42', glyph: '🏪', tag: 'Frontier post' },
-    end_of_trail: { accent: '#c9a05a', glyph: '✨', tag: 'End of the trail' }
-  };
   const postKind = $derived<PostKind>(landmark.postKind ?? 'frontier');
   const theme = $derived(POST_THEME[postKind]);
 

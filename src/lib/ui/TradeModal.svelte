@@ -7,6 +7,7 @@
   import { getWagon } from '$lib/game/content/wagons';
   import { postRemainingQty } from '$lib/game/systems/post-stock';
   import { ICON } from '$lib/data/icon-dictionary';
+  import { POST_THEME } from '$lib/data/post-theme';
   import ItemTooltip from './ItemTooltip.svelte';
   import NumberStepper from './NumberStepper.svelte';
 
@@ -33,15 +34,6 @@
     'coat', 'blanket', 'ox_shoes', 'rope'
   ];
 
-  // Per-post theming. Purely cosmetic — accent color + header glyph chosen
-  // to match each post kind's historical flavor.
-  const POST_THEME: Record<PostKind, { accent: string; glyph: string; tag: string }> = {
-    us_army:      { accent: '#4a6a8c', glyph: '🎖️', tag: 'U.S. Army post' },
-    hbc:          { accent: '#1f5a3f', glyph: '🦫', tag: "Hudson's Bay Company" },
-    mountain:     { accent: '#8a5a2a', glyph: '⛰️', tag: 'Mountain outpost' },
-    frontier:     { accent: '#b86a42', glyph: '🏪', tag: 'Frontier post' },
-    end_of_trail: { accent: '#c9a05a', glyph: '✨', tag: 'End of the trail' }
-  };
   const theme = $derived(POST_THEME[postKind]);
 
   // Merchant / Banker buy discount + sell bonus (matches trade.ts).

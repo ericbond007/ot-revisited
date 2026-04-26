@@ -25,7 +25,7 @@
       <span class="head-glyph">🧾</span>
       <div class="head-titles">
         <span class="head-tag">RECEIPT · {result.postName}</span>
-        <h2>Trade complete</h2>
+        <h2 class="modal-title">Trade complete</h2>
       </div>
     </div>
 

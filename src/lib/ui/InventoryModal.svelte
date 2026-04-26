@@ -73,7 +73,7 @@
 
 <div class="modal-backdrop" onclick={onclose} role="presentation">
   <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
-    <h2 style="color: var(--c-rust);">📦 Inventory</h2>
+    <h2 class="modal-title">📦 Inventory</h2>
 
     <!-- Header stats -->
     <section class="stat-grid">
