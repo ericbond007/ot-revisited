@@ -178,8 +178,10 @@
 
       <!-- 3. clouds — bandY=400 plants the cloud band a bit lower
            in the sky (spread y=400..472) so the puffs don't kiss
-           the top edge of the strip. -->
-      <CloudLayer kind={weatherKind} t={tEff} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
+           the top edge of the strip. Drift is parallax-coupled to
+           the same scrollX the terrain layers use, so direction
+           and "stops when stopped" behavior follow ground motion. -->
+      <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
 
       <!-- 4. far parallax -->
       <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />

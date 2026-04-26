@@ -23,7 +23,7 @@
 
   const ezra   = member({ id: 'p1', name: 'Ezra',  profession: 'banker', isLeader: true, health: 78 });
   const mary   = member({ id: 'p2', name: 'Mary',  profession: 'doctor', sex: 'female', health: 92 });
-  const sarah  = member({ id: 'p3', name: 'Sarah', kind: 'child', sex: 'female', age: 8, health: 34, conditions: [{ id: 'fever', daysSinceOnset: 2 }] });
+  const sarah  = member({ id: 'p3', name: 'Sarah', kind: 'child', sex: 'female', age: 8, health: 34, conditions: [{ id: 'cholera', daysSinceOnset: 2 }] });
   const amos   = member({ id: 'p4', name: 'Amos',  profession: 'scout', dead: true, deathCause: 'cholera', deathDay: 41, health: 0 });
 
   const oxen: Ox[] = [
