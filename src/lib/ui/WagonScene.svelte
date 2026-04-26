@@ -6,7 +6,7 @@
   // travel; today it's a static painted scene that reflects current
   // game state (terrain + season + derived weather).
 
-  import type { GameState } from '$lib/game/types';
+  import type { GameState, Weather } from '$lib/game/types';
 
   let { state }: { state: GameState } = $props();
 
@@ -15,28 +15,25 @@
   const teamGlyph = $derived(teamKind === 'mule' ? '🐴' : '🐂');
   const month = $derived(state.date.month);
 
-  // --- Weather classification (drives both the readout chip + the
-  //     particle/cloud overlay). Stand-in until #153 ships real state. ---
-  type WeatherKind = 'sunny' | 'partly' | 'cloudy' | 'rainy' | 'snowy';
+  // --- Weather (#153) — read straight from game state. Falls back to
+  //     'clear' for pre-#153 saves before upgradeState fills it in.
+  //     The painting maps 8 weather kinds into 5 visual modes for the
+  //     particle/cloud overlay (sunny / partly / cloudy / rainy / snowy).
+  type VisualKind = 'sunny' | 'partly' | 'cloudy' | 'rainy' | 'snowy';
 
-  const weather = $derived.by<{ kind: WeatherKind; glyph: string; label: string }>(() => {
-    const m = month;
-    if (terrain === 'desert')   return { kind: 'sunny',  glyph: '☀️', label: 'Hot, arid' };
-    if (terrain === 'river')    return { kind: 'cloudy', glyph: '💧', label: 'Damp air' };
-    if (terrain === 'mountains') {
-      if (m >= 11 || m <= 2)    return { kind: 'snowy',  glyph: '❄️', label: 'Frozen' };
-      if (m >= 6 && m <= 8)     return { kind: 'cloudy', glyph: '🌤️', label: 'Cool, thin' };
-      return { kind: 'cloudy', glyph: '🌥️', label: 'Crisp' };
+  const weather = $derived.by<{ kind: VisualKind; glyph: string; label: string }>(() => {
+    const w: Weather = state.weather ?? 'clear';
+    switch (w) {
+      case 'storm':    return { kind: 'rainy',  glyph: '⛈️', label: 'Thunderstorm' };
+      case 'rain':     return { kind: 'rainy',  glyph: '🌧️', label: 'Rain' };
+      case 'snow':     return { kind: 'snowy',  glyph: '🌨️', label: 'Snow' };
+      case 'frost':    return { kind: 'cloudy', glyph: '❄️', label: 'Hard frost' };
+      case 'heat':     return { kind: 'sunny',  glyph: '🔥', label: 'Heat wave' };
+      case 'fog':      return { kind: 'cloudy', glyph: '🌫️', label: 'Heavy fog' };
+      case 'overcast': return { kind: 'cloudy', glyph: '☁️', label: 'Overcast' };
+      case 'clear':
+      default:         return { kind: 'sunny',  glyph: '☀️', label: 'Clear' };
     }
-    if (terrain === 'forest') {
-      if (m >= 11 || m <= 2)    return { kind: 'rainy', glyph: '🌧️', label: 'Cold, wet' };
-      return { kind: 'partly', glyph: '🌳', label: 'Damp, shaded' };
-    }
-    // prairie default
-    if (m >= 11 || m <= 2) return { kind: 'snowy',  glyph: '❄️', label: 'Cold, frost' };
-    if (m >= 6 && m <= 8)  return { kind: 'sunny',  glyph: '☀️', label: 'Hot, dry' };
-    if (m === 3 || m === 4) return { kind: 'partly', glyph: '🌤️', label: 'Cool, breezy' };
-    return { kind: 'partly', glyph: '🍂', label: 'Brisk, windy' };
   });
 
   // --- Sky / horizon / ground per terrain ---

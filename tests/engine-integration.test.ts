@@ -43,9 +43,10 @@ describe('30-day deterministic simulation', () => {
     expect(s.inventory.flour).toBeLessThan(startingFlour);
     expect(s.wagon.condition).toBeLessThan(startingCondition);
     expect(s.oxen.some((o) => o.fatigue > 0)).toBe(true);
-    // Calibrated: oxen fatigue degrades speed from ~21 mi/day down to ~0 by day 24.
-    // Actual 30-day total with moderate pace + 4 shod oxen = ~259 miles.
-    expect(s.location.milesTraveled).toBeGreaterThan(200);
+    // Calibrated: oxen fatigue degrades speed from ~21 mi/day down to ~0 by day 24,
+    // and weather (#153) adds ~20% drag from rain/heat/storm days. Actual 30-day total
+    // with moderate pace + 4 shod oxen ≈ 195 mi. Threshold leaves slack for seed drift.
+    expect(s.location.milesTraveled).toBeGreaterThan(150);
     expect(typeof s.flags.hadFireLastNight).toBe('boolean');
   });
 
@@ -75,13 +76,12 @@ describe('30-day deterministic simulation', () => {
   });
 
   it('covers significant ground within 25 moderate days of travel', () => {
-    // Calibrated: oxen fatigue limits real range to ~259 miles over 30 days (moderate pace).
-    // By day 25 the party has already exhausted oxen speed, covering ~259 miles total.
-    // Fort Kearny (300 miles) requires a rest mechanic not yet implemented; this test
-    // verifies the travel system drives meaningful forward progress before exhaustion.
-    // previousLandmarkId advances only upon crossing 300 mi; we assert on milesTraveled instead.
+    // Calibrated: oxen fatigue limits real range to ~195 miles over 30 days (moderate pace
+    // with weather). By day 25 the party has already exhausted oxen speed. Fort Kearny
+    // (300 miles) requires a rest mechanic not yet implemented; this test verifies the
+    // travel system drives meaningful forward progress before exhaustion.
     let s = freshGameWithOxen();
     for (let i = 0; i < 25; i++) s = tickDay(s);
-    expect(s.location.milesTraveled).toBeGreaterThanOrEqual(200);
+    expect(s.location.milesTraveled).toBeGreaterThanOrEqual(150);
   });
 });

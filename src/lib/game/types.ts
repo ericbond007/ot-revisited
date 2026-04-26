@@ -3,6 +3,20 @@
 
 export type Pace = 'slow' | 'moderate' | 'fast' | 'grueling';
 export type Rations = 'meager' | 'normal' | 'filling';
+
+// Daily weather state (#153). Chosen each morning by tickWeather based
+// on current terrain, season, and yesterday's weather. Drives travel
+// speed, water gain/loss, wagon damage, and gates the matching random
+// weather events.
+export type Weather =
+  | 'clear'      // bright + dry, no penalty
+  | 'overcast'   // cool, slight water-loss reduction
+  | 'rain'       // -15% travel, slow water gain, wet firewood risk
+  | 'storm'      // -50% travel, wagon damage, morale hit
+  | 'snow'       // -40% travel; mountains may halt entirely
+  | 'heat'       // -15% travel, doubled water-loss
+  | 'fog'        // -15% travel, easy to wander
+  | 'frost';     // morning chill, small morale hit
 export type Terrain = 'prairie' | 'forest' | 'desert' | 'mountains' | 'river';
 export type Outcome = 'in-progress' | 'arrived' | 'wiped' | 'stranded';
 
@@ -146,6 +160,8 @@ export interface GameState {
   morale: number; // 0..100
   pace: Pace;
   rations: Rations;
+  /** Today's weather. Re-rolled each morning by tickWeather. */
+  weather?: Weather;
   eventLog: LogEntry[];
   // Widened to accept small JSON-serializable objects (e.g. _huntHaul
    // from actions/hunt.ts). Still string-keyed and serialization-safe;

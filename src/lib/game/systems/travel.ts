@@ -6,6 +6,7 @@ import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
 import { gatherFirewoodOnTravel } from './fire';
 import { hasLiveScout } from '../professions/predicates';
+import { weatherTravelMult } from './weather';
 
 const PACE_BASE_MILES: Record<Pace, number> = {
   slow: 12,
@@ -78,7 +79,12 @@ export function milesPerDay(state: GameState): number {
   // +8% travel speed while alive in the party.
   const scoutMult = hasLiveScout(state) ? 1.08 : 1.0;
 
-  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult);
+  // Weather (#153) — storm and snow seriously slow the wagon; rain,
+  // heat, and fog moderately so. Set by tickWeather earlier in the
+  // pipeline.
+  const weatherMult = weatherTravelMult(state.weather);
+
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.

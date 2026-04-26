@@ -1,6 +1,7 @@
 import type { GameDate, GameState, PartyMember, ProfessionId, Sex } from './types';
 import { DEFAULT_WAGON_MODEL, getWagon, type WagonModelId } from './content/wagons';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
+import { tickWeather } from './systems/weather';
 import { progressConditions } from './systems/conditions';
 import { adjustMorale } from './systems/morale';
 import { tickOxen } from './systems/oxen';
@@ -149,6 +150,7 @@ export type TickStep = (state: GameState, rng: Rng) => GameState;
 
 // --- composition ---
 const DAILY_STEPS: TickStep[] = [
+  tickWeather,                     // first so every downstream system reads today's weather
   progressConditions,
   (s) => applyEggLay(s), // eggs lay first so they're available to eat
   (s) => applyDailyConsumption(s), // consumption has no Rng param; wrap it

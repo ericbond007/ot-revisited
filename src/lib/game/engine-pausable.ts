@@ -3,6 +3,7 @@ import { makeRng } from './rng';
 import { upgradeState } from './upgrade';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { applyStarvation } from './systems/starvation';
+import { tickWeather } from './systems/weather';
 import { progressConditions } from './systems/conditions';
 import { tickOxen } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
@@ -38,7 +39,8 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   const normalized = upgradeState(state);
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
 
-  let s = progressConditions(normalized, rng);
+  let s = tickWeather(normalized, rng);
+  s = progressConditions(s, rng);
   // Eggs lay at dawn so today's yield is available for today's meal.
   s = applyEggLay(s);
   // Spoilage runs BEFORE consumption so the party can't eat rotten meat

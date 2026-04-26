@@ -5,6 +5,7 @@ import { TEAMSTER_RECOVERY_MULT } from '../systems/oxen';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption, applyDirtyWaterRisk } from '../systems/consumption';
 import { applyStarvation } from '../systems/starvation';
+import { tickWeather } from '../systems/weather';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale, healingMultiplier } from '../systems/morale';
 import { recoverOxenFatigue } from '../systems/oxen';
@@ -108,6 +109,7 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
   for (let i = 0; i < days; i++) {
     const rng = makeRng(`${s.seed}:action:rest:${s.day}:0`);
 
+    s = tickWeather(s, rng);
     s = progressConditions(s, rng);
     s = applyEggLay(s);
     s = applyDailyConsumption(s);

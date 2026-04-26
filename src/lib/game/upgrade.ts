@@ -41,7 +41,11 @@ export function upgradeState(state: GameState): GameState {
     state.wagon.model && getWagonOrNull(state.wagon.model) ? state.wagon.model : DEFAULT_WAGON_MODEL;
   const wagon = { ...state.wagon, model: modelId };
 
-  return { ...state, flags, party, wagon };
+  // Pre-#153 saves have no weather field. Default to 'clear' so tickWeather's
+  // stickiness math has something to lerp from on day 1.
+  const weather = state.weather ?? 'clear';
+
+  return { ...state, flags, party, wagon, weather };
 }
 
 function getWagonOrNull(id: string): ReturnType<typeof getWagon> | null {

@@ -1,6 +1,6 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
-import { inTerrain, monthIs, yearAtLeast, yearBetween } from './event-gating';
+import { and, inTerrain, monthIs, weatherIs, yearAtLeast, yearBetween } from './event-gating';
 import { consumeWagonPart, deathMoralePenalty } from '../professions/bonuses';
 import { randomChildName } from './historical-names';
 
@@ -61,6 +61,7 @@ const storm: GameEvent = {
   body: 'Dark clouds gather and the rain comes down in sheets.',
   bodyKey: 'weather_storm.body',
   weight: 4,
+  gate: weatherIs('storm'),
   choices: [
     {
       id: 'press_on',
@@ -88,7 +89,7 @@ const heat_wave: GameEvent = {
   body: 'The sun beats down mercilessly. Water stores dwindle fast.',
   bodyKey: 'weather_heat.body',
   weight: 3,
-  gate: inTerrain('prairie', 'desert'),
+  gate: and(weatherIs('heat'), inTerrain('prairie', 'desert')),
   choices: [
     {
       id: 'endure',
@@ -114,6 +115,7 @@ const fog: GameEvent = {
   body: 'Visibility drops to nothing.',
   bodyKey: 'weather_fog.body',
   weight: 2,
+  gate: weatherIs('fog'),
   choices: [
     {
       id: 'wait',
@@ -135,7 +137,7 @@ const early_snow: GameEvent = {
   body: 'A chill bite in the air and snowflakes on the pass.',
   bodyKey: 'weather_snow.body',
   weight: 3,
-  gate: monthIs(9, 10, 11),
+  gate: and(weatherIs('snow'), monthIs(9, 10, 11)),
   choices: [
     {
       id: 'push_through',

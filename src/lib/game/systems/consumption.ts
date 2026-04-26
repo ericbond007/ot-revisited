@@ -1,6 +1,7 @@
 import type { GameState, Rations } from '../types';
 import { foodItemIds } from '../content/items';
 import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
+import { weatherWaterMult } from './weather';
 
 const FOOD_PER_ADULT: Record<Rations, number> = {
   meager: 1,
@@ -38,7 +39,9 @@ export function foodConsumedToday(state: GameState): number {
 export function waterConsumedToday(state: GameState): number {
   const adults = aliveAdultCount(state);
   const children = aliveChildCount(state);
-  return adults * WATER_PER_ADULT_GAL + Math.ceil(children * WATER_PER_ADULT_GAL * CHILD_WATER_MULT);
+  const base = adults * WATER_PER_ADULT_GAL + Math.ceil(children * WATER_PER_ADULT_GAL * CHILD_WATER_MULT);
+  // Weather (#153) — heat doubles water needs, overcast/rain trims a bit.
+  return Math.ceil(base * weatherWaterMult(state.weather));
 }
 
 export function applyDailyConsumption(state: GameState): GameState {

@@ -1,4 +1,4 @@
-import type { GameState } from '../types';
+import type { GameState, Weather } from '../types';
 
 export function yearBetween(min: number, maxInclusive: number): (s: GameState) => boolean {
   return (s) => s.date.year >= min && s.date.year <= maxInclusive;
@@ -14,6 +14,10 @@ export function monthIs(...months: number[]): (s: GameState) => boolean {
 
 export function inTerrain(...terrain: GameState['location']['terrain'][]): (s: GameState) => boolean {
   return (s) => terrain.includes(s.location.terrain);
+}
+
+export function weatherIs(...weather: Weather[]): (s: GameState) => boolean {
+  return (s) => weather.includes(s.weather ?? 'clear');
 }
 
 export function milesBetween(fromMile: number, toMile: number): (s: GameState) => boolean {
