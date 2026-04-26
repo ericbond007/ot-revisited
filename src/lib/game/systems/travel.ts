@@ -1,6 +1,6 @@
 import type { GameState, Pace, Terrain } from '../types';
 import type { Rng } from '../rng';
-import { oxenSpeedFactor } from './oxen';
+import { oxenSpeedFactorFor } from './oxen';
 import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../content/landmarks';
 import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
@@ -54,7 +54,7 @@ export function milesPerDay(state: GameState): number {
 
   const base = PACE_BASE_MILES[state.pace];
   let terrain = TERRAIN_MULTIPLIER[state.location.terrain];
-  const oxen = oxenSpeedFactor(state.oxen, wagon.optimalTeam);
+  const oxen = oxenSpeedFactorFor(state);
 
   // Team-kind multiplier. Mule ratio scales both the speed bonus and
   // the terrain bonus (so a pure mule team gets full mountain grip,

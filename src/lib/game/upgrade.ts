@@ -45,7 +45,17 @@ export function upgradeState(state: GameState): GameState {
   // stickiness math has something to lerp from on day 1.
   const weather = state.weather ?? 'clear';
 
-  return { ...state, flags, party, wagon, weather };
+  // Pre-#107 saves only carried 1 yoke regardless of wagon. Bring them
+  // up to the wagon's required count so the new yoke-gating doesn't
+  // immediately strand half the team. One-time top-up: only fires
+  // when the inventory falls short of the wagon's needs.
+  const wagonModel = getWagon(modelId);
+  const haveYokes = state.inventory.yoke ?? 0;
+  const inventory = haveYokes < wagonModel.requiredYokes
+    ? { ...state.inventory, yoke: wagonModel.requiredYokes }
+    : state.inventory;
+
+  return { ...state, flags, party, wagon, weather, inventory };
 }
 
 function getWagonOrNull(id: string): ReturnType<typeof getWagon> | null {

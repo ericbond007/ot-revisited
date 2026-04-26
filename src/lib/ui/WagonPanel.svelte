@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { getWagon } from '$lib/game/content/wagons';
-  import { grazingQuality } from '$lib/game/systems/oxen';
+  import { grazingQuality, hitchedOxenCount } from '$lib/game/systems/oxen';
 
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
@@ -33,6 +33,13 @@
   const grainOnHand = $derived(state.inventory.grain ?? 0);
   const oxenCount = $derived(aliveOxen.filter((o) => o.kind !== 'mule').length);
   const showGrazingWarn = $derived(grazing < 0.6 && oxenCount > 0 && grainOnHand < oxenCount);
+
+  // Yoke deficit (#107) — each pair of oxen needs a yoke. When yokes
+  // run short the surplus oxen go unhitched and don't pull. Wagon
+  // events can chew through yokes (wolves, breakage); chip surfaces
+  // the deficit so the player can resupply.
+  const hitched = $derived(hitchedOxenCount(state));
+  const unhitched = $derived(Math.max(0, oxenCount - hitched));
 
   const spareParts = $derived({
     wheel: state.inventory.wheel ?? 0,
@@ -76,6 +83,9 @@
     {/if}
     {#if showGrazingWarn}
       <span class="ox-warn" title="Grass is thin here — carry grain to keep oxen fed">⚠ thin grass</span>
+    {/if}
+    {#if unhitched > 0}
+      <span class="ox-warn" title="Need 1 yoke per pair of oxen — buy yokes at any major post">⚠ {unhitched} unyoked</span>
     {/if}
   </div>
 

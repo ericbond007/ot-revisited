@@ -41,7 +41,9 @@ function baseState(partyProfs: ProfessionId[] = ['carpenter'], overrides: Partia
       { id: 'o1', health: 100, fatigue: 10, shod: true },
       { id: 'o2', health: 100, fatigue: 10, shod: true }
     ],
-    inventory: { flour: 200, bacon: 100 },
+    // Yoke included so the 2-ox team can hitch — #107 gates speed
+    // tests on yoke supply.
+    inventory: { flour: 200, bacon: 100, yoke: 1 },
     cash: 100,
     resources: { water: 10, waterCap: 20 },
     morale: 60,

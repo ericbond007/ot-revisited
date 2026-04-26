@@ -96,7 +96,8 @@ export function createInitialState(opts: NewGameOptions): GameState {
   // party at creation time. Non-null assertion is safe: every member from the
   // wizard is an adult with a profession set.
   const professions = party.flatMap((m) => (m.profession ? [m.profession] : []));
-  const kit = buildStarterKit(professions);
+  const wagonModelId = opts.wagonModel ?? DEFAULT_WAGON_MODEL;
+  const kit = buildStarterKit(professions, wagonModelId);
   const oxen = Array.from({ length: kit.oxen }, (_, i) => ({
     id: `ox-${i}`,
     health: 100,
@@ -104,7 +105,6 @@ export function createInitialState(opts: NewGameOptions): GameState {
     shod: true
   }));
 
-  const wagonModelId = opts.wagonModel ?? DEFAULT_WAGON_MODEL;
   const wagonModel = getWagon(wagonModelId);
 
   return {

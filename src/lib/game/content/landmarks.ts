@@ -89,7 +89,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon', 'hardtack',
       'bullets', 'bandages',
       'blanket',
-      'ox_shoes', 'rope', 'spare_plank',
+      'ox_shoes', 'yoke', 'rope', 'spare_plank',
       'tobacco', 'whiskey'
     ] },
   { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 80,  terrain: 'prairie',   kind: 'trading_post',
@@ -105,7 +105,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon', 'hardtack',
       'bullets', 'bandages', 'quinine',
       'coat', 'blanket',
-      'spare_plank', 'ox_shoes', 'rope', 'chicken', 'grain'
+      'spare_plank', 'ox_shoes', 'yoke', 'rope', 'chicken', 'grain'
     ] },
   { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 120, terrain: 'prairie',   kind: 'landmark' },
   { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 60, terrain: 'river', kind: 'river',
@@ -140,7 +140,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
       'coat', 'boots', 'blanket',
-      'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'ox_shoes',
+      'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'ox_shoes', 'yoke',
       'shovel', 'salt', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'grain',
       'tobacco', 'whiskey', 'bible',
       'moccasins', 'buffalo_robe', 'beads'
@@ -192,7 +192,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum',
       'coat', 'boots', 'blanket',
-      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'grain',
+      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'grain',
       'salt', 'tobacco', 'whiskey', 'harmonica'
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
@@ -239,7 +239,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
       'coat', 'boots', 'blanket',
-      'wheel', 'axle', 'tongue', 'canvas',
+      'wheel', 'axle', 'tongue', 'canvas', 'yoke',
       'cookware', 'rope', 'salt',
       'tobacco', 'whiskey', 'bible', 'harmonica', 'fiddle'
     ] },

@@ -197,20 +197,49 @@ export function tickOxen(state: GameState, _rng: Rng): GameState {
  * model (Light=2, Prairie=4, Heavy=6). Below `optimalTeam`, the team
  * underperforms proportionally; above it, spares give at most TEAM_FACTOR_CAP
  * bonus.
+ *
+ * `hitchedCount` (#107) caps how many of the alive animals can actually
+ * be hitched to the wagon — limited by yokes on hand. Unhitched oxen
+ * still tire and graze but don't pull. Defaults to all alive when the
+ * caller doesn't model yokes (legacy callers / tests).
  */
-export function oxenSpeedFactor(oxen: Ox[], optimalTeam: number = 2): number {
+export function oxenSpeedFactor(
+  oxen: Ox[],
+  optimalTeam: number = 2,
+  hitchedCount?: number
+): number {
   const alive = oxen.filter((o) => o.health > 0);
   if (alive.length === 0) return 0;
+  // Sort by best-fitness first so the hitch goes to the strongest oxen.
+  const ordered = [...alive].sort(
+    (a, b) => (b.health / 100) * (1 - b.fatigue / 100) - (a.health / 100) * (1 - a.fatigue / 100)
+  );
+  const cap = Math.max(0, Math.min(hitchedCount ?? alive.length, alive.length));
+  const hitched = ordered.slice(0, cap);
+  if (hitched.length === 0) return 0;
   const avgFitness =
-    alive.reduce((s, o) => s + (o.health / 100) * (1 - o.fatigue / 100), 0) / alive.length;
-  const teamFactor = Math.min(TEAM_FACTOR_CAP, alive.length / Math.max(1, optimalTeam));
+    hitched.reduce((s, o) => s + (o.health / 100) * (1 - o.fatigue / 100), 0) / hitched.length;
+  const teamFactor = Math.min(TEAM_FACTOR_CAP, hitched.length / Math.max(1, optimalTeam));
   return teamFactor * avgFitness;
 }
 
-/** Convenience: compute ox speed factor from full state (reads wagon model). */
+/** Number of alive oxen that can actually be hitched given yokes on hand
+ *  (1 yoke per pair). Excludes mules — they're harnessed differently
+ *  and aren't gated by the ox-yoke supply. */
+export function hitchedOxenCount(state: GameState): number {
+  const liveOxen = state.oxen.filter((o) => o.health > 0 && o.kind !== 'mule').length;
+  const yokes = state.inventory.yoke ?? 0;
+  return Math.min(liveOxen, yokes * 2);
+}
+
+/** Convenience: compute ox speed factor from full state (reads wagon model
+ *  and yoke supply). */
 export function oxenSpeedFactorFor(state: GameState): number {
   const wagon = getWagon(state.wagon.model);
-  return oxenSpeedFactor(state.oxen, wagon.optimalTeam);
+  // Hitched cap counts yoked oxen + all mules (mules don't share the
+  // yoke pool). Add live mules back so a mixed team still pulls.
+  const liveMules = state.oxen.filter((o) => o.health > 0 && o.kind === 'mule').length;
+  return oxenSpeedFactor(state.oxen, wagon.optimalTeam, hitchedOxenCount(state) + liveMules);
 }
 
 // Recovery applied when the party rests or camps.

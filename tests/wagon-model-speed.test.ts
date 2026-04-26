@@ -34,7 +34,9 @@ function baseGame(wagonModel: WagonModelId = 'prairie_schooner', oxen: Ox[] = fo
     wagonModel
   });
   // Start with an empty-ish inventory so load tests start at 0 weight.
-  return { ...s, oxen, inventory: {} };
+  // Keep enough yokes to hitch all the test oxen — these tests measure
+  // travel speed mechanics, not the #107 yoke-gating.
+  return { ...s, oxen, inventory: { yoke: Math.ceil(oxen.length / 2) } };
 }
 
 describe('load helpers', () => {
@@ -137,13 +139,13 @@ describe('milesPerDay with wagon models', () => {
 
   it('prairie wagon full (2500 lb) moves same speed as empty', () => {
     const empty = baseGame('prairie_schooner', fourHealthyOxen());
-    const full = { ...empty, inventory: { flour: 2500 } };
+    const full = { ...empty, inventory: { flour: 2500, yoke: 2 } };
     expect(milesPerDay(full)).toBe(milesPerDay(empty));
   });
 
   it('prairie wagon at 150% overload moves slower than at cap', () => {
-    const cap = { ...baseGame('prairie_schooner', fourHealthyOxen()), inventory: { flour: 2500 } };
-    const over = { ...baseGame('prairie_schooner', fourHealthyOxen()), inventory: { flour: 3750 } };
+    const cap = { ...baseGame('prairie_schooner', fourHealthyOxen()), inventory: { flour: 2500, yoke: 2 } };
+    const over = { ...baseGame('prairie_schooner', fourHealthyOxen()), inventory: { flour: 3750, yoke: 2 } };
     expect(milesPerDay(over)).toBeLessThan(milesPerDay(cap));
   });
 });

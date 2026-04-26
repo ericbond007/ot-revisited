@@ -27,6 +27,14 @@ export interface WagonModel {
   // How many live chickens fit in a coop strapped to this wagon.
   // Represents the physical coop footprint, not a food-weight cap.
   chickenCap: number;
+  // Yokes needed to hitch the full optimal team (one yoke per pair of
+  // oxen). Without this many yokes in inventory the surplus oxen go
+  // unhitched and don't contribute to pulling speed. (#107)
+  requiredYokes: number;
+  // Per-model bonuses added on top of BASE_KIT in buildStarterKit.
+  // Heavy wagons get extra spares to reflect higher break rates;
+  // light wagons get nothing extra. (#107)
+  starterSpares?: Record<string, number>;
 }
 
 export const WAGONS: Record<WagonModelId, WagonModel> = {
@@ -42,7 +50,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     optimalTeam: 2,
     minTeam: 1,
     baseWaterCapGal: 15,
-    chickenCap: 3
+    chickenCap: 3,
+    requiredYokes: 1
   },
   prairie_schooner: {
     id: 'prairie_schooner',
@@ -56,7 +65,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     optimalTeam: 4,
     minTeam: 2,
     baseWaterCapGal: 20,
-    chickenCap: 5
+    chickenCap: 5,
+    requiredYokes: 2
   },
   heavy: {
     id: 'heavy',
@@ -70,7 +80,12 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     optimalTeam: 6,
     minTeam: 4,
     baseWaterCapGal: 25,
-    chickenCap: 8
+    chickenCap: 8,
+    requiredYokes: 3,
+    // Heavy wagons break parts more often. Extra spares reflect that
+    // an outfit big enough to load a household into would also pack
+    // contingency parts for the haul.
+    starterSpares: { wheel: 1, spare_plank: 2 }
   }
 };
 
