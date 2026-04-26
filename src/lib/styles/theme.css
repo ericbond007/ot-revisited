@@ -61,6 +61,13 @@
   --c-river:        #4a8bc9;
   --c-river-pale:   #d6e2ec;
 
+  /* Darker shades used by the components handoff for gradients
+     (HP bars, morale ribbon stripes). Naming follows the handoff
+     spec; values mirror the brand palette. */
+  --c-sage-dark:    #6a9a4a;
+  --c-ill-dark:     #a83a2a;
+  --c-amber-dark:   #d4a850;
+
   /* ---------- BRIGHTER PARCHMENT VARIANTS ---------- */
   --c-parchment-visited: #f0e2c2;
   --c-parchment-trade:   #f3dbb8;
