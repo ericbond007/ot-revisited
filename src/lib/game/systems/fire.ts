@@ -1,11 +1,13 @@
-import type { GameState, Terrain } from '../types';
+import type { GameState, Terrain, Weather } from '../types';
 import type { Rng } from '../rng';
 import { exposureMult } from './warmth';
 
 // Nightly fire. Wood is the gate — historically, emigrants with dry
 // fuel and a flint could light a fire; the real daily problem was
-// finding the fuel in the first place. Wet-weather failures are
-// handled by dedicated storm events (future #136).
+// finding the fuel in the first place. Wet-weather days reduce the
+// passive gather (#143) — wood already stowed under the canvas stays
+// dry, so the bite comes from a thin gather pile during multi-day
+// storms eventually emptying the stockpile.
 //
 // Sequence each night:
 //   1. If firewood < FIRE_WOOD_PER_NIGHT → cold camp, no fire.
@@ -27,6 +29,28 @@ export const FIREWOOD_GATHER_MEAN: Record<Terrain, number> = {
   desert: 2,   // sparse greasewood and sage
   river: 8     // driftwood
 };
+
+/**
+ * Wet-weather multiplier on the day's gather (#143). Wood already in
+ * the wagon stays dry under canvas — only today's pickup is hit.
+ *  - rain: half normal (some sticks under cover)
+ *  - snow: 60% (dry powder, harder to spot deadfall)
+ *  - storm: 20% (sheltering more than gathering)
+ *  - everything else: clear-day baseline
+ */
+export function weatherWoodFactor(weather: Weather | undefined): number {
+  switch (weather) {
+    case 'storm': return 0.2;
+    case 'rain':  return 0.5;
+    case 'snow':  return 0.6;
+    default:      return 1.0;
+  }
+}
+
+/** Yields below this fraction of the clear-weather mean trigger a
+ *  log-line note so the player sees the wet-weather mechanic working
+ *  before the stockpile runs dry. */
+const WET_GATHER_LOG_THRESHOLD = 0.3;
 
 /** Cold-night health hit per adult when no fire in cool terrain. */
 const COLD_NIGHT_HEALTH_HIT = 3;
@@ -92,12 +116,17 @@ export function attemptFire(state: GameState, _rng: Rng): GameState {
  * ignores it in favor of a deterministic day-seeded draw.
  */
 export function gatherFirewoodOnTravel(state: GameState, _rng: Rng): GameState {
-  const mean = FIREWOOD_GATHER_MEAN[state.location.terrain];
-  if (mean <= 0) return state;
+  const baseMean = FIREWOOD_GATHER_MEAN[state.location.terrain];
+  if (baseMean <= 0) return state;
+  // Wet weather (#143) cuts the gather mean — wood already in the
+  // wagon stays dry under canvas, so the bite comes from a thin pickup
+  // pile while the storm holds.
+  const factor = weatherWoodFactor(state.weather);
+  const mean = baseMean * factor;
   // Deterministic jitter from state.seed + state.day so RNG is stable
   // across save/load and doesn't compete with the shared tick rng.
-  const lo = Math.max(0, Math.round(mean * 0.6));
-  const hi = Math.round(mean * 1.4);
+  const lo = Math.max(0, mean * 0.6);
+  const hi = mean * 1.4;
   // Tiny inline xorshift — don't pull in makeRng to avoid cycle.
   let h = 2166136261;
   const key = `${state.seed}:firewood:${state.day}`;
@@ -107,12 +136,28 @@ export function gatherFirewoodOnTravel(state: GameState, _rng: Rng): GameState {
   }
   const r = ((h >>> 0) % 1000) / 1000;
   const gained = Math.round(lo + r * (hi - lo));
-  if (gained <= 0) return state;
-  return {
-    ...state,
-    resources: {
-      ...state.resources,
-      firewood: (state.resources.firewood ?? 0) + gained
-    }
-  };
+  let next: GameState = state;
+  if (gained > 0) {
+    next = {
+      ...next,
+      resources: {
+        ...next.resources,
+        firewood: (next.resources.firewood ?? 0) + gained
+      }
+    };
+  }
+  // Surface a one-line note on noticeably-wet days so the player can
+  // see the mechanic before the stockpile bottoms out at night. Compare
+  // against the clear-day mean (baseMean), not the wet-discounted one,
+  // so the threshold tracks "how much you'd normally get here".
+  if (gained < baseMean * WET_GATHER_LOG_THRESHOLD && factor < 1.0) {
+    const woodNote = gained <= 0
+      ? 'Wet weather kept any firewood out of reach today.'
+      : `Wet weather kept the firewood pile thin today — only ${gained} lb gathered.`;
+    next = {
+      ...next,
+      eventLog: [...next.eventLog, { day: state.day, text: woodNote }]
+    };
+  }
+  return next;
 }
