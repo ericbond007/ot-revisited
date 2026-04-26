@@ -85,6 +85,11 @@
 
   // Day-change pulse: briefly flash the header when the day number changes
   let dayFlash = $state(false);
+  // Wagon rolls only when the day actually advances (player just hit
+  // Travel and the engine moved). Between turns the scene is parked
+  // so the wagon doesn't appear to keep moving while the player is
+  // idle on the trail screen. #164.
+  let wagonRolling = $state(false);
   let lastSeenDay = -1;
   $effect(() => {
     const currentDay = gs.day;
@@ -94,8 +99,10 @@
     }
     if (currentDay !== lastSeenDay) {
       dayFlash = true;
+      wagonRolling = true;
       lastSeenDay = currentDay;
       setTimeout(() => { dayFlash = false; }, 800);
+      setTimeout(() => { wagonRolling = false; }, 1500);
     }
   });
 
@@ -188,9 +195,10 @@
         <TrailMapSnippet
           currentMileage={gs.location.milesTraveled}
           onExpand={() => (showTrailMapModal = true)} />
-        <!-- Side view of the wagon traveling. Reflects current
-             terrain; eventually will host real animation. -->
-        <WagonScene state={gs} />
+        <!-- Side view of the wagon traveling. Animation is gated on
+             `wagonRolling` so the wheels + parallax only run for ~1.5s
+             after a day-tick — between turns the scene is parked. -->
+        <WagonScene state={gs} paused={!wagonRolling} />
       {/if}
 
       <div class="actions-row">

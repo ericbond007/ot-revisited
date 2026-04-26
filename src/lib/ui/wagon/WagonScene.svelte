@@ -18,7 +18,7 @@
   //
   // One requestAnimationFrame tick drives `t`. All motion derives
   // from `t` — no CSS animations, no setIntervals.
-  import { onMount } from 'svelte';
+  import { untrack } from 'svelte';
   import type { GameState } from '$lib/game/types';
   import type { WagonModelId } from '$lib/game/content/wagons';
 
@@ -59,21 +59,27 @@
   let { state: gameState, timeOfDay = 'day', paused = false }: Props = $props();
 
   // ---------- animation tick ----------
+  // When `paused`, the rAF loop is fully cancelled (#164) — no
+  // wasted frames between turns. `t` holds its last value so the
+  // wheels + parallax freeze in place rather than snapping to t=0.
+  // Resuming continues seamlessly from the frozen value.
   let t = $state(0);
-  onMount(() => {
-    const t0 = performance.now();
+  $effect(() => {
+    if (paused) return;
+    // Read `t` without subscribing — the rAF loop writes back to it
+    // every frame, so a tracked read here would re-fire the effect
+    // and tear down the loop on every tick.
+    const start = performance.now() - untrack(() => t) * 1000;
     let raf = 0;
     const loop = (now: number) => {
-      t = (now - t0) / 1000;
+      t = (now - start) / 1000;
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   });
 
-  // Holding `tEff` lets us pause the scene by snapping it to the
-  // current `t` value at the moment of pause.
-  const tEff = $derived(paused ? 0 : t);
+  const tEff = $derived(t);
   // Per the brief's animation-model section. scrollX is negated so
   // parallax tiles slide LEFT→RIGHT past the camera — that reads as
   // the wagon traveling WEST (right-to-left through the world).
