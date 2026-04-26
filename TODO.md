@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-25 (post-#107). 19 open.
+As of 2026-04-26 (post-#119). 25 open.
 
 ## New mechanics
 
@@ -26,26 +26,26 @@ As of 2026-04-25 (post-#107). 19 open.
 ## UI / UX polish
 
 | #    | |
-| ---- | ------------------------------------------------------ |
-| #156 | Wagon SVG visual revisit — proportions / damage / addons after a play-test pass (Phase 1 ports were good-enough, not pixel-final) |
-| #157 | Terrain + weather visual revisit — silhouettes, parallax pacing, cloud density, rain/snow feel (Phase 2/3 ports were good-enough, not pixel-final) |
-| #158 | Ox + mule team visual revisit — proportions, gait, yoke/collar against a public-domain working-ox reference photo (Phase 5 v1 built from the brief spec only) |
-| #159 | WagonScene strip framing pass — viewBox crop, sky/wagon/ground proportions, sun/cloud y-anchoring, height behavior on wide columns. Current values were hand-tuned on Dave's setup |
-| #147 | Success/arrival view rework — pair with #148 scoring   |
-| #160 | Trail-map visual revisit — snippet framing, modal pan/zoom feel, route-coords interpolation per landmark; Phase 1 lifted snippet's hardcoded reference state for the Ft. Kearny → Ft. Laramie leg |
-| #161 | Brand handoff revisit — extend `icon-dictionary.ts` to cover decorative emojis we left in place (post kinds, profession glyphs, town services, hunt fauna, FordModal/FordSummary water+ferry, JourneyMenu items, EndScreen tombstone+tree, decorative status `★ ✕ ⚠ ⛔ ❤ ⚡`); designer call which to standardize and which to drop. Also: BrandLockup auto-variant SSR flicker (renders mark on first paint because clientWidth=0 before hydration). |
-| #162 | Components handoff revisit — retrofit existing custom bars (InventoryPanel weight/warmth, WagonModal condition, etc.) onto the new `StatBar.svelte` primitive once the visual diff is approved post-playtest. PartyPanel avatars are placeholder compositions (head/shoulders/hat); designer pass for richer per-profession portraits + animation pause-awareness when game is paused. |
-| #163 | PartyPanel mini-stats vs top-bar duplication — the panel footer (food days · oxen · pace) repeats data already in the top-bar stat cluster. Confirmed intentional in the handoff for at-a-glance scannability, but worth re-examining post-playtest: drop the duplication and reclaim vertical space, or keep and shrink the top-bar instead. |
-| #164 | WagonScene — pause the rAF tick when not actively traveling. Right now the wheels keep spinning and the parallax keeps scrolling while stopped at a landmark, resting, or camped. Tie the animation to a "moving" predicate (atLandmark? camp open? travel in flight?) so the scene visually parks when the party is parked. |
-| #87  | Rich event visuals                                     |
-| #89  | Rich trading post / landmark display                   |
-| #133 | EventModal polish — animations + glyphs                |
-| #112 | Wagon modal visual redesign                            |
-| #132 | Party view rework (denser / fullscreen)                |
-| #86  | Expand hover tooltips across all data points           |
-| #102 | Pre-made vs custom starter kit choice                  |
-| #134 | Water keg/barrel glyph next to water amount            |
-| #145 | Camp view — eliminate laptop scroll                    |
+| ---- | ------------------------------------------------------------------------- |
+| #156 | Wagon SVG visual revisit — proportions / damage / addons (post-playtest)  |
+| #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow feel       |
+| #158 | Ox + mule team visual revisit — proportions, gait, yoke (post-playtest)   |
+| #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring        |
+| #160 | Trail-map visual revisit — snippet framing, modal pan/zoom, route coords  |
+| #161 | Brand revisit — extend icon-dictionary, BrandLockup SSR flicker           |
+| #162 | Components revisit — StatBar bar retrofit, PartyPanel avatar designer pass |
+| #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call          |
+| #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)        |
+| #147 | Success/arrival view rework — pair with #148 scoring                      |
+| #87  | Rich event visuals                                                        |
+| #89  | Rich trading post / landmark display                                      |
+| #133 | EventModal polish — animations + glyphs                                   |
+| #112 | Wagon modal visual redesign                                               |
+| #132 | Party view rework (denser / fullscreen)                                   |
+| #86  | Expand hover tooltips across all data points                              |
+| #102 | Pre-made vs custom starter kit choice                                     |
+| #134 | Water keg/barrel glyph next to water amount                               |
+| #145 | Camp view — eliminate laptop scroll                                       |
 
 ## Balance / audit
 
