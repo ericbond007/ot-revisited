@@ -1,12 +1,12 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#119). 25 open.
+As of 2026-04-26 (post-#148). 24 open.
 
 ## New mechanics
 
 | #    | |
 | ---- | ---------------------------------------------------------------- |
-| #148 | Scoring system — miles × survivors + arrival + luxury-item bonus |
+| _(none open)_ | |
 
 ## More animals
 
@@ -36,7 +36,7 @@ As of 2026-04-26 (post-#119). 25 open.
 | #162 | Components revisit — StatBar bar retrofit, PartyPanel avatar designer pass |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call          |
 | #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)        |
-| #147 | Success/arrival view rework — pair with #148 scoring                      |
+| #147 | Success/arrival view rework — richer than the current score panel         |
 | #87  | Rich event visuals                                                        |
 | #89  | Rich trading post / landmark display                                      |
 | #133 | EventModal polish — animations + glyphs                                   |
@@ -59,6 +59,7 @@ As of 2026-04-26 (post-#119). 25 open.
 
 ## Recently shipped
 
+- **#148** scoring system — miles + 200/survivor + 1000 arrival + luxury bonus on delivery. New `grandfather_clock` item (100 lb, $50, +1000 score) is the headline luxury — at Independence outfit + Ft. Laramie. Score breakdown surfaces on EndScreen.
 - **#119** travel calibration audit — 8 high-plain landmarks reclassed mountains→prairie, Laurel Hill mountains→forest, mountain mult 0.55→0.65, base pace +2 mi/day. Realistic moderate-pace journey now hits ~150-day historical median.
 - **#165** wagon clouds parallax-couple to scrollX — same axis as terrain, far/near depth jitter
 - **#13** trail content — 2 road ranches + 4 scenic landmarks

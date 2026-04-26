@@ -142,7 +142,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'ox_shoes', 'yoke',
       'shovel', 'salt', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'grain',
-      'tobacco', 'whiskey', 'bible',
+      'tobacco', 'whiskey', 'bible', 'grandfather_clock',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
   { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 12,  terrain: 'prairie',   kind: 'landmark' },

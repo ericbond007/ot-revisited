@@ -312,7 +312,7 @@
                   {@const buying = buyQty[id] ?? 0}
                   {@const selling = sellQty[id] ?? 0}
                   {@const afterOwned = owned + buying - selling}
-                  {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo'}
+                  {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo' || g.cat === 'feed'}
                   {@const canSell = buysFromEmigrants && owned > 0}
                   {@const stockLeft = inStock && here ? postRemainingQty(gameState, here, id) : 0}
                   <div class="item-row" class:out-of-stock={!inStock && owned === 0}>

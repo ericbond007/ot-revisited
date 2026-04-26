@@ -103,6 +103,11 @@ export const ITEMS: Record<string, ItemMeta> = {
   harmonica: { id: 'harmonica', name: 'Harmonica', category: 'comfort', weightLbPerUnit: 0.2, description: 'Unlocks the Entertain camp action — boosts morale.' },
   fiddle: { id: 'fiddle', name: 'Fiddle', category: 'comfort', weightLbPerUnit: 3, description: 'Larger morale bump than a harmonica. Keeps spirits up on long nights.' },
   bible: { id: 'bible', name: 'Bible', category: 'comfort', weightLbPerUnit: 2, description: '+2 passive morale while owned. Enables Preacher\'s camp service.' },
+  // The grandfather clock is a luxury haul — useless on the trail, but
+  // delivering it to Oregon City is a major prestige score bonus (#148).
+  // 100 lb of solid walnut + brass eats real wagon capacity, so taking
+  // one is a deliberate trade-off.
+  grandfather_clock: { id: 'grandfather_clock', name: 'Grandfather clock', category: 'comfort', weightLbPerUnit: 100, description: 'Useless on the trail. Delivered to Oregon City: a massive prestige score bonus.' },
 
   moccasins: { id: 'moccasins', name: 'Moccasins', category: 'native_trade', weightLbPerUnit: 1, description: 'Warmth +10 per person. Lightweight cold mitigation; pairs well with a coat.' },
   buffalo_robe: { id: 'buffalo_robe', name: 'Buffalo robe', category: 'native_trade', weightLbPerUnit: 8, description: 'Warmth +25 per person. Heavy but the warmest single item — indispensable in winter.' },

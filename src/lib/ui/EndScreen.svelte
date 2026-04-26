@@ -1,7 +1,9 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { LANDMARKS } from '$lib/game/content/landmarks';
+  import { score } from '$lib/game/systems/scoring';
   let { state }: { state: GameState } = $props();
+  const result = $derived(score(state));
 
   // The last landmark the party actually passed (or the one they were
   // parked at when they died) — surfaced as "furthest point reached".
@@ -31,6 +33,7 @@
       {#if lastLandmark}
         <span class="stat">last seen at <strong>{lastLandmark}</strong></span>
       {/if}
+      <span class="stat">score <strong>{result.total.toLocaleString()}</strong></span>
     </div>
 
     <div class="graves">
@@ -81,6 +84,25 @@
         </li>
       {/each}
     </ul>
+
+    <div class="score">
+      <div class="score-head">FINAL SCORE</div>
+      <div class="score-total">{result.total.toLocaleString()}</div>
+      <ul class="score-breakdown">
+        <li><span>Miles</span><span>{result.miles.toLocaleString()}</span></li>
+        <li><span>Survivors</span><span>+{result.survivors}</span></li>
+        <li><span>Reached Oregon City</span><span>+{result.arrival.toLocaleString()}</span></li>
+        {#if result.luxuries > 0}
+          <li class="luxury-head"><span>Luxuries delivered</span><span>+{result.luxuries.toLocaleString()}</span></li>
+          {#each result.luxuryItems as lux}
+            <li class="luxury-item">
+              <span>· {lux.name}{lux.qty > 1 ? ` × ${lux.qty}` : ''}</span>
+              <span>+{lux.points.toLocaleString()}</span>
+            </li>
+          {/each}
+        {/if}
+      </ul>
+    </div>
 
     <div class="cta-row">
       <a href="/new" class="cta primary">🆕 New Journey</a>
@@ -274,5 +296,57 @@
   .roster-fate {
     color: var(--c-tan);
     font-style: italic;
+  }
+
+  /* Score panel — celebratory accent on the arrived screen. */
+  .score {
+    margin-top: 1em;
+    padding: 0.8em 1em;
+    background: var(--c-bg-raised);
+    border: 1px solid var(--c-rust);
+    border-radius: 4px;
+  }
+  .score-head {
+    font-family: var(--f-mono);
+    font-size: 0.7em;
+    letter-spacing: 0.18em;
+    color: var(--c-wood);
+    font-weight: 700;
+    text-align: center;
+  }
+  .score-total {
+    font-family: var(--f-display);
+    font-size: 2.2em;
+    color: var(--c-rust);
+    text-align: center;
+    line-height: 1.1;
+    margin: 0.1em 0 0.4em 0;
+    letter-spacing: 0.04em;
+  }
+  .score-breakdown {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.18em;
+    font-size: 0.85em;
+    color: var(--c-tan);
+    border-top: 1px solid rgba(138, 90, 42, 0.3);
+    padding-top: 0.5em;
+  }
+  .score-breakdown li {
+    display: flex;
+    justify-content: space-between;
+  }
+  .score-breakdown li.luxury-head {
+    margin-top: 0.3em;
+    color: var(--c-tan-bright);
+    font-weight: 700;
+  }
+  .score-breakdown li.luxury-item {
+    padding-left: 0.6em;
+    color: var(--c-wood);
+    font-size: 0.92em;
   }
 </style>
