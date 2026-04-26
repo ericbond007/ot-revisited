@@ -40,26 +40,87 @@
   const next = $derived(milesToNext(marked, currentMileage));
   const nextFort = $derived(milesToNextOfKind(marked, currentMileage, 'trading_post'));
 
-  // Camera window — narrow 320×100 strip showing ~2-3 upcoming
-  // landmarks. Wagon anchored at the right-30% mark so most of the
-  // viewport shows what's ahead westward; clamping keeps the camera
-  // inside the shared 1000×380 coord-space at the trail's east/west
-  // ends. `slice` preserves horizontal fill in the strip host (mild
-  // vertical crop is fine — the trail diagonal is shallow).
-  const VB_W = 320;
-  const VB_H = 100;
-  /** Where the wagon sits inside the viewBox, expressed as 0–1 from
-   *  left edge. 0.7 = wagon at the right-30% mark, leaving the bulk
-   *  of the viewport for "what's ahead." */
-  const WAGON_ANCHOR = 0.7;
+  // Dynamic camera — fit the wagon + ~1 plotted landmark behind +
+  // ~4 plotted landmarks ahead, with padding so labels don't kiss
+  // the edges. Bounding box auto-resizes by leg density: tight when
+  // landmarks cluster (Ft. Laramie area), wide when they're far
+  // apart (Snake-River desert run). `meet` keeps everything in
+  // frame with letterboxing on whichever axis under-fills.
   const wagonXY = $derived(interpolatePosition(marked, currentMileage, LANDMARK_COORDS));
-  const camX = $derived(
-    Math.max(0, Math.min(TRAIL_VIEWBOX_W - VB_W, wagonXY[0] - WAGON_ANCHOR * VB_W))
-  );
-  const camY = $derived(
-    Math.max(0, Math.min(TRAIL_VIEWBOX_H - VB_H, wagonXY[1] - VB_H / 2))
-  );
-  const viewBox = $derived(`${camX} ${camY} ${VB_W} ${VB_H}`);
+
+  /** Plotted landmarks chosen to anchor the camera. Defaults to
+   *  1 behind + 4 ahead; pulls more from behind if we're near the end. */
+  const focusLandmarks = $derived.by(() => {
+    const plotted = marked.filter((m) => LANDMARK_COORDS[m.id]);
+    if (plotted.length === 0) return [];
+    let lastIdx = -1;
+    for (let i = 0; i < plotted.length; i++) {
+      if (plotted[i].mile <= currentMileage) lastIdx = i;
+      else break;
+    }
+    const result: typeof plotted = [];
+    if (lastIdx >= 0) result.push(plotted[lastIdx]);
+    for (let i = lastIdx + 1; i < plotted.length && result.length < 5; i++) {
+      result.push(plotted[i]);
+    }
+    // Near the end of the trail: pull more from behind to keep the
+    // camera populated.
+    for (let i = lastIdx - 1; i >= 0 && result.length < 5; i--) {
+      result.unshift(plotted[i]);
+    }
+    return result;
+  });
+
+  /** Padding (in modal coord-units) to keep labels off the edge.
+   *  `H_PAD` is generous because labels can extend horizontally
+   *  (e.g. "ROBIDOUX TRADING POST" anchored at center). */
+  const H_PAD = 40;
+  const V_PAD = 25;
+  /** Minimum aspect ratio so the strip always reads as a strip and
+   *  doesn't compress into a square when landmarks cluster tightly. */
+  const MIN_ASPECT = 2.8;
+
+  const cam = $derived.by(() => {
+    const xs = [wagonXY[0]];
+    const ys = [wagonXY[1]];
+    for (const l of focusLandmarks) {
+      const c = LANDMARK_COORDS[l.id]!;
+      xs.push(c[0]);
+      ys.push(c[1]);
+    }
+    let minX = Math.min(...xs) - H_PAD;
+    let maxX = Math.max(...xs) + H_PAD;
+    let minY = Math.min(...ys) - V_PAD;
+    let maxY = Math.max(...ys) + V_PAD;
+
+    minX = Math.max(0, minX);
+    maxX = Math.min(TRAIL_VIEWBOX_W, maxX);
+    minY = Math.max(0, minY);
+    maxY = Math.min(TRAIL_VIEWBOX_H, maxY);
+
+    let w = maxX - minX;
+    let h = maxY - minY;
+
+    // Enforce min aspect by widening (the trail is roughly horizontal,
+    // so adding x-padding is cheap; adding y-padding wastes vertical
+    // space).
+    if (w / h < MIN_ASPECT) {
+      const targetW = h * MIN_ASPECT;
+      const expand = (targetW - w) / 2;
+      minX = Math.max(0, minX - expand);
+      maxX = Math.min(TRAIL_VIEWBOX_W, maxX + expand);
+      w = maxX - minX;
+    }
+
+    return { x: minX, y: minY, w, h };
+  });
+
+  const viewBox = $derived(`${cam.x} ${cam.y} ${cam.w} ${cam.h}`);
+  /** Scale fonts/strokes inversely with zoom so text reads
+   *  consistently regardless of the camera's current span. The
+   *  constant is calibrated against the prior fixed-width tuning
+   *  (paintScale 0.4 at vbWidth 320 ≈ 0.00125 per modal-unit). */
+  const paintScale = $derived(0.00125 * cam.w);
 
   // HUD strings — single combined readout. Leg ordinal + day moved
   // to the play-page status bar; this HUD focuses on the upcoming
@@ -96,9 +157,11 @@
       <Compass />
     </div>
 
-    <!-- map SVG — camera window over the shared 1000×380 paint -->
-    <svg {viewBox} preserveAspectRatio="xMidYMid slice" class="map-svg">
-      <TrailMapPaint {landmarks} {currentMileage} wagonSize="sm" paintScale={0.4} />
+    <!-- map SVG — camera window over the shared 1000×380 paint.
+         `meet` ensures all chosen landmarks stay in frame even if
+         they extend farther vertically than the strip's aspect. -->
+    <svg {viewBox} preserveAspectRatio="xMidYMid meet" class="map-svg">
+      <TrailMapPaint {landmarks} {currentMileage} wagonSize="sm" {paintScale} />
     </svg>
 
     <!-- bottom row: HUD + legend, flex-laid so they never overlap -->
