@@ -7,6 +7,7 @@
   import WagonPicker from '$lib/ui/WagonPicker.svelte';
   import { getProfession } from '$lib/game/content/professions';
   import { getWagon, type WagonModel, type WagonModelId } from '$lib/game/content/wagons';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   let { data, form }: {
     data: {
@@ -239,19 +240,7 @@
     comfort: 'Comfort',
     native_trade: 'Trade goods'
   };
-  const CATEGORY_ICON: Record<ItemCategory, string> = {
-    food: '🍖',
-    feed: '🌾',
-    medicine: '💊',
-    weapon: '🔫',
-    ammo: '🎯',
-    tool: '🔨',
-    wagon_part: '🛠️',
-    livestock: '🐂',
-    clothing: '🧥',
-    comfort: '🎁',
-    native_trade: '🪶'
-  };
+  const CATEGORY_ICON = ICON.inventory_categories;
 
   // Default-open sections: essentials only. Everything else is collapsed
   // so the page reads quickly on first load. Clicking a header toggles.

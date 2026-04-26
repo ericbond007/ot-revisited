@@ -6,6 +6,7 @@
   import { getProfession } from '$lib/game/content/professions';
   import { getWagon } from '$lib/game/content/wagons';
   import { postRemainingQty } from '$lib/game/systems/post-stock';
+  import { ICON } from '$lib/data/icon-dictionary';
   import ItemTooltip from './ItemTooltip.svelte';
   import NumberStepper from './NumberStepper.svelte';
 
@@ -107,11 +108,7 @@
     tool: 'Tools', wagon_part: 'Wagon parts', livestock: 'Livestock',
     clothing: 'Clothing', comfort: 'Comfort', native_trade: 'Trade goods'
   };
-  const CATEGORY_ICON: Record<ItemCategory, string> = {
-    food: '🍖', feed: '🌾', medicine: '💊', weapon: '🔫', ammo: '🎯', tool: '🔨',
-    wagon_part: '🛠️', livestock: '🐂', clothing: '🧥', comfort: '🎁',
-    native_trade: '🪶'
-  };
+  const CATEGORY_ICON = ICON.inventory_categories;
 
   type Group = { cat: ItemCategory; ids: string[] };
   const groups = $derived.by<Group[]>(() => {

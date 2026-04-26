@@ -4,6 +4,7 @@
   import { foodConsumedToday } from '$lib/game/systems/consumption';
   import { warmthFor } from '$lib/game/systems/warmth';
   import { canBoilWater } from '$lib/game/systems/water-purity';
+  import { ICON, icon } from '$lib/data/icon-dictionary';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
   const CATEGORY_ORDER: ItemCategory[] = [
@@ -32,19 +33,7 @@
     comfort: 'Comfort',
     native_trade: 'Trade'
   };
-  const CATEGORY_ICON: Record<ItemCategory, string> = {
-    food: '🍖',
-    feed: '🌾',
-    medicine: '💊',
-    weapon: '🔫',
-    ammo: '🎯',
-    tool: '🔨',
-    wagon_part: '🛠️',
-    livestock: '🐂',
-    clothing: '🧥',
-    comfort: '🎁',
-    native_trade: '🪶'
-  };
+  const CATEGORY_ICON = ICON.inventory_categories;
 
   type Entry = { id: string; name: string; qty: number; weight: number };
   type Group = { cat: ItemCategory; entries: Entry[] };
@@ -133,20 +122,20 @@
   </div>
 
   <div class="stats">
-    <span class="cash">💵 ${state.cash}</span>
+    <span class="cash">{icon('stats', 'cash')} ${state.cash}</span>
     {#if knowsBoiling && dirtyGal > 0}
       <span class="water" title="Clean / dirty / capacity. Boil dirty before drinking.">
-        💧 {state.resources.water}<span class="water-dirty">+{dirtyGal}</span>/{state.resources.waterCap} gal
+        {icon('stats', 'water')} {state.resources.water}<span class="water-dirty">+{dirtyGal}</span>/{state.resources.waterCap} gal
       </span>
     {:else}
-      <span class="water">💧 {totalGal}/{state.resources.waterCap} gal</span>
+      <span class="water">{icon('stats', 'water')} {totalGal}/{state.resources.waterCap} gal</span>
     {/if}
   </div>
 
   <!-- At-a-glance food summary. Days remaining is the number the player
        actually uses to make decisions; lb is included for the math-minded. -->
   <div class="food-summary" title="{Math.round(foodLb)} lb of food / {dailyFoodLb} lb per day">
-    <span class="food-icon">🍖</span>
+    <span class="food-icon">{icon('inventory_categories', 'food')}</span>
     <span class="food-days" style="color: {foodColor};">
       <strong>{foodDays}</strong>
       <span class="food-unit">days</span>
@@ -163,7 +152,7 @@
   </div>
 
   <div class="weight-row" title={warmthTip}>
-    <span class="weight-label">🧥 Warmth</span>
+    <span class="weight-label">{icon('inventory_categories', 'clothing')} Warmth</span>
     <div class="weight-bar">
       <div class="weight-fill" style="width: {warmth}%; background: {warmthColor};"></div>
     </div>

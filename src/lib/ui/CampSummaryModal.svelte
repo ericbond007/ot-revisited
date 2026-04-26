@@ -4,6 +4,7 @@
   // to `?/ackCamp` which clears the flag.
   import type { CampSummary } from '$lib/game/actions/rest';
   import { ITEMS } from '$lib/game/content/items';
+  import { ICON, icon } from '$lib/data/icon-dictionary';
 
   let { summary, slot }: { summary: CampSummary; slot: string } = $props();
   const qp = $derived(encodeURIComponent(slot));
@@ -17,16 +18,13 @@
 
   // Item name + category-based icon pulled from the catalog. Falls back
   // to the id if an item somehow isn't catalogued.
-  const CATEGORY_ICON: Record<string, string> = {
-    food: '🍖', medicine: '💊', weapon: '🔫', ammo: '🎯', tool: '🔨',
-    wagon_part: '🛠️', livestock: '🐂', clothing: '🧥', comfort: '🎁',
-    native_trade: '🪶'
-  };
+  // Decorative '📦' fallback isn't in the icon dictionary — see #161.
   function itemDisplay(id: string) {
     const meta = ITEMS[id];
+    const cat = meta?.category as keyof typeof ICON.inventory_categories | undefined;
     return {
       name: meta?.name ?? id.replace(/_/g, ' '),
-      icon: meta ? CATEGORY_ICON[meta.category] ?? '📦' : '📦'
+      icon: cat && ICON.inventory_categories[cat] ? ICON.inventory_categories[cat] : '📦'
     };
   }
 
@@ -45,7 +43,7 @@
 <div class="modal-backdrop">
   <div class="panel modal-body">
     <div class="head">
-      <span class="head-glyph">🔥</span>
+      <span class="head-glyph">{icon('camp_scene', 'fire')}</span>
       <div class="head-titles">
         <span class="head-tag">CAMP · {summary.daysRested} day{summary.daysRested === 1 ? '' : 's'} rested</span>
         <h2>Broke camp on day {summary.startDay + summary.daysRested}</h2>
