@@ -6,12 +6,16 @@
   import { onMount } from 'svelte';
   import type { Terrain } from '$lib/game/types';
   import SkyGradient from '$lib/ui/wagon/terrain/SkyGradient.svelte';
-  import ParallaxBands from '$lib/ui/wagon/terrain/ParallaxBands.svelte';
+  import FarLayer from '$lib/ui/wagon/terrain/FarLayer.svelte';
+  import MidLayer from '$lib/ui/wagon/terrain/MidLayer.svelte';
+  import NearLayer from '$lib/ui/wagon/terrain/NearLayer.svelte';
+  import GroundBand from '$lib/ui/wagon/terrain/GroundBand.svelte';
   import { SCENE_W, SCENE_H, HORIZON_Y, GROUND_Y, type TimeOfDay } from '$lib/ui/wagon/terrain';
   import SkyAccent, { type SkyAccentKind } from '$lib/ui/wagon/weather/SkyAccent.svelte';
   import CloudLayer from '$lib/ui/wagon/weather/CloudLayer.svelte';
   import PrecipOverlays from '$lib/ui/wagon/weather/PrecipOverlays.svelte';
   import StormVignette from '$lib/ui/wagon/weather/StormVignette.svelte';
+  import LandmarkLayer from '$lib/ui/wagon/landmarks/LandmarkLayer.svelte';
 
   const terrains: Terrain[] = ['prairie', 'mountains', 'forest', 'desert', 'river'];
   const times: TimeOfDay[] = ['day', 'dusk', 'night'];
@@ -73,10 +77,12 @@
             <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill={`url(#sky-${terrain})`} />
             <SkyAccent kind={weatherKind} x={SCENE_W * 0.85} y={SCENE_H * 0.15} {t} />
             <CloudLayer kind={weatherKind} {t} w={SCENE_W} skyH={HORIZON_Y} />
-            <ParallaxBands {terrain} {scrollX}
-                           horizonY={HORIZON_Y} groundY={GROUND_Y}
-                           w={SCENE_W} h={SCENE_H}
-                           idPrefix="dev-{terrain}" />
+            <FarLayer {terrain} {scrollX} horizonY={HORIZON_Y} />
+            <LandmarkLayer {terrain} {scrollX} horizonY={HORIZON_Y} />
+            <MidLayer {terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
+            <GroundBand {terrain} groundY={GROUND_Y} h={SCENE_H - GROUND_Y} w={SCENE_W}
+                        idPrefix="dev-{terrain}" />
+            <NearLayer {terrain} {scrollX} groundY={GROUND_Y} />
             <PrecipOverlays {t} w={SCENE_W} h={SCENE_H} groundY={GROUND_Y}
                             showRain={weatherKind === 'rainy'}
                             showSnow={weatherKind === 'snowy'}

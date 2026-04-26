@@ -28,6 +28,7 @@ As of 2026-04-25 (post-#107). 19 open.
 | #    | |
 | ---- | ------------------------------------------------------ |
 | #156 | Wagon SVG visual revisit — proportions / damage / addons after a play-test pass (Phase 1 ports were good-enough, not pixel-final) |
+| #157 | Terrain + weather visual revisit — silhouettes, parallax pacing, cloud density, rain/snow feel (Phase 2/3 ports were good-enough, not pixel-final) |
 | #147 | Success/arrival view rework — pair with #148 scoring   |
 | #90  | Hand-drawn map rework                                  |
 | #87  | Rich event visuals                                     |
