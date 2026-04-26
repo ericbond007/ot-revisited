@@ -1,41 +1,198 @@
-:root {
-  --c-bg: #1a0f08;
-  --c-bg-raised: #2a1a10;
-  --c-panel: #3d2817;
-  --c-border: #5a3a1a;
-  --c-tan: #e8c89a;
-  --c-tan-bright: #f5e6c8;
-  --c-rust: #c96a2a;
-  --c-rust-dark: #8a3a1a;
-  --c-wood: #8a5a2a;
-  --c-ink: #3a1a08;
-  --c-sage: #6a7a4a;
-  --c-parchment: #e8d9b8;
+/* ==========================================================================
+   OT.IO — Colors & Type
+   Aesthetic: dusty 32-bit western — burnt-orange rust, deep wood, parchment.
+   Expanded with the design-system superset for the travel-scene work
+   (see docs/handoff/travel-scene/colors_and_type.css for the canonical brief).
+   ========================================================================== */
 
-  --f-mono: 'Courier New', ui-monospace, monospace;
-  --f-body: 'Georgia', 'Times New Roman', serif;
+/* ---------- SELF-HOSTED FONTS (woff2, latin subset) ----------
+ * Files live in /static/fonts/ and are served as /fonts/*.woff2.
+ * Latin-only — the game ships in English; non-latin subsets would
+ * just bloat the bundle. */
+
+@font-face {
+  font-family: 'IM Fell English';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/im-fell-english-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Special Elite';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/special-elite-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Rye';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/rye-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/vt323-latin.woff2') format('woff2');
+}
+
+:root {
+  /* ---------- BASE PALETTE ---------- */
+  --c-bg:           #1a0f08;
+  --c-bg-raised:    #2a1a10;
+  --c-panel:        #3d2817;
+  --c-border:       #5a3a1a;
+  --c-wood:         #8a5a2a;
+  --c-rust-dark:    #8a3a1a;
+  --c-rust:         #c96a2a;
+  --c-tan:          #e8c89a;
+  --c-tan-bright:   #f5e6c8;
+  --c-ink:          #3a1a08;
+  --c-sage:         #6a7a4a;
+  --c-parchment:    #e8d9b8;
+
+  /* ---------- SEMANTIC STATUS ---------- */
+  --c-good:         #8bb96a;
+  --c-warn:         #f5c96a;
+  --c-danger:       #e85a4a;
+  --c-river:        #4a8bc9;
+  --c-river-pale:   #d6e2ec;
+
+  /* ---------- BRIGHTER PARCHMENT VARIANTS ---------- */
+  --c-parchment-visited: #f0e2c2;
+  --c-parchment-trade:   #f3dbb8;
+  --c-parchment-end:     #f5e0a8;
+
+  /* ---------- TYPOGRAPHY FAMILIES ---------- */
+  --f-mono:    'Special Elite', 'Courier Prime', 'Courier New', ui-monospace, monospace;
+  --f-body:    'IM Fell English', 'Georgia', 'Times New Roman', serif;
+  --f-display: 'Rye', 'IM Fell English SC', 'Georgia', serif;
+  --f-pixel:   'VT323', 'Courier New', monospace;
+
+  /* ---------- TYPE SCALE ---------- */
+  --fs-xs:   12px;
+  --fs-sm:   13px;
+  --fs-md:   15px;
+  --fs-lg:   18px;
+  --fs-xl:   22px;
+  --fs-2xl:  30px;
+  --fs-3xl:  44px;
+  --fs-4xl:  64px;
+
+  --lh-tight: 1.18;
+  --lh-body:  1.55;
+
+  --ls-loose:  0.18em;
+  --ls-medium: 0.10em;
+  --ls-tight:  0.04em;
+
+  /* ---------- SPACING (4px base) ---------- */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-8:  32px;
+  --s-10: 40px;
+
+  /* ---------- RADII (small, period-correct) ---------- */
+  --r-xs:   2px;
+  --r-sm:   3px;
+  --r-md:   4px;
+  --r-pill: 999px;
+
+  /* ---------- BORDERS ---------- */
+  --bw-1: 1px;
+  --bw-2: 2px;
+  --bw-3: 3px;
+
+  /* ---------- SHADOWS ---------- */
+  --sh-dot:        0 1px 3px rgba(0, 0, 0, 0.25);
+  --sh-card:       0 4px 14px rgba(0, 0, 0, 0.45);
+  --sh-modal:      0 12px 40px rgba(0, 0, 0, 0.7);
+  --sh-glow-rust:  0 0 14px rgba(201, 106, 42, 0.45);
+  --sh-glow-fire:  0 0 12px rgba(255, 180, 60, 0.55);
+  --sh-inset-lit:  inset 0 0 0 1px rgba(255, 180, 60, 0.5);
+
+  /* ---------- TIMINGS ---------- */
+  --t-fast:    0.12s;
+  --t-base:    0.20s;
+  --t-medium:  0.40s;
+  --t-wagon:   2.50s;
+
+  --e-default: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --e-pop:     cubic-bezier(0.2, 0.9, 0.3, 1.1);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: var(--c-bg); color: var(--c-tan); font-family: var(--f-mono); min-height: 100vh; }
 
-h1, h2, h3, h4 { color: var(--c-tan-bright); letter-spacing: 0.05em; margin: 0 0 0.5em 0; }
-h1 { font-size: 2em; }
-h2 { font-size: 1.5em; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--c-bg);
+  color: var(--c-tan);
+  font-family: var(--f-mono);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  color: var(--c-tan-bright);
+  letter-spacing: var(--ls-medium);
+  margin: 0 0 0.5em 0;
+  font-family: var(--f-display);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+}
+h1 { font-size: var(--fs-3xl); }
+h2 { font-size: var(--fs-2xl); }
+h3 { font-size: var(--fs-xl); }
+h4 { font-size: var(--fs-md); letter-spacing: var(--ls-loose); color: var(--c-rust); }
+
+p { line-height: var(--lh-body); margin: 0 0 1em 0; }
+
+code, pre, kbd { font-family: var(--f-mono); }
 
 a { color: var(--c-rust); text-decoration: none; }
 a:hover { color: var(--c-tan-bright); text-decoration: underline; }
+
+/* Headline brand mark (".brand") used on landing */
+.brand {
+  font-family: var(--f-display);
+  font-size: var(--fs-4xl);
+  letter-spacing: 0.08em;
+  color: var(--c-rust);
+  font-weight: 900;
+  margin: 0;
+}
+.brand .dot { color: var(--c-tan-bright); }
+
+/* Small uppercase label — "DAY", "PARTY", "AHEAD" — pervasive */
+.eyebrow {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-loose);
+  font-weight: 700;
+  color: var(--c-wood);
+  text-transform: uppercase;
+}
 
 button {
   font-family: inherit;
   background: var(--c-rust-dark);
   color: var(--c-tan-bright);
-  border: 2px solid var(--c-ink);
+  border: var(--bw-2) solid var(--c-ink);
   padding: 0.5em 1em;
   cursor: pointer;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-medium);
   font-weight: 700;
   text-transform: uppercase;
+  border-radius: var(--r-sm);
+  transition: background var(--t-fast), box-shadow var(--t-fast);
 }
 button:hover:not(:disabled) { background: var(--c-rust); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -44,9 +201,9 @@ input, select, textarea {
   font-family: inherit;
   background: var(--c-bg-raised);
   color: var(--c-tan);
-  border: 2px solid var(--c-wood);
+  border: var(--bw-2) solid var(--c-wood);
   padding: 0.4em 0.6em;
-  border-radius: 3px;
+  border-radius: var(--r-sm);
 }
 
 input:focus, select:focus, textarea:focus {
@@ -71,7 +228,7 @@ select {
   background-size: 6px 6px, 6px 6px;
   background-repeat: no-repeat;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: var(--ls-tight);
 }
 select:hover:not(:disabled) {
   border-color: var(--c-rust);
@@ -85,26 +242,31 @@ select option {
   color: var(--c-tan);
 }
 
-.panel { background: var(--c-panel); border: 2px solid var(--c-wood); padding: 1em; border-radius: 3px; }
-.container { max-width: 900px; margin: 0 auto; padding: 2em 1em; }
+.panel {
+  background: var(--c-panel);
+  border: var(--bw-2) solid var(--c-wood);
+  padding: var(--s-4);
+  border-radius: var(--r-sm);
+}
+.container { max-width: 900px; margin: 0 auto; padding: var(--s-8) var(--s-4); }
 
 /* Responsive — Z Fold 4 unfolded is ~884px; breakpoint at 900px */
 @media (max-width: 900px) {
-  .container { padding: 1em 0.8em; }
-  h1 { font-size: 1.5em; }
-  h2 { font-size: 1.2em; }
+  .container { padding: var(--s-4) var(--s-3); }
+  h1 { font-size: var(--fs-2xl); }
+  h2 { font-size: var(--fs-xl); }
   button { padding: 0.6em 1em; font-size: 0.95em; }
 }
 
 @media (max-width: 640px) {
-  .container { padding: 0.8em 0.5em; }
+  .container { padding: var(--s-3) var(--s-2); }
   button { min-height: 44px; }
 }
 
 /* Visibility helpers */
 .desktop-only { display: initial; }
-.mobile-only { display: none; }
+.mobile-only  { display: none; }
 @media (max-width: 900px) {
   .desktop-only { display: none; }
-  .mobile-only { display: initial; }
+  .mobile-only  { display: initial; }
 }

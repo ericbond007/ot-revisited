@@ -5,7 +5,7 @@
   import InventoryPanel from '$lib/ui/InventoryPanel.svelte';
   import EventLog from '$lib/ui/EventLog.svelte';
   import ActionBar from '$lib/ui/ActionBar.svelte';
-  import WagonScene from '$lib/ui/WagonScene.svelte';
+  import WagonScene from '$lib/ui/wagon/WagonScene.svelte';
   import TownStage from '$lib/ui/TownStage.svelte';
   import EndScreen from '$lib/ui/EndScreen.svelte';
   import EventModal from '$lib/ui/EventModal.svelte';

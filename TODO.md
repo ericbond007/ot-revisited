@@ -27,6 +27,10 @@ As of 2026-04-25 (post-#107). 19 open.
 
 | #    | |
 | ---- | ------------------------------------------------------ |
+| #156 | Wagon SVG visual revisit — proportions / damage / addons after a play-test pass (Phase 1 ports were good-enough, not pixel-final) |
+| #157 | Terrain + weather visual revisit — silhouettes, parallax pacing, cloud density, rain/snow feel (Phase 2/3 ports were good-enough, not pixel-final) |
+| #158 | Ox + mule team visual revisit — proportions, gait, yoke/collar against a public-domain working-ox reference photo (Phase 5 v1 built from the brief spec only) |
+| #159 | WagonScene strip framing pass — viewBox crop, sky/wagon/ground proportions, sun/cloud y-anchoring, height behavior on wide columns. Current values were hand-tuned on Dave's setup |
 | #147 | Success/arrival view rework — pair with #148 scoring   |
 | #90  | Hand-drawn map rework                                  |
 | #87  | Rich event visuals                                     |
