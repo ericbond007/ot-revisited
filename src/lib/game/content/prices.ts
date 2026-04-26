@@ -73,6 +73,7 @@ export const PRICES: Record<string, PriceEntry> = {
   harmonica: { buy: 3.00, sell: 1.50 },
   fiddle:    { buy: 12.00, sell: 6.00 },
   bible:     { buy: 5.00, sell: 2.50 },
+  grandfather_clock: { buy: 50.00, sell: 25.00 },
 
   // Native trade goods
   moccasins:    { buy: 3.00, sell: 1.50 },

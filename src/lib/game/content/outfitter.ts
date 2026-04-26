@@ -20,5 +20,5 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   // Medicine
   'quinine', 'laudanum', 'calomel', 'bandages', 'herbal_poultice', 'patent_medicine',
   // Comfort
-  'tobacco', 'whiskey', 'harmonica', 'fiddle', 'bible'
+  'tobacco', 'whiskey', 'harmonica', 'fiddle', 'bible', 'grandfather_clock'
 ];
