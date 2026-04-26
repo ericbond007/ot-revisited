@@ -5,6 +5,7 @@
   // jerky) is a future extension tied to the camp curing action (#124);
   // for now this modal is a read + acknowledge step.
   import type { HuntHaul } from '$lib/game/actions/hunt';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   // No backdrop-close on this modal — the server-side flag (_huntHaul)
   // persists until the Continue button's form submission clears it, so
@@ -24,10 +25,10 @@
   // Target-specific flavor. Drives the header glyph + animal name so the
   // modal reads right for each kill type.
   const TARGET_FLAVOR: Record<HuntHaul['target'], { glyph: string; label: string }> = {
-    small:  { glyph: '🐇', label: 'Small game' },
-    medium: { glyph: '🦌', label: 'Medium game' },
-    big:    { glyph: '🦬', label: 'Big game' },
-    gather: { glyph: '🌿', label: 'Foraging' }
+    small:  { glyph: ICON.fauna.small,  label: 'Small game' },
+    medium: { glyph: ICON.fauna.medium, label: 'Medium game' },
+    big:    { glyph: ICON.fauna.big,    label: 'Big game' },
+    gather: { glyph: ICON.fauna.forage, label: 'Foraging' }
   };
   const flavor = $derived(TARGET_FLAVOR[haul.target]);
 

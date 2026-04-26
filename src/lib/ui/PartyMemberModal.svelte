@@ -3,7 +3,7 @@
   import { getProfession } from '$lib/game/content/professions';
   import { getCondition } from '$lib/game/content/conditions';
   import { ITEMS } from '$lib/game/content/items';
-  import { icon } from '$lib/data/icon-dictionary';
+  import { icon, ICON } from '$lib/data/icon-dictionary';
 
   let { member, onclose }: { member: PartyMember; onclose: () => void } = $props();
 
@@ -46,7 +46,7 @@
       <div class="head-text">
         <div class="name-row">
           <h2 class="modal-title">{member.name}</h2>
-          {#if member.isLeader}<span class="leader" title="Party leader">★ LEADER</span>{/if}
+          {#if member.isLeader}<span class="leader" title="Party leader">{ICON.status.leader} LEADER</span>{/if}
         </div>
         <div class="role">{roleLine}</div>
         {#if prof}

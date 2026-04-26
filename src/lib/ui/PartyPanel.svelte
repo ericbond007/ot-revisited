@@ -10,6 +10,7 @@
   import type { GameState, PartyMember } from '$lib/game/types';
   import { ITEMS } from '$lib/game/content/items';
   import { foodConsumedToday } from '$lib/game/systems/consumption';
+  import { ICON } from '$lib/data/icon-dictionary';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
   // Derived headline counts.
@@ -193,7 +194,7 @@
             <div class="death-line">✝ day {m.deathDay ?? '?'} · {m.deathCause ?? 'unknown'}</div>
           {:else}
             <strong class="name">{m.name}</strong>
-            {#if m.isLeader}<span class="leader" title="Party leader">★</span>{/if}
+            {#if m.isLeader}<span class="leader" title="Party leader">{ICON.status.leader}</span>{/if}
             <span class="prof">{m.profession ?? (m.kind === 'child' ? `child age ${m.age}` : 'adult')}</span>
             {#if illLabel(m)}<span class="ill-tag">{illLabel(m)}</span>{/if}
             <div class="hp-row">
@@ -235,9 +236,9 @@
     </div>
     <span class="morale-readout">
       <span class="morale-num">{state.morale}</span>
-      {#if moraleTrend === 'down'}<span class="trend trend-down" title="trending down">▼</span>
-      {:else if moraleTrend === 'up'}<span class="trend trend-up" title="trending up">▲</span>
-      {:else}<span class="trend trend-flat" title="steady">▬</span>
+      {#if moraleTrend === 'down'}<span class="trend trend-down" title="trending down">{ICON.trend.down}</span>
+      {:else if moraleTrend === 'up'}<span class="trend trend-up" title="trending up">{ICON.trend.up}</span>
+      {:else}<span class="trend trend-flat" title="steady">{ICON.trend.flat}</span>
       {/if}
     </span>
   </div>

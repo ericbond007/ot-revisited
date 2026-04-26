@@ -10,6 +10,7 @@
 // tokens here in one place.
 
 import type { PostKind } from '$lib/game/content/landmarks';
+import { ICON } from './icon-dictionary';
 
 export interface PostTheme {
   accent: string;
@@ -17,10 +18,12 @@ export interface PostTheme {
   tag: string;
 }
 
+// Glyphs come from ICON.post_kinds (#161); accent + tag are post-theme
+// specific.
 export const POST_THEME: Record<PostKind, PostTheme> = {
-  us_army:      { accent: '#4a6a8c', glyph: '🎖️', tag: 'U.S. Army post' },
-  hbc:          { accent: '#1f5a3f', glyph: '🦫', tag: "Hudson's Bay Company" },
-  mountain:     { accent: '#8a5a2a', glyph: '⛰️', tag: 'Mountain outpost' },
-  frontier:     { accent: '#b86a42', glyph: '🏪', tag: 'Frontier post' },
-  end_of_trail: { accent: '#c9a05a', glyph: '✨', tag: 'End of the trail' }
+  us_army:      { accent: '#4a6a8c', glyph: ICON.post_kinds.us_army,      tag: 'U.S. Army post' },
+  hbc:          { accent: '#1f5a3f', glyph: ICON.post_kinds.hbc,          tag: "Hudson's Bay Company" },
+  mountain:     { accent: '#8a5a2a', glyph: ICON.post_kinds.mountain,     tag: 'Mountain outpost' },
+  frontier:     { accent: '#b86a42', glyph: ICON.post_kinds.frontier,     tag: 'Frontier post' },
+  end_of_trail: { accent: '#c9a05a', glyph: ICON.post_kinds.end_of_trail, tag: 'End of the trail' }
 };

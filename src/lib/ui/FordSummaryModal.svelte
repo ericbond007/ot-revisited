@@ -4,6 +4,7 @@
   // flag via the `?/ackFord` server action.
   import type { FordResult } from '$lib/game/actions/ford';
   import { ITEMS } from '$lib/game/content/items';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   let { result, slot }: { result: FordResult; slot: string } = $props();
   const qp = $derived(encodeURIComponent(slot));
@@ -15,10 +16,10 @@
     wait: 'Waited'
   };
   const METHOD_GLYPH: Record<FordResult['method'], string> = {
-    ford: '🏞️',
-    caulk: '🛶',
-    ferry: '⛴️',
-    wait: '⏳'
+    ford:  ICON.ford_methods.river,
+    caulk: ICON.ford_methods.caulk,
+    ferry: ICON.ford_methods.ferry,
+    wait:  ICON.ford_methods.wait
   };
 
   // Round to integer for display — the underlying condition can carry

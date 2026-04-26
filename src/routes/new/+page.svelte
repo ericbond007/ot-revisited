@@ -2,6 +2,7 @@
   import { MALE_NAMES, FEMALE_NAMES } from '$lib/game/content/historical-names';
   import NumberStepper from '$lib/ui/NumberStepper.svelte';
   import ProfessionPicker from '$lib/ui/ProfessionPicker.svelte';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   let { data, form } = $props();
 
@@ -142,9 +143,9 @@
               >♀</button>
             </div>
             {#if i === 0}
-              <span class="required-tag" title="The party leader cannot be removed">★ LEADER</span>
+              <span class="required-tag" title="The party leader cannot be removed">{ICON.status.leader} LEADER</span>
             {:else}
-              <button type="button" onclick={() => removeMember(i)} class="remove-btn" title="Remove companion">✕</button>
+              <button type="button" onclick={() => removeMember(i)} class="remove-btn" title="Remove companion">{ICON.status.close}</button>
             {/if}
           </div>
           <ProfessionPicker

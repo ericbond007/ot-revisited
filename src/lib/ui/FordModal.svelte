@@ -3,6 +3,7 @@
   import { getLandmark } from '$lib/game/content/landmarks';
   import CardRadio from './CardRadio.svelte';
   import NumberStepper from './NumberStepper.svelte';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
@@ -23,25 +24,25 @@
       value: 'ford' as const,
       label: 'Ford',
       sublabel: 'Walk the oxen through — fast and free but risks lost supplies',
-      icon: '🥾'
+      icon: ICON.ford_methods.ford
     },
     {
       value: 'caulk' as const,
       label: 'Caulk & Float',
       sublabel: '2 days — seal the wagon and float it across',
-      icon: '🛶'
+      icon: ICON.ford_methods.caulk
     },
     {
       value: 'ferry' as const,
       label: 'Hire Ferry',
       sublabel: `$${river.ferryPrice} — the safe (if expensive) way`,
-      icon: '⛵'
+      icon: ICON.ford_methods.ferry
     },
     {
       value: 'wait' as const,
       label: 'Wait it Out',
       sublabel: 'Camp nearby, hope the river drops',
-      icon: '⏳'
+      icon: ICON.ford_methods.wait
     }
   ]);
 </script>

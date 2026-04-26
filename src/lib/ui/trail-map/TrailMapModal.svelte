@@ -13,6 +13,7 @@
   import ParchmentBg from './trail-map-svg/ParchmentBg.svelte';
   import LandmarkPin from './trail-map-svg/LandmarkPin.svelte';
   import WagonGlyph from './trail-map-svg/WagonGlyph.svelte';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   interface Props {
     landmarks?: readonly Landmark[];
@@ -153,7 +154,7 @@
   <div class="modal-shell">
     <div class="modal-titlebar">
       <span class="title">◆ THE OREGON TRAIL · INDEPENDENCE MO → OREGON CITY OR · 2,170 mi</span>
-      <button class="modal-close" onclick={() => onClose?.()}>✕ Close</button>
+      <button class="modal-close" onclick={() => onClose?.()}>{ICON.status.close} Close</button>
     </div>
 
     <div class="modal-body">

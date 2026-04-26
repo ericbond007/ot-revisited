@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ProfessionId } from '$lib/game/types';
   import Tooltip from './Tooltip.svelte';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   interface Profession {
     id: string;
@@ -19,21 +20,7 @@
     professions: Profession[];
   } = $props();
 
-  const ICONS: Record<string, string> = {
-    banker: '💰',
-    farmer: '🌾',
-    carpenter: '🔨',
-    doctor: '⚕️',
-    blacksmith: '⚒️',
-    hunter: '🏹',
-    teamster: '🐂',
-    merchant: '💼',
-    whore: '💋',
-    scout: '🧭',
-    preacher: '✝️',
-    indian_trader: '🪶',
-    gunsmith: '🔫'
-  };
+  const ICONS = ICON.professions;
 </script>
 
 <!-- Hidden native input keeps FormData submission working without changes to the server action -->
@@ -54,7 +41,7 @@
           class:selected
           onclick={() => (value = p.id as ProfessionId)}
         >
-          <span class="icon">{ICONS[p.id] ?? '•'}</span>
+          <span class="icon">{ICONS[p.id as keyof typeof ICONS] ?? '•'}</span>
           <span class="label">
             {p.name}
             {#if p.femaleOnly}<span class="fem">♀</span>{/if}

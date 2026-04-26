@@ -10,6 +10,7 @@
     GUIDE_DOLLARS_PER_DAY
   } from '$lib/game/systems/town-services';
   import { POST_THEME } from '$lib/data/post-theme';
+  import { ICON } from '$lib/data/icon-dictionary';
 
   // Fullscreen Town view. Replaces the VisitModal — same service-card
   // grid rendered inline in the left-column stage slot, alongside the
@@ -89,7 +90,7 @@
   <div class="services">
     {#if landmark.kind === 'trading_post'}
       <button type="button" class="svc-card primary" onclick={ontrade}>
-        <span class="svc-icon">🛍️</span>
+        <span class="svc-icon">{ICON.town_services.store}</span>
         <div class="svc-body">
           <span class="svc-label">Trade at the post</span>
           <span class="svc-sub">Buy and sell supplies</span>
@@ -100,7 +101,7 @@
     {#if services.includes('gossip')}
       <form method="POST" action="?/townGossip&slot={qp}" use:enhance={() => () => {}} class="svc-form">
         <button type="submit" class="svc-card" disabled={gameState.cash < 1}>
-          <span class="svc-icon">📢</span>
+          <span class="svc-icon">{ICON.town_services.gossip}</span>
           <div class="svc-body">
             <span class="svc-label">Ask around for news</span>
             <span class="svc-sub">$1 (round of drinks) · pulls a fresh rumor</span>
@@ -113,7 +114,7 @@
       <form method="POST" action="?/townRepair&slot={qp}" use:enhance={() => () => {}} class="svc-form">
         <input type="hidden" name="dollars" value={repairCost} />
         <div class="svc-card" class:disabled={!wagonNeedsRepair || gameState.cash < repairCost}>
-          <span class="svc-icon">🔨</span>
+          <span class="svc-icon">{ICON.town_services.blacksmith}</span>
           <div class="svc-body">
             <span class="svc-label">Hire the blacksmith</span>
             <span class="svc-sub">+{repairPoints} condition for ${repairCost}</span>
@@ -132,7 +133,7 @@
       <form method="POST" action="?/townInn&slot={qp}" use:enhance={() => () => {}} class="svc-form">
         <input type="hidden" name="nights" value={nights} />
         <div class="svc-card" class:disabled={gameState.cash < innCost || aliveCount === 0}>
-          <span class="svc-icon">🛏️</span>
+          <span class="svc-icon">{ICON.town_services.inn}</span>
           <div class="svc-body">
             <span class="svc-label">Stay at the inn</span>
             <span class="svc-sub">{nights} {nights === 1 ? 'night' : 'nights'} × {aliveCount} × ${innRate} = ${innCost} · +{nights * 5} morale, +{nights * 5} HP/member</span>
@@ -149,7 +150,7 @@
       <form method="POST" action="?/townGuide&slot={qp}" use:enhance={() => () => {}} class="svc-form">
         <input type="hidden" name="dollars" value={guideCost} />
         <div class="svc-card" class:disabled={gameState.cash < guideCost}>
-          <span class="svc-icon">🧭</span>
+          <span class="svc-icon">{ICON.town_services.guide}</span>
           <div class="svc-body">
             <span class="svc-label">Hire a guide</span>
             <span class="svc-sub">{guideDays} days · ${guideCost} · +15% travel speed while along</span>
@@ -166,7 +167,7 @@
       <form method="POST" action="?/townGamble&slot={qp}" use:enhance={() => () => {}} class="svc-form">
         <input type="hidden" name="stake" value={stake} />
         <div class="svc-card" class:disabled={gameState.cash < stake}>
-          <span class="svc-icon">🎲</span>
+          <span class="svc-icon">{ICON.town_services.gambling}</span>
           <div class="svc-body">
             <span class="svc-label">Try your luck at cards</span>
             <span class="svc-sub">${stake} stake · ~45% double, 55% lose</span>
@@ -182,7 +183,7 @@
     {#if services.includes('brothel')}
       <form method="POST" action="?/townBrothel&slot={qp}" use:enhance={() => () => {}} class="svc-form">
         <button type="submit" class="svc-card" disabled={adultMales === 0 || gameState.cash < brothelCost}>
-          <span class="svc-icon">💋</span>
+          <span class="svc-icon">{ICON.town_services.brothel}</span>
           <div class="svc-body">
             <span class="svc-label">Visit the cribs out back</span>
             <span class="svc-sub">${brothelCost} ({adultMales} men × ${BROTHEL_DOLLARS_PER_MAN}) · party morale up · 8% pox risk per man</span>

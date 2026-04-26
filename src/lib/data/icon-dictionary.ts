@@ -1,13 +1,16 @@
-// Canonical concept → glyph dictionary, ported verbatim from
-// docs/handoff/brand/src/icon-dictionary.json. The brand handoff
-// treats this as a contract: when a concept appears in UI code,
-// use the listed glyph (via the typed `icon()` helper below) so
-// drift between files becomes impossible.
+// Canonical concept → glyph dictionary. Originally ported verbatim
+// from docs/handoff/brand/src/icon-dictionary.json. The brand handoff
+// treats this as a contract: when a concept appears in UI code, use
+// the listed glyph (via the typed `icon()` helper below) so drift
+// between files becomes impossible.
 //
-// Adding new entries is a designer decision — don't extend this
-// table unilaterally. If a UI surface needs a glyph that isn't
-// listed, leave the literal in place and flag it for the brand
-// revisit (TODO #161).
+// Categories below the original handoff bundle (post_kinds, professions,
+// town_services, fauna, ford_methods, journey_menu, end_screen, status,
+// trend) were added under #161 to cover decorative emojis the original
+// handoff didn't enumerate but which the codebase already used as
+// literals. They name what was already shipped — not new design — so
+// adding them isn't a design decision, just a naming one. Genuinely
+// new concepts still need to clear the brand revisit.
 
 export const ICON = {
   actions: {
@@ -79,6 +82,90 @@ export const ICON = {
     fire:    '🔥',
     shelter: '🛖',
     ox:      '🐂'
+  },
+  // Trading-post flavor — paired with POST_THEME accent colors so the
+  // header glyph and the panel tint visually agree.
+  post_kinds: {
+    us_army:      '🎖️',
+    hbc:          '🦫',
+    mountain:     '⛰️',
+    frontier:     '🏪',
+    end_of_trail: '✨'
+  },
+  // Profession glyphs — used by ProfessionPicker, party-detail badges,
+  // outfit page, etc.
+  professions: {
+    banker:        '💰',
+    farmer:        '🌾',
+    carpenter:     '🔨',
+    doctor:        '⚕️',
+    blacksmith:    '⚒️',
+    hunter:        '🏹',
+    teamster:      '🐂',
+    merchant:      '💼',
+    whore:         '💋',
+    scout:         '🧭',
+    preacher:      '✝️',
+    indian_trader: '🪶',
+    gunsmith:      '🔫'
+  },
+  // Service icons in TownStage's service-card grid (round 1 + round 2).
+  town_services: {
+    blacksmith: '🔨',
+    inn:        '🛏️',
+    gambling:   '🎲',
+    brothel:    '💋',
+    gossip:     '📢',
+    guide:      '🧭',
+    store:      '🛍️'
+  },
+  // Hunt-modal target list + post-hunt resolution flavor.
+  fauna: {
+    small:  '🐇',  // rabbit / squirrel
+    medium: '🦌',  // deer / antelope
+    big:    '🦬',  // bison / elk
+    forage: '🌿'   // berries / greens
+  },
+  // FordModal method picker. `river` is the post-cross flavor glyph
+  // used by FordSummaryModal; `wait` is the hourglass for the
+  // "camp until the water drops" branch.
+  ford_methods: {
+    ford:  '🥾',
+    caulk: '🛶',
+    ferry: '⛵',
+    wait:  '⏳',
+    river: '🏞️'
+  },
+  // Journey-menu items + dev scenario submit row.
+  journey_menu: {
+    save:     '💾',
+    new:      '🆕',
+    home:     '🏠',
+    dev:      '🧪',
+    scenario: '🎯'
+  },
+  // EndScreen + burial flavor.
+  end_screen: {
+    tombstone: '🪦',
+    tree:      '🌲'
+  },
+  // Decorative status glyphs — leader stars, close buttons, warnings,
+  // alert chips. Pulled into the dictionary so we own the names; the
+  // glyphs themselves are typographic, not branded.
+  status: {
+    leader: '★',
+    close:  '✕',
+    warn:   '⚠',
+    block:  '⛔',
+    heart:  '❤',
+    bolt:   '⚡'
+  },
+  // Trend arrows on rolling-history widgets (party-panel sparkline,
+  // morale ribbon).
+  trend: {
+    up:   '▲',
+    down: '▼',
+    flat: '▬'
   },
   landmarks: {
     independence:        '🏠',
