@@ -153,7 +153,7 @@
 <div class="status panel">
   <div class="status-head">DAY TRAVEL STATUS</div>
   <div class="landscape">
-    <svg viewBox="0 0 {SCENE_W} {SCENE_H}" preserveAspectRatio="xMidYMid meet">
+    <svg viewBox="0 0 {SCENE_W} {SCENE_H}" preserveAspectRatio="xMidYMax slice">
       <defs>
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
@@ -237,17 +237,17 @@
     color: var(--c-rust);
     font-weight: 700;
   }
-  /* The scene's intrinsic ratio is 16:9 (1280×720). On wide screens
-     we cap width so the strip never dominates the vertical layout
-     (max-width: 480px → 270px tall at 16:9, leaving room for the
-     TrailMap and ActionBar below). On narrow screens (Z Fold ≤ 900px)
-     the strip fills the column. preserveAspectRatio="xMidYMid meet"
-     guarantees the whole scene is visible — sky, sun, wagon, team. */
+  /* Horizontal strip at 4:1 (e.g. 1000×250) that fills the card's
+     full width. The SVG's intrinsic 16:9 viewBox gets scaled-to-fill
+     by `xMidYMax slice` and cropped to the bottom band, putting the
+     wagon and ox team center-stage. Sky/sun/clouds at the top of
+     the viewBox get cropped out — that's intentional, the wagon is
+     the centerpiece and everything else is decoration around it.
+     (#157 visual revisit can refine the framing.) */
   .landscape {
     position: relative;
-    width: min(100%, 480px);
-    aspect-ratio: 1280 / 720;
-    margin: 0 auto;
+    width: 100%;
+    aspect-ratio: 4 / 1;
     overflow: hidden;
     border-radius: var(--r-xs);
     border: 1px solid rgba(0, 0, 0, 0.35);
