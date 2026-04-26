@@ -37,7 +37,6 @@ As of 2026-04-25 (post-#107). 19 open.
 | #162 | Components handoff revisit — retrofit existing custom bars (InventoryPanel weight/warmth, WagonModal condition, etc.) onto the new `StatBar.svelte` primitive once the visual diff is approved post-playtest. PartyPanel avatars are placeholder compositions (head/shoulders/hat); designer pass for richer per-profession portraits + animation pause-awareness when game is paused. |
 | #163 | PartyPanel mini-stats vs top-bar duplication — the panel footer (food days · oxen · pace) repeats data already in the top-bar stat cluster. Confirmed intentional in the handoff for at-a-glance scannability, but worth re-examining post-playtest: drop the duplication and reclaim vertical space, or keep and shrink the top-bar instead. |
 | #164 | WagonScene — pause the rAF tick when not actively traveling. Right now the wheels keep spinning and the parallax keeps scrolling while stopped at a landmark, resting, or camped. Tie the animation to a "moving" predicate (atLandmark? camp open? travel in flight?) so the scene visually parks when the party is parked. |
-| #165 | WagonScene clouds — parallax cloud drift with travel direction. Wagon faces west (right→left), so clouds should also drift right→left, slower than the ground (clouds far, ground near). Currently clouds animate independently of travel cues. Pair with #164 so clouds also stop drifting when the wagon's parked. |
 | #87  | Rich event visuals                                     |
 | #89  | Rich trading post / landmark display                   |
 | #133 | EventModal polish — animations + glyphs                |
@@ -60,6 +59,7 @@ As of 2026-04-25 (post-#107). 19 open.
 
 ## Recently shipped
 
+- **#165** wagon clouds parallax-couple to scrollX — same axis as terrain, far/near depth jitter
 - **#13** trail content — 2 road ranches + 4 scenic landmarks
 - **#120** trading-post stock quantities + monthly restock
 - **#121** Indian relations foundation — 9 tribes, attitudes, regions
