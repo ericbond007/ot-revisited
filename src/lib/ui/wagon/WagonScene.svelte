@@ -176,9 +176,10 @@
            range y=380..456). -->
       <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={410} t={tEff} />
 
-      <!-- 3. clouds — bandY pushed down to 385 so the cloud spread
-           (385..457) lands inside the strip's visible sky band. -->
-      <CloudLayer kind={weatherKind} t={tEff} w={SCENE_W} skyH={HORIZON_Y} bandY={385} />
+      <!-- 3. clouds — bandY=400 plants the cloud band a bit lower
+           in the sky (spread y=400..472) so the puffs don't kiss
+           the top edge of the strip. -->
+      <CloudLayer kind={weatherKind} t={tEff} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
 
       <!-- 4. far parallax -->
       <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
