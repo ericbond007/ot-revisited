@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#164). 22 open.
+As of 2026-04-26 (post-#164). 23 open.
 
 ## New mechanics
 
@@ -43,7 +43,7 @@ As of 2026-04-26 (post-#164). 22 open.
 
 ## For Claude Design or another SVG animation generator
 
-| #158 | Ox + mule team visual revisit — proportions, gait, yoke (post-playtest) |
+| #158 | Ox + mule team visual revisit — port the new travel-scene handoff (`~/Downloads/travel_scene/design_handoff_travel_scene/`). Replaces `OxTeam.svelte` + `SingleOx.svelte` with full rewrite (Ox / Leg / OxHead / OxYoke / OxSingleYoke / OxPole / OxChain / jitterFor sub-components). Adds `gait="walking"\|"stopped"` prop with explicit at-rest pose + per-ox biological variance (deterministic phase ±0.03 + amplitude 0.88–1.12× hashed from pair-idx + near/far). Tokens: palette tweaks (OX_INK→#3a1a08, new OX_RED_LT/OX_WHITE_SH/POLE_WOOD), PAIR_PHASE_OFFSET 0.13→0.05. Replace `docs/handoff/travel-scene/` with the new bundle. /dev/ox-team harness gets a stopped/walking toggle. Closes #169 (rest-pose) natively — drop the gait/bounce snap-to-0 hack in WagonScene and pass `gait={paused ? 'stopped' : 'walking'}` instead. |
 | #156 | Wagon SVG visual revisit — proportions / damage / addons (post-playtest) |
 | #87 | Rich event visuals |
 | #89 | Rich trading post / landmark display |
