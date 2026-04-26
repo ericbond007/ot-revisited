@@ -245,6 +245,9 @@
     position: relative;
     overflow: hidden;
     cursor: grab;
+    /* Drag-to-pan otherwise highlights every label as text. */
+    user-select: none;
+    -webkit-user-select: none;
   }
   .modal-map-wrap.dragging { cursor: grabbing; }
   .modal-map-stage {

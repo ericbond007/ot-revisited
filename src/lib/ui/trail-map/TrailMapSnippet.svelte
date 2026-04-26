@@ -132,6 +132,9 @@
     width: 100%;
     height: 380px;
     cursor: zoom-in;
+    /* Click+drag on the strip otherwise highlights every label. */
+    user-select: none;
+    -webkit-user-select: none;
   }
   .map-svg {
     position: absolute;

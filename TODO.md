@@ -94,4 +94,3 @@ As of 2026-04-26 (post-#160). 20 open.
 
 when not moving, i.e. right after travel has stopped, the wagon should not be animating. it looks like the wagon is still moving, but we are not.
 Party Card: on hover, too much color. stick with the other card hover styles, like wagon and inventory
-click to drag on map selects all text, get rid of this.
