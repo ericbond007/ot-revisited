@@ -171,14 +171,14 @@
       <!-- 1. sky -->
       <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill="url(#ws-sky)" />
 
-      <!-- 2. sun / moon — positioned on the left so it's not cropped
-           by the strip's vertical slice and stays clear of the wagon
-           on the right. Y placed in the upper sky of the visible band. -->
-      <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={SCENE_H * 0.32} t={tEff} />
+      <!-- 2. sun / moon — left side (clear of wagon) at y=410, which
+           sits in the upper third of the strip's sky band (visible
+           range y=380..456). -->
+      <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={410} t={tEff} />
 
-      <!-- 3. clouds — pushed into the visible mid-sky band so the
-           strip's vertical slice doesn't crop them. -->
-      <CloudLayer kind={weatherKind} t={tEff} w={SCENE_W} skyH={HORIZON_Y} bandY={170} />
+      <!-- 3. clouds — bandY pushed down to 385 so the cloud spread
+           (385..457) lands inside the strip's visible sky band. -->
+      <CloudLayer kind={weatherKind} t={tEff} w={SCENE_W} skyH={HORIZON_Y} bandY={385} />
 
       <!-- 4. far parallax -->
       <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
