@@ -14,9 +14,13 @@
     w: number;
     /** Sky height (unused now but reserved for future cloud-band sizing). */
     skyH?: number;
+    /** Top y-coord of the cloud band in viewBox units. Composers
+     *  that crop the SVG (e.g. WagonScene's slice strip) push this
+     *  down so clouds fall in the visible region. */
+    bandY?: number;
   }
 
-  let { kind, t, w, skyH: _skyH }: Props = $props();
+  let { kind, t, w, skyH: _skyH, bandY = 30 }: Props = $props();
 
   const config = $derived.by(() => {
     if (kind === 'sunny')  return { count: 2, baseOp: 0.5,  scale: 0.7 };
@@ -44,7 +48,7 @@
       const baseX = ((seed * 47) % (w + 200)) - 100;
       const x = (baseX - t * driftSpeed) % (w + 200);
       const fx = x < -100 ? x + (w + 200) : x;
-      const y = 30 + (seed % 5) * 18;
+      const y = bandY + (seed % 5) * 18;
       const sc = config.scale * (0.7 + ((seed * 7) % 50) / 100);
       const op = isStorm
         ? config.baseOp * 0.85

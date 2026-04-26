@@ -153,7 +153,7 @@
 <div class="status panel">
   <div class="status-head">DAY TRAVEL STATUS</div>
   <div class="landscape">
-    <svg viewBox="0 0 {SCENE_W} {SCENE_H}" preserveAspectRatio="xMidYMax slice">
+    <svg viewBox="0 0 {SCENE_W} {SCENE_H}" preserveAspectRatio="xMidYMid slice">
       <defs>
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
@@ -161,11 +161,14 @@
       <!-- 1. sky -->
       <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill="url(#ws-sky)" />
 
-      <!-- 2. sun / moon -->
-      <SkyAccent kind={weatherKind} x={SCENE_W * 0.85} y={SCENE_H * 0.18} t={tEff} />
+      <!-- 2. sun / moon — positioned on the left so it's not cropped
+           by the strip's vertical slice and stays clear of the wagon
+           on the right. Y placed in the upper sky of the visible band. -->
+      <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={SCENE_H * 0.32} t={tEff} />
 
-      <!-- 3. clouds -->
-      <CloudLayer kind={weatherKind} t={tEff} w={SCENE_W} skyH={HORIZON_Y} />
+      <!-- 3. clouds — pushed into the visible mid-sky band so the
+           strip's vertical slice doesn't crop them. -->
+      <CloudLayer kind={weatherKind} t={tEff} w={SCENE_W} skyH={HORIZON_Y} bandY={170} />
 
       <!-- 4. far parallax -->
       <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
@@ -247,7 +250,7 @@
   .landscape {
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 1;
+    aspect-ratio: 3 / 1;
     overflow: hidden;
     border-radius: var(--r-xs);
     border: 1px solid rgba(0, 0, 0, 0.35);
