@@ -2,12 +2,27 @@ import { describe, it, expect } from 'vitest';
 import { buildStarterKit, BASE_KIT } from '../src/lib/game/content/starter-kit';
 
 describe('starter kit', () => {
-  it('BASE_KIT has cash, oxen, food, bullets, shovel', () => {
+  it('BASE_KIT covers the day-1 essentials', () => {
     expect(BASE_KIT.cash).toBeGreaterThan(0);
     expect(BASE_KIT.oxen).toBeGreaterThanOrEqual(4);
+    // Variety in the food spread (#110 varied-diet bonus is reachable
+    // without buying anything else).
     expect(BASE_KIT.inventory.flour).toBeGreaterThan(0);
-    expect(BASE_KIT.inventory.bullets).toBeGreaterThan(0);
+    expect(BASE_KIT.inventory.beans).toBeGreaterThan(0);
+    expect(BASE_KIT.inventory.bacon).toBeGreaterThan(0);
+    // Day-1 essentials so the brew / cure / triage paths all work
+    // regardless of profession picks.
+    expect(BASE_KIT.inventory.coffee).toBeGreaterThan(0);
+    expect(BASE_KIT.inventory.salt).toBeGreaterThan(0);
+    expect(BASE_KIT.inventory.bandages).toBeGreaterThan(0);
+    expect(BASE_KIT.inventory.cookware).toBe(1);
     expect(BASE_KIT.inventory.shovel).toBe(1);
+    // Bullets removed from BASE — useless without a rifle, and either
+    // Hunter or Gunsmith brings one.
+    expect(BASE_KIT.inventory.bullets ?? 0).toBe(0);
+    // Water skins removed from BASE — wagons declare their own
+    // baseWaterCapGal; skins are an outfitter upgrade.
+    expect(BASE_KIT.inventory.water_skin ?? 0).toBe(0);
     // Yokes are added per-wagon in buildStarterKit (#107) — no longer
     // a flat constant on BASE_KIT.
   });
@@ -21,10 +36,11 @@ describe('starter kit', () => {
     expect(heavy.inventory.yoke).toBe(3);
   });
 
-  it('heavy wagon kit includes extra spares', () => {
+  it('does not pre-load wagon spare parts (player buys at outfit)', () => {
     const heavy = buildStarterKit([], 'heavy');
-    expect(heavy.inventory.wheel).toBe(1);
-    expect(heavy.inventory.spare_plank).toBe(2);
+    expect(heavy.inventory.wheel ?? 0).toBe(0);
+    expect(heavy.inventory.spare_plank ?? 0).toBe(0);
+    expect(heavy.inventory.axle ?? 0).toBe(0);
   });
 
   it('buildStarterKit stacks profession gear onto base', () => {
@@ -35,7 +51,7 @@ describe('starter kit', () => {
 
   it('banker adds starting cash', () => {
     const kit = buildStarterKit(['banker']);
-    expect(kit.cash).toBe(BASE_KIT.cash + 800);
+    expect(kit.cash).toBe(BASE_KIT.cash + 600);
   });
 
   it('stacks duplicate professions', () => {

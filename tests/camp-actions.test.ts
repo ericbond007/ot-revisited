@@ -56,8 +56,9 @@ describe('camp actions', () => {
     // so the cure-input pile is smaller than the starting amount. Assert
     // the conversion ratio rather than a fixed number.
 
-    // No salt — 0.7× conversion.
-    const s1 = { ...newGame(), inventory: { ...newGame().inventory, game_meat: 1000 } };
+    // No salt — 0.7× conversion. BASE now ships salt, so override it
+    // out for this branch.
+    const s1 = { ...newGame(), inventory: { ...newGame().inventory, salt: 0, game_meat: 1000 } };
     const out1 = rest(s1, 1, { campActions: ['cure_meat'] });
     expect(out1.inventory.game_meat).toBe(0);
     const jerky1 = out1.inventory.jerky ?? 0;
@@ -104,11 +105,12 @@ describe('camp actions', () => {
 
   it('rejects camp actions that bust the 12-hour budget', () => {
     // dig_well (5) + cure_meat (6, no salt) + sing_along (2) = 13 hours.
+    // Salt is in BASE now — null it out so cure_meat takes the slow path.
     const s = {
       ...newGame(),
       inventory: {
         ...newGame().inventory,
-        shovel: 1, game_meat: 10, harmonica: 1
+        salt: 0, shovel: 1, game_meat: 10, harmonica: 1
       }
     };
     expect(() =>

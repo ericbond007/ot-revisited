@@ -8,14 +8,35 @@ export interface StarterKit {
   inventory: Record<string, number>;
 }
 
+// Audited starter kit (#102 follow-up):
+//   - Variety in BASE so the varied-diet bonus (#110) is reachable
+//     without buying anything: 300 flour + 50 beans + 30 bacon spans
+//     the starch + meat groups.
+//   - Cookware, salt, bandages, coffee in BASE so the brew-water,
+//     cure-meat, and triage-injury paths all work day 1 regardless
+//     of party composition.
+//   - Bullets removed from BASE: useless without a rifle, so leaving
+//     them in the kit wasted weight when the party had no Hunter or
+//     Gunsmith. Either of those professions brings their own bullets.
+//   - Water skins removed from BASE: each wagon model already
+//     declares its own baseWaterCapGal (15 / 20 / 25) representing
+//     the wagon's built-in keg. Water skins are an outfitter upgrade
+//     for dry stretches, not a baseline assumption.
+//   - Wagon spare-parts no longer pre-loaded — players who want
+//     wheels / axles / planks buy them at the outfitter, on their
+//     own weight budget.
 export const BASE_KIT: StarterKit = {
-  cash: 300,
+  cash: 400,
   oxen: 4,
   inventory: {
-    flour: 500,
-    bullets: 20,
-    shovel: 1,
-    water_skin: 2
+    flour:     300,
+    beans:      50,
+    bacon:      30,
+    coffee:      2,
+    salt:        2,
+    bandages:    4,
+    shovel:      1,
+    cookware:    1
     // Yokes are added per-wagon by buildStarterKit — each wagon
     // model needs a different count to hitch its full team (#107).
   }
@@ -29,16 +50,11 @@ export function buildStarterKit(
   let cash = BASE_KIT.cash;
   let oxen = BASE_KIT.oxen;
 
-  // Wagon-model bonuses: enough yokes to hitch the full team, plus
-  // any extra starter spares the model wants (e.g. heavy wagons get
-  // a spare wheel + planks).
+  // Wagon model adds enough yokes to hitch the full team. Spare
+  // parts are no longer auto-bundled — players buy what they want
+  // at the outfitter so the per-wagon weight budget is honest.
   const wagon = getWagon(wagonModel);
   inventory.yoke = (inventory.yoke ?? 0) + wagon.requiredYokes;
-  if (wagon.starterSpares) {
-    for (const [id, qty] of Object.entries(wagon.starterSpares)) {
-      inventory[id] = (inventory[id] ?? 0) + qty;
-    }
-  }
 
   for (const id of professions) {
     const prof = getProfession(id);

@@ -17,8 +17,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   banker: {
     id: 'banker',
     name: 'Banker',
-    bonusSummary: 'Starts with $800. −10% buy / +10% sell at posts.',
-    starterGear: [{ item: 'cash', qty: 800 }]
+    bonusSummary: 'Starts with $600. −10% buy / +10% sell at posts.',
+    starterGear: [{ item: 'cash', qty: 600 }]
   },
   farmer: {
     id: 'farmer',
@@ -110,7 +110,6 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     bonusSummary: 'Halves death-event morale hits. Adds bonuses to bible-reading + sing-along camp actions.',
     starterGear: [
       { item: 'bible', qty: 1 },
-      { item: 'shovel', qty: 1 },
       { item: 'herbal_poultice', qty: 10 }
     ]
   },

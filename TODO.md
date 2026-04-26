@@ -58,6 +58,7 @@ As of 2026-04-26 (post-#161). 21 open.
 
 ## Recently shipped
 
+- **starter-kit audit** — BASE_KIT trimmed to a sensible day-1 floor: 300 flour + 50 beans + 30 bacon (variety unlocks #110), 2 coffee + 2 salt + 4 bandages + 1 cookware (brew/cure/triage paths all reachable), bullets dropped (useless without rifle — Hunter/Gunsmith bring one), water_skin dropped (wagons declare their own keg cap). Wagon spare parts no longer pre-loaded (player buys at outfit). Banker $800→$600. Preacher's duplicate shovel removed. Coffee/tea consumption now scales with adult count (1 oz/adult/day, 16 oz/lb) — 2 adults: 8 days/lb, 4 adults: 4 days/lb, children skip the brew.
 - **#161B** BrandLockup SSR flicker — auto-variant SSR default flipped from mark to wordmark via `null`-sentinel for unmeasured `clientWidth`. Common case (wide containers) now renders correctly first paint, no hydration reflow. Narrow contexts pass `variant="mark"` explicitly.
 - **#161A** icon-dictionary expansion — added 9 new categories (post_kinds, professions, town_services, fauna, ford_methods, journey_menu, end_screen, status, trend) covering ~50 emojis the brand pass left as literals. Consumers (ProfessionPicker, post-theme, HuntModal, PostHuntModal, FordModal, FordSummaryModal, TownStage, JourneyMenu, EndScreen, party-related modals, /new) all route through the typed dictionary now.
 - **#151** dig-grave camp action — hidden until `_burialPending` is set, then handles the burial (clears flag, +2 morale w/ shovel). No more preemptive flavor click.

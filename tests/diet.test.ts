@@ -68,32 +68,71 @@ describe('hot drinks', () => {
     expect(after.morale).toBe(s.morale);
   });
 
-  it('consumes 1 lb of coffee every 5 brew-days', () => {
+  it('consumes 1 lb of coffee at 16 person-days (2 adults → 8 days/lb)', () => {
+    // newGame() seeds a 2-adult party (carpenter leader + doctor).
+    // 2 adults × 1 oz/day = 2 oz/day. 16 oz/lb → 8 brew-days per lb.
     let s = newGame({ inventory: { coffee: 5 } });
-    // Days 1-4: clock ticks but no consumption
-    for (let day = 0; day < 4; day++) s = applyHotDrinks(s);
+    for (let day = 0; day < 7; day++) s = applyHotDrinks(s);
     expect(s.inventory.coffee).toBe(5);
-    // Day 5: consume 1 lb, reset clock
+    // Day 8: total 16 oz consumed, 1 lb opens
     s = applyHotDrinks(s);
     expect(s.inventory.coffee).toBe(4);
-    // Days 6-9: clock ticks again
-    for (let day = 0; day < 4; day++) s = applyHotDrinks(s);
+    // Days 9-15: clock ticks again
+    for (let day = 0; day < 7; day++) s = applyHotDrinks(s);
     expect(s.inventory.coffee).toBe(4);
-    // Day 10: another consumption
+    // Day 16: another consumption
     s = applyHotDrinks(s);
     expect(s.inventory.coffee).toBe(3);
   });
 
+  it('larger parties burn coffee faster (4 adults → 4 days/lb)', () => {
+    const base = newGame();
+    // Force the party to 4 adults.
+    const adults = base.party.map((m) => ({ ...m, kind: 'adult' as const, dead: false }));
+    const fourth = { ...adults[0], id: 'p4', name: 'D' };
+    const fifth = { ...adults[0], id: 'p5', name: 'E' };
+    let s: GameState = {
+      ...base,
+      inventory: { coffee: 5 },
+      flags: { ...base.flags },
+      party: [adults[0], adults[1], fourth, fifth]
+    };
+    for (let day = 0; day < 3; day++) s = applyHotDrinks(s);
+    expect(s.inventory.coffee).toBe(5);
+    // Day 4: 4 × 4 = 16 oz consumed, 1 lb opens
+    s = applyHotDrinks(s);
+    expect(s.inventory.coffee).toBe(4);
+  });
+
+  it('children skip the brew (party of 2 adults + 1 child still consumes 2 oz/day)', () => {
+    const base = newGame();
+    let s: GameState = {
+      ...base,
+      inventory: { coffee: 5 },
+      party: [
+        ...base.party,
+        // Child added — should not contribute to consumption.
+        { id: 'kid', name: 'Kid', sex: 'female', kind: 'child', isLeader: false, age: 8, health: 100, conditions: [], dead: false }
+      ]
+    };
+    // 2 adults still → 8 days/lb. Day 7 should not consume yet.
+    for (let day = 0; day < 7; day++) s = applyHotDrinks(s);
+    expect(s.inventory.coffee).toBe(5);
+    s = applyHotDrinks(s);
+    expect(s.inventory.coffee).toBe(4);
+  });
+
   it('prefers coffee over tea when both available', () => {
     let s = newGame({ inventory: { coffee: 10, tea: 10 } });
-    for (let day = 0; day < 5; day++) s = applyHotDrinks(s);
+    // 2 adults: 8 days for the first lb of coffee.
+    for (let day = 0; day < 8; day++) s = applyHotDrinks(s);
     expect(s.inventory.coffee).toBe(9);
     expect(s.inventory.tea).toBe(10);
   });
 
   it('falls back to tea when coffee is empty', () => {
     let s = newGame({ inventory: { tea: 10 } });
-    for (let day = 0; day < 5; day++) s = applyHotDrinks(s);
+    for (let day = 0; day < 8; day++) s = applyHotDrinks(s);
     expect(s.inventory.tea).toBe(9);
   });
 
