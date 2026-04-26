@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#160). 19 open.
+As of 2026-04-26 (post-#160). 20 open.
 
 ## New mechanics
 
@@ -28,6 +28,7 @@ As of 2026-04-26 (post-#160). 19 open.
 | ---- | ------------------------------------------------------------------- |
 | #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow feel |
 | #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring  |
+| #167 | Trail-map snippet polish — clustered-landmark label collisions (Courthouse/Chimney/Ft. Laramie); left/right HUD panels overlap the map at the snippet's tight zoom |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call    |
 | #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)  |
 | #147 | Success/arrival view rework — richer than the current score panel   |
