@@ -63,27 +63,36 @@ export function milesToNextOfKind(
   return { name: found.name, miles: Math.max(0, Math.round(found.mile - currentMileage)) };
 }
 
-/** Linear interpolation between the last-passed and next-upcoming
- *  landmark's pixel coordinates, weighted by mileage. Used to position
- *  the wagon glyph on the SVG path.
+/** Linear interpolation between adjacent *plotted* landmarks weighted
+ *  by mileage. Used to position the wagon glyph on the SVG path.
  *
  *  `routeCoords` is a per-landmark `[x, y]` lookup keyed by id —
  *  hand-built per design SVG (see trail-map-svg/landmark-coords.ts).
- *  Falls back to the last-passed coords when there's no `next` (party
- *  is at the very end), or the first landmark's coords when there's no
- *  `last` (haven't started moving yet). */
+ *  Only landmarks present in the lookup count as anchors; un-plotted
+ *  intermediates are skipped, so the wagon advances proportionally
+ *  through them (e.g. mileage spent passing Ash Hollow between
+ *  plotted Ft. Kearny and Courthouse Rock just slides the wagon
+ *  along that segment). */
 export function interpolatePosition(
   marked: readonly MarkedLandmark[],
   currentMileage: number,
   routeCoords: Record<string, readonly [number, number]>
 ): readonly [number, number] {
-  const { last, next } = currentLeg(marked, currentMileage);
-  if (last && !next) return routeCoords[last.id] ?? [0, 0];
-  if (!last && next) return routeCoords[next.id] ?? [0, 0];
+  const plotted = marked.filter((m) => routeCoords[m.id]);
+  if (plotted.length === 0) return [0, 0];
+
+  let last: MarkedLandmark | null = null;
+  let next: MarkedLandmark | null = null;
+  for (const m of plotted) {
+    if (m.mile <= currentMileage) last = m;
+    else if (next === null) next = m;
+  }
+
+  if (last && !next) return routeCoords[last.id]!;
+  if (!last && next) return routeCoords[next.id]!;
   if (last && next) {
-    const a = routeCoords[last.id];
-    const b = routeCoords[next.id];
-    if (!a || !b) return a ?? b ?? [0, 0];
+    const a = routeCoords[last.id]!;
+    const b = routeCoords[next.id]!;
     const span = Math.max(1, next.mile - last.mile);
     const t = Math.max(0, Math.min(1, (currentMileage - last.mile) / span));
     return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];

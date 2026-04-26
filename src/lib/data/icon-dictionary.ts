@@ -26,6 +26,7 @@ export const ICON = {
   stats: {
     day:     '📅',
     date:    '🗓️',
+    leg:     '🧭',
     pace:    '🐂',
     rations: '🍖',
     morale:  '🎵',

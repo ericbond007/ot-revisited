@@ -116,9 +116,34 @@ describe('interpolatePosition', () => {
     expect(interpolatePosition(fixture, 9999, coords)).toEqual([400, 20]);
   });
 
-  it('returns origin when the coords map is missing the relevant ids', () => {
+  it('returns origin when the coords map is empty', () => {
     const empty: Record<string, readonly [number, number]> = {};
     expect(interpolatePosition(fixture, 125, empty)).toEqual([0, 0]);
+  });
+
+  it('skips un-plotted landmarks and lerps across the gap', () => {
+    // Sparse coords: only Start (0mi) and End (425mi) plotted. River
+    // and Mid land between them with no coords. At 212.5mi (halfway
+    // between Start and End by mile, ignoring un-plotted intermediates)
+    // the wagon should sit at the midpoint of the [0,0]→[400,0] line.
+    const sparse = { a: [0, 0], e: [400, 0] } as const satisfies Record<
+      string,
+      readonly [number, number]
+    >;
+    const [x, y] = interpolatePosition(fixture, 212.5, sparse);
+    expect(x).toBeCloseTo(200);
+    expect(y).toBeCloseTo(0);
+  });
+
+  it('uses only plotted landmarks for clamping', () => {
+    // With only 'b' (100mi) and 'd' (225mi) plotted, mileage past 225
+    // should clamp to 'd', not to 'e' (which has no coord).
+    const sparse = { b: [100, 50], d: [300, 40] } as const satisfies Record<
+      string,
+      readonly [number, number]
+    >;
+    expect(interpolatePosition(fixture, 999, sparse)).toEqual([300, 40]);
+    expect(interpolatePosition(fixture, -5, sparse)).toEqual([100, 50]);
   });
 });
 

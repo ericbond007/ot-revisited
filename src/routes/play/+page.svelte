@@ -26,7 +26,8 @@
   import StatPicker from '$lib/ui/StatPicker.svelte';
   import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
   import { ICON, icon } from '$lib/data/icon-dictionary';
-  import { getLandmark } from '$lib/game/content/landmarks';
+  import { getLandmark, LANDMARKS } from '$lib/game/content/landmarks';
+  import { accumulateMiles, legOrdinal } from '$lib/ui/trail-map/trail-map-helpers';
   import type { GameState } from '$lib/game/types';
   import type { HuntHaul } from '$lib/game/actions/hunt';
   import type { CampSummary } from '$lib/game/actions/rest';
@@ -46,6 +47,12 @@
 
   const atLandmark = $derived(
     gs.location.atLandmarkId ? getLandmark(gs.location.atLandmarkId) : null
+  );
+
+  // Leg progression for the status bar — derived from cumulative
+  // miles, same helper the trail-map snippet uses.
+  const trailLegOrdinal = $derived(
+    legOrdinal(accumulateMiles(LANDMARKS), gs.location.milesTraveled)
   );
 
   let showCamp = $state(false);
@@ -134,6 +141,11 @@
         <span class="stat-label">DATE</span>
         <span>{['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][gs.date.month - 1]} {gs.date.day}, {gs.date.year}</span>
       </span>
+      <span class="stat" title="Current leg of the trail">
+        <span class="stat-icon">{icon('stats', 'leg')}</span>
+        <span class="stat-label">LEG</span>
+        <span>{trailLegOrdinal.current} of {trailLegOrdinal.total}</span>
+      </span>
       <StatPicker
         icon={ICON.stats.pace}
         label="PACE"
@@ -175,7 +187,6 @@
       {:else}
         <TrailMapSnippet
           currentMileage={gs.location.milesTraveled}
-          day={gs.day}
           onExpand={() => (showTrailMapModal = true)} />
         <!-- Side view of the wagon traveling. Reflects current
              terrain; eventually will host real animation. -->

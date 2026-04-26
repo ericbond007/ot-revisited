@@ -8,9 +8,8 @@
   import TrailMapSnippet from '$lib/ui/trail-map/TrailMapSnippet.svelte';
   import TrailMapModal from '$lib/ui/trail-map/TrailMapModal.svelte';
 
-  let modalOpen = $state(false);
+  let modalOpen = $state(true);
   let mileage = $state(580);
-  const day = 47;
 </script>
 
 <svelte:head>
@@ -38,7 +37,6 @@
     <div class="eyebrow">Snippet · 350-mi window</div>
     <TrailMapSnippet
       currentMileage={mileage}
-      {day}
       onExpand={() => (modalOpen = true)} />
   </section>
 </div>
