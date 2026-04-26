@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import { makeRng } from '../rng';
 import { hasLiveFarmer, hasLiveTeamster, hasLivePreacher } from '../professions/predicates';
-import { TEAMSTER_RECOVERY_MULT } from '../systems/oxen';
+import { TEAMSTER_RECOVERY_MULT, consumeOxenFeed } from '../systems/oxen';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption, applyDirtyWaterRisk } from '../systems/consumption';
 import { applyStarvation } from '../systems/starvation';
@@ -127,9 +127,17 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
       })
     };
 
-    const oxRecovery = hasLiveTeamster(s)
-      ? Math.round(OX_FATIGUE_RECOVERY_PER_REST_DAY * TEAMSTER_RECOVERY_MULT)
-      : OX_FATIGUE_RECOVERY_PER_REST_DAY;
+    // Resting consumes grain on poor-grazing terrain too — oxen
+    // standing in camp still need calories. Recovery scales with the
+    // resulting effective grazing (well-fed team rests off ~25 fatigue;
+    // unfed team on poor grass barely heals).
+    const restFeed = consumeOxenFeed(s);
+    s = restFeed.state;
+    const oxRecovery = Math.round(
+      OX_FATIGUE_RECOVERY_PER_REST_DAY
+        * (hasLiveTeamster(s) ? TEAMSTER_RECOVERY_MULT : 1)
+        * restFeed.effectiveGrazing
+    );
     s = { ...s, oxen: recoverOxenFatigue(s.oxen, oxRecovery) };
 
     s = attemptFire(s, rng);

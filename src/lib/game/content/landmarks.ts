@@ -125,7 +125,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'bacon', 'jerky',
       'bullets', 'bandages',
       'coat', 'blanket',
-      'ox_shoes', 'iron_scrap', 'rope',
+      'ox_shoes', 'iron_scrap', 'rope', 'grain',
       'moccasins', 'buffalo_robe', 'beads',
       'tobacco'
     ] },
@@ -170,7 +170,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'bacon',
       'bullets', 'bandages',
       'blanket',
-      'spare_plank', 'ox_shoes', 'iron_scrap', 'rope',
+      'spare_plank', 'ox_shoes', 'iron_scrap', 'rope', 'grain',
       'moccasins', 'buffalo_robe'
     ] },
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 100, terrain: 'river',     kind: 'river',
@@ -192,7 +192,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'bullets', 'bandages', 'quinine', 'laudanum',
       'coat', 'boots', 'blanket',
-      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes',
+      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'grain',
       'salt', 'tobacco', 'whiskey', 'harmonica'
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
@@ -207,7 +207,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'bacon', 'dried_fruit',
       'bullets', 'bandages', 'quinine',
       'coat', 'blanket',
-      'canvas', 'spare_plank', 'ox_shoes',
+      'canvas', 'spare_plank', 'ox_shoes', 'grain',
       'moccasins', 'buffalo_robe'
     ] },
   { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 95,  terrain: 'desert',    kind: 'landmark' },
@@ -224,7 +224,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon',
       'bullets', 'bandages', 'quinine',
       'coat', 'blanket',
-      'canvas', 'tongue',
+      'canvas', 'tongue', 'grain',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
   { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 100, terrain: 'mountains', kind: 'trading_post',

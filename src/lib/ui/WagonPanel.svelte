@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { getWagon } from '$lib/game/content/wagons';
+  import { grazingQuality } from '$lib/game/systems/oxen';
 
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
@@ -25,6 +26,13 @@
       : 0
   );
   const shoelessOxen = $derived(aliveOxen.filter((o) => !o.shod).length);
+
+  // Thin-grass warning — surfaces only on poor terrain. Players carry
+  // grain to neutralize the penalty; chip vanishes when supplied.
+  const grazing = $derived(grazingQuality(state));
+  const grainOnHand = $derived(state.inventory.grain ?? 0);
+  const oxenCount = $derived(aliveOxen.filter((o) => o.kind !== 'mule').length);
+  const showGrazingWarn = $derived(grazing < 0.6 && oxenCount > 0 && grainOnHand < oxenCount);
 
   const spareParts = $derived({
     wheel: state.inventory.wheel ?? 0,
@@ -65,6 +73,9 @@
     {/if}
     {#if shoelessOxen > 0}
       <span class="ox-warn" title="Oxen without shoes move slower">⚠ {shoelessOxen} bare</span>
+    {/if}
+    {#if showGrazingWarn}
+      <span class="ox-warn" title="Grass is thin here — carry grain to keep oxen fed">⚠ thin grass</span>
     {/if}
   </div>
 

@@ -55,11 +55,11 @@ export const ITEMS: Record<string, ItemMeta> = {
   // eggs daily. Can die to predator events or drown in rough fords.
   chicken: { id: 'chicken', name: 'Chicken', category: 'livestock', weightLbPerUnit: 3, description: 'Hen in a coop. Lays eggs daily while alive. Coop size limited by wagon model.' },
 
-  // Grain / oats for mule teams. Oxen graze prairie grass; mules can't
-  // subsist on grass alone and need supplemental feed. 1 lb per mule
-  // per day is the burn rate. Without grain, mule fatigue climbs 2×
-  // faster — a pulled team.
-  grain: { id: 'grain', name: 'Grain', category: 'feed', weightLbPerUnit: 1, description: 'Oats and corn for mules. 1 lb per mule per day — grain-less mules tire fast.' },
+  // Grain / oats for draft teams. Mules need it every day. Oxen
+  // subsist on prairie grass when grazing is good (prairie/forest
+  // in growing season) but draw on grain when grass is thin —
+  // mountains, desert, or fall/winter. 1 lb per animal per day.
+  grain: { id: 'grain', name: 'Grain', category: 'feed', weightLbPerUnit: 1, description: 'Oats and corn for draft teams. 1 lb per animal per day. Mules eat it always; oxen draw on it when grazing is poor.' },
 
   wagon:       { id: 'wagon',       name: 'Wagon',          category: 'wagon_part', weightLbPerUnit: 0, description: 'Your home on wheels.' },
   wheel:       { id: 'wheel',       name: 'Spare wheel',    category: 'wagon_part', weightLbPerUnit: 50, description: 'Replace a broken wheel. Fully restores some wagon condition.' },
