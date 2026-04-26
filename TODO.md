@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#160). 22 open.
+As of 2026-04-26 (post-#164). 21 open.
 
 ## New mechanics
 
@@ -31,7 +31,6 @@ As of 2026-04-26 (post-#160). 22 open.
 | #167 | Trail-map cluster label collisions — Courthouse/Chimney/Scotts Bluff/Ft. Laramie/Robidoux all sit within ~60 modal-px of each other; labels overlap at modal tier 1 even with LABEL_BELOW staggering |
 | #168 | Party Card hover too colorful — match the calmer Wagon/Inventory card hover styling |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call                                                                                                   |
-| #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)                                                                                                 |
 | #147 | Success/arrival view rework — richer than the current score panel                                                                                                  |
 | #133 | EventModal polish — animations + glyphs                                                                                                                            |
 | #112 | Wagon modal visual redesign                                                                                                                                        |
@@ -61,6 +60,7 @@ As of 2026-04-26 (post-#160). 22 open.
 
 ## Recently shipped
 
+- **#164** WagonScene rAF parking — wagon was animating continuously between turns, looked like the player was traveling when they weren't. WagonScene's rAF loop now lives inside a `$effect` that fully cancels when `paused`; `t` reads via `untrack` on resume so the effect doesn't tear itself down on every frame, and `t` holds its last value across pauses (wagon freezes mid-stride, no snap to t=0). /play tracks a `wagonRolling` flag set on day-change for 1500ms and passes `paused={!wagonRolling}` — wheels + parallax now only run for ~1.5s after a Travel action.
 - **#166 + #160** trail-map data plumbing + visual revisit — both views were ignoring `currentMileage` (modal hardcoded the wagon glyph at `(700,260)` and the traveled/remaining paths to that frozen design-handoff state; snippet's SVG was a one-leg painting). Built `trail-map-svg/landmark-coords.ts` (per-landmark x,y in modal coord-space) + `TrailMapPaint.svelte` (shared SVG content, `paintScale` prop for proportional fonts/strokes when zoomed). `interpolatePosition()` now skips un-plotted landmarks so the wagon advances proportionally between adjacent plotted ones. Modal: wagon glyph + traveled/ahead polylines now data-driven from `currentMileage`. Snippet: 320×100 wagon-following camera window with `slice` aspect, wagon anchored at right-30% so most of the strip shows what's ahead (~2-3 upcoming landmarks). Bespoke per-leg snippet art (prairie stipple, sand dunes, named rivers) traded for honesty — per-region terrain repaint stays a future concern.
 - **starter-kit audit** — BASE_KIT trimmed to a sensible day-1 floor: 300 flour + 50 beans + 30 bacon (variety unlocks #110), 2 coffee + 2 salt + 4 bandages + 1 cookware (brew/cure/triage paths all reachable), bullets dropped (useless without rifle — Hunter/Gunsmith bring one), water_skin dropped (wagons declare their own keg cap). Wagon spare parts no longer pre-loaded (player buys at outfit). Banker $800→$600. Preacher's duplicate shovel removed. Coffee/tea consumption now scales with adult count (1 oz/adult/day, 16 oz/lb) — 2 adults: 8 days/lb, 4 adults: 4 days/lb, children skip the brew.
 - **#161B** BrandLockup SSR flicker — auto-variant SSR default flipped from mark to wordmark via `null`-sentinel for unmeasured `clientWidth`. Common case (wide containers) now renders correctly first paint, no hydration reflow. Narrow contexts pass `variant="mark"` explicitly.
