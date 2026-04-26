@@ -158,6 +158,12 @@ export interface GameState {
   cash: number;
   resources: Resources;
   morale: number; // 0..100
+  /** Last-7-days rolling history of `morale`. Pushed at the end of each
+   *  daily tick and trimmed to 7. Drives the party-panel sparkline; if
+   *  shorter than 7 (early game, fresh save) the sparkline pads from
+   *  the leftmost value. May be undefined on saves written before the
+   *  field existed — readers should default to `[state.morale]`. */
+  moraleHistory?: number[];
   pace: Pace;
   rations: Rations;
   /** Today's weather. Re-rolled each morning by tickWeather. */

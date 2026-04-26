@@ -172,6 +172,16 @@ const DAILY_STEPS: TickStep[] = [
   reapDead
 ];
 
+// Roll the 7-day morale history forward. Called at end-of-tick, after
+// every system has had its say, so `s.morale` is the day's settled
+// value. Drives the party-panel sparkline.
+const MORALE_HISTORY_LEN = 7;
+function pushMoraleHistory(s: GameState): GameState {
+  const prior = Array.isArray(s.moraleHistory) ? s.moraleHistory : [];
+  const next = [...prior, s.morale].slice(-MORALE_HISTORY_LEN);
+  return { ...s, moraleHistory: next };
+}
+
 export function tickDay(state: GameState): GameState {
   const normalized = upgradeState(state);
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
@@ -179,6 +189,7 @@ export function tickDay(state: GameState): GameState {
   for (const step of DAILY_STEPS) {
     s = step(s, rng);
   }
+  s = pushMoraleHistory(s);
   return {
     ...s,
     day: s.day + 1,
