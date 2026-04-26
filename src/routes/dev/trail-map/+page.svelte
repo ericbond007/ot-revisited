@@ -8,7 +8,7 @@
   import TrailMapSnippet from '$lib/ui/trail-map/TrailMapSnippet.svelte';
   import TrailMapModal from '$lib/ui/trail-map/TrailMapModal.svelte';
 
-  let modalOpen = $state(false);
+  let modalOpen = $state(true);
   let mileage = $state(580);
 </script>
 

@@ -19,6 +19,47 @@
 export const TRAIL_VIEWBOX_W = 1000;
 export const TRAIL_VIEWBOX_H = 380;
 
+/** Importance tiers for zoom-dependent visibility. Lower number = more
+ *  important. The modal renders only landmarks with tier ≤ the
+ *  current zoom threshold so the overview stays uncluttered.
+ *
+ *   1 — start, end, major forts (always visible)
+ *   2 — secondary trading posts + iconic landmarks (visible mid-zoom)
+ *   3 — river fords + minor landmarks (visible only at high zoom)
+ *
+ *  Landmarks not listed here default to tier 3.
+ */
+export const LANDMARK_TIER: Record<string, 1 | 2 | 3> = {
+  independence: 1,
+  ft_kearny: 1,
+  ft_laramie: 1,
+  south_pass: 1,
+  ft_hall: 1,
+  ft_boise: 1,
+  the_dalles: 1,
+  oregon_city: 1,
+  hollenberg_ranch: 2,
+  robidoux_post: 2,
+  ft_bridger: 2,
+  ft_walla_walla: 2,
+  courthouse_rock: 2,
+  chimney_rock: 2,
+  scotts_bluff: 2,
+  independence_rock: 2,
+  soda_springs: 2,
+  snake_three_island: 2,
+  blue_mountains: 2,
+  laurel_hill: 2,
+  ash_hollow: 3,
+  kansas_river: 3,
+  devils_gate: 3,
+  parting_of_ways: 3,
+  green_river: 3,
+  bear_river: 3,
+  farewell_bend: 3,
+  grande_ronde: 3
+};
+
 export const LANDMARK_COORDS: Record<string, readonly [number, number]> = {
   independence: [920, 305],
   // Independence → Ft. Kearny segment

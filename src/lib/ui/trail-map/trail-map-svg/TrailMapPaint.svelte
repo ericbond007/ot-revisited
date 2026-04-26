@@ -12,7 +12,7 @@
 
   import type { Landmark } from '$lib/game/content/landmarks';
   import { accumulateMiles, interpolatePosition } from '../trail-map-helpers';
-  import { LANDMARK_COORDS } from './landmark-coords';
+  import { LANDMARK_COORDS, LANDMARK_TIER } from './landmark-coords';
   import LandmarkPin from './LandmarkPin.svelte';
   import WagonGlyph from './WagonGlyph.svelte';
 
@@ -25,6 +25,10 @@
     youAreHereLabel?: boolean;
     /** Multiplier for font-size + stroke-width. Default 1 (modal). */
     paintScale?: number;
+    /** Highest landmark tier to render (Google-Maps style zoom-tiered
+     *  visibility). 1 = major stops only; 2 = major + secondary;
+     *  3 = everything. Default 3 = show all. */
+    tierThreshold?: 1 | 2 | 3;
   }
 
   let {
@@ -32,13 +36,18 @@
     currentMileage,
     wagonSize = 'sm',
     youAreHereLabel = false,
-    paintScale = 1
+    paintScale = 1,
+    tierThreshold = 3
   }: Props = $props();
 
   const ps = $derived(paintScale);
 
   const marked = $derived(accumulateMiles(landmarks));
-  const plotted = $derived(marked.filter((m) => LANDMARK_COORDS[m.id]));
+  const plotted = $derived(
+    marked
+      .filter((m) => LANDMARK_COORDS[m.id])
+      .filter((m) => (LANDMARK_TIER[m.id] ?? 3) <= tierThreshold)
+  );
   const wagonXY = $derived(interpolatePosition(marked, currentMileage, LANDMARK_COORDS));
   const wagonX = $derived(wagonXY[0]);
   const wagonY = $derived(wagonXY[1]);

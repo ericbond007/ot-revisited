@@ -49,6 +49,14 @@
   const transform = $derived(`translate(${tx}px, ${ty}px) scale(${scale})`);
   const zoomReadout = $derived(`${Math.round(scale * 100)}%`);
 
+  /** Google-Maps style zoom-tiered visibility:
+   *   scale ≤ 1.4  → tier 1 (major stops only — uncluttered overview)
+   *   scale ≤ 2.2  → tier 1+2 (add secondary forts + iconic landmarks)
+   *   scale > 2.2  → tier 3 (everything, including river fords + minor) */
+  const paintTier = $derived<1 | 2 | 3>(
+    scale <= 1.4 ? 1 : scale <= 2.2 ? 2 : 3
+  );
+
   function clamp(v: number, mn: number, mx: number) {
     return Math.max(mn, Math.min(mx, v));
   }
@@ -175,7 +183,12 @@
           <div class="trailmap-host">
             <ParchmentBg bare>
               <svg viewBox="0 0 1000 380" preserveAspectRatio="xMidYMid meet" class="modal-svg">
-                <TrailMapPaint {landmarks} {currentMileage} wagonSize="sm" youAreHereLabel />
+                <TrailMapPaint
+                  {landmarks}
+                  {currentMileage}
+                  wagonSize="sm"
+                  youAreHereLabel
+                  tierThreshold={paintTier} />
               </svg>
             </ParchmentBg>
           </div>
