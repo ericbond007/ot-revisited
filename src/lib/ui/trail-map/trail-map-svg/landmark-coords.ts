@@ -25,6 +25,8 @@ export const LANDMARK_COORDS: Record<string, readonly [number, number]> = {
   kansas_river: [861, 295],
   hollenberg_ranch: [803, 282],
   ft_kearny: [760, 273],
+  // Ft. Kearny → Courthouse (~250 mi) — ash_hollow as midpoint anchor
+  ash_hollow: [702, 265],
   // Ft. Kearny → Ft. Laramie cluster (~540–660 mi). Tight grouping
   // because the trail bunches up here historically too.
   courthouse_rock: [625, 248],
@@ -37,15 +39,20 @@ export const LANDMARK_COORDS: Record<string, readonly [number, number]> = {
   devils_gate: [455, 222],
   south_pass: [405, 200],
   // South Pass → Ft. Hall
+  parting_of_ways: [395, 197],
   green_river: [375, 190],
   ft_bridger: [355, 183],
+  bear_river: [320, 172],
   soda_springs: [310, 166],
   ft_hall: [290, 162],
   // Ft. Hall → Ft. Boise
   snake_three_island: [236, 153],
   ft_boise: [190, 140],
+  // Ft. Boise → Blue Mountains — farewell_bend midway
+  farewell_bend: [168, 136],
   // Ft. Boise → The Dalles
   blue_mountains: [148, 132],
+  grande_ronde: [138, 128],
   ft_walla_walla: [128, 122],
   the_dalles: [115, 115],
   // The Dalles → Oregon City

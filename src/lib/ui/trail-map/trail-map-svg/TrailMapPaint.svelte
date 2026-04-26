@@ -92,7 +92,10 @@
     'ft_walla_walla',
     'laurel_hill',
     'green_river',
-    'snake_three_island'
+    'snake_three_island',
+    'parting_of_ways',
+    'bear_river',
+    'grande_ronde'
   ]);
 </script>
 
