@@ -15,6 +15,7 @@ import { reapDead } from './systems/death';
 import { applySpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
+import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import type { GameEvent } from './content/events';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickText } from './content/text-pools';
@@ -47,6 +48,8 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // on its spoil-day. Any remaining fresh game_meat is zeroed out first.
   s = applySpoilage(s);
   s = applyDailyConsumption(s);
+  s = applyDietVariety(s);
+  s = applyHotDrinks(s);
   s = applyDirtyWaterRisk(s, rng);
   s = applyStarvation(s);
   s = tickOxen(s, rng);

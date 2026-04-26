@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-25 (post-#105). 21 open.
+As of 2026-04-25 (post-#110). 20 open.
 
 ## New mechanics
 
@@ -20,7 +20,6 @@ As of 2026-04-25 (post-#105). 21 open.
 
 | #    | |
 | ---- | -------------------------------------------------------------- |
-| #110 | Varied-diet consumption + coffee/tea bonuses                   |
 | #107 | Per-wagon equipment requirements (yokes, spare-part bulk)      |
 | #143 | Wet firewood — rainy-day fire failures                         |
 | #151 | Rework dig-grave camp action — situational, not preemptive     |
@@ -70,3 +69,4 @@ As of 2026-04-25 (post-#105). 21 open.
 - **#144** camp action time-cost rebalance — read_bible / find_water / dig_well retuned
 - **#153** weather pass — 8-state daily Markov picker (terrain × season × stickiness), travel + water multipliers, rain refill / storm damage / frost morale, weather-gated event firings, WagonScene reads real state
 - **#105** terrain grazing for oxen — per-terrain × season grazing quality, oxen draw on grain when grass is thin (mountains/desert/winter), travel +40% fatigue and slower rest recovery without feed; mountain/desert posts now stock grain; thin-grass chip on WagonPanel
+- **#110** varied diet + coffee/tea bonuses — drawing from ≥2 nutrition groups (starch / meat / fresh) gives +1 morale; coffee/tea pulled out of calorie draw, brewed daily for +1 morale and a wired-in waterborne-disease −40% modifier; ~1 lb per 5 brew-days

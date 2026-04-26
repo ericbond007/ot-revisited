@@ -74,7 +74,15 @@
   // top of the panel so they don't have to scan the Food group to answer
   // "how much food do we have?".
   const foodGroup = $derived(groups.find((g) => g.cat === 'food'));
-  const foodLb = $derived(foodGroup ? foodGroup.entries.reduce((s, e) => s + e.weight, 0) : 0);
+  // Exclude coffee/tea/sugar from the days-remaining calc — they're
+  // not calorie staples (coffee/tea are brewed via applyHotDrinks,
+  // sugar is a small bonus that doesn't fill bellies).
+  const foodLb = $derived(foodGroup
+    ? foodGroup.entries.reduce(
+        (s, e) => s + (typeof ITEMS[e.id]?.foodDrawOrder === 'number' ? e.weight : 0),
+        0
+      )
+    : 0);
   const dailyFoodLb = $derived(foodConsumedToday(state));
   const foodDays = $derived(dailyFoodLb > 0 ? Math.floor(foodLb / dailyFoodLb) : 0);
   const foodColor = $derived(

@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { ITEMS, getItem, foodItemIds } from '../src/lib/game/content/items';
 import { PRICES } from '../src/lib/game/content/prices';
 
-const REQUIRED_FOOD_IDS = ['flour', 'bacon', 'beans', 'hardtack', 'sugar', 'coffee', 'tea', 'dried_fruit', 'pemmican'];
+// Items in the calorie-draw pipeline. Coffee/tea are deliberately
+// excluded after #110 — they're consumed separately by applyHotDrinks
+// (~1 lb per 5 brew-days), not as regular calories.
+const REQUIRED_FOOD_IDS = ['flour', 'bacon', 'beans', 'hardtack', 'sugar', 'dried_fruit', 'pemmican'];
 
 describe('item catalog', () => {
   it('includes every required food id', () => {
@@ -10,6 +13,14 @@ describe('item catalog', () => {
     for (const id of REQUIRED_FOOD_IDS) {
       expect(foods).toContain(id);
     }
+  });
+
+  it('coffee and tea exist but are not in the calorie draw', () => {
+    expect(ITEMS.coffee).toBeDefined();
+    expect(ITEMS.tea).toBeDefined();
+    const foods = foodItemIds();
+    expect(foods).not.toContain('coffee');
+    expect(foods).not.toContain('tea');
   });
 
   it('includes core non-food items', () => {

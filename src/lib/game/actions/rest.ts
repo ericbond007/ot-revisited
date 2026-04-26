@@ -13,6 +13,7 @@ import { attemptFire } from '../systems/fire';
 import { reapDead } from '../systems/death';
 import { applyDehydration } from '../systems/dehydration';
 import { applyEggLay } from '../systems/eggs';
+import { applyDietVariety, applyHotDrinks } from '../systems/diet';
 import {
   getCampAction,
   hourCostFor,
@@ -113,6 +114,8 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     s = progressConditions(s, rng);
     s = applyEggLay(s);
     s = applyDailyConsumption(s);
+    s = applyDietVariety(s);
+    s = applyHotDrinks(s);
     s = applyDirtyWaterRisk(s, rng);
     s = applyStarvation(s);
     s = adjustMorale(s, rng);

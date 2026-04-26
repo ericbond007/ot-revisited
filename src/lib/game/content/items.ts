@@ -45,8 +45,12 @@ export const ITEMS: Record<string, ItemMeta> = {
   dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Cures scurvy. Small morale boost when eaten.' },
   pemmican:    { id: 'pemmican',    name: 'Pemmican',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6, description: 'Native-prepared dried meat + fat. Never spoils.' },
   sugar:       { id: 'sugar',       name: 'Sugar',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 7, description: 'Small morale bump when eaten; preserves foraged berries.' },
-  coffee:      { id: 'coffee',      name: 'Coffee',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 8, description: 'Boiled daily — accidentally purifies water (−40% waterborne disease odds).' },
-  tea:         { id: 'tea',         name: 'Tea',          category: 'food', weightLbPerUnit: 1, foodDrawOrder: 9, description: 'Boiled daily — accidentally purifies water (−40% waterborne disease odds).' },
+  // Coffee + tea are NOT in the regular food draw — they're consumed
+  // separately by applyHotDrinks (~1 lb per 5 brew-days). Daily brewing
+  // gives a small morale lift and accidentally cuts waterborne-disease
+  // odds because the water gets boiled.
+  coffee:      { id: 'coffee',      name: 'Coffee',       category: 'food', weightLbPerUnit: 1, description: 'Boiled daily — small morale lift and −40% waterborne disease odds while you brew.' },
+  tea:         { id: 'tea',         name: 'Tea',          category: 'food', weightLbPerUnit: 1, description: 'Boiled daily — small morale lift and −40% waterborne disease odds while you brew.' },
 
   ox: { id: 'ox', name: 'Ox', category: 'livestock', weightLbPerUnit: 0, description: 'Draft animal. Pulls the wagon. More oxen = faster travel and higher carry cap.' },
   yoke: { id: 'yoke', name: 'Yoke', category: 'livestock', weightLbPerUnit: 15, description: 'Harnesses the oxen to the wagon. Replaces broken yokes.' },

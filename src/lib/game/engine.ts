@@ -17,6 +17,7 @@ import { computeWaterCap } from './systems/water-cap';
 import { applyDehydration } from './systems/dehydration';
 import { applyStarvation } from './systems/starvation';
 import { applyEggLay } from './systems/eggs';
+import { applyDietVariety, applyHotDrinks } from './systems/diet';
 
 export interface PartyPick {
   name: string;
@@ -154,7 +155,9 @@ const DAILY_STEPS: TickStep[] = [
   progressConditions,
   (s) => applyEggLay(s), // eggs lay first so they're available to eat
   (s) => applyDailyConsumption(s), // consumption has no Rng param; wrap it
-  (s, rng) => applyDirtyWaterRisk(s, rng), // disease roll for dirty draw — silent pre-germ-theory
+  (s) => applyDietVariety(s),      // +1 morale on multi-group days
+  (s) => applyHotDrinks(s),        // coffee/tea brew — +1 morale + disease-mod
+  (s, rng) => applyDirtyWaterRisk(s, rng), // disease roll — reads coffee/tea
   (s) => applyStarvation(s),       // reads _lastFoodShortfall set above
   tickOxen,
   tickWagon,

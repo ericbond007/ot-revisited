@@ -2,6 +2,25 @@ import type { GameState, Rations } from '../types';
 import { foodItemIds } from '../content/items';
 import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
 import { weatherWaterMult } from './weather';
+import { waterborneDiseaseModifier } from './water-purity';
+
+// Food → nutrition group mapping for the varied-diet bonus (#110).
+// Drawing from ≥2 of these groups in one day = +1 morale that day.
+// Coffee / tea / sugar are treats, not main calories — excluded.
+type NutritionGroup = 'starch' | 'meat' | 'fresh';
+
+const NUTRITION_GROUP: Record<string, NutritionGroup> = {
+  flour:       'starch',
+  hardtack:    'starch',
+  beans:       'starch',
+  bacon:       'meat',
+  jerky:       'meat',
+  pemmican:    'meat',
+  game_meat:   'meat',
+  berries:     'fresh',
+  egg:         'fresh',
+  dried_fruit: 'fresh'
+};
 
 const FOOD_PER_ADULT: Record<Rations, number> = {
   meager: 1,
@@ -51,6 +70,7 @@ export function applyDailyConsumption(state: GameState): GameState {
 
   const inventory = { ...state.inventory };
   let remaining = foodNeeded;
+  const groupsDrawn = new Set<NutritionGroup>();
   for (const id of foodDrawOrder) {
     if (remaining <= 0) break;
     const have = inventory[id] ?? 0;
@@ -58,6 +78,8 @@ export function applyDailyConsumption(state: GameState): GameState {
     const take = Math.min(have, remaining);
     inventory[id] = have - take;
     remaining -= take;
+    const group = NUTRITION_GROUP[id];
+    if (group) groupsDrawn.add(group);
   }
 
   // Water draw — clean first, then fall back to dirty (risky). Track
@@ -79,10 +101,13 @@ export function applyDailyConsumption(state: GameState): GameState {
   // Surface today's food shortfall so applyStarvation (next in the
   // pipeline) can read it. `remaining` is what couldn't be drawn.
   // Dirty-water draw triggers applyDirtyWaterRisk separately.
+  // _lastFoodGroups is read by applyDietVariety for the +1 morale
+  // bonus on multi-group days.
   const flags = {
     ...state.flags,
     _lastFoodShortfall: remaining,
-    _lastDirtyWaterDrawn: dirtyDrawn
+    _lastDirtyWaterDrawn: dirtyDrawn,
+    _lastFoodGroups: [...groupsDrawn] as unknown as string
   };
 
   return {
@@ -102,9 +127,13 @@ export const DIRTY_WATER_DISEASE_CHANCE_DOCTOR = 0.025;
 export function applyDirtyWaterRisk(state: GameState, rng: { chance: (p: number) => boolean; pick: <T>(a: readonly T[]) => T }): GameState {
   const dirtyDrawn = (state.flags._lastDirtyWaterDrawn as number | undefined) ?? 0;
   if (dirtyDrawn <= 0) return state;
-  const chance = hasLiveDoctor(state)
+  const baseChance = hasLiveDoctor(state)
     ? DIRTY_WATER_DISEASE_CHANCE_DOCTOR
     : DIRTY_WATER_DISEASE_CHANCE;
+  // Boiling water for coffee/tea cuts the disease odds — they don't
+  // know why it works, just that the brew tastes better and they
+  // get sick less. modifier is 1.0 when no coffee/tea.
+  const chance = baseChance * waterborneDiseaseModifier(state);
   const adults = state.party.filter((m) => !m.dead && m.kind === 'adult');
   for (const adult of adults) {
     if (rng.chance(chance)) {
