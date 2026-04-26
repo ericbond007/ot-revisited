@@ -1,5 +1,6 @@
 <script lang="ts">
-  import TrailMap from '$lib/ui/TrailMap.svelte';
+  import TrailMapSnippet from '$lib/ui/trail-map/TrailMapSnippet.svelte';
+  import TrailMapModal from '$lib/ui/trail-map/TrailMapModal.svelte';
   import LandmarkStage from '$lib/ui/LandmarkStage.svelte';
   import PartyPanel from '$lib/ui/PartyPanel.svelte';
   import InventoryPanel from '$lib/ui/InventoryPanel.svelte';
@@ -55,6 +56,7 @@
   let showParty = $state(false);
   let selectedMemberId = $state<string | null>(null);
   let showInventory = $state(false);
+  let showTrailMapModal = $state(false);
   const selectedMember = $derived(
     selectedMemberId ? gs.party.find((m) => m.id === selectedMemberId) ?? null : null
   );
@@ -170,7 +172,10 @@
       {:else if atLandmark}
         <LandmarkStage state={gs} landmark={atLandmark} />
       {:else}
-        <TrailMap state={gs} />
+        <TrailMapSnippet
+          currentMileage={gs.location.milesTraveled}
+          day={gs.day}
+          onExpand={() => (showTrailMapModal = true)} />
         <!-- Side view of the wagon traveling. Reflects current
              terrain; eventually will host real animation. -->
         <WagonScene state={gs} />
@@ -236,6 +241,13 @@
 
 {#if showInventory}
   <InventoryModal state={gs} onclose={() => (showInventory = false)} />
+{/if}
+
+{#if showTrailMapModal}
+  <TrailMapModal
+    currentMileage={gs.location.milesTraveled}
+    onClose={() => (showTrailMapModal = false)}
+  />
 {/if}
 
 {#if showHunt && !gs.completed}
