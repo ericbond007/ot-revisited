@@ -3,6 +3,15 @@
   // from the parent — set CSS `color` to retheme. `auto` swaps to the
   // square mark below `breakpoint` px so narrow contexts (mobile chrome,
   // sidebar headers) don't truncate the wordmark.
+  //
+  // SSR/first-paint behavior (#161B): we can't measure clientWidth on
+  // the server, so the auto variant defaults to wordmark before
+  // hydration. Most consumers (landing brand, layout shell) sit in
+  // wide containers and want wordmark anyway — so first paint is
+  // correct for the common case. After hydration, we measure and
+  // swap to mark only if the container is genuinely narrow. Narrow
+  // contexts that need mark from first paint should pass
+  // `variant="mark"` explicitly.
   import Mark from '$lib/assets/brand/mark.svg?raw';
   import Wordmark from '$lib/assets/brand/wordmark.svg?raw';
 
@@ -15,10 +24,12 @@
   }
   let { variant = 'auto', breakpoint = 280, color }: Props = $props();
 
-  let containerWidth = $state(0);
+  // null = "not measured yet" — distinct from 0. The auto variant
+  // treats unmeasured as "assume wide" → wordmark.
+  let containerWidth = $state<number | null>(null);
   const resolved = $derived(
     variant === 'auto'
-      ? containerWidth < breakpoint ? 'mark' : 'wordmark'
+      ? (containerWidth !== null && containerWidth < breakpoint ? 'mark' : 'wordmark')
       : variant
   );
 </script>

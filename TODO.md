@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#151). 22 open.
+As of 2026-04-26 (post-#161). 21 open.
 
 ## New mechanics
 
@@ -31,7 +31,6 @@ As of 2026-04-26 (post-#151). 22 open.
 | #158 | Ox + mule team visual revisit — proportions, gait, yoke (post-playtest)   |
 | #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring        |
 | #160 | Trail-map visual revisit — snippet framing, modal pan/zoom, route coords  |
-| #161 | Brand revisit — BrandLockup SSR flicker (auto variant renders mark first) |
 | #162 | Components revisit — StatBar bar retrofit, PartyPanel avatar designer pass |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call          |
 | #164 | WagonScene — park rAF tick when stopped (atLandmark / camp / rest)        |
@@ -58,7 +57,8 @@ As of 2026-04-26 (post-#151). 22 open.
 
 ## Recently shipped
 
-- **#161A** icon-dictionary expansion — added 9 new categories (post_kinds, professions, town_services, fauna, ford_methods, journey_menu, end_screen, status, trend) covering ~50 emojis the brand pass left as literals. Consumers (ProfessionPicker, post-theme, HuntModal, PostHuntModal, FordModal, FordSummaryModal, TownStage, JourneyMenu, EndScreen, party-related modals, /new) all route through the typed dictionary now. SSR flicker (B) still open.
+- **#161B** BrandLockup SSR flicker — auto-variant SSR default flipped from mark to wordmark via `null`-sentinel for unmeasured `clientWidth`. Common case (wide containers) now renders correctly first paint, no hydration reflow. Narrow contexts pass `variant="mark"` explicitly.
+- **#161A** icon-dictionary expansion — added 9 new categories (post_kinds, professions, town_services, fauna, ford_methods, journey_menu, end_screen, status, trend) covering ~50 emojis the brand pass left as literals. Consumers (ProfessionPicker, post-theme, HuntModal, PostHuntModal, FordModal, FordSummaryModal, TownStage, JourneyMenu, EndScreen, party-related modals, /new) all route through the typed dictionary now.
 - **#151** dig-grave camp action — hidden until `_burialPending` is set, then handles the burial (clears flag, +2 morale w/ shovel). No more preemptive flavor click.
 - **#143** wet firewood — rain/snow/storm cuts the day's gather (×0.5 / ×0.6 / ×0.2); wagon canvas keeps stockpiled wood dry. Multi-day wet weather drains the pile and the existing no-wood cold camp triggers naturally. Log line on noticeably-wet days.
 - **#148** scoring system — miles + 200/survivor + 1000 arrival + luxury bonus on delivery. New `grandfather_clock` item (100 lb, $50, +1000 score) is the headline luxury — at Independence outfit + Ft. Laramie. Score breakdown surfaces on EndScreen.
