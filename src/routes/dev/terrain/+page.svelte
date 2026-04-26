@@ -8,12 +8,21 @@
   import SkyGradient from '$lib/ui/wagon/terrain/SkyGradient.svelte';
   import ParallaxBands from '$lib/ui/wagon/terrain/ParallaxBands.svelte';
   import { SCENE_W, SCENE_H, HORIZON_Y, GROUND_Y, type TimeOfDay } from '$lib/ui/wagon/terrain';
+  import SkyAccent, { type SkyAccentKind } from '$lib/ui/wagon/weather/SkyAccent.svelte';
+  import CloudLayer from '$lib/ui/wagon/weather/CloudLayer.svelte';
+  import PrecipOverlays from '$lib/ui/wagon/weather/PrecipOverlays.svelte';
+  import StormVignette from '$lib/ui/wagon/weather/StormVignette.svelte';
 
   const terrains: Terrain[] = ['prairie', 'mountains', 'forest', 'desert', 'river'];
   const times: TimeOfDay[] = ['day', 'dusk', 'night'];
+  const weathers: SkyAccentKind[] = ['sunny', 'partly', 'cloudy', 'rainy', 'snowy', 'night'];
 
   let t = $state(0);
   let timeOfDay = $state<TimeOfDay>('day');
+  let weatherKind = $state<SkyAccentKind>('sunny');
+
+  // Show lightning automatically when weather is rainy (storm).
+  const showLightning = $derived(weatherKind === 'rainy');
   onMount(() => {
     const t0 = performance.now();
     let raf = 0;
@@ -44,6 +53,12 @@
         <button class:active={timeOfDay === time} onclick={() => (timeOfDay = time)}>{time}</button>
       {/each}
     </div>
+    <div class="time-picker">
+      <span class="eyebrow">Weather</span>
+      {#each weathers as wk (wk)}
+        <button class:active={weatherKind === wk} onclick={() => (weatherKind = wk)}>{wk}</button>
+      {/each}
+    </div>
   </header>
 
   <section class="grid">
@@ -56,10 +71,17 @@
               <SkyGradient id="sky-{terrain}" {terrain} {timeOfDay} />
             </defs>
             <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill={`url(#sky-${terrain})`} />
+            <SkyAccent kind={weatherKind} x={SCENE_W * 0.85} y={SCENE_H * 0.15} {t} />
+            <CloudLayer kind={weatherKind} {t} w={SCENE_W} skyH={HORIZON_Y} />
             <ParallaxBands {terrain} {scrollX}
                            horizonY={HORIZON_Y} groundY={GROUND_Y}
                            w={SCENE_W} h={SCENE_H}
                            idPrefix="dev-{terrain}" />
+            <PrecipOverlays {t} w={SCENE_W} h={SCENE_H} groundY={GROUND_Y}
+                            showRain={weatherKind === 'rainy'}
+                            showSnow={weatherKind === 'snowy'}
+                            {showLightning} />
+            <StormVignette kind={weatherKind} w={SCENE_W} h={SCENE_H} />
           </svg>
         </div>
       </div>
