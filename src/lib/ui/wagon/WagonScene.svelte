@@ -252,16 +252,15 @@
     font-weight: 700;
   }
   /* Horizontal strip at 1280:180 ≈ 7.1:1 — matches the cropped
-     viewBox. Wagon dominates the vertical band (~47%), sky now
-     gets a meaningful share (~42%) while ground stays a small
-     sliver (~11%). max-height keeps the strip short enough that
-     EventLog stays in view. */
+     viewBox. Wagon dominates the vertical band (~47%), sky ~42%,
+     ground ~11%. The strip fills the card's full width; height
+     grows proportionally with it. On wider columns this means a
+     taller strip, but the proportional balance and the wagon's
+     visual prominence stay the same. */
   .landscape {
     position: relative;
     width: 100%;
     aspect-ratio: 1280 / 180;
-    max-height: 180px;
-    margin: 0 auto;
     overflow: hidden;
     border-radius: var(--r-xs);
     border: 1px solid rgba(0, 0, 0, 0.35);
