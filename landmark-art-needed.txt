@@ -1,0 +1,27 @@
+Landmarks still needing art (14 total)
+======================================
+
+Major real-gaps (4) — high priority
+-----------------------------------
+oregon_city           Oregon City                     End of trail. Final destination needs hero art.
+ft_boise              Fort Boise                      HBC trading post on the Snake River.
+ft_walla_walla        Fort Walla Walla                HBC post by the Columbia.
+laurel_hill           Laurel Hill                     Steep Cascades descent. NOTE: may overlap with the new barlow_road art — same Mt. Hood region.
+
+Medium (10) — recognizable stops worth bespoke art
+--------------------------------------------------
+hollenberg_ranch      Hollenberg Ranch                Road ranch / minor trading post in Kansas.
+ash_hollow            Ash Hollow                      Steep descent into the Platte valley; dramatic geography.
+robidoux_post         Robidoux Trading Post           Small Scotts-Bluff-area mountain-man outpost.
+register_cliff        Register Cliff                  Sandstone bluff covered in emigrant carvings.
+guernsey_ruts         Guernsey Ruts                   Deep wagon-wheel ruts cut in stone.
+green_river           Green River crossing            Major river ford in Wyoming.
+bear_river            Bear River crossing             Major river ford near Soda Springs.
+farewell_bend         Farewell Bend                   Last point on the Snake River.
+blue_mountains        Blue Mountains                  Mountain-range crossing in Oregon.
+grande_ronde          Grande Ronde Valley             Verdant valley between the Blues and Walla Walla.
+
+Skipping (8) — minor camp spots, agreed not needed
+--------------------------------------------------
+alcove_spring, willow_springs, ice_slough, pacific_springs, parting_of_ways,
+north_platte_1, north_platte_2, sweetwater_1

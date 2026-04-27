@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Trail Atlas — All 38 Landmarks</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  body { background: #2a1a10; margin: 0; padding: 24px; }
+  .atlas-shell {
+    max-width: 1400px;
+    margin: 0 auto;
+    color: var(--c-tan);
+  }
+  .atlas-header {
+    border-bottom: 2px solid var(--c-border);
+    padding-bottom: 14px;
+    margin-bottom: 24px;
+  }
+  .atlas-title {
+    font-family: var(--f-display);
+    font-size: 36px;
+    color: var(--c-tan-bright);
+    margin: 0 0 4px;
+    letter-spacing: 0.01em;
+  }
+  .atlas-sub {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--c-wood);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .atlas-blurb {
+    font-family: var(--f-body);
+    font-size: 14px;
+    color: var(--c-tan);
+    line-height: 1.55;
+    max-width: 920px;
+    margin: 14px 0 0;
+  }
+  .atlas-blurb b { color: var(--c-tan-bright); }
+  .atlas-blurb code {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--c-rust);
+    background: rgba(0,0,0,0.25);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .leg-label {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--c-rust);
+    text-transform: uppercase;
+    margin: 28px 0 10px;
+    border-top: 1px dashed var(--c-border);
+    padding-top: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .leg-label .leg-num {
+    background: var(--c-rust-dark);
+    color: var(--c-tan-bright);
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+  }
+  .leg-label .leg-name {
+    font-family: var(--f-display);
+    font-size: 18px;
+    color: var(--c-tan-bright);
+    letter-spacing: 0.01em;
+  }
+  .leg-label .leg-mile {
+    margin-left: auto;
+    color: var(--c-wood);
+    font-size: 11px;
+  }
+
+  .atlas-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .atlas-card {
+    background: var(--c-panel);
+    border: 2px solid var(--c-border);
+    border-radius: 3px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+  }
+  .atlas-card.kind-river   { border-color: #3a5560; }
+  .atlas-card.kind-fort    { border-color: #6a3d1e; }
+  .atlas-card.kind-passby  { border-color: #4a3a28; }
+  .atlas-card.kind-arrival { border-color: var(--c-border); }
+  .atlas-card.kind-end     { border-color: #4a6a3a; }
+
+  .atlas-card .kind-tag {
+    position: absolute;
+    top: -8px; right: 8px;
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: var(--c-bg);
+    color: var(--c-wood);
+    padding: 1px 6px;
+    border-radius: 2px;
+    border: 1px solid var(--c-border);
+  }
+  .atlas-card.kind-river   .kind-tag { color: #6a96a8; border-color: #3a5560; }
+  .atlas-card.kind-fort    .kind-tag { color: #c88a55; border-color: #6a3d1e; }
+  .atlas-card.kind-passby  .kind-tag { color: var(--c-wood); }
+  .atlas-card.kind-end     .kind-tag { color: #8aa872; border-color: #4a6a3a; }
+
+  .atlas-card .lmk-art-shell {
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    background: var(--c-bg-raised);
+    border: 1px solid var(--c-border);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .atlas-card .lmk-art-shell::after {
+    content: "";
+    position: absolute; inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4),
+                inset 0 0 14px rgba(0,0,0,0.3);
+    pointer-events: none;
+  }
+  .atlas-card .name {
+    font-family: var(--f-display);
+    font-size: 15px;
+    color: var(--c-tan-bright);
+    margin-top: 4px;
+    line-height: 1.15;
+  }
+  .atlas-card .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--c-wood);
+    text-transform: uppercase;
+  }
+  .atlas-card .meta b { color: var(--c-rust); font-weight: 700; }
+  .atlas-card .silh {
+    font-family: var(--f-body);
+    font-size: 11px;
+    color: var(--c-tan);
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+  .atlas-card .silh i { color: var(--c-tan-bright); font-style: normal; font-weight: 700; }
+
+  .atlas-footer {
+    margin-top: 36px;
+    padding: 16px 18px;
+    background: rgba(0,0,0,0.18);
+    border-left: 3px solid var(--c-rust-dark);
+    font-family: var(--f-body);
+    font-size: 13px;
+    color: var(--c-tan);
+    line-height: 1.55;
+  }
+  .atlas-footer b { color: var(--c-tan-bright); }
+  .atlas-footer i { color: var(--c-tan-bright); font-style: normal; }
+  .atlas-footer code {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--c-rust);
+    background: rgba(0,0,0,0.25);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 14px;
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .legend-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--c-wood);
+  }
+  .legend-chip::before {
+    content: "";
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid;
+    border-radius: 2px;
+  }
+  .legend-chip.river::before   { border-color: #3a5560; }
+  .legend-chip.fort::before    { border-color: #6a3d1e; }
+  .legend-chip.passby::before  { border-color: #4a3a28; }
+  .legend-chip.arrival::before { border-color: var(--c-border); }
+  .legend-chip.end::before     { border-color: #4a6a3a; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Frame -->
+  <script type="text/babel" src="landmark-art-frame.jsx"></script>
+
+  <!-- All 38 landmark art components, in journey order -->
+  <!-- Leg I — Trail Head & Rivers -->
+  <script type="text/babel" src="independence-art.jsx"></script>
+  <script type="text/babel" src="kansas-river-art.jsx"></script>
+  <script type="text/babel" src="alcove-spring-art.jsx"></script>
+  <script type="text/babel" src="big-blue-art.jsx"></script>
+  <script type="text/babel" src="hollenberg-ranch-art.jsx"></script>
+
+  <!-- Leg II — Platte Spires -->
+  <script type="text/babel" src="fort-kearny-art.jsx"></script>
+  <script type="text/babel" src="ash-hollow-art.jsx"></script>
+  <script type="text/babel" src="north-platte-east-art.jsx"></script>
+  <script type="text/babel" src="courthouse-jail-art.jsx"></script>
+  <script type="text/babel" src="chimney-rock-art.jsx"></script>
+  <script type="text/babel" src="scotts-bluff-art.jsx"></script>
+  <script type="text/babel" src="robidoux-post-art.jsx"></script>
+
+  <!-- Leg III — Divide Crossing -->
+  <script type="text/babel" src="fort-laramie-art.jsx"></script>
+  <script type="text/babel" src="register-cliff-art.jsx"></script>
+  <script type="text/babel" src="guernsey-ruts-art.jsx"></script>
+  <script type="text/babel" src="north-platte-west-art.jsx"></script>
+  <script type="text/babel" src="willow-springs-art.jsx"></script>
+  <script type="text/babel" src="independence-rock-art.jsx"></script>
+  <script type="text/babel" src="devils-gate-art.jsx"></script>
+  <script type="text/babel" src="sweetwater-ford-art.jsx"></script>
+  <script type="text/babel" src="ice-slough-art.jsx"></script>
+  <script type="text/babel" src="south-pass-art.jsx"></script>
+  <script type="text/babel" src="pacific-springs-art.jsx"></script>
+  <script type="text/babel" src="parting-of-ways-art.jsx"></script>
+
+  <!-- Leg IV — Snake River Country -->
+  <script type="text/babel" src="green-river-art.jsx"></script>
+  <script type="text/babel" src="fort-bridger-art.jsx"></script>
+  <script type="text/babel" src="bear-river-art.jsx"></script>
+  <script type="text/babel" src="soda-springs-art.jsx"></script>
+  <script type="text/babel" src="fort-hall-art.jsx"></script>
+  <script type="text/babel" src="three-island-art.jsx"></script>
+  <script type="text/babel" src="fort-boise-art.jsx"></script>
+
+  <!-- Leg V — Columbia Gauntlet -->
+  <script type="text/babel" src="farewell-bend-art.jsx"></script>
+  <script type="text/babel" src="blue-mountains-art.jsx"></script>
+  <script type="text/babel" src="grande-ronde-art.jsx"></script>
+  <script type="text/babel" src="fort-walla-walla-art.jsx"></script>
+  <script type="text/babel" src="whitman-mission-art.jsx"></script>
+  <script type="text/babel" src="the-dalles-art.jsx"></script>
+  <script type="text/babel" src="barlow-road-art.jsx"></script>
+  <script type="text/babel" src="oregon-city-art.jsx"></script>
+
+  <script type="text/babel">
+    // ──────────────────────────────────────────────────────────────────────
+    // Card — one landmark thumbnail.
+    // `kind` drives the colored border + corner tag so silhouette type
+    // (river/fort/arrival/pass-by/end) reads at a glance across the whole
+    // 38-card grid. `tone` maps to the LandmarkArtFrame palette.
+    // ──────────────────────────────────────────────────────────────────────
+    function Card({ id, name, mile, day, silhouette, Art, tone = "warm", kind = "arrival", tag }) {
+      return (
+        <div className={`atlas-card kind-${kind}`}>
+          <span className="kind-tag">{tag}</span>
+          <div className="lmk-art-shell">
+            <LandmarkArtFrame tone={tone} filterId={`atlas-${id}`}>
+              <Art />
+            </LandmarkArtFrame>
+          </div>
+          <div className="name">{name}</div>
+          <div className="meta">
+            <span><b>Mi {mile}</b> · ~Day {day}</span>
+            <span>{tone}</span>
+          </div>
+          <div className="silh" dangerouslySetInnerHTML={{ __html: silhouette }} />
+        </div>
+      );
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Canonical landmark list — 38 entries, in journey order.
+    // Mirrors landmarks.ts: 1 start + 8 trading posts + 8 fords + 11 arrival
+    // landmarks + 8 pass-bys + 1 endpoint = 38.
+    //
+    // tag values: STOP (interactive arrival), FORT (trading post), FORD
+    // (river crossing), PASS-BY (visual only, no event), START / END.
+    //
+    // Mile + day are approximate, sourced from the in-app waypoint tables.
+    // ──────────────────────────────────────────────────────────────────────
+    const LEGS = [
+      {
+        leg: "I", name: "Trail head & rivers", miles: "0 – 165",
+        landmarks: [
+          { id: "indep",     name: "Independence, MO",    mile: 0,    day: 1,   tone: "warm", kind: "end",     tag: "START",
+            silhouette: "Reads as a <i>busy outfitting town</i> — courthouse cupola, livery sign, loaded wagons.",
+            Art: () => <IndependenceArt /> },
+          { id: "kansas",    name: "Kansas River Crossing", mile: 100, day: 8,  tone: "warm", kind: "river",   tag: "FORD",
+            silhouette: "Reads as a <i>ferry crossing</i> — flatboat with rope, oxen unyoked, broad muddy river.",
+            Art: () => <KansasRiverArt /> },
+          { id: "alcove",    name: "Alcove Spring",       mile: 145,  day: 11,  tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>hidden spring grotto</i> — clear pool under a moss-darkened rock alcove.",
+            Art: () => <AlcoveSpringArt /> },
+          { id: "bigblue",   name: "Big Blue River",      mile: 150,  day: 12,  tone: "warm", kind: "river",   tag: "FORD",
+            silhouette: "Reads as a <i>caulked-wagon ford</i> — wagons floating box-deep with tarred seams.",
+            Art: () => <BigBlueArt /> },
+          { id: "hollenberg",name: "Hollenberg Ranch",    mile: 165,  day: 13,  tone: "warm", kind: "fort",    tag: "FORT",
+            silhouette: "Reads as a <i>lone prairie ranch</i> — long log house, picket fence, pony-express stable.",
+            Art: () => <HollenbergRanchArt /> },
+        ],
+      },
+      {
+        leg: "II", name: "Platte spires", miles: "300 – 615",
+        landmarks: [
+          { id: "kearny",    name: "Fort Kearny",         mile: 300, day: 25, tone: "warm", kind: "fort",    tag: "FORT",
+            silhouette: "Reads as a <i>sod-roofed army post</i> — low buildings, parade flagpole, no walls.",
+            Art: () => <FortKearnyArt /> },
+          { id: "ashhollow", name: "Ash Hollow",          mile: 470, day: 38, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>steep descent</i> — Windlass Hill chute dropping into a green ash grove.",
+            Art: () => <AshHollowArt /> },
+          { id: "nplatte_e", name: "North Platte (east)", mile: 510, day: 40, tone: "warm", kind: "river",   tag: "FORD",
+            silhouette: "Reads as a <i>shallow braided ford</i> — quicksand bars in a mile-wide muddy flat.",
+            Art: () => <NorthPlatteEastArt /> },
+          { id: "courthouse",name: "Courthouse & Jail Rocks", mile: 540, day: 42, tone: "warm", kind: "passby", tag: "PASS-BY",
+            silhouette: "Reads as <i>two solitary buttes</i> — flat-top sandstone above an empty plain.",
+            Art: () => <CourthouseJailArt /> },
+          { id: "chimney",   name: "Chimney Rock",        mile: 560, day: 44, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>single skinny spire</i> — a vertical exclamation mark on the horizon.",
+            Art: () => <ChimneyRockArt /> },
+          { id: "scotts",    name: "Scotts Bluff",        mile: 600, day: 47, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>massive layered cliff</i> — Mitchell Pass cleft cutting through.",
+            Art: () => <ScottsBluffArt /> },
+          { id: "robidoux",  name: "Robidoux Post",       mile: 615, day: 48, tone: "warm", kind: "fort",    tag: "FORT",
+            silhouette: "Reads as a <i>tiny log trading cabin</i> — anvil out front, pelts hanging, blacksmith smoke.",
+            Art: () => <RobidouxPostArt /> },
+        ],
+      },
+      {
+        leg: "III", name: "Divide crossing", miles: "640 – 920",
+        landmarks: [
+          { id: "laramie",   name: "Fort Laramie",        mile: 640, day: 50, tone: "warm", kind: "fort",    tag: "FORT",
+            silhouette: "Reads as a <i>whitewashed adobe quadrangle</i> — Old Bedlam two-story, US flag.",
+            Art: () => <FortLaramieArt /> },
+          { id: "register",  name: "Register Cliff",      mile: 650, day: 51, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>chalky soft-stone wall</i> — covered in carved names and dates.",
+            Art: () => <RegisterCliffArt /> },
+          { id: "ruts",      name: "Guernsey Ruts",       mile: 655, day: 51, tone: "warm", kind: "passby",  tag: "PASS-BY",
+            silhouette: "Reads as <i>deep wagon grooves</i> — five feet down into solid sandstone bedrock.",
+            Art: () => <GuernseyRutsArt /> },
+          { id: "nplatte_w", name: "North Platte (west)", mile: 700, day: 55, tone: "warm", kind: "river",   tag: "FORD",
+            silhouette: "Reads as a <i>fast deep ferry crossing</i> — Mormon-built rope ferry, $4 a wagon.",
+            Art: () => <NorthPlatteWestArt /> },
+          { id: "willow",    name: "Willow Springs",      mile: 770, day: 58, tone: "warm", kind: "passby",  tag: "PASS-BY",
+            silhouette: "Reads as a <i>willow-shaded sweet creek</i> — cool oasis after Saleratus alkali flats.",
+            Art: () => <WillowSpringsArt /> },
+          { id: "indrock",   name: "Independence Rock",   mile: 815, day: 60, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>long whale-back dome</i> — climbed by tiny figures, river curving past.",
+            Art: () => <IndependenceRockArt /> },
+          { id: "devils",    name: "Devil's Gate",        mile: 820, day: 60, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>vertical cleft</i> — sheer walls bracketing a foaming Sweetwater.",
+            Art: () => <DevilsGateArt /> },
+          { id: "sweetwater",name: "Sweetwater Crossing", mile: 830, day: 61, tone: "warm", kind: "river",   tag: "FORD",
+            silhouette: "Reads as a <i>clear gravel ford</i> — bright Sweetwater curving through low sage hills.",
+            Art: () => <SweetwaterFordArt /> },
+          { id: "iceslough", name: "Ice Slough",          mile: 870, day: 65, tone: "warm", kind: "passby",  tag: "PASS-BY",
+            silhouette: "Reads as a <i>boggy meadow</i> — wagons digging chunks of ice from peat in midsummer.",
+            Art: () => <IceSloughArt /> },
+          { id: "spass",     name: "South Pass",          mile: 915, day: 75, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as <i>vast empty saddle</i> — distant snow peaks north, brown hills south.",
+            Art: () => <SouthPassArt /> },
+          { id: "pacific",   name: "Pacific Springs",     mile: 920, day: 75, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>marshy meadow with running water</i> — first stream flowing west.",
+            Art: () => <PacificSpringsArt /> },
+          { id: "parting",   name: "Parting of the Ways", mile: 945, day: 77, tone: "warm", kind: "passby",  tag: "PASS-BY",
+            silhouette: "Reads as a <i>fork in the trail</i> — a single signpost where wagons split west or south.",
+            Art: () => <PartingOfTheWaysArt /> },
+        ],
+      },
+      {
+        leg: "IV", name: "Snake River country", miles: "1010 – 1490",
+        landmarks: [
+          { id: "green",     name: "Green River",         mile: 1010, day: 82,  tone: "cool", kind: "river",   tag: "FORD",
+            silhouette: "Reads as a <i>deep blue-green ferry crossing</i> — Mormon ferry, cottonwood banks.",
+            Art: () => <GreenRiverArt /> },
+          { id: "bridger",   name: "Fort Bridger",        mile: 1070, day: 85,  tone: "cool", kind: "fort",    tag: "FORT",
+            silhouette: "Reads as a <i>log stockade</i> — irregular palisade in a willow valley, bartered.",
+            Art: () => <FortBridgerArt /> },
+          { id: "bear",      name: "Bear River",          mile: 1140, day: 92,  tone: "cool", kind: "passby",  tag: "PASS-BY",
+            silhouette: "Reads as a <i>broad green river valley</i> — slow horseshoe meanders between ridges.",
+            Art: () => <BearRiverArt /> },
+          { id: "soda",      name: "Soda Springs",        mile: 1180, day: 95,  tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as <i>mineral cones with rising steam</i> — small intimate scale, fizz.",
+            Art: () => <SodaSpringsArt /> },
+          { id: "hall",      name: "Fort Hall",           mile: 1290, day: 100, tone: "warm", kind: "fort",    tag: "FORT",
+            silhouette: "Reads as a <i>square adobe fort</i> with a Union Jack — British in contested country.",
+            Art: () => <FortHallArt /> },
+          { id: "three",     name: "Three Island Crossing", mile: 1430, day: 110, tone: "warm", kind: "river", tag: "FORD",
+            silhouette: "Reads as a <i>wide green river</i> with diagonal islands and dark basalt bluffs.",
+            Art: () => <ThreeIslandCrossingArt /> },
+          { id: "boise",     name: "Fort Boise",          mile: 1490, day: 115, tone: "warm", kind: "fort",    tag: "FORT",
+            silhouette: "Reads as a <i>HBC adobe fort by the river</i> — Union Jack, willows, Snake confluence.",
+            Art: () => <FortBoiseArt /> },
+        ],
+      },
+      {
+        leg: "V", name: "Columbia gauntlet", miles: "1540 – 2000",
+        landmarks: [
+          { id: "farewell",  name: "Farewell Bend",       mile: 1540, day: 120, tone: "warm", kind: "passby",  tag: "PASS-BY",
+            silhouette: "Reads as a <i>last view of the Snake</i> — wagons turning inland from a wide bend.",
+            Art: () => <FarewellBendArt /> },
+          { id: "blues",     name: "Blue Mountains",      mile: 1610, day: 123, tone: "cool", kind: "passby",  tag: "PASS-BY",
+            silhouette: "Reads as <i>dark forested ridges</i> — first real mountains, snow patches on tops.",
+            Art: () => <BlueMountainsArt /> },
+          { id: "ronde",     name: "Grande Ronde Valley", mile: 1620, day: 124, tone: "cool", kind: "passby",  tag: "PASS-BY",
+            silhouette: "Reads as a <i>lush round valley</i> from above — green floor ringed by blue ridges.",
+            Art: () => <GrandeRondeArt /> },
+          { id: "walla",     name: "Fort Walla Walla",    mile: 1635, day: 124, tone: "warm", kind: "fort",    tag: "FORT",
+            silhouette: "Reads as a <i>HBC adobe post on the Columbia</i> — bastions, river barges.",
+            Art: () => <FortWallaWallaArt /> },
+          { id: "whitman",   name: "Whitman Mission",     mile: 1640, day: 125, tone: "warm", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as a <i>cluster of white buildings</i> in a green irrigated field — cultivated.",
+            Art: () => <WhitmanMissionArt /> },
+          { id: "dalles",    name: "The Dalles",          mile: 1850, day: 135, tone: "warm", kind: "river",   tag: "FORD",
+            silhouette: "Reads as a <i>basalt gorge with rafts</i> — fishing scaffolds, foamy Columbia.",
+            Art: () => <TheDallesArt /> },
+          { id: "barlow",    name: "Barlow Road · Laurel Hill", mile: 1900, day: 138, tone: "cool", kind: "arrival", tag: "STOP",
+            silhouette: "Reads as <i>snowy Mt. Hood over fir forest</i> — chute with wagon being roped down.",
+            Art: () => <BarlowRoadArt /> },
+          { id: "oregon",    name: "Oregon City",         mile: 2000, day: 145, tone: "warm", kind: "end",     tag: "END",
+            silhouette: "Reads as a <i>frontier town by Willamette Falls</i> — mills, cabins, journey's end.",
+            Art: () => <OregonCityArt /> },
+        ],
+      },
+    ];
+
+    function App() {
+      const total = LEGS.reduce((n, l) => n + l.landmarks.length, 0);
+      return (
+        <div className="atlas-shell">
+          <div className="atlas-header">
+            <h1 className="atlas-title">Trail Atlas — All Landmarks</h1>
+            <div className="atlas-sub">Independence to Oregon City · {total} places · 5 legs · ~2,000 miles</div>
+            <p className="atlas-blurb">
+              The complete set of landmark artworks at trail-map thumbnail size, in journey order. Each
+              card is a <b>shipped React component</b> in <code>landmark_art/</code> — all share the same
+              <code>LandmarkArtFrame</code> chrome (paper grain, vignette, watercolor bleed) and the same
+              <b>480 × 200 viewBox</b>, so they're interchangeable in any layout. The corner tag and
+              border color encode <b>landmark kind</b>: trading-post forts, river fords, arrival-event
+              stops, visual-only pass-bys, and the two bookends.
+            </p>
+            <div className="legend">
+              <span className="legend-chip end">Start / End</span>
+              <span className="legend-chip fort">Fort · trading post</span>
+              <span className="legend-chip river">River · ford</span>
+              <span className="legend-chip arrival">Arrival · stop event</span>
+              <span className="legend-chip passby">Pass-by · visual only</span>
+            </div>
+          </div>
+
+          {LEGS.map((leg, li) => (
+            <div key={li}>
+              <div className="leg-label">
+                <span className="leg-num">LEG {leg.leg}</span>
+                <span className="leg-name">{leg.name}</span>
+                <span className="leg-mile">{leg.landmarks.length} landmarks · Mile {leg.miles}</span>
+              </div>
+              <div className="atlas-row">
+                {leg.landmarks.map((lm) => (
+                  <Card key={lm.id} {...lm} />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="atlas-footer">
+            <b>How to read this.</b> Each card is one landmark — silhouette description, artwork, mile,
+            approximate day on the trail. Border color and corner tag encode landmark <i>kind</i>: forts
+            (warm rust), rivers (cool teal), arrivals (neutral), pass-bys (muted), bookends (green).
+            The <b>five legs</b> match the per-leg detail canvases — <i>Trail Head & Rivers</i>,
+            <i> Platte Spires</i>, <i>Divide Crossing</i>, <i>Snake River Country</i>, <i>Columbia
+            Gauntlet</i> — which drill into the same landmarks at full panel size with research notes,
+            fresh / visited / abandoned states, and detailed distinguishing features. This atlas is the
+            <b> at-a-glance check</b>: are the silhouettes distinct, does the journey rhythm read across
+            legs, do the tones sit together?
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

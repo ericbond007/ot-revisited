@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Landmark Artwork — Fort Kearny / Laramie / Bridger</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  /* tighten the canvas chrome a touch for this presentation */
+  body { background: #2a1a10; }
+  .lmk-art-shell {
+    /* simulates the LandmarkPanel art slot in the actual game UI */
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    background: var(--c-bg-raised);
+    border: 2px solid var(--c-border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .lmk-art-shell::after {
+    /* subtle inner frame (matches game panel inset) */
+    content: "";
+    position: absolute; inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4),
+                inset 0 0 16px rgba(0,0,0,0.3);
+    pointer-events: none;
+  }
+  .lmk-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 12px 4px 6px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--c-wood);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .lmk-meta strong { color: var(--c-tan-bright); letter-spacing: 0.08em; }
+  .lmk-notes {
+    margin: 8px 4px 0;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.18);
+    border-left: 3px solid var(--c-rust-dark);
+    font-family: var(--f-body);
+    font-size: 13px;
+    color: var(--c-tan);
+    line-height: 1.5;
+  }
+  .lmk-notes b { color: var(--c-tan-bright); font-weight: 700; }
+  .lmk-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .lmk-comparison .panel-shell {
+    background: var(--c-panel);
+    border: 2px solid var(--c-border);
+    border-radius: 3px;
+    padding: 12px;
+  }
+  .lmk-comparison h4 {
+    color: var(--c-rust);
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    margin: 0 0 8px;
+  }
+  .lmk-comparison .lmk-art-shell { aspect-ratio: 16 / 6; }
+  .lmk-thumb-shell {
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--c-border);
+    background: var(--c-bg-raised);
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+  .lmk-thumb-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .lmk-thumb-row .label {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--c-wood);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Design canvas -->
+  <script type="text/babel" src="design-canvas.jsx"></script>
+
+  <!-- Shared frame + landmark art -->
+  <script type="text/babel" src="landmark-art-frame.jsx"></script>
+  <script type="text/babel" src="fort-kearny-art.jsx"></script>
+  <script type="text/babel" src="fort-laramie-art.jsx"></script>
+  <script type="text/babel" src="fort-bridger-art.jsx"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Each landmark gets one section. Inside each section we present:
+    //   1) the art at full panel size (the way it'd appear in-game)
+    //   2) a "thumbnail" view (what it looks like in the trail-map list)
+    //   3) a "abandoned/visited" desaturated state
+    //   4) research notes & distinguishing features
+    //
+    // Three sections — one per fort — so designs can be compared side by side
+    // by scrolling/panning through the canvas. Each artboard is fixed at
+    // 720×440 to match the actual LandmarkPanel art slot.
+
+    // Helper: wraps a bare-SVG-group art component in the LandmarkArtFrame
+    // (which provides the <svg>, paper background, grain & vignette).
+    function FramedArt({ Art, tone = "warm", filterId, abandoned = false }) {
+      return (
+        <LandmarkArtFrame tone={tone} filterId={filterId} abandoned={abandoned}>
+          <Art />
+        </LandmarkArtFrame>
+      );
+    }
+
+    function LandmarkSection({ id, title, ArtComponent, tone, notes, features, caption }) {
+      return (
+        <DCSection id={id} title={title}>
+          {/* Full panel — what the player sees on landmark arrival */}
+          <DCArtboard id={`${id}-full`} label="Full panel — Arrival view" width={720} height={440}>
+            <div style={{
+              padding: 24, height: "100%", boxSizing: "border-box",
+              display: "flex", flexDirection: "column", gap: 12,
+            }}>
+              <div className="lmk-meta">
+                <span>Day 47 · Landmark</span>
+                <strong>{caption}</strong>
+              </div>
+              <div className="lmk-art-shell">
+                <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-full`} />
+              </div>
+              <div className="lmk-notes">
+                {notes}
+              </div>
+            </div>
+          </DCArtboard>
+
+          {/* Comparison: clean vs abandoned/visited state */}
+          <DCArtboard id={`${id}-states`} label="States — Fresh vs. Visited" width={720} height={420}>
+            <div style={{ padding: 20, height: "100%", boxSizing: "border-box" }}>
+              <div className="lmk-comparison" style={{ height: "calc(100% - 8px)" }}>
+                <div className="panel-shell">
+                  <h4>Fresh arrival</h4>
+                  <div className="lmk-art-shell">
+                    <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-fresh`} />
+                  </div>
+                </div>
+                <div className="panel-shell">
+                  <h4>Already visited (faded)</h4>
+                  <div className="lmk-art-shell">
+                    <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-vis`} abandoned />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DCArtboard>
+
+          {/* Research notes — what makes it distinctive */}
+          <DCArtboard id={`${id}-research`} label="Research notes — distinguishing features" width={500} height={440}>
+            <div style={{
+              padding: 24, height: "100%", boxSizing: "border-box",
+              fontFamily: "var(--f-body)", fontSize: 14, color: "var(--c-tan)",
+              overflowY: "auto",
+            }}>
+              <div style={{
+                fontFamily: "var(--f-display)", fontSize: 22,
+                color: "var(--c-rust)", marginBottom: 4,
+              }}>{title}</div>
+              <div style={{
+                fontFamily: "var(--f-mono)", fontSize: 11, letterSpacing: "0.14em",
+                color: "var(--c-wood)", textTransform: "uppercase", marginBottom: 16,
+              }}>Distinguishing visual marks</div>
+              <ul style={{ paddingLeft: 18, margin: 0, lineHeight: 1.55 }}>
+                {features.map((f, i) => (
+                  <li key={i} style={{ marginBottom: 8 }}>
+                    <b style={{ color: "var(--c-tan-bright)" }}>{f.title}.</b> {f.body}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </DCArtboard>
+        </DCSection>
+      );
+    }
+
+    function App() {
+      return (
+        <DesignCanvas
+          title="Landmark Artwork — Fort Series"
+          subtitle="Period engraving / pen-and-wash style for the LandmarkPanel art slot"
+        >
+          <LandmarkSection
+            id="kearny"
+            title="Fort Kearny on the Platte"
+            ArtComponent={FortKearnyArt}
+            tone="warm"
+            caption="Fort Kearny — Day 47"
+            notes={<><b>Plain Army post.</b> No walls — sod &amp; adobe buildings ring a bare 4-acre parade ground, with cottonwoods planted as a windbreak and the Platte glinting on the horizon. Ox-trains streaming past the post on the trail, drilling soldiers at the flagpole.</>}
+            features={[
+              { title: "No walls",       body: "Open Army post — the architectural language is sod-block barracks and small frame officer's quarters arranged around a flagpole, never a stockade." },
+              { title: "Cottonwoods",    body: "Planted ringing the perimeter; their loose, billowy canopies are unmistakable on the otherwise treeless Platte plain." },
+              { title: "U.S. flag center", body: "Tall pole at parade-ground center flying a small period flag. The flag is the post's vertical anchor." },
+              { title: "Field cannon",   body: "Light field pieces lined up between the cottonwoods — a quiet reminder this is the Army." },
+              { title: "Platte ribbon",  body: "The river is a flat, sandy, braided ribbon with visible sandbars — never a mountain stream." },
+            ]}
+          />
+
+          <LandmarkSection
+            id="laramie"
+            title="Fort Laramie / Fort John"
+            ArtComponent={FortLaramieArt}
+            tone="warm"
+            caption="Fort Laramie — Day 71"
+            notes={<><b>Adobe-walled trading post, the iconic emigrant landmark.</b> Thick high walls rise like a desert castle out of the grassland, with peaked-roof bastions at the corners and an arched gate. Wagons gather outside — emigrants stop here for repairs, supplies, mail, news.</>}
+            features={[
+              { title: "High adobe walls", body: "Thick tan walls with crenellated parapet — very different in scale and material from log forts. Block-coursing visible." },
+              { title: "Corner bastions",  body: "Two peaked-roof blockhouses at the front corners with gun ports — the post's most recognizable silhouette." },
+              { title: "Arched gate",      body: "Central two-leaf wooden gate set inside a slightly taller arched gate-tower. Iron studs in the planks." },
+              { title: "Flag in courtyard",body: "Pole rises from inside the courtyard — flag floats above the wall, anchoring the comp." },
+              { title: "Wagon camp outside",body: "Emigrants pitched OUTSIDE the walls (Army post wouldn't admit them) — circled wagons, campfires." },
+              { title: "Laramie Mts behind",body: "Soft blue jagged ridge on the horizon, slightly snowcapped on the highest peaks." },
+            ]}
+          />
+
+          <LandmarkSection
+            id="bridger"
+            title="Fort Bridger, Black's Fork"
+            ArtComponent={FortBridgerArt}
+            tone="cool"
+            caption="Fort Bridger — Day 102"
+            notes={<><b>Crude mountain trading post.</b> Two log cabins arranged at right angles, dirt-and-sod roofs growing grass, low pole stockade, a corral with a couple horses, Shoshone tipis pitched alongside. The Uintas snow-capped behind. Smoke from Bridger's forge.</>}
+            features={[
+              { title: "L-shaped log cabins",body: "Two squarish hewn-log cabins joined at right angles — chinking visible between courses, log-end notches at corners. Crude, not picturesque." },
+              { title: "Sod roofs",         body: "Thick dirt roofs with grass tufts growing on top — the unmistakable mountain-man building idiom." },
+              { title: "Pole stockade",     body: "Low pointed-pole fence (~8') around the compound — a fence, not a wall. Defines the post but doesn't tower." },
+              { title: "Tipi camp",         body: "Cluster of Shoshone/Ute tipis adjacent — Bridger's family connection. Painted bands, smoke from one." },
+              { title: "Forge & smoke",     body: "Smithy operates from one cabin — chimney smoke and a small fire/anvil outside say 'wagon repairs done here.'" },
+              { title: "Uinta peaks",       body: "High jagged snowcapped range filling the back of the comp — the only landmark with snow caps." },
+              { title: "Black's Fork creek",body: "Narrow mountain stream meanders through the mid-ground — clear water, not muddy Platte." },
+            ]}
+          />
+
+          {/* Side-by-side comparison strip — all three at thumbnail scale */}
+          <DCSection id="compare" title="Side-by-side — silhouette read">
+            <DCArtboard id="thumb-row" label="Trail-map thumbnail size" width={720} height={260}>
+              <div style={{
+                padding: 24, height: "100%", boxSizing: "border-box",
+                display: "flex", flexDirection: "column", gap: 16,
+              }}>
+                <div style={{
+                  fontFamily: "var(--f-mono)", fontSize: 11, letterSpacing: "0.14em",
+                  color: "var(--c-wood)", textTransform: "uppercase",
+                }}>Are the three reads distinct?</div>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: 14, alignItems: "stretch",
+                }}>
+                  <ThumbCard label="Kearny" sub="Open post, flagpole, cottonwoods" Art={FortKearnyArt} tone="warm" tid="thumb-k" />
+                  <ThumbCard label="Laramie" sub="Adobe walls, bastions, gate" Art={FortLaramieArt} tone="warm" tid="thumb-l" />
+                  <ThumbCard label="Bridger" sub="Log cabins, tipis, snow peaks" Art={FortBridgerArt} tone="cool" tid="thumb-b" />
+                </div>
+                <div style={{
+                  fontFamily: "var(--f-body)", fontSize: 13, color: "var(--c-tan)",
+                  lineHeight: 1.5, marginTop: 4,
+                }}>
+                  Each fort has a distinct silhouette: <b style={{color:"var(--c-tan-bright)"}}>Kearny</b> reads as scattered low buildings + flag, <b style={{color:"var(--c-tan-bright)"}}>Laramie</b> reads as a single solid walled mass, and <b style={{color:"var(--c-tan-bright)"}}>Bridger</b> reads as cabins + cones (tipis) + jagged peaks.
+                </div>
+              </div>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    function ThumbCard({ label, sub, Art, tone = "warm", tid = "t" }) {
+      return (
+        <div style={{
+          background: "var(--c-panel)",
+          border: "2px solid var(--c-border)",
+          borderRadius: 3,
+          padding: 10,
+          display: "flex", flexDirection: "column", gap: 6,
+        }}>
+          <div className="lmk-art-shell" style={{ aspectRatio: "16 / 7" }}>
+            <FramedArt Art={Art} tone={tone} filterId={tid} />
+          </div>
+          <div style={{
+            fontFamily: "var(--f-display)", fontSize: 16,
+            color: "var(--c-tan-bright)",
+          }}>{label}</div>
+          <div style={{
+            fontFamily: "var(--f-mono)", fontSize: 10,
+            letterSpacing: "0.1em", color: "var(--c-wood)",
+            textTransform: "uppercase",
+          }}>{sub}</div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

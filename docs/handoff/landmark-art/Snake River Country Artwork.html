@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Landmark Artwork — Soda Springs / Fort Hall / Three Island Crossing</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  body { background: #2a1a10; }
+  .lmk-art-shell {
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    background: var(--c-bg-raised);
+    border: 2px solid var(--c-border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .lmk-art-shell::after {
+    content: "";
+    position: absolute; inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4),
+                inset 0 0 16px rgba(0,0,0,0.3);
+    pointer-events: none;
+  }
+  .lmk-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 12px 4px 6px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--c-wood);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .lmk-meta strong { color: var(--c-tan-bright); letter-spacing: 0.08em; }
+  .lmk-notes {
+    margin: 8px 4px 0;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.18);
+    border-left: 3px solid var(--c-rust-dark);
+    font-family: var(--f-body);
+    font-size: 13px;
+    color: var(--c-tan);
+    line-height: 1.5;
+  }
+  .lmk-notes b { color: var(--c-tan-bright); font-weight: 700; }
+  .lmk-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .lmk-comparison .panel-shell {
+    background: var(--c-panel);
+    border: 2px solid var(--c-border);
+    border-radius: 3px;
+    padding: 12px;
+  }
+  .lmk-comparison h4 {
+    color: var(--c-rust);
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    margin: 0 0 8px;
+  }
+  .lmk-comparison .lmk-art-shell { aspect-ratio: 16 / 6; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Design canvas -->
+  <script type="text/babel" src="design-canvas.jsx"></script>
+
+  <!-- Shared frame + landmark art -->
+  <script type="text/babel" src="landmark-art-frame.jsx"></script>
+  <script type="text/babel" src="soda-springs-art.jsx"></script>
+  <script type="text/babel" src="fort-hall-art.jsx"></script>
+  <script type="text/babel" src="three-island-art.jsx"></script>
+
+  <script type="text/babel">
+    function FramedArt({ Art, tone = "warm", filterId, abandoned = false }) {
+      return (
+        <LandmarkArtFrame tone={tone} filterId={filterId} abandoned={abandoned}>
+          <Art />
+        </LandmarkArtFrame>
+      );
+    }
+
+    // Snake River country — three landmarks across ~250 miles in present-day
+    // Idaho, marking the trail's descent from the divide toward the Columbia:
+    //   1. Soda Springs           — the geothermal novelty (~mi 1180)
+    //   2. Fort Hall              — HBC adobe trading post (~mi 1290)
+    //   3. Three Island Crossing  — the great Snake ford (~mi 1430)
+
+    function LandmarkSection({ id, title, ArtComponent, tone, notes, features, caption, day }) {
+      return (
+        <DCSection id={id} title={title}>
+          <DCArtboard id={`${id}-full`} label="Full panel — Arrival view" width={720} height={440}>
+            <div style={{
+              padding: 24, height: "100%", boxSizing: "border-box",
+              display: "flex", flexDirection: "column", gap: 12,
+            }}>
+              <div className="lmk-meta">
+                <span>{day} · Landmark</span>
+                <strong>{caption}</strong>
+              </div>
+              <div className="lmk-art-shell">
+                <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-full`} />
+              </div>
+              <div className="lmk-notes">
+                {notes}
+              </div>
+            </div>
+          </DCArtboard>
+
+          <DCArtboard id={`${id}-states`} label="States — Fresh vs. Visited" width={720} height={420}>
+            <div style={{ padding: 20, height: "100%", boxSizing: "border-box" }}>
+              <div className="lmk-comparison" style={{ height: "calc(100% - 8px)" }}>
+                <div className="panel-shell">
+                  <h4>Fresh arrival</h4>
+                  <div className="lmk-art-shell">
+                    <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-fresh`} />
+                  </div>
+                </div>
+                <div className="panel-shell">
+                  <h4>Already visited (faded)</h4>
+                  <div className="lmk-art-shell">
+                    <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-vis`} abandoned />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DCArtboard>
+
+          <DCArtboard id={`${id}-research`} label="Research notes — distinguishing features" width={500} height={440}>
+            <div style={{
+              padding: 24, height: "100%", boxSizing: "border-box",
+              fontFamily: "var(--f-body)", fontSize: 14, color: "var(--c-tan)",
+              overflowY: "auto",
+            }}>
+              <div style={{
+                fontFamily: "var(--f-display)", fontSize: 22,
+                color: "var(--c-rust)", marginBottom: 4,
+              }}>{title}</div>
+              <div style={{
+                fontFamily: "var(--f-mono)", fontSize: 11, letterSpacing: "0.14em",
+                color: "var(--c-wood)", textTransform: "uppercase", marginBottom: 16,
+              }}>Distinguishing visual marks</div>
+              <ul style={{ paddingLeft: 18, margin: 0, lineHeight: 1.55 }}>
+                {features.map((f, i) => (
+                  <li key={i} style={{ marginBottom: 8 }}>
+                    <b style={{ color: "var(--c-tan-bright)" }}>{f.title}.</b> {f.body}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </DCArtboard>
+        </DCSection>
+      );
+    }
+
+    function ThumbCard({ label, sub, Art, tone = "warm", tid = "t" }) {
+      return (
+        <div style={{
+          background: "var(--c-panel)",
+          border: "2px solid var(--c-border)",
+          borderRadius: 3,
+          padding: 10,
+          display: "flex", flexDirection: "column", gap: 6,
+        }}>
+          <div className="lmk-art-shell" style={{ aspectRatio: "16 / 7" }}>
+            <FramedArt Art={Art} tone={tone} filterId={tid} />
+          </div>
+          <div style={{
+            fontFamily: "var(--f-display)", fontSize: 16,
+            color: "var(--c-tan-bright)",
+          }}>{label}</div>
+          <div style={{
+            fontFamily: "var(--f-mono)", fontSize: 10,
+            letterSpacing: "0.1em", color: "var(--c-wood)",
+            textTransform: "uppercase",
+          }}>{sub}</div>
+        </div>
+      );
+    }
+
+    function App() {
+      return (
+        <DesignCanvas
+          title="Landmark Artwork — Snake River Country"
+          subtitle="Soda Springs (mile 1180), Fort Hall (mile 1290), Three Island Crossing (mile 1430) — Idaho's basalt &amp; sage descent toward the Columbia"
+        >
+          <LandmarkSection
+            id="soda-springs"
+            title="Soda Springs"
+            ArtComponent={SodaSpringsArt}
+            tone="warm"
+            day="Day 95"
+            caption="Soda Springs &amp; Steamboat Spring"
+            notes={<><b>The trail's novelty stop.</b> Naturally carbonated water bubbles up from rust-stained mineral cones in the Bear River valley — pioneers' first encounter with effervescent water from the ground. Steamboat Spring (the big cone, center) HISSED periodically like a teakettle. Emigrants filled bottles, drank the fizz, sometimes used the water for biscuits. Sulphur in the air, pine hills on the horizon. A welcome strange-and-wonderful break before the harder Snake country.</>}
+            features={[
+              { title: "Travertine cones",       body: "Three rust-stained mineral mounds — the springs build their own cones over time. Light tan with darker rust banding/terracing. The cones are the visual signature; without them this is just a riverbank." },
+              { title: "Steamboat plume",        body: "Wispy steam rising from the central cone — the famous one that hissed periodically. Soft white plume gives vertical motion to an otherwise low-horizon comp." },
+              { title: "Bubbles at smaller vents", body: "Tiny dots of bubbles popping at the smaller cones. Reads close-up as fizz; reads at thumb size as 'something is happening here.'" },
+              { title: "Bear River curve",       body: "Gentle willow-lined river curving through mid-ground — distinguishes this from the wider, harder Snake just ahead. The water itself is calm here." },
+              { title: "Pioneers at the springs", body: "Crouched figures filling bottles, one standing pointing up at the steam plume. Tells the story: this was a TOURIST moment, not a labor moment." },
+              { title: "Pine hills horizon",     body: "Dark pine-clad ridges in the distance — the southern Idaho mountain edge. Different mood from the open sage plains of Wyoming." },
+            ]}
+          />
+
+          <LandmarkSection
+            id="fort-hall"
+            title="Fort Hall"
+            ArtComponent={FortHallArt}
+            tone="warm"
+            day="Day 100"
+            caption="Fort Hall — HBC adobe on the Snake"
+            notes={<><b>The British post in contested country.</b> A Hudson's Bay Company adobe trading post on the Snake River bottoms — square walls with bastions at opposing corners, a Union Jack flying overhead until 1846. HBC chief factors here notoriously discouraged Oregon-bound emigrants, urging them south to California. Shoshone &amp; Bannock lodges nearby; cottonwoods along the river. Tone: end-of-strength resupply in foreign-flagged country.</>}
+            features={[
+              { title: "Adobe, NOT logs",        body: "Tan/buff square walls with horizontal mortar courses — fundamentally different from log-stockade Fort Bridger. The adobe construction is the regional signature." },
+              { title: "Two corner bastions",    body: "Square towers at opposing corners with hipped wood roofs and loophole slits. The defensive geometry — square fort, two diagonal bastions — is correct period architecture." },
+              { title: "Union Jack flag",        body: "British colors on a tall pole inside the walls — distinct from any American flag. Visually unique to this fort and immediately tells the political story." },
+              { title: "Heavy timber gate",      body: "Double doors with iron straps + a small adobe arch above — the only entry, centered on the front wall. The gate reads as the focal point at a glance." },
+              { title: "Tipi camp outside",      body: "Cluster of canvas tipis flanking the fort — Shoshone and Bannock peoples traded here. The fort was never alone on the landscape." },
+              { title: "Snake bottoms setting",  body: "Cottonwoods (not pines), broad sage flat, low horizon. The Snake River bottoms have a distinct flatness that distinguishes this from the dramatic Bridger valley." },
+            ]}
+          />
+
+          <LandmarkSection
+            id="three-island"
+            title="Three Island Crossing"
+            ArtComponent={ThreeIslandCrossingArt}
+            tone="warm"
+            day="Day 110"
+            caption="Three Island Crossing of the Snake"
+            notes={<><b>The great Snake River ford — the trail's most-painted river crossing.</b> Three islands strung diagonally across a wide deep-green Snake, flanked by dark basalt bluffs. Wagons cross in stages, water up to their boxes; oxen swim with only their heads above water. Many emigrants refused the ford and stayed on the south bank — harder going later but no risk of drowning here. Real stakes, real danger.</>}
+            features={[
+              { title: "Three islands diagonal",  body: "Three sandbar/willow islands strung from upper-right to lower-left across the river. The diagonal staging is the visual signature — distinguishes this from any other ford on the trail." },
+              { title: "Dark basalt bluffs",      body: "Near-black columnar cliffs flanking the river — vertical jointing visible. Specific to Snake country; no other trail river is bracketed by this geology." },
+              { title: "Deep green Snake",        body: "Wide saturated green water with darker downstream depth band and pale rippled highlights. The water LOOKS heavy and cold — much more imposing than the Platte fords." },
+              { title: "Wagons mid-ford",         body: "Three wagons at different depths — one barely showing above water, one with belly submerged, one emerging. Tells the story of progression across at a glance." },
+              { title: "Swimming oxen",           body: "Just heads, horns, and small wakes visible — emphasizes how DEEP the river is. Pioneers' livestock famously had to swim this stretch." },
+              { title: "Refusers on south bank",  body: "Two wagons + a few standing figures on the foreground bank — the emigrants who said no. The choice is part of the landmark's story; including the refusers makes it real." },
+            ]}
+          />
+
+          {/* Side-by-side silhouette comparison */}
+          <DCSection id="compare" title="Side-by-side — silhouette read">
+            <DCArtboard id="thumb-row" label="Trail-map thumbnail size" width={720} height={260}>
+              <div style={{
+                padding: 24, height: "100%", boxSizing: "border-box",
+                display: "flex", flexDirection: "column", gap: 16,
+              }}>
+                <div style={{
+                  fontFamily: "var(--f-mono)", fontSize: 11, letterSpacing: "0.14em",
+                  color: "var(--c-wood)", textTransform: "uppercase",
+                }}>Are the three reads distinct?</div>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: 14, alignItems: "stretch",
+                }}>
+                  <ThumbCard label="Soda Springs" sub="Mineral cones, steam plume" Art={SodaSpringsArt} tone="warm" tid="thumb-s" />
+                  <ThumbCard label="Fort Hall" sub="Adobe square + Union Jack" Art={FortHallArt} tone="warm" tid="thumb-f" />
+                  <ThumbCard label="Three Island" sub="Wide green river, diagonals" Art={ThreeIslandCrossingArt} tone="warm" tid="thumb-t" />
+                </div>
+                <div style={{
+                  fontFamily: "var(--f-body)", fontSize: 13, color: "var(--c-tan)",
+                  lineHeight: 1.5, marginTop: 4,
+                }}>
+                  Distinct silhouettes: <b style={{color:"var(--c-tan-bright)"}}>Soda Springs</b> reads as MINERAL CONES with rising steam — small intimate scale; <b style={{color:"var(--c-tan-bright)"}}>Fort Hall</b> reads as a SQUARE FORT with a flag — strong rectilinear architecture; <b style={{color:"var(--c-tan-bright)"}}>Three Island Crossing</b> reads as a WIDE GREEN RIVER with dark cliffs — horizontal landscape drama. The three together tell the Snake-country chapter — gawk at the fizz, resupply under the British flag, then bet your wagon on the water.
+                </div>
+              </div>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

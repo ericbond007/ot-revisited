@@ -217,7 +217,13 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 95,  terrain: 'desert',    kind: 'landmark' },
   { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 120, terrain: 'mountains', kind: 'landmark' },
   { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 30,  terrain: 'forest',    kind: 'landmark' },
-  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 40,  terrain: 'prairie',   kind: 'trading_post',
+  // Methodist mission at Waiilatpu, headwaters of the Walla Walla. Marcus
+  // + Narcissa Whitman ran it as both medical aid and a layover for
+  // emigrants. The November 1847 massacre destroyed it; post-1847 parties
+  // saw a ruin (LandmarkStage handles via isLandmarkAbandoned).
+  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 32,  terrain: 'prairie',   kind: 'landmark',
+    abandonedAfterYear: 1847 },
+  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 8,   terrain: 'prairie',   kind: 'trading_post',
     // HBC river post. Basic but reliable stock. Native trade goods are a
     // specialty here (Walla Walla / Cayuse trade networks).
     postKind: 'hbc',
@@ -247,10 +253,15 @@ export const LANDMARKS: readonly Landmark[] = [
       'cookware', 'rope', 'salt',
       'tobacco', 'whiskey', 'bible', 'harmonica', 'fiddle'
     ] },
+  // Barlow Road junction — the toll road south around Mt. Hood, the
+  // overland alternative to rafting the Columbia. Sam Barlow opened it
+  // in 1846; this entry marks the trail decision point just past The
+  // Dalles. Laurel Hill is the steepest descent on the road itself.
+  { id: 'barlow_road',         name: 'Barlow Road',         milesFromPrevious: 20,  terrain: 'forest',    kind: 'landmark' },
   // Laurel Hill is dense Cascades forest — the Barlow Road's worst
   // stretch. Reclassed mountain → forest so the terrain descriptor
   // matches the visual + the forest mult (0.85) gives it bite.
-  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 50,  terrain: 'forest',    kind: 'landmark' },
+  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 30,  terrain: 'forest',    kind: 'landmark' },
   { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 55,  terrain: 'forest',    kind: 'end' }
 ];
 
