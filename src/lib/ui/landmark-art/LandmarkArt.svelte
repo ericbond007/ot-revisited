@@ -21,24 +21,24 @@
   import type { Component } from 'svelte';
   import type { LandmarkId, LandmarkTone } from './landmark-art-tokens';
 
-  // import IndependenceArt      from './IndependenceArt.svelte';
-  // import KansasRiverArt       from './KansasRiverArt.svelte';
-  // import BigBlueArt           from './BigBlueArt.svelte';
-  // import FortKearnyArt        from './FortKearnyArt.svelte';
-  // import CourthouseJailArt    from './CourthouseJailArt.svelte';
+  import IndependenceArt from './IndependenceArt.svelte';
+  import KansasRiverArt from './KansasRiverArt.svelte';
+  import BigBlueArt from './BigBlueArt.svelte';
+  import FortKearnyArt from './FortKearnyArt.svelte';
+  import CourthouseJailArt from './CourthouseJailArt.svelte';
   import ChimneyRockArt from './ChimneyRockArt.svelte';
-  // import ScottsBluffArt       from './ScottsBluffArt.svelte';
-  // import FortLaramieArt       from './FortLaramieArt.svelte';
-  // import IndependenceRockArt  from './IndependenceRockArt.svelte';
-  // import DevilsGateArt        from './DevilsGateArt.svelte';
-  // import SouthPassArt         from './SouthPassArt.svelte';
-  // import FortBridgerArt       from './FortBridgerArt.svelte';
-  // import SodaSpringsArt       from './SodaSpringsArt.svelte';
-  // import FortHallArt          from './FortHallArt.svelte';
-  // import ThreeIslandArt       from './ThreeIslandArt.svelte';
-  // import WhitmanMissionArt    from './WhitmanMissionArt.svelte';
-  // import TheDallesArt         from './TheDallesArt.svelte';
-  // import BarlowRoadArt        from './BarlowRoadArt.svelte';
+  import ScottsBluffArt from './ScottsBluffArt.svelte';
+  import FortLaramieArt from './FortLaramieArt.svelte';
+  import IndependenceRockArt from './IndependenceRockArt.svelte';
+  import DevilsGateArt from './DevilsGateArt.svelte';
+  import SouthPassArt from './SouthPassArt.svelte';
+  import FortBridgerArt from './FortBridgerArt.svelte';
+  import SodaSpringsArt from './SodaSpringsArt.svelte';
+  import FortHallArt from './FortHallArt.svelte';
+  import ThreeIslandArt from './ThreeIslandArt.svelte';
+  import WhitmanMissionArt from './WhitmanMissionArt.svelte';
+  import TheDallesArt from './TheDallesArt.svelte';
+  import BarlowRoadArt from './BarlowRoadArt.svelte';
 
   interface RegistryEntry {
     Art: Component;
@@ -49,24 +49,24 @@
    *  Keys must match `LANDMARKS[].id` from
    *  src/lib/game/content/landmarks.ts. */
   const REGISTRY: Partial<Record<LandmarkId, RegistryEntry>> = {
-    chimney_rock: { Art: ChimneyRockArt, tone: 'warm' }
-    // independence:        { Art: IndependenceArt,     tone: 'warm' },
-    // kansas_river:        { Art: KansasRiverArt,      tone: 'warm' },
-    // big_blue_river:      { Art: BigBlueArt,          tone: 'warm' },
-    // ft_kearny:           { Art: FortKearnyArt,       tone: 'warm' },
-    // courthouse_rock:     { Art: CourthouseJailArt,   tone: 'warm' },
-    // scotts_bluff:        { Art: ScottsBluffArt,      tone: 'warm' },
-    // ft_laramie:          { Art: FortLaramieArt,      tone: 'warm' },
-    // independence_rock:   { Art: IndependenceRockArt, tone: 'warm' },
-    // devils_gate:         { Art: DevilsGateArt,       tone: 'warm' },
-    // south_pass:          { Art: SouthPassArt,        tone: 'cool' },
-    // ft_bridger:          { Art: FortBridgerArt,      tone: 'warm' },
-    // soda_springs:        { Art: SodaSpringsArt,      tone: 'cool' },
-    // ft_hall:             { Art: FortHallArt,         tone: 'cool' },
-    // snake_three_island:  { Art: ThreeIslandArt,      tone: 'warm' },
-    // whitman_mission:     { Art: WhitmanMissionArt,   tone: 'warm' },
-    // the_dalles:          { Art: TheDallesArt,        tone: 'cool' },
-    // barlow_road:         { Art: BarlowRoadArt,       tone: 'gold' },
+    independence: { Art: IndependenceArt, tone: 'warm' },
+    kansas_river: { Art: KansasRiverArt, tone: 'warm' },
+    big_blue_river: { Art: BigBlueArt, tone: 'warm' },
+    ft_kearny: { Art: FortKearnyArt, tone: 'warm' },
+    courthouse_rock: { Art: CourthouseJailArt, tone: 'warm' },
+    chimney_rock: { Art: ChimneyRockArt, tone: 'warm' },
+    scotts_bluff: { Art: ScottsBluffArt, tone: 'warm' },
+    ft_laramie: { Art: FortLaramieArt, tone: 'warm' },
+    independence_rock: { Art: IndependenceRockArt, tone: 'warm' },
+    devils_gate: { Art: DevilsGateArt, tone: 'warm' },
+    south_pass: { Art: SouthPassArt, tone: 'cool' },
+    ft_bridger: { Art: FortBridgerArt, tone: 'warm' },
+    soda_springs: { Art: SodaSpringsArt, tone: 'cool' },
+    ft_hall: { Art: FortHallArt, tone: 'cool' },
+    snake_three_island: { Art: ThreeIslandArt, tone: 'warm' },
+    whitman_mission: { Art: WhitmanMissionArt, tone: 'warm' },
+    the_dalles: { Art: TheDallesArt, tone: 'cool' },
+    barlow_road: { Art: BarlowRoadArt, tone: 'gold' }
   };
 
   /** True if this id has a ported art component. Call sites
