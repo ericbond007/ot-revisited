@@ -23,22 +23,43 @@
 
   import IndependenceArt from './IndependenceArt.svelte';
   import KansasRiverArt from './KansasRiverArt.svelte';
+  import AlcoveSpringArt from './AlcoveSpringArt.svelte';
   import BigBlueArt from './BigBlueArt.svelte';
+  import HollenbergRanchArt from './HollenbergRanchArt.svelte';
   import FortKearnyArt from './FortKearnyArt.svelte';
+  import AshHollowArt from './AshHollowArt.svelte';
+  import NorthPlatteEastArt from './NorthPlatteEastArt.svelte';
   import CourthouseJailArt from './CourthouseJailArt.svelte';
   import ChimneyRockArt from './ChimneyRockArt.svelte';
   import ScottsBluffArt from './ScottsBluffArt.svelte';
+  import RobidouxPostArt from './RobidouxPostArt.svelte';
   import FortLaramieArt from './FortLaramieArt.svelte';
+  import RegisterCliffArt from './RegisterCliffArt.svelte';
+  import GuernseyRutsArt from './GuernseyRutsArt.svelte';
+  import NorthPlatteWestArt from './NorthPlatteWestArt.svelte';
+  import WillowSpringsArt from './WillowSpringsArt.svelte';
   import IndependenceRockArt from './IndependenceRockArt.svelte';
   import DevilsGateArt from './DevilsGateArt.svelte';
+  import SweetwaterFordArt from './SweetwaterFordArt.svelte';
+  import IceSloughArt from './IceSloughArt.svelte';
   import SouthPassArt from './SouthPassArt.svelte';
+  import PacificSpringsArt from './PacificSpringsArt.svelte';
+  import PartingOfWaysArt from './PartingOfWaysArt.svelte';
+  import GreenRiverArt from './GreenRiverArt.svelte';
   import FortBridgerArt from './FortBridgerArt.svelte';
+  import BearRiverArt from './BearRiverArt.svelte';
   import SodaSpringsArt from './SodaSpringsArt.svelte';
   import FortHallArt from './FortHallArt.svelte';
   import ThreeIslandArt from './ThreeIslandArt.svelte';
+  import FortBoiseArt from './FortBoiseArt.svelte';
+  import FarewellBendArt from './FarewellBendArt.svelte';
+  import BlueMountainsArt from './BlueMountainsArt.svelte';
+  import GrandeRondeArt from './GrandeRondeArt.svelte';
+  import FortWallaWallaArt from './FortWallaWallaArt.svelte';
   import WhitmanMissionArt from './WhitmanMissionArt.svelte';
   import TheDallesArt from './TheDallesArt.svelte';
   import BarlowRoadArt from './BarlowRoadArt.svelte';
+  import OregonCityArt from './OregonCityArt.svelte';
 
   interface RegistryEntry {
     Art: Component;
@@ -51,22 +72,46 @@
   const REGISTRY: Partial<Record<LandmarkId, RegistryEntry>> = {
     independence: { Art: IndependenceArt, tone: 'warm' },
     kansas_river: { Art: KansasRiverArt, tone: 'warm' },
+    alcove_spring: { Art: AlcoveSpringArt, tone: 'warm' },
     big_blue_river: { Art: BigBlueArt, tone: 'warm' },
+    hollenberg_ranch: { Art: HollenbergRanchArt, tone: 'warm' },
     ft_kearny: { Art: FortKearnyArt, tone: 'warm' },
+    ash_hollow: { Art: AshHollowArt, tone: 'warm' },
+    // The new bundle ships these as `north-platte-east` and `north-platte-west`;
+    // we map to our existing `north_platte_1` (mile 480) and `_2` (mile 747).
+    north_platte_1: { Art: NorthPlatteEastArt, tone: 'warm' },
     courthouse_rock: { Art: CourthouseJailArt, tone: 'warm' },
     chimney_rock: { Art: ChimneyRockArt, tone: 'warm' },
     scotts_bluff: { Art: ScottsBluffArt, tone: 'warm' },
+    robidoux_post: { Art: RobidouxPostArt, tone: 'warm' },
     ft_laramie: { Art: FortLaramieArt, tone: 'warm' },
+    register_cliff: { Art: RegisterCliffArt, tone: 'warm' },
+    guernsey_ruts: { Art: GuernseyRutsArt, tone: 'warm' },
+    north_platte_2: { Art: NorthPlatteWestArt, tone: 'warm' },
+    willow_springs: { Art: WillowSpringsArt, tone: 'warm' },
     independence_rock: { Art: IndependenceRockArt, tone: 'warm' },
     devils_gate: { Art: DevilsGateArt, tone: 'warm' },
+    // Bundle ships as `sweetwater-ford` → our `sweetwater_1` (mile 873).
+    sweetwater_1: { Art: SweetwaterFordArt, tone: 'cool' },
+    ice_slough: { Art: IceSloughArt, tone: 'cool' },
     south_pass: { Art: SouthPassArt, tone: 'cool' },
+    pacific_springs: { Art: PacificSpringsArt, tone: 'cool' },
+    parting_of_ways: { Art: PartingOfWaysArt, tone: 'warm' },
+    green_river: { Art: GreenRiverArt, tone: 'warm' },
     ft_bridger: { Art: FortBridgerArt, tone: 'warm' },
+    bear_river: { Art: BearRiverArt, tone: 'cool' },
     soda_springs: { Art: SodaSpringsArt, tone: 'cool' },
     ft_hall: { Art: FortHallArt, tone: 'cool' },
     snake_three_island: { Art: ThreeIslandArt, tone: 'warm' },
+    ft_boise: { Art: FortBoiseArt, tone: 'cool' },
+    farewell_bend: { Art: FarewellBendArt, tone: 'warm' },
+    blue_mountains: { Art: BlueMountainsArt, tone: 'gold' },
+    grande_ronde: { Art: GrandeRondeArt, tone: 'warm' },
+    ft_walla_walla: { Art: FortWallaWallaArt, tone: 'cool' },
     whitman_mission: { Art: WhitmanMissionArt, tone: 'warm' },
     the_dalles: { Art: TheDallesArt, tone: 'cool' },
-    barlow_road: { Art: BarlowRoadArt, tone: 'gold' }
+    barlow_road: { Art: BarlowRoadArt, tone: 'gold' },
+    oregon_city: { Art: OregonCityArt, tone: 'gold' }
   };
 
   /** True if this id has a ported art component. Call sites

@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Landmark Artwork — Whitman Mission / The Dalles / Barlow Road</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  body { background: #2a1a10; }
+  .lmk-art-shell {
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    background: var(--c-bg-raised);
+    border: 2px solid var(--c-border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .lmk-art-shell::after {
+    content: "";
+    position: absolute; inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4),
+                inset 0 0 16px rgba(0,0,0,0.3);
+    pointer-events: none;
+  }
+  .lmk-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 12px 4px 6px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--c-wood);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .lmk-meta strong { color: var(--c-tan-bright); letter-spacing: 0.08em; }
+  .lmk-notes {
+    margin: 8px 4px 0;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.18);
+    border-left: 3px solid var(--c-rust-dark);
+    font-family: var(--f-body);
+    font-size: 13px;
+    color: var(--c-tan);
+    line-height: 1.5;
+  }
+  .lmk-notes b { color: var(--c-tan-bright); font-weight: 700; }
+  .lmk-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .lmk-comparison .panel-shell {
+    background: var(--c-panel);
+    border: 2px solid var(--c-border);
+    border-radius: 3px;
+    padding: 12px;
+  }
+  .lmk-comparison h4 {
+    color: var(--c-rust);
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    margin: 0 0 8px;
+  }
+  .lmk-comparison .lmk-art-shell { aspect-ratio: 16 / 6; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Design canvas -->
+  <script type="text/babel" src="design-canvas.jsx"></script>
+
+  <!-- Shared frame + landmark art -->
+  <script type="text/babel" src="landmark-art-frame.jsx"></script>
+  <script type="text/babel" src="whitman-mission-art.jsx"></script>
+  <script type="text/babel" src="the-dalles-art.jsx"></script>
+  <script type="text/babel" src="barlow-road-art.jsx"></script>
+
+  <script type="text/babel">
+    function FramedArt({ Art, tone = "warm", filterId, abandoned = false }) {
+      return (
+        <LandmarkArtFrame tone={tone} filterId={filterId} abandoned={abandoned}>
+          <Art />
+        </LandmarkArtFrame>
+      );
+    }
+
+    // The Columbia gauntlet — three landmarks across the trail's final ~260
+    // miles, into present-day Oregon:
+    //   1. Whitman Mission        — the green respite at Waiilatpu (~mi 1640)
+    //   2. The Dalles             — Long Narrows + raft descent (~mi 1850)
+    //   3. Barlow Road            — Laurel Hill chute beneath Mt. Hood (~mi 1900)
+
+    function LandmarkSection({ id, title, ArtComponent, tone, notes, features, caption, day }) {
+      return (
+        <DCSection id={id} title={title}>
+          <DCArtboard id={`${id}-full`} label="Full panel — Arrival view" width={720} height={440}>
+            <div style={{
+              padding: 24, height: "100%", boxSizing: "border-box",
+              display: "flex", flexDirection: "column", gap: 12,
+            }}>
+              <div className="lmk-meta">
+                <span>{day} · Landmark</span>
+                <strong>{caption}</strong>
+              </div>
+              <div className="lmk-art-shell">
+                <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-full`} />
+              </div>
+              <div className="lmk-notes">
+                {notes}
+              </div>
+            </div>
+          </DCArtboard>
+
+          <DCArtboard id={`${id}-states`} label="States — Fresh vs. Visited" width={720} height={420}>
+            <div style={{ padding: 20, height: "100%", boxSizing: "border-box" }}>
+              <div className="lmk-comparison" style={{ height: "calc(100% - 8px)" }}>
+                <div className="panel-shell">
+                  <h4>Fresh arrival</h4>
+                  <div className="lmk-art-shell">
+                    <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-fresh`} />
+                  </div>
+                </div>
+                <div className="panel-shell">
+                  <h4>Already visited (faded)</h4>
+                  <div className="lmk-art-shell">
+                    <FramedArt Art={ArtComponent} tone={tone} filterId={`${id}-vis`} abandoned />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DCArtboard>
+
+          <DCArtboard id={`${id}-research`} label="Research notes — distinguishing features" width={500} height={440}>
+            <div style={{
+              padding: 24, height: "100%", boxSizing: "border-box",
+              fontFamily: "var(--f-body)", fontSize: 14, color: "var(--c-tan)",
+              overflowY: "auto",
+            }}>
+              <div style={{
+                fontFamily: "var(--f-display)", fontSize: 22,
+                color: "var(--c-rust)", marginBottom: 4,
+              }}>{title}</div>
+              <div style={{
+                fontFamily: "var(--f-mono)", fontSize: 11, letterSpacing: "0.14em",
+                color: "var(--c-wood)", textTransform: "uppercase", marginBottom: 16,
+              }}>Distinguishing visual marks</div>
+              <ul style={{ paddingLeft: 18, margin: 0, lineHeight: 1.55 }}>
+                {features.map((f, i) => (
+                  <li key={i} style={{ marginBottom: 8 }}>
+                    <b style={{ color: "var(--c-tan-bright)" }}>{f.title}.</b> {f.body}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </DCArtboard>
+        </DCSection>
+      );
+    }
+
+    function ThumbCard({ label, sub, Art, tone = "warm", tid = "t" }) {
+      return (
+        <div style={{
+          background: "var(--c-panel)",
+          border: "2px solid var(--c-border)",
+          borderRadius: 3,
+          padding: 10,
+          display: "flex", flexDirection: "column", gap: 6,
+        }}>
+          <div className="lmk-art-shell" style={{ aspectRatio: "16 / 7" }}>
+            <FramedArt Art={Art} tone={tone} filterId={tid} />
+          </div>
+          <div style={{
+            fontFamily: "var(--f-display)", fontSize: 16,
+            color: "var(--c-tan-bright)",
+          }}>{label}</div>
+          <div style={{
+            fontFamily: "var(--f-mono)", fontSize: 10,
+            letterSpacing: "0.1em", color: "var(--c-wood)",
+            textTransform: "uppercase",
+          }}>{sub}</div>
+        </div>
+      );
+    }
+
+    function App() {
+      return (
+        <DesignCanvas
+          title="Landmark Artwork — Columbia Gauntlet"
+          subtitle="Whitman Mission (mile 1640), The Dalles (mile 1850), Barlow Road (mile 1900) — the final descent into Oregon"
+        >
+          <LandmarkSection
+            id="whitman-mission"
+            title="Whitman Mission (Waiilatpu)"
+            ArtComponent={WhitmanMissionArt}
+            tone="warm"
+            day="Day 125"
+            caption="Whitman Mission &mdash; Waiilatpu"
+            notes={<><b>The trail's last cultivated respite.</b> Marcus &amp; Narcissa Whitman's Presbyterian mission station near present-day Walla Walla — irrigated wheat fields, kitchen gardens, a gristmill with waterwheel, a blacksmith. A rare green agricultural island in brown Cayuse country. After November 1847, after the Whitman killings, the buildings were burned; for late-season journeys the visited tone naturally reads as the post-massacre ruin.</>}
+            features={[
+              { title: "Cluster of small buildings", body: "Whitewashed limewashed walls, wood-shingled roofs — emphatically NOT a fort. The reading is 'cultivated outpost,' not 'defensive structure.' Multiple separate volumes." },
+              { title: "T-shaped mission house",     body: "Two volumes meeting at a right angle — a main wing with chimney + a perpendicular cross-wing. Period-accurate Whitman house plan, distinguishes this from generic frontier architecture." },
+              { title: "Gristmill + waterwheel",     body: "Large turning wheel on the right end of the cluster — water trough above, falling water, tail water below. A working mill is a strong visual signal of agricultural settlement." },
+              { title: "Irrigated green fields",     body: "A horizontal stripe of GREEN across the mid-ground — fence-divided, row-marked, with a small irrigation channel. The ONLY landmark on the trail that reads as cultivated farmland." },
+              { title: "Brown rolling hills",        body: "Soft warm-brown hills surrounding — Walla Walla / Palouse country. Different palette from the basalt or sage everywhere else; subtle but it locates this geographically." },
+              { title: "Cayuse rider visiting",      body: "A small mounted figure between the wagon and the mission — visual reminder that this was Cayuse land, not just a Whitman story. The relationship matters." },
+            ]}
+          />
+
+          <LandmarkSection
+            id="the-dalles"
+            title="The Dalles"
+            ArtComponent={TheDallesArt}
+            tone="warm"
+            day="Day 135"
+            caption="The Dalles &mdash; Long Narrows of the Columbia"
+            notes={<><b>Where the wagon road ended &mdash; until 1846.</b> Black basalt cliffs squeeze the Columbia into white-water rapids; emigrants disassembled their wagons and lashed them onto huge log RAFTS for the white-knuckle 90-mile float to Fort Vancouver. Native fishing platforms (Wishram, Wasco) project over the falls — cedar-pole scaffolds with men dipping for salmon with long-handled nets. A snowy peak hint of Mt. Hood in the distance.</>}
+            features={[
+              { title: "Black basalt walls",         body: "Layered, columnar, near-black cliffs flanking the river — distinctive of the Columbia gorge. Vertical jointing is the textural signature; terraced benches show the lava-flow geology." },
+              { title: "Wide angry Columbia",        body: "Saturated cool-blue river with foamy white rapids at center channel. Much bigger than any other water on the trail. The roughness reads instantly as 'this is dangerous water.'" },
+              { title: "Cedar-pole fishing scaffolds", body: "Wooden platforms projecting OUT over the rapids — supported by angled poles from the cliff base. Native men with long dip nets reaching down to catch salmon. Period-accurate, Wishram/Wasco specific." },
+              { title: "Salmon drying rack",         body: "Small horizontal pole with hanging fish on the south bank — visual specificity that says 'this place is about the fishery, not just the landscape.'" },
+              { title: "Big log rafts",              body: "Foreground rafts made of multiple parallel timbers lashed together, with a wagon BOX (no wheels) lashed on top — pioneer family aboard, sweep oar at the rear. The choice point shown clearly." },
+              { title: "Mt. Hood hint",              body: "Snowy single peak peeking over the basalt walls in the distance — foreshadows the Barlow Road landmark that comes just after, and tells you visually that the journey isn't over." },
+            ]}
+          />
+
+          <LandmarkSection
+            id="barlow-road"
+            title="Barlow Road &mdash; Laurel Hill"
+            ArtComponent={BarlowRoadArt}
+            tone="warm"
+            day="Day 138"
+            caption="Barlow Road &mdash; Laurel Hill chute beneath Mt. Hood"
+            notes={<><b>The land alternative to the river.</b> Sam Barlow's 1846 toll road around the south flank of Mt. Hood, threading dense Cascade Douglas-fir forest. The notorious LAUREL HILL CHUTE: a near-vertical pitch where wagons were lowered down with ropes wrapped around tree-stump anchors, wheels chained, sometimes smashed. Mt. Hood looms snow-capped above the trees. Tone: forested, vertical, dangerous &mdash; the opposite of the open prairie that started this journey.</>}
+            features={[
+              { title: "Mt. Hood dominant",          body: "Snow-capped single-peak cone fills the upper third — the ONLY trail landmark with a snowy mountain this close and dominant. Reads as the destination's threshold." },
+              { title: "Dense Douglas-fir forest",   body: "Tall narrow conifers crowding the left and right edges — vertical lines, dark greens, near-black trunks. Visually completely different from the open sage and prairie of every prior landmark." },
+              { title: "The CHUTE — diagonal scar",  body: "A near-vertical earth pitch cleared through the forest, with drag-mark grooves running down its length. The chute IS the landmark; without it this is just a forest." },
+              { title: "Wagon being lowered",        body: "Mid-chute wagon tipped down the slope, ROPE running from rear axle UP to a stump anchor, wheels CHAIN-LOCKED. Tells the entire mechanism of descent in one glance." },
+              { title: "Anchor stumps",              body: "Stumps on either side of the chute have visible rope grooves worn into them from prior wagons. A single textural detail that conveys 'this has been done many times.'" },
+              { title: "Pioneers top + bottom",      body: "Two figures braced at the top working the rope, one figure signaling at the bottom with another wagon already parked — frames the descent as a coordinated team effort, not a solo daredevil moment." },
+            ]}
+          />
+
+          {/* Side-by-side silhouette comparison */}
+          <DCSection id="compare" title="Side-by-side &mdash; silhouette read">
+            <DCArtboard id="thumb-row" label="Trail-map thumbnail size" width={720} height={260}>
+              <div style={{
+                padding: 24, height: "100%", boxSizing: "border-box",
+                display: "flex", flexDirection: "column", gap: 16,
+              }}>
+                <div style={{
+                  fontFamily: "var(--f-mono)", fontSize: 11, letterSpacing: "0.14em",
+                  color: "var(--c-wood)", textTransform: "uppercase",
+                }}>Are the three reads distinct?</div>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: 14, alignItems: "stretch",
+                }}>
+                  <ThumbCard label="Whitman Mission" sub="Cluster + green fields" Art={WhitmanMissionArt} tone="warm" tid="thumb-w" />
+                  <ThumbCard label="The Dalles" sub="Basalt gorge + rafts" Art={TheDallesArt} tone="warm" tid="thumb-d" />
+                  <ThumbCard label="Barlow Road" sub="Snowy Hood + chute" Art={BarlowRoadArt} tone="warm" tid="thumb-b" />
+                </div>
+                <div style={{
+                  fontFamily: "var(--f-body)", fontSize: 13, color: "var(--c-tan)",
+                  lineHeight: 1.5, marginTop: 4,
+                }}>
+                  Distinct silhouettes: <b style={{color:"var(--c-tan-bright)"}}>Whitman Mission</b> reads as a CLUSTER OF BUILDINGS in a green stripe — settled and farmed; <b style={{color:"var(--c-tan-bright)"}}>The Dalles</b> reads as a WIDE BLUE-FOAM RIVER squeezed by black cliffs — wet and dangerous; <b style={{color:"var(--c-tan-bright)"}}>Barlow Road</b> reads as a SNOWY PEAK over a dense FOREST with a diagonal scar — vertical and forested. Together they tell the trail's final act — rest at the mission, choose the river or the mountain, and arrive at last in Oregon.
+                </div>
+              </div>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

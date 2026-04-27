@@ -2,6 +2,7 @@
   import type { GameState } from '$lib/game/types';
   import type { Landmark } from '$lib/game/content/landmarks';
   import { isLandmarkAbandoned } from '$lib/game/content/landmarks';
+  import LandmarkArt, { hasLandmarkArt } from '$lib/ui/landmark-art/LandmarkArt.svelte';
 
   let { state, landmark }: { state: GameState; landmark: Landmark } = $props();
 
@@ -116,12 +117,17 @@
     {/if}
   </div>
 
-  <!-- Placeholder for phase 2 rich visuals -->
-  <div class="art-placeholder">
-    <span class="placeholder-note">
-      (Rich landmark artwork — phase 2)
-    </span>
-  </div>
+  <!-- Rich landmark artwork (#89). Falls back to the dashed placeholder
+       only for landmarks that don't yet have a registered art component. -->
+  {#if hasLandmarkArt(landmark.id)}
+    <div class="art-canvas">
+      <LandmarkArt id={landmark.id} {abandoned} />
+    </div>
+  {:else}
+    <div class="art-placeholder">
+      <span class="placeholder-note">(Art pending — designer hasn't shipped this one yet)</span>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -284,6 +290,13 @@
     font-weight: 700;
   }
 
+  .art-canvas {
+    flex: 1;
+    min-height: 120px;
+    border-radius: 3px;
+    overflow: hidden;
+    aspect-ratio: 16 / 7;
+  }
   .art-placeholder {
     flex: 1;
     min-height: 60px;
