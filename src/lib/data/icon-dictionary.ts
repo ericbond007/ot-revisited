@@ -27,12 +27,23 @@ export const ICON = {
     day:     '📅',
     date:    '🗓️',
     leg:     '🧭',
+    weather: '🌤️',
     pace:    '🐂',
     rations: '🍖',
     morale:  '🎵',
     health:  '❤️',
     cash:    '💵',
     water:   '💧'
+  },
+  weather_states: {
+    clear:    '☀️',
+    overcast: '☁️',
+    rain:     '🌧️',
+    storm:    '⛈️',
+    snow:     '❄️',
+    heat:     '🥵',
+    fog:      '🌫️',
+    frost:    '🌨️'
   },
   pace_options: {
     slow:     '🐢',

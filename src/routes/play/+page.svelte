@@ -26,6 +26,7 @@
   import StatPicker from '$lib/ui/StatPicker.svelte';
   import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
   import { ICON, icon } from '$lib/data/icon-dictionary';
+  import { weatherInfo } from '$lib/data/weather-info';
   import { getLandmark, LANDMARKS } from '$lib/game/content/landmarks';
   import { accumulateMiles, legOrdinal } from '$lib/ui/trail-map/trail-map-helpers';
   import type { GameState } from '$lib/game/types';
@@ -54,6 +55,10 @@
   const trailLegOrdinal = $derived(
     legOrdinal(accumulateMiles(LANDMARKS), gs.location.milesTraveled)
   );
+
+  // Weather display metadata for the status bar. weatherInfo() falls
+  // back to 'clear' for legacy saves where gs.weather is undefined.
+  const todayWeather = $derived(weatherInfo(gs.weather));
 
   let showCamp = $state(false);
   let showHunt = $state(false);
@@ -152,6 +157,11 @@
         <span class="stat-icon">{icon('stats', 'leg')}</span>
         <span class="stat-label">LEG</span>
         <span>{trailLegOrdinal.current} of {trailLegOrdinal.total}</span>
+      </span>
+      <span class="stat" title={todayWeather.tooltip}>
+        <span class="stat-icon">{todayWeather.icon}</span>
+        <span class="stat-label">WEATHER</span>
+        <span>{todayWeather.label}</span>
       </span>
       <StatPicker
         icon={ICON.stats.pace}
