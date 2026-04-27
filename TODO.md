@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#158). 22 open.
+As of 2026-04-26 (post-#158). 23 open.
 
 ## New mechanics
 
@@ -40,6 +40,7 @@ As of 2026-04-26 (post-#158). 22 open.
 | #102 | Pre-made vs custom starter kit choice                                                                                                                                                                                                                                                                                                                         |
 | #134 | Water keg/barrel glyph next to water amount                                                                                                                                                                                                                                                                                                                   |
 | #145 | Camp view — eliminate laptop scroll                                                                                                                                                                                                                                                                                                                           |
+| #170 | Use new ox-team design beyond the travel strip — only `WagonScene` renders SingleOx/OxTeam today; opportunities: WagonPicker (model preview with 2-ox team), WagonPanel sidebar (tiny ox sprite next to count), LandmarkStage / TownStage (parked team with `gait="stopped"`, doubles as test bed for the new at-rest pose), CampStage (resting team beside the wagon), EndScreen (final tally with surviving oxen pictured) |
 
 ## For Claude Design or another SVG animation generator
 
