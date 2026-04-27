@@ -95,4 +95,3 @@ As of 2026-04-26 (post-#158). 23 open.
 ## TODO
 
 _(empty — items moved into the sections above)_
-Add weather status to the wagon travel view, and make sure the weather effects are clear in the UI. Maybe a little icon next to the mileage or something? Also, consider adding a tooltip that explains how different weather conditions affect travel and camp actions.
