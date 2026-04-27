@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#158). 23 open.
+As of 2026-04-27 (post-#89). 22 open.
 
 ## New mechanics
 
@@ -24,30 +24,32 @@ As of 2026-04-26 (post-#158). 23 open.
 
 ## UI / UX polish
 
-| #    |                                                                                                                                                                                                                                                                                                                                                               |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow feel                                                                                                                                                                                                                                                                                           |
-| #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring                                                                                                                                                                                                                                                                                            |
-| #167 | Trail-map cluster label collisions — Courthouse/Chimney/Scotts Bluff/Ft. Laramie/Robidoux all sit within ~60 modal-px of each other; labels overlap at modal tier 1 even with LABEL_BELOW staggering                                                                                                                                                          |
-| #168 | Party Card hover too colorful — match the calmer Wagon/Inventory card hover styling                                                                                                                                                                                                                                                                           |
-| #169 | WagonScene paused state still reads as motion — rAF parked + gait/bounce snap to 0 weren't enough. Investigate: residual wheel-angle (held mid-rotation), parallax position frozen mid-scroll (no "at-rest" anchor), ox head/eye micro-details, weather-layer drift. Could need an explicit "at-rest pose" preset rather than just freezing animation drivers |
-| #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call                                                                                                                                                                                                                                                                                              |
-| #147 | Success/arrival view rework — richer than the current score panel                                                                                                                                                                                                                                                                                             |
-| #133 | EventModal polish — animations + glyphs                                                                                                                                                                                                                                                                                                                       |
-| #112 | Wagon modal visual redesign                                                                                                                                                                                                                                                                                                                                   |
-| #132 | Party view rework (denser / fullscreen)                                                                                                                                                                                                                                                                                                                       |
-| #86  | Expand hover tooltips across all data points                                                                                                                                                                                                                                                                                                                  |
-| #102 | Pre-made vs custom starter kit choice                                                                                                                                                                                                                                                                                                                         |
-| #134 | Water keg/barrel glyph next to water amount                                                                                                                                                                                                                                                                                                                   |
-| #145 | Camp view — eliminate laptop scroll                                                                                                                                                                                                                                                                                                                           |
-| #170 | Use new ox-team design beyond the travel strip — only `WagonScene` renders SingleOx/OxTeam today; opportunities: WagonPicker (model preview with 2-ox team), WagonPanel sidebar (tiny ox sprite next to count), LandmarkStage / TownStage (parked team with `gait="stopped"`, doubles as test bed for the new at-rest pose), CampStage (resting team beside the wagon), EndScreen (final tally with surviving oxen pictured) |
+| #    |                                                                  |
+| ---- | ---------------------------------------------------------------- |
+| #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow   |
+| #159 | WagonScene strip framing pass — viewBox crop + cloud anchoring   |
+| #167 | Trail-map cluster labels overlap at modal tier 1                 |
+| #168 | Party Card hover too colorful — match Wagon/Inventory hover      |
+| #169 | WagonScene paused state still reads as motion                    |
+| #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop      |
+| #147 | Success/arrival view rework — richer than current score panel    |
+| #133 | EventModal polish — animations + glyphs                          |
+| #112 | Wagon modal visual redesign                                      |
+| #132 | Party view rework — denser / fullscreen                          |
+| #86  | Expand hover tooltips across all data points                     |
+| #102 | Pre-made vs custom starter kit choice                            |
+| #134 | Water keg/barrel glyph next to water amount                      |
+| #145 | Camp view — eliminate laptop scroll                              |
+| #170 | Use new ox-team design beyond the travel strip                   |
+| #171 | Laurel Hill landmark art — only gap from #89 batch               |
+| #172 | Travel mileage calibration second pass — Whitman/Barlow inserts  |
+| #173 | TownStage hero art — hoist LandmarkArt into Visit view (Phase B) |
 
 ## For Claude Design or another SVG animation generator
 
-| #156 | Wagon SVG visual revisit — proportions / damage / addons (post-playtest) |
-| #87 | Rich event visuals |
-| #89 | Rich trading post / landmark display |
-| #162 | Components revisit — StatBar bar retrofit, PartyPanel avatar designer pass |
+| #156 | Wagon SVG visual revisit — proportions / damage / addons        |
+| #87  | Rich event visuals                                              |
+| #162 | Components revisit — StatBar + PartyPanel avatar designer pass  |
 
 ## Balance / audit
 
@@ -61,6 +63,8 @@ As of 2026-04-26 (post-#158). 23 open.
 
 ## Recently shipped
 
+- **#89** rich landmark display — Claude Design handoff ported (39 of 38 plotted landmarks have bespoke SVG art; only `laurel_hill` lacks dedicated art and is logged as #171). New `src/lib/ui/landmark-art/` module: `LandmarkArtFrame.svelte` chrome, `LandmarkArt.svelte` id-dispatcher, 39 per-landmark `<g>`-only Svelte components, plus `landmark-art-tokens.ts` (`LMK` palette + `LandmarkId` union). `LandmarkStage.svelte`'s placeholder slot now renders `<LandmarkArt id={landmark.id} {abandoned} />` gated by `hasLandmarkArt()`. Three id remappings (`north-platte-east → north_platte_1`, `north-platte-west → north_platte_2`, `sweetwater-ford → sweetwater_1`). Two new LANDMARKS added: `whitman_mission` (mile 1885, `abandonedAfterYear: 1847`) and `barlow_road` (mile 2013). `/dev/landmark-art` harness for visual diff against the bundled atlas + per-region showcase HTMLs.
+- **#158** ox + mule team visual revisit — full handoff port to `src/lib/ui/wagon/ox-team/` (Ox/Leg/OxHead/OxYoke/OxSingleYoke/OxPole/OxChain sub-components via Svelte snippets), `gait="walking"|"stopped"` prop with explicit at-rest pose, per-ox biological variance (deterministic phase ±0.03 + amplitude 0.88–1.12× hashed from pair-idx + near/far). Tokens refresh: OX_INK→#3a1a08, new OX_RED_LT/OX_WHITE_SH/POLE_WOOD; PAIR_PHASE_OFFSET 0.13→0.05; PAIR_SPACE 22→24. Architectural shift: OxTeam owns the shared `teamBob` over the entire hitched mass; WagonScene mirrors it on the wagon translate so they ride together (was independent double-frequency bounce that read as trotting). Mule fallback preserved.
 - **#164** WagonScene rAF parking — wagon was animating continuously between turns, looked like the player was traveling when they weren't. WagonScene's rAF loop now lives inside a `$effect` that fully cancels when `paused`; `t` reads via `untrack` on resume so the effect doesn't tear itself down on every frame, and `t` holds its last value across pauses (wagon freezes mid-stride, no snap to t=0). /play tracks a `wagonRolling` flag set on day-change for 1500ms and passes `paused={!wagonRolling}` — wheels + parallax now only run for ~1.5s after a Travel action.
 - **#166 + #160** trail-map data plumbing + visual revisit — both views were ignoring `currentMileage` (modal hardcoded the wagon glyph at `(700,260)` and the traveled/remaining paths to that frozen design-handoff state; snippet's SVG was a one-leg painting). Built `trail-map-svg/landmark-coords.ts` (per-landmark x,y in modal coord-space) + `TrailMapPaint.svelte` (shared SVG content, `paintScale` prop for proportional fonts/strokes when zoomed). `interpolatePosition()` now skips un-plotted landmarks so the wagon advances proportionally between adjacent plotted ones. Modal: wagon glyph + traveled/ahead polylines now data-driven from `currentMileage`. Snippet: 320×100 wagon-following camera window with `slice` aspect, wagon anchored at right-30% so most of the strip shows what's ahead (~2-3 upcoming landmarks). Bespoke per-leg snippet art (prairie stipple, sand dunes, named rivers) traded for honesty — per-region terrain repaint stays a future concern.
 - **starter-kit audit** — BASE_KIT trimmed to a sensible day-1 floor: 300 flour + 50 beans + 30 bacon (variety unlocks #110), 2 coffee + 2 salt + 4 bandages + 1 cookware (brew/cure/triage paths all reachable), bullets dropped (useless without rifle — Hunter/Gunsmith bring one), water_skin dropped (wagons declare their own keg cap). Wagon spare parts no longer pre-loaded (player buys at outfit). Banker $800→$600. Preacher's duplicate shovel removed. Coffee/tea consumption now scales with adult count (1 oz/adult/day, 16 oz/lb) — 2 adults: 8 days/lb, 4 adults: 4 days/lb, children skip the brew.
