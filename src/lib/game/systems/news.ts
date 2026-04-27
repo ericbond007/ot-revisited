@@ -54,11 +54,18 @@ function writeNews(state: GameState, items: NewsItem[]): GameState {
 
 /** Push a news item into both the event log and the journal flag. If
  *  the item carries an `applyEffect` hook, it fires once here so the
- *  rumor concretely shifts the world state. */
+ *  rumor concretely shifts the world state.
+ *
+ *  The function reference is stripped from the persisted record before
+ *  it lands in `flags._news` — SvelteKit form-action returns go through
+ *  devalue, which throws on functions. The effect has already fired by
+ *  this point, so only the displayable fields need to survive. */
 export function addNews(state: GameState, item: NewsItem): GameState {
   let next = state;
   if (item.applyEffect) next = item.applyEffect(next);
-  const items = [...readNews(next), item].slice(-NEWS_CAP);
+  const { applyEffect: _stripped, ...persisted } = item;
+  void _stripped;
+  const items = [...readNews(next), persisted].slice(-NEWS_CAP);
   return {
     ...writeNews(next, items),
     eventLog: [

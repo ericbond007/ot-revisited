@@ -81,6 +81,25 @@ describe('news world-effects', () => {
     });
     expect(next.flags._choleraHintedUntilDay).toBe(s.day + 14);
   });
+
+  it('strips applyEffect from the persisted item so the state stays serializable', () => {
+    // SvelteKit form-action returns go through devalue, which throws on
+    // function values. addNews has to fire the effect AND scrub the
+    // function from what lands in flags._news.
+    const s = newGame();
+    const next = addNews(s, {
+      text: 'Boil your water.', source: 'eastbound emigrants',
+      topic: 'hazard', day: s.day,
+      applyEffect: effectCholeraScare
+    });
+    const stored = recentNews(next)[0];
+    expect(stored.applyEffect).toBeUndefined();
+    // Round-trip via JSON to confirm nothing function-shaped survived.
+    const roundTripped = JSON.parse(JSON.stringify(next.flags._news));
+    expect(roundTripped[0].applyEffect).toBeUndefined();
+    // And the effect itself still fired.
+    expect(next.flags._choleraHintedUntilDay).toBe(s.day + 14);
+  });
 });
 
 describe('post gossip generator', () => {
