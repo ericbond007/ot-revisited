@@ -1,10 +1,13 @@
 <script lang="ts">
-  // Visual-diff harness for the ox + mule team port.
+  // Visual-diff harness for the ox + mule team port (#158).
   //
   // Renders teams of 1 / 2 / 4 / 6 oxen plus a 4-mule team in
   // separate cards, each at the same sceneScale=4 the wagon uses.
   // A single rAF tick drives gaitPhase so all teams walk in step
   // (modulo the per-pair phase offset baked into OxTeam).
+  //
+  // The "stopped" toggle exercises gait="stopped" so we can verify
+  // the at-rest pose: legs vertical, no body bob, no team rocking.
   import { onMount } from 'svelte';
   import OxTeam from '$lib/ui/wagon/ox-team/OxTeam.svelte';
 
@@ -18,6 +21,7 @@
   ];
 
   let t = $state(0);
+  let stopped = $state(false);
   onMount(() => {
     const t0 = performance.now();
     let raf = 0;
@@ -31,6 +35,7 @@
 
   // 1.6 Hz stride per the wagon-scene README spec.
   const gaitPhase = $derived((t * 1.6) % 1);
+  const gait = $derived<'walking' | 'stopped'>(stopped ? 'stopped' : 'walking');
 </script>
 
 <svelte:head>
@@ -40,7 +45,14 @@
 <div class="page">
   <header>
     <h1 class="brand-title">Ox Team Showcase</h1>
-    <p class="subtitle">Pied working oxen + mule variant. Profile view, sceneScale 4×, walk cycle off a single tick.</p>
+    <p class="subtitle">
+      Pied working oxen + mule fallback. Profile view, sceneScale 4×.
+      Pole tip lands at the right edge of each card; pairs lay out leftward.
+    </p>
+    <label class="toggle">
+      <input type="checkbox" bind:checked={stopped} />
+      <span>gait="stopped"</span>
+    </label>
   </header>
 
   <section class="grid">
@@ -51,19 +63,15 @@
           <svg viewBox="0 -90 400 110" preserveAspectRatio="xMidYMax meet">
             <!-- ground line -->
             <line x1="0" y1="0" x2="400" y2="0" stroke="#5a3a1a" stroke-width="0.5" stroke-dasharray="1.4 1.6" opacity="0.6" />
-            <g transform="translate(50 0) scale(4)">
+            <!-- Pole tip lands at scene x=350. OxTeam draws pairs leftward
+                 from there; whole team rocks together via teamBob. -->
+            <g transform="translate(350 0) scale(4)">
               <OxTeam
                 count={s.count}
                 isMule={s.isMule}
+                {gait}
                 {gaitPhase}
-                anchorX={0}
-                wagonHookX={s.count > 1 ? 26 + (Math.ceil(s.count / 2) - 1) * 22 : 16}
-                y={0}
               />
-              <!-- decorative wagon-tongue stub so the chain has somewhere to terminate -->
-              <line x1={s.count > 1 ? 26 + (Math.ceil(s.count / 2) - 1) * 22 : 16} y1="-6"
-                    x2={s.count > 1 ? 36 + (Math.ceil(s.count / 2) - 1) * 22 : 26} y2="-3"
-                    stroke="#5a3a1a" stroke-width="1" stroke-linecap="round" />
             </g>
           </svg>
         </div>
@@ -89,7 +97,16 @@
   .subtitle {
     color: var(--c-tan);
     font-family: var(--f-body);
-    margin: 0;
+    margin: 0 0 var(--s-3) 0;
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    color: var(--c-tan);
+    font-family: var(--f-mono);
+    font-size: var(--fs-sm);
+    cursor: pointer;
   }
 
   .grid {

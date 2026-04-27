@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-26 (post-#164). 23 open.
+As of 2026-04-26 (post-#158). 23 open.
 
 ## New mechanics
 
@@ -24,26 +24,26 @@ As of 2026-04-26 (post-#164). 23 open.
 
 ## UI / UX polish
 
-| #    |                                                                                                                                                                    |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow feel                                                                                                |
-| #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring                                                                                                 |
-| #167 | Trail-map cluster label collisions — Courthouse/Chimney/Scotts Bluff/Ft. Laramie/Robidoux all sit within ~60 modal-px of each other; labels overlap at modal tier 1 even with LABEL_BELOW staggering |
-| #168 | Party Card hover too colorful — match the calmer Wagon/Inventory card hover styling |
+| #    |                                                                                                                                                                                                                                                                                                                                                               |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow feel                                                                                                                                                                                                                                                                                           |
+| #159 | WagonScene strip framing pass — viewBox crop + sun/cloud anchoring                                                                                                                                                                                                                                                                                            |
+| #167 | Trail-map cluster label collisions — Courthouse/Chimney/Scotts Bluff/Ft. Laramie/Robidoux all sit within ~60 modal-px of each other; labels overlap at modal tier 1 even with LABEL_BELOW staggering                                                                                                                                                          |
+| #168 | Party Card hover too colorful — match the calmer Wagon/Inventory card hover styling                                                                                                                                                                                                                                                                           |
 | #169 | WagonScene paused state still reads as motion — rAF parked + gait/bounce snap to 0 weren't enough. Investigate: residual wheel-angle (held mid-rotation), parallax position frozen mid-scroll (no "at-rest" anchor), ox head/eye micro-details, weather-layer drift. Could need an explicit "at-rest pose" preset rather than just freezing animation drivers |
-| #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call                                                                                                   |
-| #147 | Success/arrival view rework — richer than the current score panel                                                                                                  |
-| #133 | EventModal polish — animations + glyphs                                                                                                                            |
-| #112 | Wagon modal visual redesign                                                                                                                                        |
-| #132 | Party view rework (denser / fullscreen)                                                                                                                            |
-| #86  | Expand hover tooltips across all data points                                                                                                                       |
-| #102 | Pre-made vs custom starter kit choice                                                                                                                              |
-| #134 | Water keg/barrel glyph next to water amount                                                                                                                        |
-| #145 | Camp view — eliminate laptop scroll                                                                                                                                |
+| #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop call                                                                                                                                                                                                                                                                                              |
+| #147 | Success/arrival view rework — richer than the current score panel                                                                                                                                                                                                                                                                                             |
+| #133 | EventModal polish — animations + glyphs                                                                                                                                                                                                                                                                                                                       |
+| #112 | Wagon modal visual redesign                                                                                                                                                                                                                                                                                                                                   |
+| #132 | Party view rework (denser / fullscreen)                                                                                                                                                                                                                                                                                                                       |
+| #86  | Expand hover tooltips across all data points                                                                                                                                                                                                                                                                                                                  |
+| #102 | Pre-made vs custom starter kit choice                                                                                                                                                                                                                                                                                                                         |
+| #134 | Water keg/barrel glyph next to water amount                                                                                                                                                                                                                                                                                                                   |
+| #145 | Camp view — eliminate laptop scroll                                                                                                                                                                                                                                                                                                                           |
+| #170 | Use new ox-team design beyond the travel strip — only `WagonScene` renders SingleOx/OxTeam today; opportunities: WagonPicker (model preview with 2-ox team), WagonPanel sidebar (tiny ox sprite next to count), LandmarkStage / TownStage (parked team with `gait="stopped"`, doubles as test bed for the new at-rest pose), CampStage (resting team beside the wagon), EndScreen (final tally with surviving oxen pictured) |
 
 ## For Claude Design or another SVG animation generator
 
-| #158 | Ox + mule team visual revisit — port the new travel-scene handoff (`~/Downloads/travel_scene/design_handoff_travel_scene/`). Replaces `OxTeam.svelte` + `SingleOx.svelte` with full rewrite (Ox / Leg / OxHead / OxYoke / OxSingleYoke / OxPole / OxChain / jitterFor sub-components). Adds `gait="walking"\|"stopped"` prop with explicit at-rest pose + per-ox biological variance (deterministic phase ±0.03 + amplitude 0.88–1.12× hashed from pair-idx + near/far). Tokens: palette tweaks (OX_INK→#3a1a08, new OX_RED_LT/OX_WHITE_SH/POLE_WOOD), PAIR_PHASE_OFFSET 0.13→0.05. Replace `docs/handoff/travel-scene/` with the new bundle. /dev/ox-team harness gets a stopped/walking toggle. Closes #169 (rest-pose) natively — drop the gait/bounce snap-to-0 hack in WagonScene and pass `gait={paused ? 'stopped' : 'walking'}` instead. **Architectural shift on the wagon side**: the new OxTeam owns a single-frequency `teamBob` over the entire hitched mass (oxen + yoke + chains + pole + wagon) and exposes it via `data-team-bob` on its root `<g>`. The wagon must be wrapped in the same translate so it rides the team bob — the current independent `bounce = sin(t*4)*0.5` in WagonScene reads as trotting (double-frequency) and must be removed. When `gait="stopped"` teamBob=0, wagon settles flat naturally. |
 | #156 | Wagon SVG visual revisit — proportions / damage / addons (post-playtest) |
 | #87 | Rich event visuals |
 | #89 | Rich trading post / landmark display |
@@ -95,3 +95,4 @@ As of 2026-04-26 (post-#164). 23 open.
 ## TODO
 
 _(empty — items moved into the sections above)_
+Add weather status to the wagon travel view, and make sure the weather effects are clear in the UI. Maybe a little icon next to the mileage or something? Also, consider adding a tooltip that explains how different weather conditions affect travel and camp actions.

@@ -107,6 +107,11 @@ exposing seconds-elapsed since mount. Everything else is derived from `t`:
 - `gaitPhase = (tEff * 1.6) % 1`  — 1.6 Hz step cycle
 - `bounce = Math.sin(tEff * 4) * 0.5`  — overall scene bounce
 
+**Stopped state** — pass `gait="stopped"` to `OxTeam` to render a
+resting team (camp, fort, river-crossing wait). Animals stand planted,
+no body bob; `gaitPhase` is ignored. Wagon should also be passed
+`bounce={0}` and a static wheel angle to match.
+
 **No CSS animations. No `setInterval`s. No spring physics.** All motion is
 SVG attributes recomputed each frame. The whole scene pauses by holding `t`.
 

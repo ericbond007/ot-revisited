@@ -41,7 +41,6 @@
 
   // Ox team
   import OxTeam from './ox-team/OxTeam.svelte';
-  import { PAIR_SPACE } from './ox-team/ox-team-tokens';
 
   // Wagon
   import { WAGON_RENDER } from './wagon-svg';
@@ -83,15 +82,22 @@
   // Per the brief's animation-model section. scrollX is negated so
   // parallax tiles slide LEFT→RIGHT past the camera — that reads as
   // the wagon traveling WEST (right-to-left through the world).
-  // Parallax + wheels freeze at their last value when paused. Gait
-  // and bounce snap to a "standing at rest" pose so the oxen aren't
-  // caught mid-stride and the wagon sits flat on the ground.
+  // Parallax + wheels freeze at their last value when paused; gait
+  // snaps to 0 (handled by OxTeam's gait="stopped" pose).
   const scrollX = $derived(-tEff * 60);
   const gaitPhase = $derived(paused ? 0 : (tEff * 1.6) % 1);
-  const bounce = $derived(paused ? 0 : Math.sin(tEff * 4) * 0.5);
   // Negative wheel angle so wheels roll the same direction the
   // wagon is heading (counter-clockwise from viewer = westward).
   const wheelAngle = $derived((-tEff * 90) % 360);
+  // Shared team bob (#158): the entire hitched mass — oxen + yoke +
+  // chains + pole + wagon — settles together in one slow vertical
+  // cycle. OxTeam computes the same value internally and bakes it
+  // into its own translate; we mirror it on the wagon so they ride
+  // together. Single-frequency only — a double-frequency bob reads
+  // as trotting, not walking. Zero when paused.
+  const teamBob = $derived(
+    paused ? 0 : Math.sin(gaitPhase * Math.PI * 2) * 0.08
+  );
 
   // ---------- weather mapping ----------
   // Engine has 8 states; the brief's visual vocabulary has 6. The
@@ -133,19 +139,14 @@
   const wagonTongueTipSceneX = $derived(WAGON_X + (-29) * SCENE_SCALE);
 
   // ---------- ox team placement ----------
-  // The ox team renders in its own scaled frame anchored at scene
-  // (0, GROUND_Y). Inside that frame:
-  //   * `wagonHookX` is where the trailing chain ends — converted
-  //     from the scene-coord tongue tip back into ox-local units.
-  //   * `anchorX` is the leftmost (lead) pair's center — calibrated
-  //     so the trailing pair sits ~6 units left of the wagon hook.
+  // OxTeam draws its pole tip at its own (0, -11.5). The wrapping
+  // <g translate(wagonTongueTipSceneX, GROUND_Y) scale(SCENE_SCALE)>
+  // puts that pole tip at the wagon's tongue-tip; pairs extend
+  // leftward (negative x). Origin convention changed in #158 — the
+  // team no longer takes anchorX/wagonHookX, just wraps in a translate.
   const liveOxen = $derived(gameState.oxen.filter((o) => o.health > 0));
   const oxCount = $derived(Math.max(1, Math.min(6, liveOxen.length)));
   const isMule = $derived(liveOxen.length > 0 && liveOxen[0].kind === 'mule');
-  const pairCount = $derived(Math.max(1, Math.ceil(oxCount / 2)));
-
-  const wagonHookX = $derived(wagonTongueTipSceneX / SCENE_SCALE);
-  const teamAnchorX = $derived(wagonHookX - 8 - (pairCount - 1) * PAIR_SPACE);
 
   // ---------- addons ----------
   const addons = $derived({
@@ -208,23 +209,22 @@
       <!-- 8. near parallax -->
       <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
 
-      <!-- 9. ox/mule team -->
-      <g transform="translate(0 {GROUND_Y}) scale({SCENE_SCALE})">
+      <!-- 9. ox/mule team — pole tip lands at wagonTongueTipSceneX -->
+      <g transform="translate({wagonTongueTipSceneX} {GROUND_Y}) scale({SCENE_SCALE})">
         <OxTeam
           count={oxCount}
           {isMule}
           {gaitPhase}
-          anchorX={teamAnchorX}
-          {wagonHookX}
-          y={0}
+          gait={paused ? 'stopped' : 'walking'}
         />
       </g>
 
-      <!-- 10. wagon -->
-      <g transform="translate({WAGON_X} {wagonY}) scale({SCENE_SCALE})">
+      <!-- 10. wagon — rides the team bob via a y-offset on the
+           translate, so it settles together with the hitched mass. -->
+      <g transform="translate({WAGON_X} {wagonY + teamBob * SCENE_SCALE}) scale({SCENE_SCALE})">
         <WagonComponent
           angle={wheelAngle}
-          {bounce}
+          bounce={0}
           health={gameState.wagon.condition}
           {addons}
         />

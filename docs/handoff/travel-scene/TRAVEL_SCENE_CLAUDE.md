@@ -136,9 +136,19 @@ photo. Constraints:
 - Walk cycle: diagonal pairs alternate via `Math.sin(legPhase * 2π)`.
 - Coordinate system: origin between hooves on ground, y-positive down,
   spine at `y = -8` to `-9`, length ~17 units, leg length ~5.
-- `OxTeam` props: `count` (1–6), `isMule`, `gaitPhase` (0–1), `anchorX`,
-  `wagonHookX`, `y`.
-- Pair spacing: `PAIR_SPACE = 22`. Phase offset between pairs: `+0.13`.
+- `OxTeam` props: `count` (1–6), `isMule`, `gait` (`"walking"` | `"stopped"`,
+  default `"walking"`), `gaitPhase` (0–1), `anchorX`, `wagonHookX`, `y`.
+- **`gait="stopped"`** — animals stand planted: legs vertical, no body bob,
+  no team-wide rocking, wagon stays still. Use this for resting/camped
+  scenes (night camp, fort, river crossing wait). When stopped, `gaitPhase`
+  is ignored; you can still drive the parent timeline normally.
+- **Per-ox biological variance**: each ox in the team gets a small
+  deterministic phase offset (±0.03 of a cycle) and amplitude jitter
+  (0.88–1.12× swing). Hashed from (pair index, near/far) so the same
+  animal always strides the same way. Result: yoked pairs read as still
+  walking together, but each animal's gait is a touch different — no more
+  army-marching lockstep. No knobs to tune; the variance is built in.
+- Pair spacing: `PAIR_SPACE = 22`. Phase offset between pairs: `+0.05`.
 - Drawn at `sceneScale = 4.0` to match the wagon.
 
 The wagon tongue terminates at `x ≈ -29` in wagon-local units; the rightmost
