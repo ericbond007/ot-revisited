@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-27 (post-#89). 31 open.
+As of 2026-04-28 (post-#89). 31 open.
 
 ## New mechanics
 
@@ -34,7 +34,6 @@ As of 2026-04-27 (post-#89). 31 open.
 | #169 | WagonScene paused state still reads as motion                    |
 | #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop      |
 | #147 | Success/arrival view rework — richer than current score panel    |
-| #133 | EventModal polish — animations + glyphs                          |
 | #112 | Wagon modal visual redesign                                      |
 | #132 | Party view rework — denser / fullscreen                          |
 | #86  | Expand hover tooltips across all data points                     |
@@ -57,6 +56,7 @@ As of 2026-04-27 (post-#89). 31 open.
 | #    |                                                            |
 | ---- | ---------------------------------------------------------- |
 | #182 | Hunt yields audit — tallow / animal fat as byproduct?      |
+| #186 | Populate per-choice EventChoice.icon across event catalog  |
 | #183 | AI art / animation pipeline — eval libs + image-gen APIs   |
 | #184 | Full game review — Sonnet pass on mechanics + balance      |
 | #185 | Playwright MCP — point at /usr/bin/chromium (fleet config) |
@@ -67,6 +67,10 @@ As of 2026-04-27 (post-#89). 31 open.
 
 ## Recently shipped
 
+- **#133** EventModal visual polish — `EventChoice.icon?: string` field added so any choice can carry a thematic action glyph (🐂, ⛺, ⚒️, etc.), not just item-gated ones. EventModal renders `req.icon` (item-gate, stronger signal) when present, falls back to `c.icon` (action flavor). The card-slide / choice-in animations and rust-bordered button styling were already in place from earlier work; this closes the infrastructure side. Content fill — populating `c.icon` across the event catalog — is logged as #186 follow-up.
+- **components/ step 4a** — ActionBar parity confirmed against `docs/handoff/components/`. The 5 sprite-symbol path data sets (`gi-travel`, `gi-rest`, `gi-hunt`, `gi-visit`, `gi-ford`) are byte-identical to the bundle; restored the inline section comments the original port stripped.
+- **profession-icons** — handoff bundle's 13 watercolor profession glyphs ported (10 mechanical via Sonnet subagent + 3 worked-port templates: doctor, banker, hunter). New `src/lib/ui/profession-icons/` module mirrors landmark-icons / stat-icons shape: `LI` palette, `ProfessionIconKind` union, dispatcher with optional `badge` prop (warm/cool/gold) reusing the `_badge.svelte` HybridBadge from landmark-icons, `hasProfessionIcon()` guard. `ProfessionPicker.svelte` (new-game grid) wired — bespoke 32px SVGs replace the emoji glyphs. PartyPanel avatar corner + PartyMemberModal hero deferred to step 4d's PartyPanel rebuild (would be touched twice otherwise). `tests/profession-icons-port.test.ts` element-count parity (13 of 13). Strips Svelte `<script>` blocks before counting (Hunter's port comment mentions `<g>` literally — would inflate counts otherwise).
+- **stat-icons** — handoff bundle's 8 watercolor stat glyphs ported (5 mechanical via Sonnet subagent + 3 worked-port templates: day, pace, health) plus 2 fresh glyphs in matching vocabulary for `leg` (brass-cased pocket compass) and `weather` (sun-behind-cumulus) which the bundle pre-dates. `src/lib/ui/stat-icons/StatIcon.svelte` dispatcher (Svelte 5 runes), `SI` palette, `StatIconKind` union (10 ids). Wired into `/play` top-bar header for day / date / leg, and routed through `StatPicker` for pace / rations via a new optional `kind` prop (falls back to legacy `icon: string` emoji when absent). Weather intentionally stays on emoji — the per-state glyph (clear / cloudy / rain / storm / fog) carries more info than a single watercolor cloud would. `tests/stat-icons-port.test.ts` element-count parity test had to handle JSX destructured params (`function DayIcon({ size = 16 })`) by skipping past parens before finding the body's brace; same shape ports forward.
 - **landmark-icons foundation + bulk port** — handoff bundle's 4-step icon import, step 1 of 4. New module `src/lib/ui/landmark-icons/` (sibling to landmark-art so the 24×24 watercolor pin set doesn't cohabit with the 480×200 modal illustrations). 40 of 40 ids ported: 38 verbatim from `docs/handoff/landmark-icons/src/icons-{arrival,passbys,rivers,trading-posts}.jsx` (mechanical Sonnet subagent pass — `strokeWidth → stroke-width` etc., HybridBadge wrapped via `{#snippet children()}`, helper components imported from sibling files), plus 2 fresh glyphs (whitman_mission, barlow_road) drawn in matching vocabulary because the bundle predates the historical pass. `LandmarkIcon.svelte` is a Svelte 5 runes port of the bundle's Svelte 4 dispatcher (`$props` instead of `export let`, `$derived` instead of `$:`, `<Art />` instead of `<svelte:component>`); per-id REGISTRY map; `hasLandmarkIcon()` guard exposed for callers that fall back to emoji on unmapped ids. Fidelity verification: (1) `tests/landmark-icons-port.test.ts` element-count parity per landmark — 38 of 38 pass; (2) Sonnet code-reviewer subagent spot-check on 5 random ports (fort_hall / three_island_crossing / devils_gate / courthouse_jail_rocks / oregon_city) — 0 drift found; (3) `/dev/landmark-icons` specimen route shows every LANDMARKS id at 24/32/48 px. Bundle source committed at `docs/handoff/landmark-icons/`. **Wiring to LandmarkPin / modal headers + step-2 stat-icons + step-3 profession-icons + step-4 components are still ahead.**
 - **#179** Lightening the wagon — `discardItem` server action gated to `state.location.atLandmarkId` (period reality: lightening happened at the rocks and forts, not on the open trail). InventoryModal now renders three submit buttons per row when at a landmark — `−1`, `−min(10, qty)`, `all` — each with its own `name="qty" value=N` so the player picks the bulk in a single click without per-row JS state. Items removed from `state.inventory`; future ox-fatigue benefit comes through the existing weight-driven oxen system. Compact ghost-button styling so dense rows don't crowd. New `slot` prop on InventoryModal; callsite in `/play` updated.
 - **#178** Independence Day — once-per-year +6 morale bump on July 4. New `systems/holidays.ts` (`applyHolidays`) wired into both engine pipelines (`tickDay` + `tickDayPausable`); per-year flag `_july4Year` gates re-firing within the same year. Cap-respecting (no morale > 100), no-op when `state.completed`. 5 new tests; pattern extends naturally to Christmas / Thanksgiving (1863+) when wanted.

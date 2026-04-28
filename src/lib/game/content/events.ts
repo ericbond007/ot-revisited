@@ -24,6 +24,12 @@ export interface EventChoice {
   // Audited choices that write their own outcome line set this to true so the
   // log isn't redundant. Unaudited choices keep getting the auto-append.
   silentLog?: boolean;
+  // Optional action glyph rendered at the left edge of the choice button —
+  // intended for thematic cues (🐂 push through, ⛺ pitch camp, ⚒️ fix it,
+  // etc.). When `requires.icon` is also set, the requires icon takes
+  // precedence (item-gate is a stronger signal than action flavor).
+  // Populating this across the full event catalog is a follow-up.
+  icon?: string;
   // Optional required-item gate. When set, the choice renders disabled in
   // the modal if the party is missing the item, with a hint stating why.
   // The item's icon is also surfaced alongside the label.

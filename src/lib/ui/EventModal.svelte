@@ -93,8 +93,10 @@
               title={req.disabled ? req.reason : ''}
               style="animation-delay: {40 + i * 60}ms;"
             >
-              {#if req.icon}
-                <span class="choice-icon" aria-hidden="true">{req.icon}</span>
+              {#if req.icon || c.icon}
+                <!-- Item-gate icon wins when present; falls back to the
+                     choice's thematic action glyph (#133). -->
+                <span class="choice-icon" aria-hidden="true">{req.icon ?? c.icon}</span>
               {/if}
               <span class="choice-label-text">{c.label}</span>
               {#if req.disabled && req.reason}
