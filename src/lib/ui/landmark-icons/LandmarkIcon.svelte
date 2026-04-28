@@ -26,12 +26,12 @@
   import CourthouseRock     from './courthouse_rock.svelte';
   import DevilsGate          from './devils_gate.svelte';
   import FarewellBend        from './farewell_bend.svelte';
-  import FortBoise           from './fort_boise.svelte';
-  import FortBridger         from './fort_bridger.svelte';
-  import FortHall            from './fort_hall.svelte';
-  import FortKearny          from './fort_kearny.svelte';
-  import FortLaramie         from './fort_laramie.svelte';
-  import FortWallaWalla      from './fort_walla_walla.svelte';
+  import FortBoise           from './ft_boise.svelte';
+  import FortBridger         from './ft_bridger.svelte';
+  import FortHall            from './ft_hall.svelte';
+  import FortKearny          from './ft_kearny.svelte';
+  import FortLaramie         from './ft_laramie.svelte';
+  import FortWallaWalla      from './ft_walla_walla.svelte';
   import GrandeRonde         from './grande_ronde.svelte';
   import GreenRiver          from './green_river.svelte';
   import GuernseyRuts        from './guernsey_ruts.svelte';
@@ -70,12 +70,12 @@
     courthouse_rock:        CourthouseRock,
     devils_gate:            DevilsGate,
     farewell_bend:          FarewellBend,
-    fort_boise:             FortBoise,
-    fort_bridger:           FortBridger,
-    fort_hall:              FortHall,
-    fort_kearny:            FortKearny,
-    fort_laramie:           FortLaramie,
-    fort_walla_walla:       FortWallaWalla,
+    ft_boise:               FortBoise,
+    ft_bridger:             FortBridger,
+    ft_hall:                FortHall,
+    ft_kearny:              FortKearny,
+    ft_laramie:             FortLaramie,
+    ft_walla_walla:         FortWallaWalla,
     grande_ronde:           GrandeRonde,
     green_river:            GreenRiver,
     guernsey_ruts:          GuernseyRuts,
@@ -181,12 +181,12 @@
     'courthouse_rock',
     'devils_gate',
     'farewell_bend',
-    'fort_boise',
-    'fort_bridger',
-    'fort_hall',
-    'fort_kearny',
-    'fort_laramie',
-    'fort_walla_walla',
+    'ft_boise',
+    'ft_bridger',
+    'ft_hall',
+    'ft_kearny',
+    'ft_laramie',
+    'ft_walla_walla',
     'grande_ronde',
     'green_river',
     'guernsey_ruts',
