@@ -108,6 +108,16 @@
           </div>
         </button>
       </form>
+
+      <form method="POST" action="?/townNewspaper&slot={qp}" use:enhance={() => () => {}} class="svc-form">
+        <button type="submit" class="svc-card" disabled={gameState.cash < 1}>
+          <span class="svc-icon">{ICON.town_services.newspaper}</span>
+          <div class="svc-body">
+            <span class="svc-label">Read the newspaper</span>
+            <span class="svc-sub">$1 · headlines from back east + a rumor or two</span>
+          </div>
+        </button>
+      </form>
     {/if}
 
     {#if services.includes('blacksmith')}

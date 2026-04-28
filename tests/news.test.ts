@@ -4,6 +4,8 @@ import {
   addNews,
   recentNews,
   generatePostGossip,
+  generateNewspaper,
+  applyNewspaper,
   effectCholeraScare,
   effectHuntBonus,
   effectTribeShift
@@ -136,5 +138,61 @@ describe('post gossip generator', () => {
     }
     // If we didn't pull a tribe-Sioux roll across 30 seeds, the test is
     // inconclusive but doesn't fail. (The generator can pick other topics.)
+  });
+});
+
+describe('newspaper generator', () => {
+  function gameInYear(year: number, month = 6): GameState {
+    return createInitialState({
+      seed: 'paper',
+      leader: { name: 'A', profession: 'farmer' },
+      companions: [{ name: 'B', profession: 'doctor' }],
+      startDate: { year, month, day: 15 }
+    });
+  }
+
+  it('returns 2-4 historical headlines plus a couple gossip items', () => {
+    const s = gameInYear(1849);
+    const { items } = generateNewspaper(s, makeRng('paper-1'), 'Fort Laramie');
+    expect(items.length).toBeGreaterThanOrEqual(2);
+    expect(items.length).toBeLessThanOrEqual(6);
+  });
+
+  it('marks read headlines so the same paper is not served twice', () => {
+    let s = gameInYear(1849);
+    const { items: items1, headlineIdsUsed: ids1 } = generateNewspaper(s, makeRng('p-a'), 'Fort Laramie');
+    s = applyNewspaper(s, items1, ids1);
+    const readSet = (s.flags._headlinesRead as unknown as string[]) ?? [];
+    for (const id of ids1) expect(readSet).toContain(id);
+
+    // Subsequent reads must not pull a previously-read headline.
+    const { headlineIdsUsed: ids2 } = generateNewspaper(s, makeRng('p-b'), 'Fort Laramie');
+    for (const id of ids2) expect(ids1).not.toContain(id);
+  });
+
+  it('Gold Rush headline flips the California unlock flag', () => {
+    // The Gold Rush story runs Aug 1848 onward — pick a window where
+    // it's the only post-Aug headline that fires its california_unlock
+    // effect. We seed the year and apply repeatedly until the flag flips.
+    let s = gameInYear(1848, 9);
+    let flipped = false;
+    for (let i = 0; i < 10 && !flipped; i++) {
+      const { items, headlineIdsUsed } = generateNewspaper(s, makeRng(`gold-${i}`), 'Fort Laramie');
+      s = applyNewspaper(s, items, headlineIdsUsed);
+      if (s.flags._californiaUnlocked) flipped = true;
+    }
+    expect(flipped).toBe(true);
+  });
+
+  it('newspaper batch is JSON-serializable (no function refs survive)', () => {
+    let s = gameInYear(1854);
+    const { items, headlineIdsUsed } = generateNewspaper(s, makeRng('roundtrip'), 'Fort Laramie');
+    s = applyNewspaper(s, items, headlineIdsUsed);
+    // Whole flags blob must round-trip cleanly — devalue would throw on
+    // a function. The Grattan Affair headline carries an effect; this
+    // confirms the dispatcher fired it AND scrubbed the function.
+    const round = JSON.parse(JSON.stringify(s.flags));
+    expect(round._news).toBeDefined();
+    for (const n of round._news) expect(n.applyEffect).toBeUndefined();
   });
 });

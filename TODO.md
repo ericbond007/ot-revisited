@@ -1,12 +1,17 @@
 # Remaining TODOs
 
-As of 2026-04-27 (post-#89). 22 open.
+As of 2026-04-27 (post-#89). 33 open.
 
 ## New mechanics
 
-| #             |     |
-| ------------- | --- |
-| _(none open)_ |     |
+| #    |                                                                   |
+| ---- | ----------------------------------------------------------------- |
+| #175 | California leg — Gold Rush headline unlocks alternate route       |
+| #176 | Wagon trains — join 20-50 caravan for safety bonus                |
+| #177 | Letters from home — rare fort event, morale shifts by content     |
+| #178 | Independence Day — July 4 celebration morale bump                 |
+| #179 | Lightening the wagon — discard at landmarks for ox-fatigue cut    |
+| #180 | Year-sensitive dialogue — 1849+ California talk flavor            |
 
 ## More animals
 
@@ -18,9 +23,9 @@ As of 2026-04-27 (post-#89). 22 open.
 
 ## System reworks
 
-| #             |     |
-| ------------- | --- |
-| _(none open)_ |     |
+| #    |                                                            |
+| ---- | ---------------------------------------------------------- |
+| #174 | Bullets — split into lead + powder + caps for authenticity |
 
 ## UI / UX polish
 
@@ -44,6 +49,7 @@ As of 2026-04-27 (post-#89). 22 open.
 | #171 | Laurel Hill landmark art — only gap from #89 batch               |
 | #172 | Travel mileage calibration second pass — Whitman/Barlow inserts  |
 | #173 | TownStage hero art — hoist LandmarkArt into Visit view (Phase B) |
+| #181 | Newspaper paper-styled modal — parchment + period typography     |
 
 ## For Claude Design or another SVG animation generator
 
@@ -53,9 +59,9 @@ As of 2026-04-27 (post-#89). 22 open.
 
 ## Balance / audit
 
-| #             |     |
-| ------------- | --- |
-| _(none open)_ |     |
+| #    |                                                            |
+| ---- | ---------------------------------------------------------- |
+| #182 | Hunt yields audit — tallow / animal fat as byproduct?      |
 
 ## Known design-incoming
 
@@ -63,6 +69,7 @@ As of 2026-04-27 (post-#89). 22 open.
 
 ## Recently shipped
 
+- **historical pass** — period-flavor items + luxury haul + newspapers (#150 follow-up). Items: cornmeal, salt_pork, saleratus, lard, tar_bucket, vinegar; luxury haul (anvil 800 / china_tea_set 400 / feather_mattress 300); existing `sugar` re-flavored as period loaf form (loaf_sugar folded in rather than duplicated). New `news-headlines.ts` (35 curated headlines spanning 1846-1859, year+month gated), `generateNewspaper`/`applyNewspaper` interleave 2-4 historical headlines with 1-2 gossip items into the existing addNews pipeline, headline ids tracked in `flags._headlinesRead` to avoid re-serves. Headline effects use plain descriptors (`{kind: 'california_unlock'}` / `{kind: 'tribe_shift', ...}`) resolved at apply time — keeps `news-headlines.ts` a pure-data file (no circular import on systems/news.ts) and devalue-safe. Gold Rush headline flips `_californiaUnlocked` for the future California leg (#175). Treaty of Ft. Laramie 1851 nudges Sioux/Cheyenne attitude up; Grattan Affair 1854 + Harney 1855 nudge Sioux down; Whitman Massacre 1847 nudges Cayuse down. New `townNewspaper` server action ($1) + TownStage "Read the newspaper" service card gated on the same `gossip` service flag (clerks who chat have papers). 4 new regression tests covering: 2-4 headline counts, no-repeat read tracking, Gold Rush flag flip, JSON round-trip safety.
 - **#89** rich landmark display — Claude Design handoff ported (39 of 38 plotted landmarks have bespoke SVG art; only `laurel_hill` lacks dedicated art and is logged as #171). New `src/lib/ui/landmark-art/` module: `LandmarkArtFrame.svelte` chrome, `LandmarkArt.svelte` id-dispatcher, 39 per-landmark `<g>`-only Svelte components, plus `landmark-art-tokens.ts` (`LMK` palette + `LandmarkId` union). `LandmarkStage.svelte`'s placeholder slot now renders `<LandmarkArt id={landmark.id} {abandoned} />` gated by `hasLandmarkArt()`. Three id remappings (`north-platte-east → north_platte_1`, `north-platte-west → north_platte_2`, `sweetwater-ford → sweetwater_1`). Two new LANDMARKS added: `whitman_mission` (mile 1885, `abandonedAfterYear: 1847`) and `barlow_road` (mile 2013). `/dev/landmark-art` harness for visual diff against the bundled atlas + per-region showcase HTMLs.
 - **#158** ox + mule team visual revisit — full handoff port to `src/lib/ui/wagon/ox-team/` (Ox/Leg/OxHead/OxYoke/OxSingleYoke/OxPole/OxChain sub-components via Svelte snippets), `gait="walking"|"stopped"` prop with explicit at-rest pose, per-ox biological variance (deterministic phase ±0.03 + amplitude 0.88–1.12× hashed from pair-idx + near/far). Tokens refresh: OX_INK→#3a1a08, new OX_RED_LT/OX_WHITE_SH/POLE_WOOD; PAIR_PHASE_OFFSET 0.13→0.05; PAIR_SPACE 22→24. Architectural shift: OxTeam owns the shared `teamBob` over the entire hitched mass; WagonScene mirrors it on the wagon translate so they ride together (was independent double-frequency bounce that read as trotting). Mule fallback preserved.
 - **#164** WagonScene rAF parking — wagon was animating continuously between turns, looked like the player was traveling when they weren't. WagonScene's rAF loop now lives inside a `$effect` that fully cancels when `paused`; `t` reads via `untrack` on resume so the effect doesn't tear itself down on every frame, and `t` holds its last value across pauses (wagon freezes mid-stride, no snap to t=0). /play tracks a `wagonRolling` flag set on day-change for 1500ms and passes `paused={!wagonRolling}` — wheels + parallax now only run for ~1.5s after a Travel action.

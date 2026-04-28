@@ -21,6 +21,12 @@ import type { GameState } from '../types';
 /** Per-item prestige points awarded on arrival in Oregon City. */
 export const LUXURY_POINTS: Record<string, number> = {
   grandfather_clock: 1000,
+  // Anvil — frontier-blacksmith ambition. Just shy of the clock.
+  anvil: 800,
+  // China tea set — fragile porcelain that survived 2000+ miles.
+  china_tea_set: 400,
+  // Feather mattress — the bulky comfort that didn't get jettisoned.
+  feather_mattress: 300,
   fiddle: 50,
   bible: 30,
   harmonica: 20,

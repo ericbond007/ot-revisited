@@ -36,15 +36,25 @@ export const ITEMS: Record<string, ItemMeta> = {
   // the coop. foodDrawOrder 0.75 = after berries, before flour.
   egg:         { id: 'egg',         name: 'Egg',          category: 'food', weightLbPerUnit: 0.1, foodDrawOrder: 0.75, description: 'Fresh from the coop. Breakfast staple on the trail — variety beats hardtack.' },
   flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten after fresh meat.' },
+  // Cornmeal — period staple alongside (or instead of) wheat flour. Cheaper,
+  // ground locally, the foundation of johnnycakes and cornbread on the trail.
+  cornmeal:    { id: 'cornmeal',    name: 'Cornmeal',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1.2, description: 'Ground corn. Cheaper than flour, makes johnnycakes and mush.' },
   beans:       { id: 'beans',       name: 'Beans',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 2, description: 'Shelf-stable protein. Keeps indefinitely.' },
   bacon:       { id: 'bacon',       name: 'Bacon',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: 'Salted pork. High-calorie, slow to spoil.' },
+  // Salt pork — heavier-cure pork, packed in barrels. Distinct from bacon:
+  // saltier, fattier, lasts longer in summer heat.
+  salt_pork:   { id: 'salt_pork',   name: 'Salt pork',    category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3.2, description: 'Heavy-cured pork from the barrel. Saltier than bacon, holds up better in summer.' },
   // Jerky sits at 3.5 so it reads between bacon and hardtack — a durable
   // staple meat protein. Cured from game_meat + salt (camp action TBD).
   jerky:       { id: 'jerky',       name: 'Jerky',        category: 'food', weightLbPerUnit: 0.5, foodDrawOrder: 3.5, description: 'Dried strips of cured meat. Lean, salty, lasts indefinitely.' },
   hardtack:    { id: 'hardtack',    name: 'Hardtack',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 4, description: 'Indestructible biscuit. Fills bellies, drags morale.' },
   dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Cures scurvy. Small morale boost when eaten.' },
   pemmican:    { id: 'pemmican',    name: 'Pemmican',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6, description: 'Native-prepared dried meat + fat. Never spoils.' },
-  sugar:       { id: 'sugar',       name: 'Sugar',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 7, description: 'Small morale bump when eaten; preserves foraged berries.' },
+  // Period sugar — sold as conical loaves (a.k.a. "loaf" or "lump" sugar)
+  // wrapped in blue paper, broken off with sugar-nips. Treated as the
+  // generic sugar item; one pound per unit normalizes the loaves for
+  // gameplay weight rather than the historical 4-5 lb cone.
+  sugar:       { id: 'sugar',       name: 'Sugar',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 7, description: 'Loaf sugar — period cone form, broken off with nips. Small morale bump; preserves foraged berries.' },
   // Coffee + tea are NOT in the regular food draw — they're consumed
   // separately by applyHotDrinks (~1 lb per 5 brew-days). Daily brewing
   // gives a small morale lift and accidentally cuts waterborne-disease
@@ -72,6 +82,11 @@ export const ITEMS: Record<string, ItemMeta> = {
   canvas:      { id: 'canvas',      name: 'Canvas cover',   category: 'wagon_part', weightLbPerUnit: 30, description: 'Replace a torn cover. Otherwise weather damages supplies.' },
   spare_plank: { id: 'spare_plank', name: 'Spare plank',    category: 'wagon_part', weightLbPerUnit: 8, description: 'Patches minor wagon damage. Cheaper than a full replacement.' },
   iron_scrap:  { id: 'iron_scrap',  name: 'Iron scrap',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Salvaged metal. A Blacksmith can forge it into repairs.' },
+  // Tar bucket — pine-tar grease for axle hubs. Every emigrant diary
+  // mentions one swinging under the wagon. Slows axle wear if you keep
+  // it greased; the future axle-wear mechanic (#174 follow-up area)
+  // will hook into this directly.
+  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows axle wear.' },
 
   rifle: { id: 'rifle', name: 'Rifle', category: 'weapon', weightLbPerUnit: 10, description: 'Required for hunting. A second rifle lets two hunters work in parallel.' },
   bullets: { id: 'bullets', name: 'Bullets', category: 'ammo', weightLbPerUnit: 0.1, description: 'Consumed on every hunt. Runs out faster than you expect.' },
@@ -86,6 +101,14 @@ export const ITEMS: Record<string, ItemMeta> = {
   rope: { id: 'rope', name: 'Rope', category: 'tool', weightLbPerUnit: 8, description: 'Lower wagons down steep grades, secure loads, rescue fallen oxen.' },
   shovel: { id: 'shovel', name: 'Shovel', category: 'tool', weightLbPerUnit: 5, description: 'Enables well-digging, grave-digging, wagon extraction. Auto-digs firepit + latrine each camp.' },
   salt: { id: 'salt', name: 'Salt', category: 'tool', weightLbPerUnit: 1, description: 'Preserves fresh game meat. Multiplies curing speed, reduces spoilage loss during the jerk process.' },
+  // Saleratus — sodium bicarbonate (period name for baking soda). Tiny
+  // bag, big quality-of-life: leavens biscuits, settles upset stomachs,
+  // counters alkali water sour. Period diaries mention it constantly.
+  saleratus: { id: 'saleratus', name: 'Saleratus', category: 'tool', weightLbPerUnit: 0.5, description: 'Period baking soda. Leavens biscuits, settles stomachs, sweetens alkali water.' },
+  // Lard — rendered pork fat in a tin. Multi-use frontier staple:
+  // cooking grease (every camp meal), axle dressing if you run out of
+  // tar, skin salve for chapped hands and sunburn.
+  lard: { id: 'lard', name: 'Lard', category: 'tool', weightLbPerUnit: 5, description: 'Rendered pork fat. Cooks meals, greases axles in a pinch, salves chapped skin.' },
   compass: { id: 'compass', name: 'Compass', category: 'tool', weightLbPerUnit: 0.5, description: 'Reduces the chance of being lost in storms or fog.' },
   water_skin: { id: 'water_skin', name: 'Water skin', category: 'tool', weightLbPerUnit: 2, description: '+5 gal water carry cap each. A buffer for dry stretches — base cap is 20 gal.' },
   ox_shoes: { id: 'ox_shoes', name: 'Ox / mule shoes', category: 'livestock', weightLbPerUnit: 2, description: 'Replace shoes that oxen or mules throw on rocky terrain. A Blacksmith or Teamster re-shoes them.' },
@@ -97,6 +120,10 @@ export const ITEMS: Record<string, ItemMeta> = {
   bandages: { id: 'bandages', name: 'Bandages', category: 'medicine', weightLbPerUnit: 1, description: 'Treats wounds, snakebite, broken bones.' },
   herbal_poultice: { id: 'herbal_poultice', name: 'Herbal poultice', category: 'medicine', weightLbPerUnit: 0.5, description: 'Weaker than modern medicine. Foraged or Preacher-made.' },
   patent_medicine: { id: 'patent_medicine', name: 'Patent medicine', category: 'medicine', weightLbPerUnit: 0.5, description: 'Gamble: 50% heal / 35% nothing / 15% mild harm. Era-accurate snake oil.' },
+  // Vinegar — sold in stoneware jugs (~1 gal, ~8 lb). Period
+  // antiscorbutic and food preservative. Modest scurvy edge for parties
+  // running out of dried fruit on long stretches.
+  vinegar: { id: 'vinegar', name: 'Vinegar', category: 'medicine', weightLbPerUnit: 8, description: 'Stoneware jug. Wards off scurvy and preserves food when dried fruit runs thin.' },
 
   tobacco: { id: 'tobacco', name: 'Tobacco', category: 'comfort', weightLbPerUnit: 1, description: 'Morale consumable. Also Native American trade currency.' },
   whiskey: { id: 'whiskey', name: 'Whiskey', category: 'comfort', weightLbPerUnit: 4, description: 'Morale bump. Small cold-exposure heal. Rare dependency risk.' },
@@ -108,6 +135,17 @@ export const ITEMS: Record<string, ItemMeta> = {
   // 100 lb of solid walnut + brass eats real wagon capacity, so taking
   // one is a deliberate trade-off.
   grandfather_clock: { id: 'grandfather_clock', name: 'Grandfather clock', category: 'comfort', weightLbPerUnit: 100, description: 'Useless on the trail. Delivered to Oregon City: a massive prestige score bonus.' },
+  // Anvil — the headline blacksmith haul. Settlers really did pack 80-100 lb
+  // anvils to set up forges in Oregon. Cheap to buy, brutal to haul. Big
+  // prestige bonus for delivery, just behind the grandfather clock.
+  anvil: { id: 'anvil', name: 'Anvil', category: 'comfort', weightLbPerUnit: 80, description: 'A blacksmith\'s anvil. 80 lb of dead weight on the trail; a frontier livelihood at the end of it.' },
+  // China tea set — porcelain service in a packing crate. Status item;
+  // half the wagons that started with one buried it on the high plains.
+  // Surviving sets are a major prestige delivery.
+  china_tea_set: { id: 'china_tea_set', name: 'China tea set', category: 'comfort', weightLbPerUnit: 25, description: 'Porcelain service in a packing crate. Fragile, prestigious, and surprisingly heavy.' },
+  // Feather mattress — bulky comfort haul. Common in early packing
+  // lists, often abandoned at Independence Rock when wagons lightened.
+  feather_mattress: { id: 'feather_mattress', name: 'Feather mattress', category: 'comfort', weightLbPerUnit: 40, description: 'Bulky comfort. Often abandoned at Independence Rock — the ones that arrive are prized.' },
 
   moccasins: { id: 'moccasins', name: 'Moccasins', category: 'native_trade', weightLbPerUnit: 1, description: 'Warmth +10 per person. Lightweight cold mitigation; pairs well with a coat.' },
   buffalo_robe: { id: 'buffalo_robe', name: 'Buffalo robe', category: 'native_trade', weightLbPerUnit: 8, description: 'Warmth +25 per person. Heavy but the warmest single item — indispensable in winter.' },

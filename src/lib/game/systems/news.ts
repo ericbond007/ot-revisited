@@ -2,6 +2,7 @@ import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { LANDMARKS, type Landmark } from '../content/landmarks';
 import { TRIBES, attitudeLevel } from '../content/tribes';
+import { eligibleHeadlines, type NewsHeadline, type HeadlineEffect } from '../content/news-headlines';
 import { getTribeAttitude } from './tribe-relations';
 
 // Trail gossip — actionable hints the player picks up from encounters,
@@ -216,4 +217,129 @@ export function generatePostGossip(
     // Cholera ahead — boosts cholera event weight for two weeks.
     applyEffect: cholera ? effectCholeraScare : undefined
   };
+}
+
+// --- Newspaper generation (#150 follow-up: A+B+C hybrid) ---
+//
+// "Read newspaper" pulls 2-4 unread historical headlines for the
+// player's current year + 1-2 dynamic gossip items, interleaves them,
+// and adds them all via addNews. Headlines flagged as read in
+// `flags._headlinesRead` so the same paper isn't served twice.
+
+/** Resolve a single headline effect descriptor against world state. */
+function applyHeadlineEffect(state: GameState, eff: HeadlineEffect): GameState {
+  switch (eff.kind) {
+    case 'california_unlock':
+      // The California-leg branching (#175) reads this flag — harmless
+      // until the leg itself is wired, useful as a save-state marker now.
+      return { ...state, flags: { ...state.flags, _californiaUnlocked: true } };
+    case 'tribe_shift':
+      return effectTribeShift(eff.tribeId, eff.delta)(state);
+  }
+}
+
+/** Compose multiple headline effect descriptors into one applyEffect
+ *  function for the addNews pipeline. */
+function composeHeadlineEffects(effects: HeadlineEffect[]) {
+  return (state: GameState): GameState => {
+    let next = state;
+    for (const eff of effects) next = applyHeadlineEffect(next, eff);
+    return next;
+  };
+}
+
+const HEADLINES_PER_PAPER_MIN = 2;
+const HEADLINES_PER_PAPER_MAX = 4;
+const GOSSIP_PER_PAPER = 2;
+
+function readHeadlinesRead(state: GameState): Set<string> {
+  const arr = (state.flags._headlinesRead as unknown as string[] | undefined) ?? [];
+  return new Set(arr);
+}
+
+function writeHeadlinesRead(state: GameState, set: Set<string>): GameState {
+  return {
+    ...state,
+    flags: { ...state.flags, _headlinesRead: [...set] as unknown as Record<string, unknown> }
+  };
+}
+
+/** Build the newspaper-source string from the post name + date.
+ *  Period flavor: small posts get the "Saint Joseph Gazette" by mail,
+ *  big hubs get something local-feeling. */
+function paperSource(postName: string, year: number, month: number): string {
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  return `${postName} clerk's paper, ${monthNames[month - 1]} ${year}`;
+}
+
+/** Pick the headlines + gossip for a single newspaper read. Returns the
+ *  ordered list of news items + the headline ids that were used (so the
+ *  caller can mark them read). */
+export function generateNewspaper(
+  state: GameState,
+  rng: Rng,
+  postName: string
+): { items: NewsItem[]; headlineIdsUsed: string[] } {
+  const year = state.date.year;
+  const month = state.date.month;
+  const eligible = eligibleHeadlines(year, month);
+  const alreadyRead = readHeadlinesRead(state);
+  const fresh = eligible.filter((h) => !alreadyRead.has(h.id));
+
+  // Shuffle fresh headlines deterministically and take the front N.
+  const pool = [...fresh];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = rng.int(0, i);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const targetCount = rng.int(HEADLINES_PER_PAPER_MIN, HEADLINES_PER_PAPER_MAX);
+  const picked = pool.slice(0, targetCount);
+
+  const headlineItems: NewsItem[] = picked.map((h: NewsHeadline) => ({
+    text: h.text,
+    source: `${paperSource(postName, year, month)} — ${h.dateline}`,
+    topic: 'hazard' as NewsTopic, // Generic bucket; paper headlines aren't trail-action gossip.
+    day: state.day,
+    applyEffect: h.effects && h.effects.length > 0 ? composeHeadlineEffects(h.effects) : undefined
+  }));
+
+  const gossipItems: NewsItem[] = [];
+  for (let i = 0; i < GOSSIP_PER_PAPER; i++) {
+    const g = generatePostGossip(state, rng, postName);
+    if (g) gossipItems.push(g);
+  }
+
+  // Interleave: headline, gossip, headline, headline, gossip, ...
+  // Mostly headlines on top, gossip woven through.
+  const items: NewsItem[] = [];
+  const hQueue = [...headlineItems];
+  const gQueue = [...gossipItems];
+  while (hQueue.length || gQueue.length) {
+    if (hQueue.length) items.push(hQueue.shift()!);
+    if (gQueue.length && (items.length % 2 === 0 || hQueue.length === 0)) {
+      items.push(gQueue.shift()!);
+    }
+  }
+
+  return { items, headlineIdsUsed: picked.map((h) => h.id) };
+}
+
+/** Apply a generated newspaper batch — fires each item via addNews and
+ *  records the read headline ids. */
+export function applyNewspaper(
+  state: GameState,
+  items: NewsItem[],
+  headlineIdsUsed: string[]
+): GameState {
+  let next = state;
+  for (const item of items) next = addNews(next, item);
+  if (headlineIdsUsed.length > 0) {
+    const set = readHeadlinesRead(next);
+    for (const id of headlineIdsUsed) set.add(id);
+    next = writeHeadlinesRead(next, set);
+  }
+  return next;
 }

@@ -102,10 +102,11 @@ export const LANDMARKS: readonly Landmark[] = [
     services: ['gossip', 'blacksmith'],
     blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries, and he will not buy from you.',
     stock: [
-      'flour', 'beans', 'bacon', 'hardtack',
+      'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack',
       'bullets', 'bandages', 'quinine',
       'coat', 'blanket',
-      'spare_plank', 'ox_shoes', 'yoke', 'rope', 'chicken', 'grain'
+      'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'rope', 'chicken', 'grain',
+      'lard'
     ] },
   { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 120, terrain: 'prairie',   kind: 'landmark' },
   { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 60, terrain: 'river', kind: 'river',
@@ -137,12 +138,13 @@ export const LANDMARKS: readonly Landmark[] = [
     services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide'],
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
-      'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
-      'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
+      'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
+      'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine', 'vinegar',
       'coat', 'boots', 'blanket',
-      'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'ox_shoes', 'yoke',
-      'shovel', 'salt', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'grain',
-      'tobacco', 'whiskey', 'bible', 'grandfather_clock',
+      'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke',
+      'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'grain',
+      'tobacco', 'whiskey', 'bible',
+      'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
   { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 12,  terrain: 'prairie',   kind: 'landmark' },

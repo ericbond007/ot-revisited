@@ -6,8 +6,12 @@ export interface PriceEntry {
 export const PRICES: Record<string, PriceEntry> = {
   // Food
   flour:       { buy: 0.20, sell: 0.10 },
+  // Cornmeal — period prices ran half of wheat flour, often locally milled.
+  cornmeal:    { buy: 0.10, sell: 0.05 },
   beans:       { buy: 0.25, sell: 0.15 },
   bacon:       { buy: 0.40, sell: 0.30 },
+  // Salt pork — heavier-cure, period barrel meat. Slightly above bacon.
+  salt_pork:   { buy: 0.45, sell: 0.30 },
   hardtack:    { buy: 0.15, sell: 0.08 },
   dried_fruit: { buy: 0.60, sell: 0.35 },
   pemmican:    { buy: 0.80, sell: 0.45 },
@@ -37,6 +41,7 @@ export const PRICES: Record<string, PriceEntry> = {
   canvas:      { buy: 6.00, sell: 3.00 },
   spare_plank: { buy: 2.00, sell: 1.00 },
   iron_scrap:  { buy: 1.50, sell: 0.75 },
+  tar_bucket:  { buy: 1.50, sell: 0.50 },
 
   // Weapons / ammo
   rifle:              { buy: 20.00, sell: 12.00 },
@@ -54,6 +59,8 @@ export const PRICES: Record<string, PriceEntry> = {
   rope:         { buy: 2.50,  sell: 1.20 },
   shovel:       { buy: 4.00,  sell: 2.00 },
   salt:         { buy: 1.50,  sell: 0.60 },
+  saleratus:    { buy: 0.20,  sell: 0.08 },
+  lard:         { buy: 0.25,  sell: 0.10 },
   compass:      { buy: 8.00,  sell: 4.00 },
   water_skin:   { buy: 2.00,  sell: 1.00 },
   ox_shoes:     { buy: 1.00,  sell: 0.50 },
@@ -66,6 +73,7 @@ export const PRICES: Record<string, PriceEntry> = {
   bandages:        { buy: 1.50, sell: 0.75 },
   herbal_poultice: { buy: 1.00, sell: 0.50 },
   patent_medicine: { buy: 3.00, sell: 1.50 },
+  vinegar:         { buy: 1.00, sell: 0.40 },
 
   // Comfort
   tobacco:   { buy: 1.00, sell: 0.50 },
@@ -74,6 +82,10 @@ export const PRICES: Record<string, PriceEntry> = {
   fiddle:    { buy: 12.00, sell: 6.00 },
   bible:     { buy: 5.00, sell: 2.50 },
   grandfather_clock: { buy: 50.00, sell: 25.00 },
+  // Cheap to buy, brutal to haul — the prestige is in delivery (#148).
+  anvil:             { buy:  5.00, sell:  3.00 },
+  china_tea_set:     { buy: 25.00, sell: 12.00 },
+  feather_mattress:  { buy: 15.00, sell:  7.00 },
 
   // Native trade goods
   moccasins:    { buy: 3.00, sell: 1.50 },

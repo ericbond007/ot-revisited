@@ -4,21 +4,23 @@
 
 export const OUTFITTER_BUYABLES: readonly string[] = [
   // Food
-  'flour', 'beans', 'bacon', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
+  'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
   // Livestock
   'yoke', 'chicken',
   // Feed
   'grain',
   // Wagon parts
-  'wheel', 'axle', 'tongue', 'canvas', 'spare_plank',
+  'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket',
   // Weapons
   'rifle', 'bullets', 'rifle_cleaning_kit',
   // Clothing
   'coat', 'boots', 'blanket',
   // Tools
-  'iron_toolkit', 'cookware', 'rope', 'shovel', 'compass', 'water_skin', 'ox_shoes', 'spyglass',
+  'iron_toolkit', 'cookware', 'rope', 'shovel', 'salt', 'saleratus', 'lard', 'compass', 'water_skin', 'ox_shoes', 'spyglass',
   // Medicine
-  'quinine', 'laudanum', 'calomel', 'bandages', 'herbal_poultice', 'patent_medicine',
+  'quinine', 'laudanum', 'calomel', 'bandages', 'herbal_poultice', 'patent_medicine', 'vinegar',
   // Comfort
-  'tobacco', 'whiskey', 'harmonica', 'fiddle', 'bible', 'grandfather_clock'
+  'tobacco', 'whiskey', 'harmonica', 'fiddle', 'bible',
+  // Luxuries — useless on the trail, prestige score on arrival (#148).
+  'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock'
 ];

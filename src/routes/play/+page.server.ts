@@ -8,7 +8,7 @@ import { EVENTS } from '$lib/game/content/events';
 import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-events';
 import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
-import { addNews, generatePostGossip } from '$lib/game/systems/news';
+import { addNews, generatePostGossip, generateNewspaper, applyNewspaper } from '$lib/game/systems/news';
 import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide } from '$lib/game/systems/town-services';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
@@ -425,6 +425,31 @@ export const actions: Actions = {
       ...state,
       eventLog: [...state.eventLog, { day: state.day, text: `Bought a round at ${here.name} but heard nothing new.` }]
     };
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  townNewspaper: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    if (!state.location.atLandmarkId) throw error(409, 'not at a landmark');
+    const here = getLandmark(state.location.atLandmarkId);
+    // Newspapers ride mail with the same clerks who hand out gossip.
+    if (!(here.services ?? []).includes('gossip')) throw error(409, 'no paper here');
+    const COST = 1;
+    if (state.cash < COST) throw error(409, "need $1 for the newspaper");
+    state = { ...state, cash: state.cash - COST };
+    const rng = makeRng(`${state.seed}:paper:${here.id}:${state.day}:${state.cash}`);
+    const { items, headlineIdsUsed } = generateNewspaper(state, rng, here.name);
+    if (items.length === 0) {
+      state = {
+        ...state,
+        eventLog: [...state.eventLog, { day: state.day, text: `Bought a paper at ${here.name}, but the news was old.` }]
+      };
+    } else {
+      state = applyNewspaper(state, items, headlineIdsUsed);
+    }
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },
