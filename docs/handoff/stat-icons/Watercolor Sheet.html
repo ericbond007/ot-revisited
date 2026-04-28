@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OT.IO — Stat Icons · Watercolor Specimen</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+  body {
+    background: var(--c-bg);
+    color: var(--c-tan);
+    padding: 56px 32px 96px;
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+  header {
+    border-bottom: 1px solid var(--c-border);
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    color: var(--c-rust);
+    font-size: 38px;
+    margin: 0;
+  }
+  .meta {
+    font-family: var(--f-mono);
+    color: var(--c-wood);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .lede {
+    max-width: 760px;
+    line-height: 1.6;
+    color: var(--c-tan);
+  }
+  .lede code, p code {
+    background: var(--c-bg-raised);
+    color: var(--c-tan-bright);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 12px;
+  }
+
+  h2 {
+    color: var(--c-rust);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 56px 0 18px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--c-border);
+  }
+  h2 .sub {
+    color: var(--c-wood);
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    margin-left: 14px;
+    text-transform: uppercase;
+  }
+  h3 {
+    color: var(--c-tan-bright);
+    font-size: 14px;
+    letter-spacing: 0.14em;
+    margin: 28px 0 12px;
+    text-transform: uppercase;
+  }
+  h3 .pill {
+    display: inline-block;
+    background: var(--c-bg-raised);
+    color: var(--c-wood);
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 10px;
+    text-transform: uppercase;
+  }
+
+  /* ============== HERO GRID — large, named, with provenance ============== */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
+  }
+  .hero {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 3px;
+    padding: 18px 14px 14px;
+    text-align: center;
+  }
+  .hero .icon-frame {
+    background: var(--c-bg-raised);
+    border: 1px dashed var(--c-border);
+    border-radius: 50%;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hero .name {
+    color: var(--c-tan-bright);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+  }
+  .hero .id {
+    color: var(--c-wood);
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .hero .src {
+    color: var(--c-wood);
+    font-family: var(--f-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--c-border);
+  }
+  .hero .src.kept { color: var(--c-rust); }
+
+  /* ============== SIZE GRID — 16/20/24/32 ============== */
+  .size-grid {
+    display: grid;
+    grid-template-columns: 100px repeat(4, 1fr) 1.4fr;
+    gap: 4px 18px;
+    align-items: center;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 3px;
+    padding: 16px 22px;
+  }
+  .size-grid > .head {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--c-wood);
+    text-transform: uppercase;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--c-border);
+    margin-bottom: 6px;
+  }
+  .size-grid > .row-label {
+    color: var(--c-tan-bright);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    font-family: var(--f-mono);
+  }
+  .size-grid > .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+  }
+  .size-grid > .cell-readout {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--c-tan);
+    font-family: var(--f-mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    padding: 0 6px;
+  }
+  .size-grid > .cell-readout .val {
+    color: var(--c-tan-bright);
+    font-weight: 700;
+  }
+  .size-grid > .cell-readout .of {
+    color: var(--c-wood);
+    font-size: 11px;
+  }
+
+  /* ============== TOP-BAR + CONTEXT ============== */
+  .topbar-stress {
+    margin-top: 18px;
+    background: #2a1a10;
+    border: 2px solid var(--c-wood);
+    border-radius: 3px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .topbar-stress .stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--f-mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--c-tan);
+    padding-right: 22px;
+    border-right: 1px solid var(--c-border);
+  }
+  .topbar-stress .stat:last-child {
+    border-right: 0;
+    padding-right: 0;
+  }
+  .topbar-stress .stat .lbl {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: var(--c-wood);
+    text-transform: uppercase;
+    margin-right: 2px;
+  }
+  .topbar-stress .stat .val {
+    color: var(--c-tan-bright);
+    font-weight: 700;
+  }
+
+  .party-row {
+    background: #3d2817;
+    border: 2px solid #8a5a2a;
+    border-radius: 3px;
+    padding: 9px 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 480px;
+    margin-top: 12px;
+    font-family: var(--f-mono);
+    font-size: 12px;
+  }
+  .party-row .name {
+    color: #f5e6c8;
+    font-family: 'IM Fell English', serif;
+    font-size: 14px;
+    flex: 0 0 110px;
+  }
+  .party-row .stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--c-tan);
+  }
+  .party-row .stats .stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .party-row .stats .val {
+    color: var(--c-tan-bright);
+  }
+
+  /* ============== PROVENANCE NOTE ============== */
+  .note {
+    margin-top: 56px;
+    background: linear-gradient(180deg, #2a1a10 0%, #1a0f08 100%);
+    border-left: 4px solid var(--c-rust);
+    padding: 22px 28px;
+    border-radius: 0 3px 3px 0;
+  }
+  .note h2 { margin-top: 0; border: 0; padding: 0; }
+  .note p, .note ul { color: var(--c-tan); line-height: 1.7; max-width: 760px; }
+  .note ul { padding-left: 22px; }
+  .note strong { color: var(--c-tan-bright); }
+
+  /* helpers for color coding the legend */
+  .legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .swatch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--c-bg-raised);
+    border: 1px solid var(--c-border);
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--c-tan);
+  }
+  .swatch .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid #2a1a08;
+  }
+  .swatch .key { color: var(--c-tan-bright); margin-right: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Stat Icons — Watercolor Specimen</h1>
+  <div class="meta">8 STATS · WASH + INK · 16/20/24/32 PX</div>
+</header>
+
+<p class="lede">
+  The full watercolor set, replacing the emoji glyphs in <code>ICON.stats</code>.
+  Same vocabulary as the landmark icons — wash fills + ink overlay — ported down
+  to inline-readout sizing. Four glyphs preserve the silhouette of the existing
+  OT.IO art they replace (ox head, haunch, folded bills) so the visual handoff
+  from emoji is recognizable. The rest are drawn fresh in the same language.
+</p>
+
+<div class="legend-row">
+  <div class="swatch"><div class="dot" style="background:#f0c658"></div><span class="key">SUN</span> day</div>
+  <div class="swatch"><div class="dot" style="background:#c96a2a"></div><span class="key">RUST</span> date · today marker</div>
+  <div class="swatch"><div class="dot" style="background:#b8845a"></div><span class="key">PIED</span> ox / pace</div>
+  <div class="swatch"><div class="dot" style="background:#a85a3a"></div><span class="key">MEAT</span> rations</div>
+  <div class="swatch"><div class="dot" style="background:#8a3a1a"></div><span class="key">WOOD</span> morale (concertina)</div>
+  <div class="swatch"><div class="dot" style="background:#c94a2a"></div><span class="key">HEART</span> health</div>
+  <div class="swatch"><div class="dot" style="background:#7a8a4a"></div><span class="key">SAGE</span> cash (notes)</div>
+  <div class="swatch"><div class="dot" style="background:#4a8bc9"></div><span class="key">RIVER</span> water</div>
+</div>
+
+<!-- ====================================================================== -->
+<!-- HERO ROW                                                               -->
+<!-- ====================================================================== -->
+
+<h2>The Set <span class="sub">48 px hero · provenance · in-game id</span></h2>
+
+<div class="hero-grid">
+
+  <!-- DAY -->
+  <div class="hero">
+    <div class="icon-frame">
+      <svg width="64" height="64" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4.4" fill="#f0c658" opacity="0.92"/>
+        <circle cx="12" cy="12" r="4.4" fill="none" stroke="#2a1a08" stroke-width="1.1"/>
+        <g stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round">
+          <line x1="12" y1="3" x2="12" y2="6"/>
+          <line x1="12" y1="18" x2="12" y2="21"/>
+          <line x1="3" y1="12" x2="6" y2="12"/>
+          <line x1="18" y1="12" x2="21" y2="12"/>
+          <line x1="5.6" y1="5.6" x2="7.5" y2="7.5"/>
+          <line x1="16.5" y1="16.5" x2="18.4" y2="18.4"/>
+          <line x1="5.6" y1="18.4" x2="7.5" y2="16.5"/>
+          <line x1="16.5" y1="7.5" x2="18.4" y2="5.6"/>
+        </g>
+      </svg>
+    </div>
+    <div class="name">Day</div>
+    <div class="id">stats.day</div>
+    <div class="src">FRESH · sun radiating</div>
+  </div>
+
+  <!-- DATE -->
+  <div class="hero">
+    <div class="icon-frame">
+      <svg width="64" height="64" viewBox="0 0 24 24">
+        <rect x="4" y="6" width="16" height="14" rx="1" fill="#e8d9b8"/>
+        <rect x="4" y="6" width="16" height="3.5" fill="#c96a2a" opacity="0.85"/>
+        <rect x="4" y="6" width="16" height="14" rx="1" fill="none" stroke="#2a1a08" stroke-width="1.1"/>
+        <line x1="4" y1="9.5" x2="20" y2="9.5" stroke="#2a1a08" stroke-width="1"/>
+        <line x1="8" y1="3.5" x2="8" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="16" y1="3.5" x2="16" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="8"  cy="13" r="0.7" fill="#2a1a08"/>
+        <circle cx="12" cy="13" r="0.7" fill="#2a1a08"/>
+        <circle cx="16" cy="13" r="0.7" fill="#2a1a08"/>
+        <circle cx="8"  cy="17" r="0.7" fill="#2a1a08"/>
+        <circle cx="12" cy="17" r="1.3" fill="#c96a2a"/>
+        <circle cx="12" cy="17" r="1.3" fill="none" stroke="#2a1a08" stroke-width="0.6"/>
+      </svg>
+    </div>
+    <div class="name">Date</div>
+    <div class="id">stats.date</div>
+    <div class="src">FRESH · calendar w/ rust today</div>
+  </div>
+
+  <!-- PACE — ported ox head -->
+  <div class="hero">
+    <div class="icon-frame">
+      <!-- Ox head simplified from explorations/travel-scene/ox-team.jsx OxHead.
+           Original is 3/4 side view, body coords ~ x=-8 to -14, y=-9 to -13.
+           Re-traced into a 24×24 viewBox: long flat profile facing left, big
+           leaf ear, single forward-curving horn, pied rust crown patch,
+           cream muzzle. Watercolor wash + ink overlay, same as landmark icons. -->
+      <svg width="64" height="64" viewBox="0 0 24 24">
+        <!-- ear (back) -->
+        <path d="M 16 7.5 Q 19 7 19.5 9.5 Q 19 11 17 10.5 Z" fill="#b8845a" opacity="0.9"/>
+        <path d="M 16 7.5 Q 19 7 19.5 9.5 Q 19 11 17 10.5 Z" fill="none" stroke="#2a1a08" stroke-width="0.9" stroke-linejoin="round"/>
+        <!-- head silhouette: long flat profile, facing left -->
+        <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z"
+              fill="#efe4c8"/>
+        <!-- rust crown patch (pied marking) -->
+        <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8.5 8  Q 8 9 9 10  Q 12 9.5 15 10  Q 17 10.5 17.8 11  Q 17.5 9 17 7 Z"
+              fill="#a85a3a" opacity="0.9"/>
+        <!-- ink head outline -->
+        <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z"
+              fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+        <!-- crown patch ink edge -->
+        <path d="M 8.5 8.2 Q 12 9 17.5 10.6" fill="none" stroke="#2a1a08" stroke-width="0.7" opacity="0.75"/>
+        <!-- muzzle -->
+        <path d="M 4 12  Q 4 13.5 5 14  L 7 14.5  Q 7.5 13.5 7 12.5  Q 5.5 12 4 12 Z" fill="#c0907a"/>
+        <path d="M 4 12  Q 4 13.5 5 14  L 7 14.5  Q 7.5 13.5 7 12.5  Q 5.5 12 4 12 Z" fill="none" stroke="#2a1a08" stroke-width="0.9" stroke-linejoin="round"/>
+        <!-- nostril -->
+        <ellipse cx="5.4" cy="13.2" rx="0.5" ry="0.35" fill="#2a1a08"/>
+        <!-- eye -->
+        <ellipse cx="9" cy="11.4" rx="0.5" ry="0.4" fill="#2a1a08"/>
+        <!-- horn — forward-and-up curve from poll -->
+        <path d="M 16.5 6.8  Q 14.5 5.5 13.2 4.2" fill="none" stroke="#d8c49a" stroke-width="1.7" stroke-linecap="round"/>
+        <path d="M 16.5 6.8  Q 14.5 5.5 13.2 4.2" fill="none" stroke="#2a1a08" stroke-width="0.6" stroke-linecap="round" opacity="0.6"/>
+        <circle cx="13.1" cy="4.1" r="0.35" fill="#2a1004"/>
+      </svg>
+    </div>
+    <div class="name">Pace</div>
+    <div class="id">stats.pace</div>
+    <div class="src kept">PORTED · OxHead silhouette</div>
+  </div>
+
+  <!-- RATIONS — drumstick (matches 🍖 emoji directly) -->
+  <div class="hero">
+    <div class="icon-frame">
+      <!-- Drumstick: round meat ball bottom-right, narrow bone shaft
+           rising up to a knobbed cream tip top-left. Same silhouette
+           as the 🍖 emoji used today in party-panel.html. -->
+      <svg width="64" height="64" viewBox="0 0 24 24">
+        <!-- meat ball — chunky round drumstick body -->
+        <circle cx="15.5" cy="15.5" r="5.2" fill="#a85a3a" opacity="0.95"/>
+        <!-- inner warm highlight on the meat -->
+        <ellipse cx="14" cy="14" rx="2.4" ry="1.8" fill="#c96a2a" opacity="0.55" transform="rotate(-30 14 14)"/>
+        <!-- meat ink outline -->
+        <circle cx="15.5" cy="15.5" r="5.2" fill="none" stroke="#2a1a08" stroke-width="1.1"/>
+        <!-- bone shaft — cream wash -->
+        <path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="#efe4c8"/>
+        <path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+        <!-- bone knob (top-left tip) — two lobes for the classic cartoon bone end -->
+        <circle cx="5.2" cy="5.6" r="1.6" fill="#efe4c8"/>
+        <circle cx="3.8" cy="7" r="1.6" fill="#efe4c8"/>
+        <circle cx="5.2" cy="5.6" r="1.6" fill="none" stroke="#2a1a08" stroke-width="1.1"/>
+        <circle cx="3.8" cy="7" r="1.6" fill="none" stroke="#2a1a08" stroke-width="1.1"/>
+        <!-- meat-meets-bone shadow seam (where bone enters meat) -->
+        <path d="M 10.2 12.6 Q 11.5 13 12 14" fill="none" stroke="#2a1a08" stroke-width="0.6" opacity="0.5"/>
+        <!-- bone shading line -->
+        <line x1="5.5" y1="7.5" x2="10.5" y2="13" stroke="#2a1a08" stroke-width="0.5" opacity="0.3"/>
+      </svg>
+    </div>
+    <div class="name">Rations</div>
+    <div class="id">stats.rations</div>
+    <div class="src kept">PORTED · 🍖 drumstick silhouette</div>
+  </div>
+
+  <!-- MORALE — concertina -->
+  <div class="hero">
+    <div class="icon-frame">
+      <svg width="64" height="64" viewBox="0 0 24 24">
+        <!-- bellows -->
+        <path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="#e8c89a"/>
+        <path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+        <!-- side boxes -->
+        <path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="#8a3a1a" opacity="0.92"/>
+        <path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+        <path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="#8a3a1a" opacity="0.92"/>
+        <path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+        <!-- bellows folds -->
+        <line x1="11" y1="9" x2="11" y2="15" stroke="#2a1a08" stroke-width="0.6"/>
+        <line x1="13" y1="9" x2="13" y2="15" stroke="#2a1a08" stroke-width="0.6"/>
+        <!-- buttons -->
+        <circle cx="6.6" cy="10.6" r="0.55" fill="#e8c89a"/>
+        <circle cx="6.6" cy="13" r="0.55" fill="#e8c89a"/>
+        <circle cx="17.4" cy="10.6" r="0.55" fill="#e8c89a"/>
+        <circle cx="17.4" cy="13" r="0.55" fill="#e8c89a"/>
+      </svg>
+    </div>
+    <div class="name">Morale</div>
+    <div class="id">stats.morale</div>
+    <div class="src">FRESH · concertina (period-correct music)</div>
+  </div>
+
+  <!-- HEALTH -->
+  <div class="hero">
+    <div class="icon-frame">
+      <svg width="64" height="64" viewBox="0 0 24 24">
+        <path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="#c94a2a" opacity="0.9"/>
+        <!-- inner highlight -->
+        <path d="M 9 7 Q 7.5 9 8.5 11.5" fill="none" stroke="#f0deb6" stroke-width="0.9" opacity="0.6" stroke-linecap="round"/>
+        <path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="name">Health</div>
+    <div class="id">stats.health</div>
+    <div class="src">FRESH · heart</div>
+  </div>
+
+  <!-- CASH — folded bills -->
+  <div class="hero">
+    <div class="icon-frame">
+      <svg width="64" height="64" viewBox="0 0 24 24">
+        <!-- back bill, slightly offset -->
+        <rect x="4.5" y="9" width="16" height="9" rx="0.6" fill="#5a6a3a" opacity="0.55"/>
+        <!-- front bill (top of stack), folded so we see the top edge -->
+        <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="#7a8a4a" opacity="0.95"/>
+        <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+        <!-- top fold edge -->
+        <path d="M 3.5 8  L 19.5 7  L 19.7 7.6  L 3.6 8.6 Z" fill="#5a6a3a" opacity="0.7"/>
+        <!-- center oval medallion -->
+        <ellipse cx="11.7" cy="12" rx="3" ry="2" fill="none" stroke="#2a1a08" stroke-width="0.8" opacity="0.85"/>
+        <text x="11.7" y="13.2" text-anchor="middle" font-family="serif" font-weight="700" font-size="3.6" fill="#2a1a08">$</text>
+        <!-- corner numerals -->
+        <circle cx="6"  cy="9.6"  r="0.7" fill="none" stroke="#2a1a08" stroke-width="0.5"/>
+        <circle cx="17.5" cy="14.5" r="0.7" fill="none" stroke="#2a1a08" stroke-width="0.5"/>
+      </svg>
+    </div>
+    <div class="name">Cash</div>
+    <div class="id">stats.cash</div>
+    <div class="src kept">PORTED · 💵 folded bills</div>
+  </div>
+
+  <!-- WATER -->
+  <div class="hero">
+    <div class="icon-frame">
+      <svg width="64" height="64" viewBox="0 0 24 24">
+        <path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z"
+              fill="#4a8bc9" opacity="0.88"/>
+        <!-- inner darker wash bottom -->
+        <path d="M 7 14 Q 12 18 17 14 Q 17 19 12 21 Q 7 19 7 14 Z" fill="#2a5a8a" opacity="0.4"/>
+        <!-- highlight glint -->
+        <path d="M 9 17 Q 9 19 11 19" stroke="#e8d9b8" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z"
+              fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="name">Water</div>
+    <div class="id">stats.water</div>
+    <div class="src">FRESH · droplet w/ depth wash</div>
+  </div>
+
+</div>
+
+<!-- ====================================================================== -->
+<!-- SIZE TEST                                                              -->
+<!-- ====================================================================== -->
+
+<h2>Size Test <span class="sub">16 / 20 / 24 / 32 px · with inline readout</span></h2>
+
+<div class="size-grid">
+  <div class="head"></div>
+  <div class="head" style="text-align:center">16 PX</div>
+  <div class="head" style="text-align:center">20 PX</div>
+  <div class="head" style="text-align:center">24 PX</div>
+  <div class="head" style="text-align:center">32 PX</div>
+  <div class="head" style="text-align:center">IN&nbsp;CONTEXT</div>
+
+  <!-- DAY -->
+  <div class="row-label">day</div>
+  <div class="cell"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.4" fill="#f0c658"/><circle cx="12" cy="12" r="4.4" fill="none" stroke="#2a1a08" stroke-width="1.1"/><g stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/><line x1="5.6" y1="5.6" x2="7.5" y2="7.5"/><line x1="16.5" y1="16.5" x2="18.4" y2="18.4"/><line x1="5.6" y1="18.4" x2="7.5" y2="16.5"/><line x1="16.5" y1="7.5" x2="18.4" y2="5.6"/></g></svg></div>
+  <div class="cell"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.4" fill="#f0c658"/><circle cx="12" cy="12" r="4.4" fill="none" stroke="#2a1a08" stroke-width="1.1"/><g stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/><line x1="5.6" y1="5.6" x2="7.5" y2="7.5"/><line x1="16.5" y1="16.5" x2="18.4" y2="18.4"/><line x1="5.6" y1="18.4" x2="7.5" y2="16.5"/><line x1="16.5" y1="7.5" x2="18.4" y2="5.6"/></g></svg></div>
+  <div class="cell"><svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.4" fill="#f0c658"/><circle cx="12" cy="12" r="4.4" fill="none" stroke="#2a1a08" stroke-width="1.1"/><g stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/><line x1="5.6" y1="5.6" x2="7.5" y2="7.5"/><line x1="16.5" y1="16.5" x2="18.4" y2="18.4"/><line x1="5.6" y1="18.4" x2="7.5" y2="16.5"/><line x1="16.5" y1="7.5" x2="18.4" y2="5.6"/></g></svg></div>
+  <div class="cell"><svg width="32" height="32" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.4" fill="#f0c658"/><circle cx="12" cy="12" r="4.4" fill="none" stroke="#2a1a08" stroke-width="1.1"/><g stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/><line x1="5.6" y1="5.6" x2="7.5" y2="7.5"/><line x1="16.5" y1="16.5" x2="18.4" y2="18.4"/><line x1="5.6" y1="18.4" x2="7.5" y2="16.5"/><line x1="16.5" y1="7.5" x2="18.4" y2="5.6"/></g></svg></div>
+  <div class="cell-readout"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.4" fill="#f0c658"/><circle cx="12" cy="12" r="4.4" fill="none" stroke="#2a1a08" stroke-width="1.1"/><g stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/></g></svg> <span class="val">DAY 47</span></div>
+
+  <!-- DATE -->
+  <div class="row-label">date</div>
+  <div class="cell"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="1" fill="#e8d9b8"/><rect x="4" y="6" width="16" height="3.5" fill="#c96a2a" opacity="0.85"/><rect x="4" y="6" width="16" height="14" rx="1" fill="none" stroke="#2a1a08" stroke-width="1.1"/><line x1="8" y1="3.5" x2="8" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="3.5" x2="16" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="14" r="1.6" fill="#c96a2a"/></svg></div>
+  <div class="cell"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="1" fill="#e8d9b8"/><rect x="4" y="6" width="16" height="3.5" fill="#c96a2a" opacity="0.85"/><rect x="4" y="6" width="16" height="14" rx="1" fill="none" stroke="#2a1a08" stroke-width="1.1"/><line x1="4" y1="9.5" x2="20" y2="9.5" stroke="#2a1a08" stroke-width="1"/><line x1="8" y1="3.5" x2="8" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="3.5" x2="16" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="14" r="1.4" fill="#c96a2a" stroke="#2a1a08" stroke-width="0.6"/></svg></div>
+  <div class="cell"><svg width="24" height="24" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="1" fill="#e8d9b8"/><rect x="4" y="6" width="16" height="3.5" fill="#c96a2a" opacity="0.85"/><rect x="4" y="6" width="16" height="14" rx="1" fill="none" stroke="#2a1a08" stroke-width="1.1"/><line x1="4" y1="9.5" x2="20" y2="9.5" stroke="#2a1a08" stroke-width="1"/><line x1="8" y1="3.5" x2="8" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="3.5" x2="16" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/><circle cx="8"  cy="13" r="0.7" fill="#2a1a08"/><circle cx="12" cy="13" r="0.7" fill="#2a1a08"/><circle cx="16" cy="13" r="0.7" fill="#2a1a08"/><circle cx="8"  cy="17" r="0.7" fill="#2a1a08"/><circle cx="12" cy="17" r="1.3" fill="#c96a2a" stroke="#2a1a08" stroke-width="0.6"/></svg></div>
+  <div class="cell"><svg width="32" height="32" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="1" fill="#e8d9b8"/><rect x="4" y="6" width="16" height="3.5" fill="#c96a2a" opacity="0.85"/><rect x="4" y="6" width="16" height="14" rx="1" fill="none" stroke="#2a1a08" stroke-width="1.1"/><line x1="4" y1="9.5" x2="20" y2="9.5" stroke="#2a1a08" stroke-width="1"/><line x1="8" y1="3.5" x2="8" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/><line x1="16" y1="3.5" x2="16" y2="7.5" stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"/><circle cx="8"  cy="13" r="0.7" fill="#2a1a08"/><circle cx="12" cy="13" r="0.7" fill="#2a1a08"/><circle cx="16" cy="13" r="0.7" fill="#2a1a08"/><circle cx="8"  cy="17" r="0.7" fill="#2a1a08"/><circle cx="12" cy="17" r="1.3" fill="#c96a2a" stroke="#2a1a08" stroke-width="0.6"/></svg></div>
+  <div class="cell-readout"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="1" fill="#e8d9b8" stroke="#2a1a08" stroke-width="1.1"/><rect x="4" y="6" width="16" height="3.5" fill="#c96a2a" opacity="0.85"/></svg> <span class="val">JUL 14</span></div>
+
+  <!-- PACE — ported ox head -->
+  <div class="row-label">pace</div>
+  <div class="cell">
+    <!-- 16px ox head — same paths as hero, simplified by the hero size -->
+    <svg width="16" height="16" viewBox="0 0 24 24">
+      <path d="M 16 7.5 Q 19 7 19.5 9.5 Q 19 11 17 10.5 Z" fill="#b8845a" stroke="#2a1a08" stroke-width="0.9"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z" fill="#efe4c8"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8.5 8  Q 8 9 9 10  Q 12 9.5 15 10  Q 17 10.5 17.8 11  Q 17.5 9 17 7 Z" fill="#a85a3a"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <path d="M 4 12  Q 4 13.5 5 14  L 7 14.5  Q 7.5 13.5 7 12.5  Q 5.5 12 4 12 Z" fill="#c0907a" stroke="#2a1a08" stroke-width="0.9" stroke-linejoin="round"/>
+      <path d="M 16.5 6.8  Q 14.5 5.5 13.2 4.2" fill="none" stroke="#d8c49a" stroke-width="1.6" stroke-linecap="round"/>
+      <ellipse cx="9" cy="11.4" rx="0.6" ry="0.5" fill="#2a1a08"/>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path d="M 16 7.5 Q 19 7 19.5 9.5 Q 19 11 17 10.5 Z" fill="#b8845a" stroke="#2a1a08" stroke-width="0.9"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z" fill="#efe4c8"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8.5 8  Q 8 9 9 10  Q 12 9.5 15 10  Q 17 10.5 17.8 11  Q 17.5 9 17 7 Z" fill="#a85a3a"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <path d="M 4 12  Q 4 13.5 5 14  L 7 14.5  Q 7.5 13.5 7 12.5  Q 5.5 12 4 12 Z" fill="#c0907a" stroke="#2a1a08" stroke-width="0.9" stroke-linejoin="round"/>
+      <path d="M 16.5 6.8  Q 14.5 5.5 13.2 4.2" fill="none" stroke="#d8c49a" stroke-width="1.7" stroke-linecap="round"/>
+      <ellipse cx="9" cy="11.4" rx="0.5" ry="0.4" fill="#2a1a08"/>
+      <ellipse cx="5.4" cy="13.2" rx="0.5" ry="0.35" fill="#2a1a08"/>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <path d="M 16 7.5 Q 19 7 19.5 9.5 Q 19 11 17 10.5 Z" fill="#b8845a" stroke="#2a1a08" stroke-width="0.9"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z" fill="#efe4c8"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8.5 8  Q 8 9 9 10  Q 12 9.5 15 10  Q 17 10.5 17.8 11  Q 17.5 9 17 7 Z" fill="#a85a3a"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <path d="M 4 12  Q 4 13.5 5 14  L 7 14.5  Q 7.5 13.5 7 12.5  Q 5.5 12 4 12 Z" fill="#c0907a" stroke="#2a1a08" stroke-width="0.9" stroke-linejoin="round"/>
+      <path d="M 16.5 6.8  Q 14.5 5.5 13.2 4.2" fill="none" stroke="#d8c49a" stroke-width="1.7" stroke-linecap="round"/>
+      <ellipse cx="9" cy="11.4" rx="0.5" ry="0.4" fill="#2a1a08"/>
+      <ellipse cx="5.4" cy="13.2" rx="0.5" ry="0.35" fill="#2a1a08"/>
+      <circle cx="13.1" cy="4.1" r="0.35" fill="#2a1004"/>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="32" height="32" viewBox="0 0 24 24">
+      <path d="M 16 7.5 Q 19 7 19.5 9.5 Q 19 11 17 10.5 Z" fill="#b8845a" stroke="#2a1a08" stroke-width="0.9"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z" fill="#efe4c8"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8.5 8  Q 8 9 9 10  Q 12 9.5 15 10  Q 17 10.5 17.8 11  Q 17.5 9 17 7 Z" fill="#a85a3a"/>
+      <path d="M 17 7  Q 16 6 14 6.5  Q 11 7 8 8.5  Q 5 10 4 12  Q 4 13.5 5 14  L 7 14.5  Q 8 16 10 16.5  Q 13 17 15 16.5  Q 17 16 17.5 14.5  Q 18 13 17.8 11  Q 17.5 9 17 7 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <path d="M 8.5 8.2 Q 12 9 17.5 10.6" fill="none" stroke="#2a1a08" stroke-width="0.7" opacity="0.75"/>
+      <path d="M 4 12  Q 4 13.5 5 14  L 7 14.5  Q 7.5 13.5 7 12.5  Q 5.5 12 4 12 Z" fill="#c0907a" stroke="#2a1a08" stroke-width="0.9" stroke-linejoin="round"/>
+      <path d="M 16.5 6.8  Q 14.5 5.5 13.2 4.2" fill="none" stroke="#d8c49a" stroke-width="1.7" stroke-linecap="round"/>
+      <ellipse cx="9" cy="11.4" rx="0.5" ry="0.4" fill="#2a1a08"/>
+      <ellipse cx="5.4" cy="13.2" rx="0.5" ry="0.35" fill="#2a1a08"/>
+      <circle cx="13.1" cy="4.1" r="0.35" fill="#2a1004"/>
+    </svg>
+  </div>
+  <div class="cell-readout">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+      <path d="M 17 7 Q 16 6 14 6.5 Q 11 7 8 8.5 Q 5 10 4 12 Q 4 13.5 5 14 L 7 14.5 Q 8 16 10 16.5 Q 13 17 15 16.5 Q 17 16 17.5 14.5 Q 18 13 17.8 11 Q 17.5 9 17 7 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <path d="M 17 7 Q 16 6 14 6.5 Q 11 7 8.5 8 Q 8 9 9 10 Q 12 9.5 15 10 Q 17 10.5 17.8 11 Q 17.5 9 17 7 Z" fill="#a85a3a"/>
+      <path d="M 16.5 6.8 Q 14.5 5.5 13.2 4.2" fill="none" stroke="#d8c49a" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <span class="val">STEADY</span>
+  </div>
+
+  <!-- RATIONS — drumstick -->
+  <div class="row-label">rations</div>
+  <div class="cell">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+      <circle cx="15.5" cy="15.5" r="5.2" fill="#a85a3a" stroke="#2a1a08" stroke-width="1.1"/>
+      <path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <circle cx="5.2" cy="5.6" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+      <circle cx="3.8" cy="7" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <circle cx="15.5" cy="15.5" r="5.2" fill="#a85a3a"/>
+      <ellipse cx="14" cy="14" rx="2.4" ry="1.8" fill="#c96a2a" opacity="0.55" transform="rotate(-30 14 14)"/>
+      <circle cx="15.5" cy="15.5" r="5.2" fill="none" stroke="#2a1a08" stroke-width="1.1"/>
+      <path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <circle cx="5.2" cy="5.6" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+      <circle cx="3.8" cy="7" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <circle cx="15.5" cy="15.5" r="5.2" fill="#a85a3a"/>
+      <ellipse cx="14" cy="14" rx="2.4" ry="1.8" fill="#c96a2a" opacity="0.55" transform="rotate(-30 14 14)"/>
+      <circle cx="15.5" cy="15.5" r="5.2" fill="none" stroke="#2a1a08" stroke-width="1.1"/>
+      <path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <circle cx="5.2" cy="5.6" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+      <circle cx="3.8" cy="7" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+      <line x1="5.5" y1="7.5" x2="10.5" y2="13" stroke="#2a1a08" stroke-width="0.5" opacity="0.3"/>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="32" height="32" viewBox="0 0 24 24">
+      <circle cx="15.5" cy="15.5" r="5.2" fill="#a85a3a"/>
+      <ellipse cx="14" cy="14" rx="2.4" ry="1.8" fill="#c96a2a" opacity="0.55" transform="rotate(-30 14 14)"/>
+      <circle cx="15.5" cy="15.5" r="5.2" fill="none" stroke="#2a1a08" stroke-width="1.1"/>
+      <path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <circle cx="5.2" cy="5.6" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+      <circle cx="3.8" cy="7" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+      <line x1="5.5" y1="7.5" x2="10.5" y2="13" stroke="#2a1a08" stroke-width="0.5" opacity="0.3"/>
+      <path d="M 10.2 12.6 Q 11.5 13 12 14" fill="none" stroke="#2a1a08" stroke-width="0.6" opacity="0.5"/>
+    </svg>
+  </div>
+  <div class="cell-readout">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+      <circle cx="15.5" cy="15.5" r="5.2" fill="#a85a3a" stroke="#2a1a08" stroke-width="1.1"/>
+      <path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <circle cx="5.2" cy="5.6" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+      <circle cx="3.8" cy="7" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/>
+    </svg>
+    <span class="val">142</span><span class="of">LB</span>
+  </div>
+
+  <!-- MORALE -->
+  <div class="row-label">morale</div>
+  <div class="cell"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="#e8c89a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/></svg></div>
+  <div class="cell"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="#e8c89a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><line x1="11" y1="9" x2="11" y2="15" stroke="#2a1a08" stroke-width="0.6"/><line x1="13" y1="9" x2="13" y2="15" stroke="#2a1a08" stroke-width="0.6"/></svg></div>
+  <div class="cell"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="#e8c89a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><line x1="11" y1="9" x2="11" y2="15" stroke="#2a1a08" stroke-width="0.6"/><line x1="13" y1="9" x2="13" y2="15" stroke="#2a1a08" stroke-width="0.6"/><circle cx="6.6" cy="10.6" r="0.5" fill="#e8c89a"/><circle cx="6.6" cy="13" r="0.5" fill="#e8c89a"/><circle cx="17.4" cy="10.6" r="0.5" fill="#e8c89a"/><circle cx="17.4" cy="13" r="0.5" fill="#e8c89a"/></svg></div>
+  <div class="cell"><svg width="32" height="32" viewBox="0 0 24 24"><path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="#e8c89a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><line x1="11" y1="9" x2="11" y2="15" stroke="#2a1a08" stroke-width="0.6"/><line x1="13" y1="9" x2="13" y2="15" stroke="#2a1a08" stroke-width="0.6"/><circle cx="6.6" cy="10.6" r="0.5" fill="#e8c89a"/><circle cx="6.6" cy="13" r="0.5" fill="#e8c89a"/><circle cx="17.4" cy="10.6" r="0.5" fill="#e8c89a"/><circle cx="17.4" cy="13" r="0.5" fill="#e8c89a"/></svg></div>
+  <div class="cell-readout"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="#e8c89a" stroke="#2a1a08" stroke-width="1.1"/><path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1"/><path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1"/></svg> <span class="val">HIGH</span></div>
+
+  <!-- HEALTH -->
+  <div class="row-label">health</div>
+  <div class="cell"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="#c94a2a" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <div class="cell"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="#c94a2a" opacity="0.92"/><path d="M 9 7 Q 7.5 9 8.5 11.5" fill="none" stroke="#f0deb6" stroke-width="0.9" opacity="0.6" stroke-linecap="round"/><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <div class="cell"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="#c94a2a" opacity="0.92"/><path d="M 9 7 Q 7.5 9 8.5 11.5" fill="none" stroke="#f0deb6" stroke-width="0.9" opacity="0.6" stroke-linecap="round"/><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <div class="cell"><svg width="32" height="32" viewBox="0 0 24 24"><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="#c94a2a" opacity="0.92"/><path d="M 9 7 Q 7.5 9 8.5 11.5" fill="none" stroke="#f0deb6" stroke-width="0.9" opacity="0.6" stroke-linecap="round"/><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <div class="cell-readout"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="#c94a2a" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg> <span class="val">82</span><span class="of">/100</span></div>
+
+  <!-- CASH -->
+  <div class="row-label">cash</div>
+  <div class="cell">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+      <rect x="4.5" y="9" width="16" height="9" rx="0.6" fill="#5a6a3a" opacity="0.55"/>
+      <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="#7a8a4a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <text x="11.7" y="13.5" text-anchor="middle" font-family="serif" font-weight="700" font-size="5" fill="#2a1a08">$</text>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <rect x="4.5" y="9" width="16" height="9" rx="0.6" fill="#5a6a3a" opacity="0.55"/>
+      <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="#7a8a4a"/>
+      <path d="M 3.5 8  L 19.5 7  L 19.7 7.6  L 3.6 8.6 Z" fill="#5a6a3a" opacity="0.7"/>
+      <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <ellipse cx="11.7" cy="12" rx="3" ry="2" fill="none" stroke="#2a1a08" stroke-width="0.7" opacity="0.85"/>
+      <text x="11.7" y="13.2" text-anchor="middle" font-family="serif" font-weight="700" font-size="3.6" fill="#2a1a08">$</text>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <rect x="4.5" y="9" width="16" height="9" rx="0.6" fill="#5a6a3a" opacity="0.55"/>
+      <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="#7a8a4a"/>
+      <path d="M 3.5 8  L 19.5 7  L 19.7 7.6  L 3.6 8.6 Z" fill="#5a6a3a" opacity="0.7"/>
+      <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <ellipse cx="11.7" cy="12" rx="3" ry="2" fill="none" stroke="#2a1a08" stroke-width="0.7" opacity="0.85"/>
+      <text x="11.7" y="13.2" text-anchor="middle" font-family="serif" font-weight="700" font-size="3.6" fill="#2a1a08">$</text>
+      <circle cx="6"  cy="9.6"  r="0.7" fill="none" stroke="#2a1a08" stroke-width="0.5"/>
+      <circle cx="17.5" cy="14.5" r="0.7" fill="none" stroke="#2a1a08" stroke-width="0.5"/>
+    </svg>
+  </div>
+  <div class="cell">
+    <svg width="32" height="32" viewBox="0 0 24 24">
+      <rect x="4.5" y="9" width="16" height="9" rx="0.6" fill="#5a6a3a" opacity="0.55"/>
+      <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="#7a8a4a"/>
+      <path d="M 3.5 8  L 19.5 7  L 19.7 7.6  L 3.6 8.6 Z" fill="#5a6a3a" opacity="0.7"/>
+      <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="none" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <ellipse cx="11.7" cy="12" rx="3" ry="2" fill="none" stroke="#2a1a08" stroke-width="0.7" opacity="0.85"/>
+      <text x="11.7" y="13.2" text-anchor="middle" font-family="serif" font-weight="700" font-size="3.6" fill="#2a1a08">$</text>
+      <circle cx="6"  cy="9.6"  r="0.7" fill="none" stroke="#2a1a08" stroke-width="0.5"/>
+      <circle cx="17.5" cy="14.5" r="0.7" fill="none" stroke="#2a1a08" stroke-width="0.5"/>
+    </svg>
+  </div>
+  <div class="cell-readout">
+    <svg width="16" height="16" viewBox="0 0 24 24">
+      <path d="M 3.5 8  L 19.5 7  L 20 16  L 4 17 Z" fill="#7a8a4a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/>
+      <text x="11.7" y="13.5" text-anchor="middle" font-family="serif" font-weight="700" font-size="5" fill="#2a1a08">$</text>
+    </svg>
+    <span class="val">$248</span>
+  </div>
+
+  <!-- WATER -->
+  <div class="row-label">water</div>
+  <div class="cell"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="#4a8bc9" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <div class="cell"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="#4a8bc9" opacity="0.88"/><path d="M 7 14 Q 12 18 17 14 Q 17 19 12 21 Q 7 19 7 14 Z" fill="#2a5a8a" opacity="0.4"/><path d="M 9 17 Q 9 19 11 19" stroke="#e8d9b8" stroke-width="0.9" fill="none" stroke-linecap="round"/><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <div class="cell"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="#4a8bc9" opacity="0.88"/><path d="M 7 14 Q 12 18 17 14 Q 17 19 12 21 Q 7 19 7 14 Z" fill="#2a5a8a" opacity="0.4"/><path d="M 9 17 Q 9 19 11 19" stroke="#e8d9b8" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <div class="cell"><svg width="32" height="32" viewBox="0 0 24 24"><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="#4a8bc9" opacity="0.88"/><path d="M 7 14 Q 12 18 17 14 Q 17 19 12 21 Q 7 19 7 14 Z" fill="#2a5a8a" opacity="0.4"/><path d="M 9 17 Q 9 19 11 19" stroke="#e8d9b8" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="none" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+  <div class="cell-readout"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="#4a8bc9" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg> <span class="val">FULL</span></div>
+</div>
+
+<!-- ====================================================================== -->
+<!-- TOP-BAR + PARTY-ROW STRESS                                             -->
+<!-- ====================================================================== -->
+
+<h2>In Context <span class="sub">top-bar readout · party-row mini · all 8 inline</span></h2>
+
+<h3>Top-bar readout <span class="pill">16 px · 8 stats inline</span></h3>
+<div class="topbar-stress">
+  <div class="stat"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.4" fill="#f0c658" stroke="#2a1a08" stroke-width="1.1"/><g stroke="#2a1a08" stroke-width="1.4" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/></g></svg><span class="lbl">DAY</span><span class="val">47</span></div>
+  <div class="stat"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="1" fill="#e8d9b8" stroke="#2a1a08" stroke-width="1.1"/><rect x="4" y="6" width="16" height="3.5" fill="#c96a2a" opacity="0.85"/></svg><span class="val">JUL 14</span></div>
+  <div class="stat"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 17 7 Q 16 6 14 6.5 Q 11 7 8 8.5 Q 5 10 4 12 Q 4 13.5 5 14 L 7 14.5 Q 8 16 10 16.5 Q 13 17 15 16.5 Q 17 16 17.5 14.5 Q 18 13 17.8 11 Q 17.5 9 17 7 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><path d="M 17 7 Q 16 6 14 6.5 Q 11 7 8.5 8 Q 8 9 9 10 Q 12 9.5 15 10 Q 17 10.5 17.8 11 Q 17.5 9 17 7 Z" fill="#a85a3a"/><path d="M 16.5 6.8 Q 14.5 5.5 13.2 4.2" fill="none" stroke="#d8c49a" stroke-width="1.6" stroke-linecap="round"/></svg><span class="val">STEADY</span></div>
+  <div class="stat"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="15.5" cy="15.5" r="5.2" fill="#a85a3a" stroke="#2a1a08" stroke-width="1.1"/><path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><circle cx="5.2" cy="5.6" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/><circle cx="3.8" cy="7" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/></svg><span class="val">142</span><span class="of">lb</span></div>
+  <div class="stat"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="#e8c89a" stroke="#2a1a08" stroke-width="1.1"/><path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1"/><path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1"/></svg><span class="val">HIGH</span></div>
+  <div class="stat"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="#c94a2a" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg><span class="val">82</span></div>
+  <div class="stat"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 3.5 8 L 19.5 7 L 20 16 L 4 17 Z" fill="#7a8a4a" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><text x="11.7" y="13.5" text-anchor="middle" font-family="serif" font-weight="700" font-size="5" fill="#2a1a08">$</text></svg><span class="val">$248</span></div>
+  <div class="stat"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M 12 3 C 12 3 5 11 5 16 C 5 19.5 8 22 12 22 C 16 22 19 19.5 19 16 C 19 11 12 3 12 3 Z" fill="#4a8bc9" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg><span class="val">FULL</span></div>
+</div>
+
+<h3>Party row mini <span class="pill">14 px · alongside name + role</span></h3>
+<div class="party-row">
+  <div class="name">Henry Ward</div>
+  <div class="stats">
+    <div class="stat"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M 12 20.5 C 4 14 4 6.5 8 4.5 C 10 3.5 12 5.5 12 6.5 C 12 5.5 14 3.5 16 4.5 C 20 6.5 20 14 12 20.5 Z" fill="#c94a2a" stroke="#2a1a08" stroke-width="1.2" stroke-linejoin="round"/></svg><span class="val">92</span></div>
+    <div class="stat"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M 9 7.5 Q 12 6.5 15 7.5 L 15 16.5 Q 12 17.5 9 16.5 Z" fill="#e8c89a" stroke="#2a1a08" stroke-width="1.1"/><path d="M 5 9 L 9 7 L 9 17 L 5 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1"/><path d="M 19 9 L 15 7 L 15 17 L 19 15 Z" fill="#8a3a1a" stroke="#2a1a08" stroke-width="1.1"/></svg><span class="val">HIGH</span></div>
+    <div class="stat"><svg width="14" height="14" viewBox="0 0 24 24"><circle cx="15.5" cy="15.5" r="5.2" fill="#a85a3a" stroke="#2a1a08" stroke-width="1.1"/><path d="M 11.5 12 L 6 6.5 L 4.5 8 L 9.5 14 Z" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1" stroke-linejoin="round"/><circle cx="5.2" cy="5.6" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/><circle cx="3.8" cy="7" r="1.6" fill="#efe4c8" stroke="#2a1a08" stroke-width="1.1"/></svg><span class="val">FED</span></div>
+  </div>
+</div>
+
+<!-- ====================================================================== -->
+<!-- PROVENANCE                                                             -->
+<!-- ====================================================================== -->
+
+<div class="note">
+  <h2>Provenance</h2>
+  <p>Four glyphs preserve the silhouette of existing OT.IO art so the visual
+    handoff from the emoji set is recognizable:</p>
+  <ul>
+    <li><strong>Pace (ox head)</strong> — simplified from
+      <code>explorations/travel-scene/ox-team.jsx</code>'s <code>OxHead</code>.
+      Long flat profile, single forward-curving horn, big leaf ear, pied rust
+      crown patch over cream body, cream muzzle. The 3/4 body coords (~ x=−8 to
+      −14, y=−9 to −13) were re-traced into the 24×24 viewBox with the
+      same proportions.</li>
+    <li><strong>Rations (drumstick)</strong> — direct match to the
+      <code>🍖</code> emoji used throughout <code>party-panel.html</code>.
+      Round meat ball bottom-right, narrow bone shaft rising up to a
+      double-lobed cream knob top-left — the unmistakable cartoon
+      drumstick. Rust-brown meat wash with a warm highlight, ink overlay.</li>
+    <li><strong>Cash (folded notes)</strong> — silhouette of the existing
+      <code>💵</code> emoji. Folded stack with the top edge slightly lifted
+      and a center-oval medallion, sage-green wash to read as paper currency
+      not coin.</li>
+  </ul>
+  <p>The other four — <strong>day, date, morale, health, water</strong> —
+    are drawn fresh in the same wash + ink vocabulary as the landmark icon
+    set. The morale concertina is period-correct (1840s emigrant trail
+    instrument); the date's rust-tinted "today" dot is the load-bearing
+    motif.</p>
+  <p style="margin-top: 22px; color: var(--c-wood); font-size: 12px;">
+    → If approved, I'll port these into <code>StatIcon.svelte</code> + 8 art
+    files in <code>src/lib/ui/stat-icons/</code>, mirroring the
+    <code>LandmarkIcon</code> dispatcher pattern, and write
+    <code>STAT_ICONS_CLAUDE.md</code> as the implementation brief.
+  </p>
+</div>
+
+</body>
+</html>
