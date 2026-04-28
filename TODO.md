@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-28 (post-#89). 31 open.
+As of 2026-04-28 (post-#89). 35 open.
 
 ## New mechanics
 
@@ -20,9 +20,10 @@ As of 2026-04-28 (post-#89). 31 open.
 
 ## System reworks
 
-| #    |                                                            |
-| ---- | ---------------------------------------------------------- |
-| #174 | Bullets — split into lead + powder + caps for authenticity |
+| #    |                                                                  |
+| ---- | ---------------------------------------------------------------- |
+| #174 | Bullets — split into lead + powder + caps for authenticity       |
+| #187 | Camp multi-day rework — reset slots day 2, surface that to player |
 
 ## UI / UX polish
 
@@ -44,6 +45,8 @@ As of 2026-04-28 (post-#89). 31 open.
 | #171 | Laurel Hill landmark art — only gap from #89 batch               |
 | #172 | Travel mileage calibration second pass — Whitman/Barlow inserts  |
 | #173 | TownStage hero art — hoist LandmarkArt into Visit view (Phase B) |
+| #189 | Landmark / trading-post screen rework — better town actions      |
+| #190 | InventoryPanel: water as a bar graph (match weight treatment)    |
 
 ## For Claude Design or another SVG animation generator
 
@@ -57,6 +60,7 @@ As of 2026-04-28 (post-#89). 31 open.
 | ---- | ---------------------------------------------------------- |
 | #182 | Hunt yields audit — tallow / animal fat as byproduct?      |
 | #186 | Populate per-choice EventChoice.icon across event catalog  |
+| #188 | BUG — town actions show no confirm button (Ft. Laramie)    |
 | #183 | AI art / animation pipeline — eval libs + image-gen APIs   |
 | #184 | Full game review — Sonnet pass on mechanics + balance      |
 | #185 | Playwright MCP — point at /usr/bin/chromium (fleet config) |
