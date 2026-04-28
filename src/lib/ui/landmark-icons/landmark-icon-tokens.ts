@@ -85,6 +85,8 @@ export type LandmarkIconId =
   | 'farewell_bend'
   | 'blue_mountains'
   | 'grande_ronde_valley'
-  // Trail termini — gold-tone badge
+  // Trail termini — gold-tone badge. `independence_mo` is the city
+  // (Independence, MO — start of trail). Note: this is distinct from
+  // `independence_rock` above (the Wyoming granite landmark).
   | 'independence_mo'
   | 'oregon_city';

@@ -42,9 +42,9 @@ function justBefore(state: GameState, landmarkId: string): GameState {
       milesTraveled: runningMilesTo(landmarkId) - 1,
       nextLandmarkId: landmarkId,
       // previousLandmarkId stays whatever it was (the engine compares
-      // before/after to detect a change). 'independence' is the safe
-      // starting value.
-      previousLandmarkId: state.location.previousLandmarkId ?? 'independence'
+      // before/after to detect a change). 'independence_mo' is the
+      // safe starting value (the trail-start city).
+      previousLandmarkId: state.location.previousLandmarkId ?? 'independence_mo'
     }
   };
 }

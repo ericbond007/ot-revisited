@@ -4,7 +4,7 @@ import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../src/lib/game/conte
 describe('landmark stub (Plan 2a)', () => {
   it('has at least Independence and Fort Kearny', () => {
     const ids = LANDMARKS.map((l) => l.id);
-    expect(ids).toContain('independence');
+    expect(ids).toContain('independence_mo');
     expect(ids).toContain('ft_kearny');
   });
 
@@ -13,7 +13,7 @@ describe('landmark stub (Plan 2a)', () => {
   });
 
   it('nextLandmarkAfter finds the next one in order', () => {
-    const next = nextLandmarkAfter('independence');
+    const next = nextLandmarkAfter('independence_mo');
     expect(next?.id).toBe('kansas_river');
   });
 

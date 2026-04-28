@@ -102,36 +102,64 @@
     willow_springs:         WillowSprings,
   };
 
-  let { id, size = 24, title, className = '' }: {
+  let { id, size = 24, title, className = '', inline = false }: {
     id: LandmarkIconId | string;
     size?: number;
     title?: string;
     className?: string;
+    /** When true, render bare `<g>` content scaled+centered at the
+     *  parent SVG's origin — for embedding inside another `<svg>`
+     *  (e.g. trail-map pins). When false (default), render an outer
+     *  `<svg viewBox="0 0 24 24">` for HTML mounting (modal headers,
+     *  the dev specimen). */
+    inline?: boolean;
   } = $props();
 
   const Art = $derived(REGISTRY[id as LandmarkIconId]);
+  // Inline mode: scale 24-unit art down to `size`, then translate so
+  // the visual center sits at the parent group's origin (0,0).
+  // SVG transforms apply right-to-left, so this reads:
+  //   scale(size/24) → 24×24 becomes size×size with origin at (0,0)
+  //   translate(-size/2, -size/2) → shift so center is at (0,0)
+  const inlineXf = $derived(`translate(${-size / 2}, ${-size / 2}) scale(${size / 24})`);
 </script>
 
-<svg
-  viewBox="0 0 24 24"
-  width={size}
-  height={size}
-  class={className}
-  aria-hidden={title ? undefined : true}
-  role={title ? 'img' : undefined}
-  style="display: block;"
->
-  {#if title}<title>{title}</title>{/if}
+{#if inline}
   {#if Art}
-    <Art />
+    <g transform={inlineXf}>
+      {#if title}<title>{title}</title>{/if}
+      <Art />
+    </g>
   {:else}
-    <!-- Fallback for unknown / unported ids — neutral parchment dot
-         with a "?" so missing-icon states are obvious in dev. -->
-    <circle cx="12" cy="12" r="10" fill="#e8d9b8" stroke="#2a1a08" stroke-width="0.8" />
-    <text x="12" y="16" font-size="10" font-family="Georgia, serif"
-          text-anchor="middle" fill="#2a1a08">?</text>
+    <g transform={inlineXf}>
+      {#if title}<title>{title}</title>{/if}
+      <circle cx="12" cy="12" r="10" fill="#e8d9b8" stroke="#2a1a08" stroke-width="0.8" />
+      <text x="12" y="16" font-size="10" font-family="Georgia, serif"
+            text-anchor="middle" fill="#2a1a08">?</text>
+    </g>
   {/if}
-</svg>
+{:else}
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    class={className}
+    aria-hidden={title ? undefined : true}
+    role={title ? 'img' : undefined}
+    style="display: block;"
+  >
+    {#if title}<title>{title}</title>{/if}
+    {#if Art}
+      <Art />
+    {:else}
+      <!-- Fallback for unknown / unported ids — neutral parchment dot
+           with a "?" so missing-icon states are obvious in dev. -->
+      <circle cx="12" cy="12" r="10" fill="#e8d9b8" stroke="#2a1a08" stroke-width="0.8" />
+      <text x="12" y="16" font-size="10" font-family="Georgia, serif"
+            text-anchor="middle" fill="#2a1a08">?</text>
+    {/if}
+  </svg>
+{/if}
 
 <script lang="ts" module>
   /** Returns true when LandmarkIcon has bespoke art for the given id.
@@ -165,6 +193,7 @@
     'hollenberg_ranch',
     'ice_slough',
     'independence_mo',
+
     'independence_rock',
     'kansas_river',
     'laurel_hill',

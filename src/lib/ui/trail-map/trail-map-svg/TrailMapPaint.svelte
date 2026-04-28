@@ -14,6 +14,7 @@
   import { accumulateMiles, interpolatePosition } from '../trail-map-helpers';
   import { LANDMARK_COORDS, LANDMARK_TIER } from './landmark-coords';
   import LandmarkPin from './LandmarkPin.svelte';
+  import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
   import WagonGlyph from './WagonGlyph.svelte';
 
   interface Props {
@@ -220,31 +221,22 @@
 {#each plotted as l (l.id)}
   {@const [x, y] = LANDMARK_COORDS[l.id]!}
   <g transform="translate({x},{y})">
-    {#if l.id === 'chimney_rock'}
-      <path d="M-4 0 L-2 -3 L2 -3 L4 0 Z" fill="#c9b89a" stroke="#3a1a08" stroke-width={0.9 * ps} />
-      <path d="M-1.2 -3 L-0.6 -11 L0.6 -11 L1.2 -3 Z" fill="#c9b89a" stroke="#3a1a08" stroke-width={0.9 * ps} />
-      <text x="0" y="-15" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">CHIMNEY ROCK</text>
-    {:else if l.id === 'independence_rock'}
-      <ellipse cx="0" cy="0" rx="6" ry="3" fill="#c9b89a" stroke="#3a1a08" stroke-width={1.2 * ps} />
-      <text x="0" y="-7" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
-    {:else if l.id === 'south_pass'}
-      <path d="M-8 4 L-4 -3 L0 4 Z" fill="#c9b89a" stroke="#3a1a08" stroke-width={1 * ps} />
-      <path d="M0 4 L4 -3 L8 4 Z" fill="#c9b89a" stroke="#3a1a08" stroke-width={1 * ps} />
-      <text x="0" y="-7" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
-    {:else if l.id === 'the_dalles'}
-      <ellipse cx="0" cy="0" rx="4" ry="2" fill="#c9b89a" stroke="#3a1a08" stroke-width={1 * ps} />
-      <text x="0" y="-6" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
+    {#if hasLandmarkIcon(l.id)}
+      <!-- Bespoke watercolor pin from the landmark-icons module. The
+           handoff icons render at 24-unit viewBox; pin diameter is
+           tied to paintScale so it tracks zoom level. Labels are
+           still external (below) so the leader-line + text styling
+           stays consistent across icon vs. fallback pins. -->
+      <LandmarkIcon id={l.id} size={18 * ps} inline />
     {:else}
       <LandmarkPin kind={pinKind(l)} />
-      {#if l.id === 'independence'}
-        <text x="-8" y="18" text-anchor="end" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
-      {:else if l.id === 'oregon_city'}
-        <text x="0" y="-13" text-anchor="middle" class="lmk-text" style="font-size:{11 * ps}px;letter-spacing:0.15em">{pinLabel(l)}</text>
-      {:else if LABEL_BELOW.has(l.id)}
-        <text x="0" y="14" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
-      {:else}
-        <text x="0" y="-10" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
-      {/if}
+    {/if}
+    {#if l.id === 'oregon_city'}
+      <text x="0" y="-13" text-anchor="middle" class="lmk-text" style="font-size:{11 * ps}px;letter-spacing:0.15em">{pinLabel(l)}</text>
+    {:else if LABEL_BELOW.has(l.id)}
+      <text x="0" y="14" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
+    {:else}
+      <text x="0" y="-10" text-anchor="middle" class="lmk-text" style="font-size:{9 * ps}px">{pinLabel(l)}</text>
     {/if}
   </g>
 {/each}

@@ -30,9 +30,26 @@ function upgradeMember(m: PartyMember): PartyMember {
   };
 }
 
+/** Pre-rename: `independence` was the LANDMARKS id for Independence,
+ *  Missouri (the trail-start city). Renamed to `independence_mo` to
+ *  disambiguate from `independence_rock` (the Wyoming granite
+ *  landmark). Saves carry the old id in any of three location fields;
+ *  rewrite each to the new id on load. */
+function rewriteIndependenceId(id: string | null | undefined): string | null {
+  if (id === 'independence') return 'independence_mo';
+  return id ?? null;
+}
+
 export function upgradeState(state: GameState): GameState {
   const flags = { ...DEFAULT_FLAGS, ...state.flags };
   const party = state.party.map(upgradeMember);
+
+  const location = {
+    ...state.location,
+    nextLandmarkId: rewriteIndependenceId(state.location.nextLandmarkId) ?? state.location.nextLandmarkId,
+    previousLandmarkId: rewriteIndependenceId(state.location.previousLandmarkId),
+    atLandmarkId: rewriteIndependenceId(state.location.atLandmarkId)
+  };
 
   // Pre-wagon-model saves don't have wagon.model. Default → prairie schooner
   // (matches the pre-migration carryCapacity of 2500 lb). If a save somehow
@@ -55,7 +72,7 @@ export function upgradeState(state: GameState): GameState {
     ? { ...state.inventory, yoke: wagonModel.requiredYokes }
     : state.inventory;
 
-  return { ...state, flags, party, wagon, weather, inventory };
+  return { ...state, flags, party, wagon, weather, inventory, location };
 }
 
 function getWagonOrNull(id: string): ReturnType<typeof getWagon> | null {

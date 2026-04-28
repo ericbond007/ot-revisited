@@ -7,7 +7,7 @@ describe('full trail catalog', () => {
   });
 
   it('starts at Independence and ends at Oregon City', () => {
-    expect(LANDMARKS[0].id).toBe('independence');
+    expect(LANDMARKS[0].id).toBe('independence_mo');
     expect(LANDMARKS[LANDMARKS.length - 1].id).toBe('oregon_city');
   });
 

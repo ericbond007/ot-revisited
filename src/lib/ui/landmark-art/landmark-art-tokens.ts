@@ -53,7 +53,7 @@ export type LandmarkTone = 'warm' | 'cool' | 'gold';
  *  art component are listed here. Adding a new one is two lines: extend
  *  this union and add the row in `LandmarkArt.svelte`'s REGISTRY. */
 export type LandmarkId =
-  | 'independence'
+  | 'independence_mo'
   | 'kansas_river'
   | 'alcove_spring'
   | 'big_blue_river'

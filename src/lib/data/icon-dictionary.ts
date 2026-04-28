@@ -181,7 +181,7 @@ export const ICON = {
     flat: '▬'
   },
   landmarks: {
-    independence:        '🏠',
+    independence_mo:     '🏠',
     kansas_river:        '🌊',
     alcove_spring:       '💧',
     big_blue_river:      '🌊',

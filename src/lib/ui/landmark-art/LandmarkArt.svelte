@@ -70,7 +70,7 @@
    *  Keys must match `LANDMARKS[].id` from
    *  src/lib/game/content/landmarks.ts. */
   const REGISTRY: Partial<Record<LandmarkId, RegistryEntry>> = {
-    independence: { Art: IndependenceArt, tone: 'warm' },
+    independence_mo: { Art: IndependenceArt, tone: 'warm' },
     kansas_river: { Art: KansasRiverArt, tone: 'warm' },
     alcove_spring: { Art: AlcoveSpringArt, tone: 'warm' },
     big_blue_river: { Art: BigBlueArt, tone: 'warm' },
