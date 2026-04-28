@@ -16,20 +16,90 @@
   import type { Component } from 'svelte';
   import type { LandmarkIconId } from './landmark-icon-tokens';
 
-  import ChimneyRock     from './chimney_rock.svelte';
-  import FortLaramie     from './fort_laramie.svelte';
-  import KansasRiver     from './kansas_river.svelte';
-  import WhitmanMission  from './whitman_mission.svelte';
-  import BarlowRoad      from './barlow_road.svelte';
+  import AlcoveSpring        from './alcove_spring.svelte';
+  import AshHollow           from './ash_hollow.svelte';
+  import BarlowRoad          from './barlow_road.svelte';
+  import BearRiver           from './bear_river.svelte';
+  import BigBlueRiver        from './big_blue_river.svelte';
+  import BlueMountains       from './blue_mountains.svelte';
+  import ChimneyRock         from './chimney_rock.svelte';
+  import CourthouseJailRocks from './courthouse_jail_rocks.svelte';
+  import DevilsGate          from './devils_gate.svelte';
+  import FarewellBend        from './farewell_bend.svelte';
+  import FortBoise           from './fort_boise.svelte';
+  import FortBridger         from './fort_bridger.svelte';
+  import FortHall            from './fort_hall.svelte';
+  import FortKearny          from './fort_kearny.svelte';
+  import FortLaramie         from './fort_laramie.svelte';
+  import FortWallaWalla      from './fort_walla_walla.svelte';
+  import GrandeRondeValley   from './grande_ronde_valley.svelte';
+  import GreenRiver          from './green_river.svelte';
+  import GuernseyRuts        from './guernsey_ruts.svelte';
+  import HollenbergRanch     from './hollenberg_ranch.svelte';
+  import IceSlough           from './ice_slough.svelte';
+  import IndependenceMo      from './independence_mo.svelte';
+  import IndependenceRock    from './independence_rock.svelte';
+  import KansasRiver         from './kansas_river.svelte';
+  import LaurelHill          from './laurel_hill.svelte';
+  import NorthPlatteEast     from './north_platte_east.svelte';
+  import NorthPlatteWest     from './north_platte_west.svelte';
+  import OregonCity          from './oregon_city.svelte';
+  import PacificSprings      from './pacific_springs.svelte';
+  import PartingOfTheWays    from './parting_of_the_ways.svelte';
+  import RegisterCliff       from './register_cliff.svelte';
+  import RobidouxPost        from './robidoux_post.svelte';
+  import ScottsBluff         from './scotts_bluff.svelte';
+  import SodaSprings         from './soda_springs.svelte';
+  import SouthPass           from './south_pass.svelte';
+  import Sweetwater1         from './sweetwater_1.svelte';
+  import TheDalles           from './the_dalles.svelte';
+  import ThreeIslandCrossing from './three_island_crossing.svelte';
+  import WhitmanMission      from './whitman_mission.svelte';
+  import WillowSprings       from './willow_springs.svelte';
 
-  // Partial registry — extend as bulk port lands. `Partial<>` so
-  // unmapped ids return undefined and trigger the fallback.
+  // Full registry — all 40 landmark ids mapped. `Partial<>` preserved
+  // so the type stays compatible if future ids are added before porting.
   const REGISTRY: Partial<Record<LandmarkIconId, Component>> = {
-    chimney_rock:    ChimneyRock,
-    fort_laramie:    FortLaramie,
-    kansas_river:    KansasRiver,
-    whitman_mission: WhitmanMission,
-    barlow_road:     BarlowRoad
+    alcove_spring:          AlcoveSpring,
+    ash_hollow:             AshHollow,
+    barlow_road:            BarlowRoad,
+    bear_river:             BearRiver,
+    big_blue_river:         BigBlueRiver,
+    blue_mountains:         BlueMountains,
+    chimney_rock:           ChimneyRock,
+    courthouse_jail_rocks:  CourthouseJailRocks,
+    devils_gate:            DevilsGate,
+    farewell_bend:          FarewellBend,
+    fort_boise:             FortBoise,
+    fort_bridger:           FortBridger,
+    fort_hall:              FortHall,
+    fort_kearny:            FortKearny,
+    fort_laramie:           FortLaramie,
+    fort_walla_walla:       FortWallaWalla,
+    grande_ronde_valley:    GrandeRondeValley,
+    green_river:            GreenRiver,
+    guernsey_ruts:          GuernseyRuts,
+    hollenberg_ranch:       HollenbergRanch,
+    ice_slough:             IceSlough,
+    independence_mo:        IndependenceMo,
+    independence_rock:      IndependenceRock,
+    kansas_river:           KansasRiver,
+    laurel_hill:            LaurelHill,
+    north_platte_east:      NorthPlatteEast,
+    north_platte_west:      NorthPlatteWest,
+    oregon_city:            OregonCity,
+    pacific_springs:        PacificSprings,
+    parting_of_the_ways:    PartingOfTheWays,
+    register_cliff:         RegisterCliff,
+    robidoux_post:          RobidouxPost,
+    scotts_bluff:           ScottsBluff,
+    soda_springs:           SodaSprings,
+    south_pass:             SouthPass,
+    sweetwater_1:           Sweetwater1,
+    the_dalles:             TheDalles,
+    three_island_crossing:  ThreeIslandCrossing,
+    whitman_mission:        WhitmanMission,
+    willow_springs:         WillowSprings,
   };
 
   let { id, size = 24, title, className = '' }: {
@@ -73,10 +143,45 @@
 
   // Mirrors the keys of REGISTRY above. Keep in sync when porting.
   const REGISTRY_KEYS = new Set<string>([
+    'alcove_spring',
+    'ash_hollow',
+    'barlow_road',
+    'bear_river',
+    'big_blue_river',
+    'blue_mountains',
     'chimney_rock',
+    'courthouse_jail_rocks',
+    'devils_gate',
+    'farewell_bend',
+    'fort_boise',
+    'fort_bridger',
+    'fort_hall',
+    'fort_kearny',
     'fort_laramie',
+    'fort_walla_walla',
+    'grande_ronde_valley',
+    'green_river',
+    'guernsey_ruts',
+    'hollenberg_ranch',
+    'ice_slough',
+    'independence_mo',
+    'independence_rock',
     'kansas_river',
+    'laurel_hill',
+    'north_platte_east',
+    'north_platte_west',
+    'oregon_city',
+    'pacific_springs',
+    'parting_of_the_ways',
+    'register_cliff',
+    'robidoux_post',
+    'scotts_bluff',
+    'soda_springs',
+    'south_pass',
+    'sweetwater_1',
+    'the_dalles',
+    'three_island_crossing',
     'whitman_mission',
-    'barlow_road'
+    'willow_springs',
   ]);
 </script>

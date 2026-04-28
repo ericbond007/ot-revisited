@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-27 (post-#89). 29 open.
+As of 2026-04-27 (post-#89). 31 open.
 
 ## New mechanics
 
@@ -58,6 +58,8 @@ As of 2026-04-27 (post-#89). 29 open.
 | ---- | ---------------------------------------------------------- |
 | #182 | Hunt yields audit — tallow / animal fat as byproduct?      |
 | #183 | AI art / animation pipeline — eval libs + image-gen APIs   |
+| #184 | Full game review — Sonnet pass on mechanics + balance      |
+| #185 | Playwright MCP — point at /usr/bin/chromium (fleet config) |
 
 ## Known design-incoming
 
@@ -65,6 +67,7 @@ As of 2026-04-27 (post-#89). 29 open.
 
 ## Recently shipped
 
+- **landmark-icons foundation + bulk port** — handoff bundle's 4-step icon import, step 1 of 4. New module `src/lib/ui/landmark-icons/` (sibling to landmark-art so the 24×24 watercolor pin set doesn't cohabit with the 480×200 modal illustrations). 40 of 40 ids ported: 38 verbatim from `docs/handoff/landmark-icons/src/icons-{arrival,passbys,rivers,trading-posts}.jsx` (mechanical Sonnet subagent pass — `strokeWidth → stroke-width` etc., HybridBadge wrapped via `{#snippet children()}`, helper components imported from sibling files), plus 2 fresh glyphs (whitman_mission, barlow_road) drawn in matching vocabulary because the bundle predates the historical pass. `LandmarkIcon.svelte` is a Svelte 5 runes port of the bundle's Svelte 4 dispatcher (`$props` instead of `export let`, `$derived` instead of `$:`, `<Art />` instead of `<svelte:component>`); per-id REGISTRY map; `hasLandmarkIcon()` guard exposed for callers that fall back to emoji on unmapped ids. Fidelity verification: (1) `tests/landmark-icons-port.test.ts` element-count parity per landmark — 38 of 38 pass; (2) Sonnet code-reviewer subagent spot-check on 5 random ports (fort_hall / three_island_crossing / devils_gate / courthouse_jail_rocks / oregon_city) — 0 drift found; (3) `/dev/landmark-icons` specimen route shows every LANDMARKS id at 24/32/48 px. Bundle source committed at `docs/handoff/landmark-icons/`. **Wiring to LandmarkPin / modal headers + step-2 stat-icons + step-3 profession-icons + step-4 components are still ahead.**
 - **#179** Lightening the wagon — `discardItem` server action gated to `state.location.atLandmarkId` (period reality: lightening happened at the rocks and forts, not on the open trail). InventoryModal now renders three submit buttons per row when at a landmark — `−1`, `−min(10, qty)`, `all` — each with its own `name="qty" value=N` so the player picks the bulk in a single click without per-row JS state. Items removed from `state.inventory`; future ox-fatigue benefit comes through the existing weight-driven oxen system. Compact ghost-button styling so dense rows don't crowd. New `slot` prop on InventoryModal; callsite in `/play` updated.
 - **#178** Independence Day — once-per-year +6 morale bump on July 4. New `systems/holidays.ts` (`applyHolidays`) wired into both engine pipelines (`tickDay` + `tickDayPausable`); per-year flag `_july4Year` gates re-firing within the same year. Cap-respecting (no morale > 100), no-op when `state.completed`. 5 new tests; pattern extends naturally to Christmas / Thanksgiving (1863+) when wanted.
 - **#177** Letters from home — rare delivery on first arrival at posts with `gossip` service (~30%, per-post dedup via `flags._lettersDeliveredAt`, per-letter dedup via `flags._lettersRead`). 12 curated period letters (5 good / 3 mixed / 4 bad) — births, weddings, harvests, deaths, fires, mother begging the party home. Morale delta applied immediately. New `LetterModal.svelte` (parchment, IM Fell English serif, signed closing right-aligned, color-coded morale footnote) mounts off `flags._pendingLetter`; `?/ackLetter` clears it. Hooked into `runTravelLoop`'s post-arrival block alongside the existing whore-earnings / restock / gossip steps. 4 new tests; 678/678 green.
