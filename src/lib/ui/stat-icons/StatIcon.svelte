@@ -16,17 +16,27 @@
   import type { Component } from 'svelte';
   import type { StatIconKind } from './stat-icon-tokens';
 
+  import Cash    from './cash.svelte';
+  import Date    from './date.svelte';
   import Day     from './day.svelte';
-  import Pace    from './pace.svelte';
   import Health  from './health.svelte';
   import Leg     from './leg.svelte';
+  import Morale  from './morale.svelte';
+  import Pace    from './pace.svelte';
+  import Rations from './rations.svelte';
+  import Water   from './water.svelte';
   import Weather from './weather.svelte';
 
   const REGISTRY: Partial<Record<StatIconKind, Component>> = {
+    cash:    Cash,
+    date:    Date,
     day:     Day,
-    pace:    Pace,
     health:  Health,
     leg:     Leg,
+    morale:  Morale,
+    pace:    Pace,
+    rations: Rations,
+    water:   Water,
     weather: Weather
   };
 
@@ -70,10 +80,15 @@
 
   // Mirrors the keys of REGISTRY above. Keep in sync when porting.
   const REGISTRY_KEYS = new Set<string>([
+    'cash',
+    'date',
     'day',
-    'pace',
     'health',
     'leg',
+    'morale',
+    'pace',
+    'rations',
+    'water',
     'weather'
   ]);
 </script>
