@@ -189,7 +189,11 @@ a:hover { color: var(--c-tan-bright); text-decoration: underline; }
 }
 
 /* Default button — "primary" in the design system. Rust-dark surface,
-   tan-bright text, ink stroke; hover lifts to bright rust. */
+   tan-bright text, ink stroke; hover lifts to bright rust.
+   Reference visual: docs/handoff/components/src/buttons.html.
+   Token values match the bundle hex literals via --c-rust-dark
+   (#8a3a1a), --c-tan-bright (#f5e6c8), --c-ink (#3a1a08), --c-rust
+   (#c96a2a). Don't reintroduce raw hex here. */
 button {
   font-family: inherit;
   background: var(--c-rust-dark);
