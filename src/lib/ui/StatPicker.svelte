@@ -1,5 +1,7 @@
 <script lang="ts" generics="T extends string">
   import { enhance } from '$app/forms';
+  import StatIcon from './stat-icons/StatIcon.svelte';
+  import type { StatIconKind } from './stat-icons/stat-icon-tokens';
 
   interface Option {
     value: T;
@@ -10,6 +12,7 @@
 
   let {
     icon,
+    kind,
     label,
     name,
     action,
@@ -17,7 +20,12 @@
     options,
     align = 'left'
   }: {
-    icon: string;
+    /** Emoji glyph fallback. Used when `kind` isn't supplied. */
+    icon?: string;
+    /** Watercolor SVG kind from the stat-icons module. Takes precedence
+     *  over `icon` when both are passed — the SVG is the rendered form,
+     *  emoji stays the textual fallback for log/toast/copy contexts. */
+    kind?: StatIconKind;
     label: string;
     name: string;
     action: string;
@@ -46,7 +54,11 @@
 
 <span class="stat-picker" bind:this={root}>
   <button type="button" class="stat-btn" onclick={toggle} title="Change {label.toLowerCase()}">
-    <span class="stat-icon">{icon}</span>
+    {#if kind}
+      <StatIcon {kind} size={14} className="stat-svg" />
+    {:else}
+      <span class="stat-icon">{icon}</span>
+    {/if}
     <span class="stat-label">{label}</span>
     <span class="stat-val capitalize">{current}</span>
     <span class="caret">{open ? '▾' : '▸'}</span>

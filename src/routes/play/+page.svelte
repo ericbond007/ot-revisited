@@ -26,6 +26,7 @@
   import PartyMemberModal from '$lib/ui/PartyMemberModal.svelte';
   import InventoryModal from '$lib/ui/InventoryModal.svelte';
   import StatPicker from '$lib/ui/StatPicker.svelte';
+  import StatIcon from '$lib/ui/stat-icons/StatIcon.svelte';
   import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
   import { ICON, icon } from '$lib/data/icon-dictionary';
   import { weatherInfo } from '$lib/data/weather-info';
@@ -150,27 +151,30 @@
     </div>
     <div class="date-readout {dayFlash ? 'pulse' : ''}">
       <span class="stat" title="Current day of the journey">
-        <span class="stat-icon">{icon('stats', 'day')}</span>
+        <StatIcon kind="day" size={14} className="stat-svg" />
         <span class="stat-label">DAY</span>
         <span class="day-num">{gs.day}</span>
       </span>
       <span class="stat" title="In-game calendar date">
-        <span class="stat-icon">{icon('stats', 'date')}</span>
+        <StatIcon kind="date" size={14} className="stat-svg" />
         <span class="stat-label">DATE</span>
         <span>{['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][gs.date.month - 1]} {gs.date.day}, {gs.date.year}</span>
       </span>
       <span class="stat" title="Current leg of the trail">
-        <span class="stat-icon">{icon('stats', 'leg')}</span>
+        <StatIcon kind="leg" size={14} className="stat-svg" />
         <span class="stat-label">LEG</span>
         <span>{trailLegOrdinal.current} of {trailLegOrdinal.total}</span>
       </span>
+      <!-- Weather stays as per-state emoji (clear/cloudy/rain/storm/fog…)
+           rather than the generic <StatIcon kind="weather"> — the
+           per-state glyph carries more info than a single SVG would. -->
       <span class="stat" title={todayWeather.tooltip}>
         <span class="stat-icon">{todayWeather.icon}</span>
         <span class="stat-label">WEATHER</span>
         <span>{todayWeather.label}</span>
       </span>
       <StatPicker
-        icon={ICON.stats.pace}
+        kind="pace"
         label="PACE"
         name="pace"
         action={paceAction}
@@ -178,7 +182,7 @@
         options={paceOptions}
       />
       <StatPicker
-        icon={ICON.stats.rations}
+        kind="rations"
         label="RATIONS"
         name="rations"
         action={rationsAction}
