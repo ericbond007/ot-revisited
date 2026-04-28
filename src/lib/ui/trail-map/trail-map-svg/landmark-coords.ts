@@ -30,7 +30,7 @@ export const TRAIL_VIEWBOX_H = 380;
  *  Landmarks not listed here default to tier 3.
  */
 export const LANDMARK_TIER: Record<string, 1 | 2 | 3> = {
-  independence: 1,
+  independence_mo: 1,
   ft_kearny: 1,
   ft_laramie: 1,
   south_pass: 1,
@@ -61,7 +61,7 @@ export const LANDMARK_TIER: Record<string, 1 | 2 | 3> = {
 };
 
 export const LANDMARK_COORDS: Record<string, readonly [number, number]> = {
-  independence: [920, 305],
+  independence_mo: [920, 305],
   // Independence → Ft. Kearny segment
   kansas_river: [861, 295],
   hollenberg_ranch: [803, 282],

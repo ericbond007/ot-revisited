@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-28 (post-#89). 35 open.
+As of 2026-04-28 (post-#89). 36 open.
 
 ## New mechanics
 
@@ -47,6 +47,7 @@ As of 2026-04-28 (post-#89). 35 open.
 | #173 | TownStage hero art — hoist LandmarkArt into Visit view (Phase B) |
 | #189 | Landmark / trading-post screen rework — better town actions      |
 | #190 | InventoryPanel: water as a bar graph (match weight treatment)    |
+| #191 | Save format: add migration runner; deserializer hard-crashes now |
 
 ## For Claude Design or another SVG animation generator
 

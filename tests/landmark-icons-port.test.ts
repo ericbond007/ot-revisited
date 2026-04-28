@@ -54,12 +54,16 @@ const HANDOFF_MAPPING: Record<string, string> = {
   // River fords
   kansas_river:          'Lmk_KansasRiver',
   big_blue_river:        'Lmk_BigBlueRiver',
-  north_platte_east:     'Lmk_NorthPlatteEast',
-  north_platte_west:     'Lmk_NorthPlatteWest',
+  // LANDMARKS canonical ids — `north_platte_1/2` are the eastern /
+  // western Platte fords (bundle JSX names them East/West);
+  // `snake_three_island` is the braided Snake crossing (bundle JSX
+  // names it ThreeIsland). The svelte file names match LANDMARKS.
+  north_platte_1:        'Lmk_NorthPlatteEast',
+  north_platte_2:        'Lmk_NorthPlatteWest',
   sweetwater_1:          'Lmk_SweetwaterFord',
   green_river:           'Lmk_GreenRiver',
   bear_river:            'Lmk_BearRiver',
-  three_island_crossing: 'Lmk_ThreeIsland',
+  snake_three_island:    'Lmk_ThreeIsland',
   // Arrival landmarks
   alcove_spring:         'Lmk_AlcoveSpring',
   ash_hollow:            'Lmk_AshHollow',
@@ -72,15 +76,17 @@ const HANDOFF_MAPPING: Record<string, string> = {
   pacific_springs:       'Lmk_PacificSprings',
   soda_springs:          'Lmk_SodaSprings',
   laurel_hill:           'Lmk_LaurelHill',
-  // Pass-bys
-  courthouse_jail_rocks: 'PB_CourthouseJail',
+  // Pass-bys — ids match LANDMARKS canonical naming (the bundle JSX
+  // function names sometimes diverge: `parting_of_ways` is the LANDMARKS
+  // id but the JSX function is `PB_PartingOfTheWays`, etc).
+  courthouse_rock:       'PB_CourthouseJail',
   guernsey_ruts:         'PB_GuernseyRuts',
   willow_springs:        'PB_WillowSprings',
   ice_slough:            'PB_IceSlough',
-  parting_of_the_ways:   'PB_PartingOfTheWays',
+  parting_of_ways:       'PB_PartingOfTheWays',
   farewell_bend:         'PB_FarewellBend',
   blue_mountains:        'PB_BlueMountains',
-  grande_ronde_valley:   'PB_GrandeRonde',
+  grande_ronde:          'PB_GrandeRonde',
   // Trail termini
   independence_mo:       'PB_IndependenceMO_Start',
   oregon_city:           'PB_OregonCity_End'

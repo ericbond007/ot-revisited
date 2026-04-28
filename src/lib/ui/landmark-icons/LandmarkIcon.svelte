@@ -23,7 +23,7 @@
   import BigBlueRiver        from './big_blue_river.svelte';
   import BlueMountains       from './blue_mountains.svelte';
   import ChimneyRock         from './chimney_rock.svelte';
-  import CourthouseJailRocks from './courthouse_jail_rocks.svelte';
+  import CourthouseRock     from './courthouse_rock.svelte';
   import DevilsGate          from './devils_gate.svelte';
   import FarewellBend        from './farewell_bend.svelte';
   import FortBoise           from './fort_boise.svelte';
@@ -32,7 +32,7 @@
   import FortKearny          from './fort_kearny.svelte';
   import FortLaramie         from './fort_laramie.svelte';
   import FortWallaWalla      from './fort_walla_walla.svelte';
-  import GrandeRondeValley   from './grande_ronde_valley.svelte';
+  import GrandeRonde         from './grande_ronde.svelte';
   import GreenRiver          from './green_river.svelte';
   import GuernseyRuts        from './guernsey_ruts.svelte';
   import HollenbergRanch     from './hollenberg_ranch.svelte';
@@ -41,11 +41,11 @@
   import IndependenceRock    from './independence_rock.svelte';
   import KansasRiver         from './kansas_river.svelte';
   import LaurelHill          from './laurel_hill.svelte';
-  import NorthPlatteEast     from './north_platte_east.svelte';
-  import NorthPlatteWest     from './north_platte_west.svelte';
+  import NorthPlatte1        from './north_platte_1.svelte';
+  import NorthPlatte2        from './north_platte_2.svelte';
   import OregonCity          from './oregon_city.svelte';
   import PacificSprings      from './pacific_springs.svelte';
-  import PartingOfTheWays    from './parting_of_the_ways.svelte';
+  import PartingOfWays       from './parting_of_ways.svelte';
   import RegisterCliff       from './register_cliff.svelte';
   import RobidouxPost        from './robidoux_post.svelte';
   import ScottsBluff         from './scotts_bluff.svelte';
@@ -53,7 +53,7 @@
   import SouthPass           from './south_pass.svelte';
   import Sweetwater1         from './sweetwater_1.svelte';
   import TheDalles           from './the_dalles.svelte';
-  import ThreeIslandCrossing from './three_island_crossing.svelte';
+  import SnakeThreeIsland    from './snake_three_island.svelte';
   import WhitmanMission      from './whitman_mission.svelte';
   import WillowSprings       from './willow_springs.svelte';
 
@@ -67,7 +67,7 @@
     big_blue_river:         BigBlueRiver,
     blue_mountains:         BlueMountains,
     chimney_rock:           ChimneyRock,
-    courthouse_jail_rocks:  CourthouseJailRocks,
+    courthouse_rock:        CourthouseRock,
     devils_gate:            DevilsGate,
     farewell_bend:          FarewellBend,
     fort_boise:             FortBoise,
@@ -76,7 +76,7 @@
     fort_kearny:            FortKearny,
     fort_laramie:           FortLaramie,
     fort_walla_walla:       FortWallaWalla,
-    grande_ronde_valley:    GrandeRondeValley,
+    grande_ronde:           GrandeRonde,
     green_river:            GreenRiver,
     guernsey_ruts:          GuernseyRuts,
     hollenberg_ranch:       HollenbergRanch,
@@ -85,11 +85,11 @@
     independence_rock:      IndependenceRock,
     kansas_river:           KansasRiver,
     laurel_hill:            LaurelHill,
-    north_platte_east:      NorthPlatteEast,
-    north_platte_west:      NorthPlatteWest,
+    north_platte_1:         NorthPlatte1,
+    north_platte_2:         NorthPlatte2,
     oregon_city:            OregonCity,
     pacific_springs:        PacificSprings,
-    parting_of_the_ways:    PartingOfTheWays,
+    parting_of_ways:        PartingOfWays,
     register_cliff:         RegisterCliff,
     robidoux_post:          RobidouxPost,
     scotts_bluff:           ScottsBluff,
@@ -97,7 +97,7 @@
     south_pass:             SouthPass,
     sweetwater_1:           Sweetwater1,
     the_dalles:             TheDalles,
-    three_island_crossing:  ThreeIslandCrossing,
+    snake_three_island:     SnakeThreeIsland,
     whitman_mission:        WhitmanMission,
     willow_springs:         WillowSprings,
   };
@@ -178,7 +178,7 @@
     'big_blue_river',
     'blue_mountains',
     'chimney_rock',
-    'courthouse_jail_rocks',
+    'courthouse_rock',
     'devils_gate',
     'farewell_bend',
     'fort_boise',
@@ -187,7 +187,7 @@
     'fort_kearny',
     'fort_laramie',
     'fort_walla_walla',
-    'grande_ronde_valley',
+    'grande_ronde',
     'green_river',
     'guernsey_ruts',
     'hollenberg_ranch',
@@ -197,11 +197,11 @@
     'independence_rock',
     'kansas_river',
     'laurel_hill',
-    'north_platte_east',
-    'north_platte_west',
+    'north_platte_1',
+    'north_platte_2',
     'oregon_city',
     'pacific_springs',
-    'parting_of_the_ways',
+    'parting_of_ways',
     'register_cliff',
     'robidoux_post',
     'scotts_bluff',
@@ -209,7 +209,7 @@
     'south_pass',
     'sweetwater_1',
     'the_dalles',
-    'three_island_crossing',
+    'snake_three_island',
     'whitman_mission',
     'willow_springs',
   ]);

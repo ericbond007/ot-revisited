@@ -55,15 +55,19 @@ export type LandmarkIconId =
   | 'the_dalles'
   | 'whitman_mission'
   | 'barlow_road'
-  // Rivers — circular badge, cool tone
+  // Rivers — circular badge, cool tone. River-crossing ids match
+  // LANDMARKS canonical naming (north_platte_1/2 for the eastern /
+  // western Platte fords; snake_three_island for the braided Snake
+  // crossing). The bundle's source files used semantic east/west /
+  // crossing names which were renamed on import.
   | 'kansas_river'
   | 'big_blue_river'
-  | 'north_platte_east'
-  | 'north_platte_west'
+  | 'north_platte_1'
+  | 'north_platte_2'
   | 'sweetwater_1'
   | 'green_river'
   | 'bear_river'
-  | 'three_island_crossing'
+  | 'snake_three_island'
   // Arrival landmarks — circular badge, warm tone
   | 'alcove_spring'
   | 'ash_hollow'
@@ -77,14 +81,14 @@ export type LandmarkIconId =
   | 'soda_springs'
   | 'laurel_hill'
   // Pass-by landmarks — bare silhouette
-  | 'courthouse_jail_rocks'
+  | 'courthouse_rock'
   | 'guernsey_ruts'
   | 'willow_springs'
   | 'ice_slough'
-  | 'parting_of_the_ways'
+  | 'parting_of_ways'
   | 'farewell_bend'
   | 'blue_mountains'
-  | 'grande_ronde_valley'
+  | 'grande_ronde'
   // Trail termini — gold-tone badge. `independence_mo` is the city
   // (Independence, MO — start of trail). Note: this is distinct from
   // `independence_rock` above (the Wyoming granite landmark).
