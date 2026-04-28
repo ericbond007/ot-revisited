@@ -11,6 +11,8 @@
   import { ITEMS } from '$lib/game/content/items';
   import { foodConsumedToday } from '$lib/game/systems/consumption';
   import { ICON } from '$lib/data/icon-dictionary';
+  import ProfessionIcon, { hasProfessionIcon } from './profession-icons/ProfessionIcon.svelte';
+  import StatIcon from './stat-icons/StatIcon.svelte';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
   // Derived headline counts.
@@ -95,13 +97,11 @@
     }
   }
   // True if the row should show a profession badge (top-right corner).
-  function profBadge(m: PartyMember): 'doctor' | 'scout' | 'preacher' | 'hunter' | null {
-    if (m.dead || m.kind === 'child') return null;
-    if (m.profession === 'doctor') return 'doctor';
-    if (m.profession === 'scout') return 'scout';
-    if (m.profession === 'preacher') return 'preacher';
-    if (m.profession === 'hunter') return 'hunter';
-    return null;
+  // Returns the profession id if the bespoke ProfessionIcon module
+  // has art for it; null otherwise (children, dead, no-profession).
+  function profBadge(m: PartyMember): string | null {
+    if (m.dead || m.kind === 'child' || !m.profession) return null;
+    return hasProfessionIcon(m.profession) ? m.profession : null;
   }
 
   // HP gradient endpoints — sage when healthy, rust when ill.
@@ -156,26 +156,14 @@
             {:else if m.profession === 'scout' || m.profession === 'hunter'}
               <path d="M5 8 Q12 4 19 8 L18 10 L6 10 Z" fill="#4a5a3a" />
             {/if}
-            <!-- Profession badge in upper right -->
-            {#if profBadge(m) === 'doctor'}
-              <g transform="translate(18 2)">
-                <rect x="-2" y="-0.7" width="4" height="1.4" fill="#e85a4a" />
-                <rect x="-0.7" y="-2" width="1.4" height="4" fill="#e85a4a" />
-              </g>
-            {:else if profBadge(m) === 'scout'}
-              <g transform="translate(18 2)">
-                <circle cx="-1" cy="0" r="1.4" fill="none" stroke="#4a5a3a" stroke-width="0.8" />
-                <circle cx="1" cy="0" r="1.4" fill="none" stroke="#4a5a3a" stroke-width="0.8" />
-              </g>
-            {:else if profBadge(m) === 'preacher'}
-              <g transform="translate(18 2)">
-                <rect x="-0.4" y="-2" width="0.8" height="4" fill="#3a1a08" />
-                <rect x="-1.5" y="-0.4" width="3" height="0.8" fill="#3a1a08" />
-              </g>
-            {:else if profBadge(m) === 'hunter'}
-              <g transform="translate(18 2)">
-                <line x1="-2" y1="-2" x2="2" y2="2" stroke="#3a1a08" stroke-width="0.9" />
-                <path d="M-2 -2 L0 -2 L-2 0 Z" fill="#3a1a08" />
+            <!-- Profession badge in upper right — bespoke ProfessionIcon
+                 art for all 13 professions (was 4 hand-drawn glyphs).
+                 ProfessionIcon renders its own <svg width=5 height=5>;
+                 the wrapping <g transform> positions that nested svg in
+                 the upper-right corner of the 24-unit avatar viewport. -->
+            {#if profBadge(m)}
+              <g transform="translate(13.5 0.5)">
+                <ProfessionIcon id={profBadge(m)!} size={5} />
               </g>
             {/if}
             <!-- Fever droplets when ill -->
@@ -243,11 +231,21 @@
     </span>
   </div>
 
-  <!-- Mini-stats footer (intentional duplication of top-bar — see #163) -->
+  <!-- Mini-stats footer. Intentional duplication of the top-bar
+       readout (#163) — keeping per the components-bundle decision so
+       the panel is self-sufficient at a glance. Rations + Pace use
+       the watercolor StatIcon glyphs; "OXEN" stays on emoji because
+       the count modifier (×N) is the focal cue, not the icon. -->
   <div class="mini-stats">
-    <div class="ms-cell"><div class="ms-val">🍖<span class="ms-num">{foodDays}d</span></div><div class="ms-label">FOOD</div></div>
+    <div class="ms-cell">
+      <div class="ms-val"><StatIcon kind="rations" size={13} /><span class="ms-num">{foodDays}d</span></div>
+      <div class="ms-label">FOOD</div>
+    </div>
     <div class="ms-cell"><div class="ms-val">🐂×{liveOxenCount}</div><div class="ms-label">OXEN</div></div>
-    <div class="ms-cell"><div class="ms-val">⚡<span class="ms-num">{PACE_LABEL[state.pace]}</span></div><div class="ms-label">PACE</div></div>
+    <div class="ms-cell">
+      <div class="ms-val"><StatIcon kind="pace" size={13} /><span class="ms-num">{PACE_LABEL[state.pace]}</span></div>
+      <div class="ms-label">PACE</div>
+    </div>
   </div>
 </button>
 
