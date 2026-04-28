@@ -270,6 +270,7 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .party-panel:hover:not(:disabled) {
+    background: var(--c-panel); /* override global button:hover rust fill */
     border-color: var(--c-rust);
     box-shadow: 0 0 0 1px var(--c-rust) inset;
   }
@@ -308,7 +309,9 @@
     align-items: center;
     transition: background 0.2s;
   }
-  .party-row:hover { background: rgba(201, 106, 42, 0.06); }
+  /* No per-row hover tint — the whole panel is a single button, so
+     row-level hover would just stack rust on top of the panel hover.
+     The .ill-shake / .dead row treatments stay; those convey state. */
   .party-row.ill-shake { background: rgba(232, 90, 74, 0.07); animation: ill 0.4s infinite; }
   .party-row.dead { opacity: 0.55; }
 
