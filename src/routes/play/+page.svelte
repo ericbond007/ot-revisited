@@ -276,7 +276,7 @@
 {/if}
 
 {#if showInventory}
-  <InventoryModal state={gs} onclose={() => (showInventory = false)} />
+  <InventoryModal state={gs} slot={data.slot} onclose={() => (showInventory = false)} />
 {/if}
 
 {#if showTrailMapModal}

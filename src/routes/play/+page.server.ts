@@ -268,6 +268,40 @@ export const actions: Actions = {
     return { state: next };
   },
 
+  discardItem: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const itemId = fd.get('itemId')?.toString();
+    const qty = Math.max(1, parseInt(fd.get('qty')?.toString() ?? '0', 10));
+    if (!itemId) throw error(400, 'itemId required');
+    const state = await loadState(locals, slot);
+    // Lightening is gated to landmarks — diaries record this happening
+    // at the rocks (Independence, Devil's Gate) and at the forts; on
+    // the open trail you'd usually push through, not pull out of formation.
+    if (!state.location.atLandmarkId) throw error(409, 'must be at a landmark to lighten the wagon');
+    const have = state.inventory[itemId] ?? 0;
+    if (have <= 0) throw error(409, `no ${itemId} in inventory`);
+    const drop = Math.min(qty, have);
+    const inventory = { ...state.inventory };
+    if (have - drop <= 0) delete inventory[itemId];
+    else inventory[itemId] = have - drop;
+    const here = getLandmark(state.location.atLandmarkId);
+    const next = {
+      ...state,
+      inventory,
+      eventLog: [
+        ...state.eventLog,
+        {
+          day: state.day,
+          text: `Lightened the wagon at ${here.name}: dropped ${drop} ${itemId.replace(/_/g, ' ')}.`
+        }
+      ]
+    };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
   ackLetter: async ({ url, locals }) => {
     const slot = url.searchParams.get('slot');
     if (!slot) throw error(400, 'slot required');

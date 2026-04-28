@@ -4,6 +4,7 @@ import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumptio
 import { tickWeather } from './systems/weather';
 import { progressConditions } from './systems/conditions';
 import { adjustMorale } from './systems/morale';
+import { applyHolidays } from './systems/holidays';
 import { tickOxen } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
 import { makeRng, type Rng } from './rng';
@@ -162,6 +163,7 @@ const DAILY_STEPS: TickStep[] = [
   tickOxen,
   tickWagon,
   adjustMorale,
+  (s) => applyHolidays(s),
   applyTravel,
   fireEvent,        // <-- new step between travel and fire
   attemptFire,

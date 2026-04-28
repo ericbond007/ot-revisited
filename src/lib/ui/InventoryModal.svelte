@@ -4,7 +4,9 @@
   import { ICON } from '$lib/data/icon-dictionary';
   import ItemTooltip from './ItemTooltip.svelte';
 
-  let { state, onclose }: { state: GameState; onclose: () => void } = $props();
+  let { state, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
+  const qp = $derived(encodeURIComponent(slot));
+  const atLandmark = $derived(state.location.atLandmarkId !== null && state.location.atLandmarkId !== undefined);
 
   const CATEGORY_ORDER: ItemCategory[] = [
     'food',
@@ -115,6 +117,18 @@
                 {/snippet}
               </ItemTooltip>
               <span class="item-qty">×{e.qty}</span>
+              {#if atLandmark}
+                <form method="POST" action="?/discardItem&slot={qp}" class="discard">
+                  <input type="hidden" name="itemId" value={e.id} />
+                  <button type="submit" name="qty" value="1" class="drop-btn" title="Drop 1">−1</button>
+                  {#if e.qty > 1}
+                    <button type="submit" name="qty" value={Math.min(10, e.qty)} class="drop-btn" title="Drop {Math.min(10, e.qty)}">−{Math.min(10, e.qty)}</button>
+                  {/if}
+                  {#if e.qty > 10}
+                    <button type="submit" name="qty" value={e.qty} class="drop-btn" title="Drop all {e.qty}">all</button>
+                  {/if}
+                </form>
+              {/if}
             </div>
           {/each}
         </div>
@@ -230,6 +244,34 @@
   .item-qty {
     font-weight: 700;
     color: var(--c-rust);
+  }
+
+  /* "Lighten the wagon" controls — visible only at landmarks (#179).
+     Compact ghost buttons; one form per row, each submit-button carries
+     its own qty value so the player drops 1 / 10 / all in a single click
+     without per-row JS state. */
+  .discard {
+    display: inline-flex;
+    gap: 3px;
+    margin-left: 6px;
+  }
+  .drop-btn {
+    background: transparent;
+    border: 1px solid rgba(138, 90, 42, 0.45);
+    color: var(--c-wood);
+    font-size: 0.7em;
+    padding: 1px 5px;
+    border-radius: 2px;
+    cursor: pointer;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    font-weight: normal;
+  }
+  .drop-btn:hover {
+    background: rgba(232, 90, 74, 0.18);
+    color: var(--c-paper);
+    border-color: var(--c-blood, #8a2020);
   }
 
   .empty {

@@ -16,6 +16,7 @@ import { applySpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
+import { applyHolidays } from './systems/holidays';
 import type { GameEvent } from './content/events';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickText } from './content/text-pools';
@@ -55,6 +56,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = tickOxen(s, rng);
   s = tickWagon(s, rng);
   s = adjustMorale(s, rng);
+  s = applyHolidays(s);
 
   // Snapshot which landmark we'd already passed before today's travel —
   // used below to detect a fresh arrival.

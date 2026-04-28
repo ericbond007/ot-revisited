@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-27 (post-#89). 31 open.
+As of 2026-04-27 (post-#89). 29 open.
 
 ## New mechanics
 
@@ -8,8 +8,6 @@ As of 2026-04-27 (post-#89). 31 open.
 | ---- | ----------------------------------------------------------------- |
 | #175 | California leg — Gold Rush headline unlocks alternate route       |
 | #176 | Wagon trains — join 20-50 caravan for safety bonus                |
-| #178 | Independence Day — July 4 celebration morale bump                 |
-| #179 | Lightening the wagon — discard at landmarks for ox-fatigue cut    |
 | #180 | Year-sensitive dialogue — 1849+ California talk flavor            |
 
 ## More animals
@@ -67,6 +65,8 @@ As of 2026-04-27 (post-#89). 31 open.
 
 ## Recently shipped
 
+- **#179** Lightening the wagon — `discardItem` server action gated to `state.location.atLandmarkId` (period reality: lightening happened at the rocks and forts, not on the open trail). InventoryModal now renders three submit buttons per row when at a landmark — `−1`, `−min(10, qty)`, `all` — each with its own `name="qty" value=N` so the player picks the bulk in a single click without per-row JS state. Items removed from `state.inventory`; future ox-fatigue benefit comes through the existing weight-driven oxen system. Compact ghost-button styling so dense rows don't crowd. New `slot` prop on InventoryModal; callsite in `/play` updated.
+- **#178** Independence Day — once-per-year +6 morale bump on July 4. New `systems/holidays.ts` (`applyHolidays`) wired into both engine pipelines (`tickDay` + `tickDayPausable`); per-year flag `_july4Year` gates re-firing within the same year. Cap-respecting (no morale > 100), no-op when `state.completed`. 5 new tests; pattern extends naturally to Christmas / Thanksgiving (1863+) when wanted.
 - **#177** Letters from home — rare delivery on first arrival at posts with `gossip` service (~30%, per-post dedup via `flags._lettersDeliveredAt`, per-letter dedup via `flags._lettersRead`). 12 curated period letters (5 good / 3 mixed / 4 bad) — births, weddings, harvests, deaths, fires, mother begging the party home. Morale delta applied immediately. New `LetterModal.svelte` (parchment, IM Fell English serif, signed closing right-aligned, color-coded morale footnote) mounts off `flags._pendingLetter`; `?/ackLetter` clears it. Hooked into `runTravelLoop`'s post-arrival block alongside the existing whore-earnings / restock / gossip steps. 4 new tests; 678/678 green.
 - **#168** Party Card hover desaturated — added the missing `background: var(--c-panel)` override (was letting the global `button:hover` rust fill bleed through) and dropped the per-row `.party-row:hover` rust tint (rows aren't individually clickable; whole panel is one button, so row-level hover just stacked rust on top of the panel hover). Ill / dead row treatments preserved — those still convey state.
 - **#181** newspaper paper-styled modal — `applyNewspaper` now stages a `PaperBatch` on `flags._paperBatch` (postName + dateline + items[]), `NewspaperModal.svelte` mounts when the flag is present (same pattern as PostHuntModal / CampSummaryModal), `?/ackPaper` server action clears the flag on dismiss. Modal reuses `ParchmentBg` for the grain/age-stain layer; layout is intentionally plain (small-caps masthead, dashed-rule story dividers, IM Fell English serif) — Claude Design will rework when ready. `applyNewspaper` signature gained a `postName` param; tests + +page.server.ts updated.
