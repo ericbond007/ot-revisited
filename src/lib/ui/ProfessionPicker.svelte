@@ -2,6 +2,7 @@
   import type { ProfessionId } from '$lib/game/types';
   import Tooltip from './Tooltip.svelte';
   import { ICON } from '$lib/data/icon-dictionary';
+  import ProfessionIcon, { hasProfessionIcon } from './profession-icons/ProfessionIcon.svelte';
 
   interface Profession {
     id: string;
@@ -41,7 +42,11 @@
           class:selected
           onclick={() => (value = p.id as ProfessionId)}
         >
-          <span class="icon">{ICONS[p.id as keyof typeof ICONS] ?? '•'}</span>
+          {#if hasProfessionIcon(p.id)}
+            <ProfessionIcon id={p.id} size={32} title={p.name} className="icon-svg" />
+          {:else}
+            <span class="icon">{ICONS[p.id as keyof typeof ICONS] ?? '•'}</span>
+          {/if}
           <span class="label">
             {p.name}
             {#if p.femaleOnly}<span class="fem">♀</span>{/if}
