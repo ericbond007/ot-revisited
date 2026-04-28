@@ -22,6 +22,30 @@
   @media (min-width: 960px) { .scaler > .panel { transform: scale(2.4) } }
 </style>
 </head><body><div class="card"><div class="scaler">
+
+<!-- Profession icon symbols (subset matching this panel's roster). 24x24 viewBox. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="pi-banker" viewBox="0 0 24 24">
+    <rect x="3" y="5" width="18" height="9" fill="#f5e4b6" stroke="#2a1a08" stroke-width="1"/>
+    <text x="7" y="10.5" text-anchor="middle" font-family="serif" font-weight="700" font-size="2.6" fill="#2a1a08">$</text>
+    <text x="17" y="10.5" text-anchor="middle" font-family="serif" font-weight="700" font-size="2.6" fill="#2a1a08">$</text>
+    <ellipse cx="12" cy="15" rx="5.5" ry="1.5" fill="#c9a04a" stroke="#2a1a08" stroke-width="0.9"/>
+    <path d="M6.5 15 L6.5 17 Q6.5 18.4 12 18.4 Q17.5 18.4 17.5 17 L17.5 15" fill="#c9a04a" stroke="#2a1a08" stroke-width="0.9"/>
+    <path d="M6.5 17 L6.5 19 Q6.5 20.4 12 20.4 Q17.5 20.4 17.5 19 L17.5 17" fill="#c9a04a" stroke="#2a1a08" stroke-width="0.9"/>
+    <text x="12" y="19.9" text-anchor="middle" font-family="serif" font-weight="700" font-size="2.6" fill="#2a1a08">$</text>
+  </symbol>
+  <symbol id="pi-doctor" viewBox="0 0 24 24">
+    <path d="M4 4 L20 4 L20 15 Q20 18.5 12 21 Q4 18.5 4 15 Z" fill="#d8c8a0" stroke="#2a1a08" stroke-width="1.1"/>
+    <path d="M10 6.5 L14 6.5 L14 10.5 L18 10.5 L18 14 L14 14 L14 18 L10 18 L10 14 L6 14 L6 10.5 L10 10.5 Z" fill="#a83a18" stroke="#2a1a08" stroke-width="0.9"/>
+  </symbol>
+  <symbol id="pi-scout" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="8.5" fill="#e8d9b8" stroke="#2a1a08" stroke-width="1"/>
+    <path d="M12 4 L13.5 12 L12 20 L10.5 12 Z" fill="#a83a18" stroke="#2a1a08" stroke-width="0.7"/>
+    <path d="M4 12 L12 13.2 L20 12 L12 10.8 Z" fill="#d8c8a0" stroke="#2a1a08" stroke-width="0.7"/>
+    <circle cx="12" cy="12" r="0.9" fill="#2a1a08"/>
+  </symbol>
+</defs></svg>
+
 <div class="panel" style="background:#3d2817;border:2px solid #8a5a2a;border-radius:3px;padding:12px 14px 14px;color:#e8c89a;display:flex;flex-direction:column;gap:8px;width:300px;font-family:'IM Fell English',Georgia,serif">
 
   <!-- header w/ live counts + sparkline -->
@@ -48,7 +72,8 @@
     <div style="font-size:13px;line-height:1.25">
       <strong style="color:#f5e6c8">Ezra</strong>
       <span style="color:#c96a2a" title="Party leader">★</span>
-      <span style="color:#8a5a2a;font-size:11px;font-style:italic">banker</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:-2px;margin:0 2px 0 1px"><use href="#pi-banker"/></svg>
+      <span style="color:#c9a86a;font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.08em;text-transform:uppercase">Banker</span>
       <!-- HP bar with hatch ticks -->
       <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
         <svg width="14" height="11" viewBox="0 0 14 11" style="flex-shrink:0">
@@ -73,12 +98,11 @@
       <path d="M5 21 Q12 14 19 21" fill="#5a3a1a"/>
       <!-- bonnet -->
       <path d="M7 7 Q12 3 17 7 L17 9 Q12 6 7 9 Z" fill="#c96a2a"/>
-      <!-- doctor cross icon -->
-      <g transform="translate(18 2)"><rect x="-2" y="-0.7" width="4" height="1.4" fill="#e85a4a"/><rect x="-0.7" y="-2" width="1.4" height="4" fill="#e85a4a"/></g>
     </svg>
     <div style="font-size:13px;line-height:1.25">
       <strong style="color:#f5e6c8">Mary</strong>
-      <span style="color:#8a5a2a;font-size:11px;font-style:italic">doctor</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:-2px;margin:0 2px 0 1px"><use href="#pi-doctor"/></svg>
+      <span style="color:#c9a86a;font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.08em;text-transform:uppercase">Doctor</span>
       <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
         <svg width="14" height="11" viewBox="0 0 14 11" style="flex-shrink:0">
           <path d="M7 10 C2 6 1 3 4 2 C6 1 7 3 7 3 C7 3 8 1 10 2 C13 3 12 6 7 10 Z" fill="#8bb96a" stroke="#3a1a08" stroke-width="0.6"/>
@@ -102,10 +126,11 @@
       <!-- fever droplets -->
       <ellipse cx="8" cy="6" rx="0.8" ry="1.4" fill="#4a8bc9" class="drip" style="animation-delay:0s"/>
       <ellipse cx="16" cy="6" rx="0.8" ry="1.4" fill="#4a8bc9" class="drip" style="animation-delay:0.6s"/>
+      <!-- no profession badge: child has no trade -->
     </svg>
     <div style="font-size:13px;line-height:1.25">
       <strong style="color:#f5e6c8">Sarah</strong>
-      <span style="color:#8a5a2a;font-size:11px;font-style:italic">child</span>
+      <span style="color:#c9a86a;font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.08em;text-transform:uppercase">Child</span>
       <span style="color:#e85a4a;font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.08em;margin-left:4px">FEVER</span>
       <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
         <svg width="14" height="11" viewBox="0 0 14 11" style="flex-shrink:0;animation:hpPulse 1.4s ease-in-out infinite">
@@ -130,7 +155,8 @@
     </svg>
     <div style="font-size:13px;line-height:1.25;color:#8a5a2a">
       <strong style="text-decoration:line-through;color:#8a5a2a">Amos</strong>
-      <span style="font-size:11px;font-style:italic">scout</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:-2px;margin:0 2px 0 1px;opacity:0.55"><use href="#pi-scout"/></svg>
+      <span style="font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.08em;text-transform:uppercase;color:#6a4a2a">Scout</span>
       <div style="font-size:10px;font-family:'Special Elite',monospace;letter-spacing:0.05em;margin-top:2px;color:#8a5a2a">✝ day 41 · cholera</div>
     </div>
   </div>
