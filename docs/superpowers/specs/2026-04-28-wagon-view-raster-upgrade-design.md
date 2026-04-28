@@ -77,7 +77,7 @@ A shared **negative prompt** is applied to every tile:
 
 > *"blurry, low quality, modern, photograph, deformed, watermark, text, signature, people, characters, wagon, oxen, ui, hud"*
 
-**Alpha handling.** Far/mid/near layers need transparency so sky, sun, and underlying parallax show through. SDXL doesn't natively output alpha. The pragmatic Phase 1 approach: each layer's tile is sized to its visible band only (heights given in the inventory table), generated against a flat magenta or sky-blue key color, then alpha is recovered either with ComfyUI's `LayerDiffusion` custom node (cleanest) or with a post-process `rembg` pass. The implementation plan picks one of these and pins it. Ground is fully opaque so the question doesn't apply.
+**Alpha handling.** Far/mid/near layers need transparency so sky, sun, and underlying parallax show through. SDXL doesn't natively output alpha. Phase 1 uses **`rembg`** as a post-process: SDXL generates each tile against a flat sky-blue background, then `rembg` (the `u2net` model) produces an alpha-masked WebP. This is rembg's sweet spot — painterly silhouettes against a clean colored backdrop, no fine fur/hair, no ambiguous foreground/background separation. Setup is `pip install rembg`; cost is ~1 s post-process per tile. If specific tiles fringe or look heuristic during visual soak, those tiles regenerate via LayerDiffusion in Phase 2 (which we set up there anyway for character work). Ground is fully opaque, so the question doesn't apply to that layer.
 
 **Why no LoRA in Phase 1:** the smoke-test prairie render landed the aesthetic with stock SDXL base. A LoRA tightens style consistency but isn't required to ship Phase 1. Add it in Phase 2 alongside the consistency stack.
 
@@ -142,6 +142,7 @@ Phase 2 raster upgrades the dynamic foreground using a consistency stack:
 
 1. Train a **wagon style LoRA** and an **ox style LoRA** from a curated reference set (15–25 images each, kohya_ss locally on the existing 8 GB VRAM, ~30 minutes per LoRA).
 2. Stand up the **consistency pipeline**: ControlNet OpenPose / DWPose for quadruped pose driving, IPAdapter for character lock, fixed seed per cycle.
+   - Alpha handling switches from rembg to **LayerDiffusion** in Phase 2 — character silhouettes need cleaner edges than `u2net` segmentation produces, especially for fur/horn outlines and painterly fringes. LayerDiffusion's RGBA-native diffusion handles those edges in a single pass.
 3. Generate **walk-cycle sprite sheets**: 8–12 frames per cycle, one cycle per ox count variant, packed into atlases. Same approach for wagon wheel rotation if the existing SVG wheel is replaced.
 4. **Replace `OxTeam` / `SingleOx` / wagon SVG components** with sprite-sheet animators that consume `gaitPhase` / `wheelAngle` and index the right frame.
 5. Generate **condition variants** (broken wagon, sick ox) as additional sprites.
