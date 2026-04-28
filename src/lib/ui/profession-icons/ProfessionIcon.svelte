@@ -10,20 +10,39 @@
   // and StatIcon. The HybridBadge component is shared with
   // landmark-icons (one instance, two callers).
   //
-  // FOUNDATION COMMIT — only 3 of 13 ports are landed (banker, doctor,
-  // hunter as templates). The mechanical 10-icon bulk port follows.
+  // All 13 profession icon ports are landed.
   import type { Component } from 'svelte';
   import type { ProfessionIconKind, ProfessionIconBadge } from './profession-icon-tokens';
   import HybridBadge from '$lib/ui/landmark-icons/_badge.svelte';
 
-  import Banker  from './banker.svelte';
-  import Doctor  from './doctor.svelte';
-  import Hunter  from './hunter.svelte';
+  import Banker       from './banker.svelte';
+  import Blacksmith   from './blacksmith.svelte';
+  import Carpenter    from './carpenter.svelte';
+  import Doctor       from './doctor.svelte';
+  import Farmer       from './farmer.svelte';
+  import Gunsmith     from './gunsmith.svelte';
+  import Hunter       from './hunter.svelte';
+  import IndianTrader from './indian_trader.svelte';
+  import Merchant     from './merchant.svelte';
+  import Preacher     from './preacher.svelte';
+  import Scout        from './scout.svelte';
+  import Teamster     from './teamster.svelte';
+  import Whore        from './whore.svelte';
 
   const REGISTRY: Partial<Record<ProfessionIconKind, Component>> = {
-    banker: Banker,
-    doctor: Doctor,
-    hunter: Hunter
+    banker:        Banker,
+    blacksmith:    Blacksmith,
+    carpenter:     Carpenter,
+    doctor:        Doctor,
+    farmer:        Farmer,
+    gunsmith:      Gunsmith,
+    hunter:        Hunter,
+    indian_trader: IndianTrader,
+    merchant:      Merchant,
+    preacher:      Preacher,
+    scout:         Scout,
+    teamster:      Teamster,
+    whore:         Whore
   };
 
   let { id, size = 24, badge = null, title, className = '' }: {
@@ -74,7 +93,17 @@
   // Mirrors the keys of REGISTRY above. Keep in sync when porting.
   const REGISTRY_KEYS = new Set<string>([
     'banker',
+    'blacksmith',
+    'carpenter',
     'doctor',
-    'hunter'
+    'farmer',
+    'gunsmith',
+    'hunter',
+    'indian_trader',
+    'merchant',
+    'preacher',
+    'scout',
+    'teamster',
+    'whore'
   ]);
 </script>
