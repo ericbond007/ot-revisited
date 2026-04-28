@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-28 (post-#89). 36 open.
+As of 2026-04-28 (post-#89). 34 open.
 
 ## New mechanics
 
@@ -33,10 +33,8 @@ As of 2026-04-28 (post-#89). 36 open.
 | #159 | WagonScene strip framing pass — viewBox crop + cloud anchoring   |
 | #167 | Trail-map cluster labels overlap at modal tier 1                 |
 | #169 | WagonScene paused state still reads as motion                    |
-| #163 | PartyPanel mini-stats vs top-bar duplication — keep-or-drop      |
 | #147 | Success/arrival view rework — richer than current score panel    |
 | #112 | Wagon modal visual redesign                                      |
-| #132 | Party view rework — denser / fullscreen                          |
 | #86  | Expand hover tooltips across all data points                     |
 | #102 | Pre-made vs custom starter kit choice                            |
 | #134 | Water keg/barrel glyph next to water amount                      |
@@ -72,6 +70,7 @@ As of 2026-04-28 (post-#89). 36 open.
 
 ## Recently shipped
 
+- **#132 + #163 + components 4d** PartyPanel wiring — replaced the 4 hand-drawn inline avatar-corner profession badges (doctor / scout / preacher / hunter only) with `<ProfessionIcon id={m.profession} size={5}>` so all 13 professions get bespoke watercolor art. Mini-stats footer now uses `<StatIcon kind="rations">` and `<StatIcon kind="pace">` (oxen stays on emoji — the ×N count is the focal cue). The panel was already substantially aligned with `docs/handoff/components/src/party-panel.html` from earlier work (sparkline header, avatars+rings, HP bars with hatch ticks, heart pulse, ill-shake, dead gravestone, morale ribbon, mini-stats existed); this commit closes the icon-wiring side. **#132** closes on the "denser" interpretation; the bundle's panel IS the rework. **#163** closes per the bundle's "keep mini-stats, intentional duplication" answer — comment in code already says so.
 - **#133** EventModal visual polish — `EventChoice.icon?: string` field added so any choice can carry a thematic action glyph (🐂, ⛺, ⚒️, etc.), not just item-gated ones. EventModal renders `req.icon` (item-gate, stronger signal) when present, falls back to `c.icon` (action flavor). The card-slide / choice-in animations and rust-bordered button styling were already in place from earlier work; this closes the infrastructure side. Content fill — populating `c.icon` across the event catalog — is logged as #186 follow-up.
 - **components/ step 4a** — ActionBar parity confirmed against `docs/handoff/components/`. The 5 sprite-symbol path data sets (`gi-travel`, `gi-rest`, `gi-hunt`, `gi-visit`, `gi-ford`) are byte-identical to the bundle; restored the inline section comments the original port stripped.
 - **profession-icons** — handoff bundle's 13 watercolor profession glyphs ported (10 mechanical via Sonnet subagent + 3 worked-port templates: doctor, banker, hunter). New `src/lib/ui/profession-icons/` module mirrors landmark-icons / stat-icons shape: `LI` palette, `ProfessionIconKind` union, dispatcher with optional `badge` prop (warm/cool/gold) reusing the `_badge.svelte` HybridBadge from landmark-icons, `hasProfessionIcon()` guard. `ProfessionPicker.svelte` (new-game grid) wired — bespoke 32px SVGs replace the emoji glyphs. PartyPanel avatar corner + PartyMemberModal hero deferred to step 4d's PartyPanel rebuild (would be touched twice otherwise). `tests/profession-icons-port.test.ts` element-count parity (13 of 13). Strips Svelte `<script>` blocks before counting (Hunter's port comment mentions `<g>` literally — would inflate counts otherwise).
