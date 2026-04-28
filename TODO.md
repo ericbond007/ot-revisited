@@ -8,7 +8,6 @@ As of 2026-04-27 (post-#89). 31 open.
 | ---- | ----------------------------------------------------------------- |
 | #175 | California leg — Gold Rush headline unlocks alternate route       |
 | #176 | Wagon trains — join 20-50 caravan for safety bonus                |
-| #177 | Letters from home — rare fort event, morale shifts by content     |
 | #178 | Independence Day — July 4 celebration morale bump                 |
 | #179 | Lightening the wagon — discard at landmarks for ox-fatigue cut    |
 | #180 | Year-sensitive dialogue — 1849+ California talk flavor            |
@@ -60,6 +59,7 @@ As of 2026-04-27 (post-#89). 31 open.
 | #    |                                                            |
 | ---- | ---------------------------------------------------------- |
 | #182 | Hunt yields audit — tallow / animal fat as byproduct?      |
+| #183 | AI art / animation pipeline — eval libs + image-gen APIs   |
 
 ## Known design-incoming
 
@@ -67,6 +67,7 @@ As of 2026-04-27 (post-#89). 31 open.
 
 ## Recently shipped
 
+- **#177** Letters from home — rare delivery on first arrival at posts with `gossip` service (~30%, per-post dedup via `flags._lettersDeliveredAt`, per-letter dedup via `flags._lettersRead`). 12 curated period letters (5 good / 3 mixed / 4 bad) — births, weddings, harvests, deaths, fires, mother begging the party home. Morale delta applied immediately. New `LetterModal.svelte` (parchment, IM Fell English serif, signed closing right-aligned, color-coded morale footnote) mounts off `flags._pendingLetter`; `?/ackLetter` clears it. Hooked into `runTravelLoop`'s post-arrival block alongside the existing whore-earnings / restock / gossip steps. 4 new tests; 678/678 green.
 - **#168** Party Card hover desaturated — added the missing `background: var(--c-panel)` override (was letting the global `button:hover` rust fill bleed through) and dropped the per-row `.party-row:hover` rust tint (rows aren't individually clickable; whole panel is one button, so row-level hover just stacked rust on top of the panel hover). Ill / dead row treatments preserved — those still convey state.
 - **#181** newspaper paper-styled modal — `applyNewspaper` now stages a `PaperBatch` on `flags._paperBatch` (postName + dateline + items[]), `NewspaperModal.svelte` mounts when the flag is present (same pattern as PostHuntModal / CampSummaryModal), `?/ackPaper` server action clears the flag on dismiss. Modal reuses `ParchmentBg` for the grain/age-stain layer; layout is intentionally plain (small-caps masthead, dashed-rule story dividers, IM Fell English serif) — Claude Design will rework when ready. `applyNewspaper` signature gained a `postName` param; tests + +page.server.ts updated.
 - **historical pass** — period-flavor items + luxury haul + newspapers (#150 follow-up). Items: cornmeal, salt_pork, saleratus, lard, tar_bucket, vinegar; luxury haul (anvil 800 / china_tea_set 400 / feather_mattress 300); existing `sugar` re-flavored as period loaf form (loaf_sugar folded in rather than duplicated). New `news-headlines.ts` (35 curated headlines spanning 1846-1859, year+month gated), `generateNewspaper`/`applyNewspaper` interleave 2-4 historical headlines with 1-2 gossip items into the existing addNews pipeline, headline ids tracked in `flags._headlinesRead` to avoid re-serves. Headline effects use plain descriptors (`{kind: 'california_unlock'}` / `{kind: 'tribe_shift', ...}`) resolved at apply time — keeps `news-headlines.ts` a pure-data file (no circular import on systems/news.ts) and devalue-safe. Gold Rush headline flips `_californiaUnlocked` for the future California leg (#175). Treaty of Ft. Laramie 1851 nudges Sioux/Cheyenne attitude up; Grattan Affair 1854 + Harney 1855 nudge Sioux down; Whitman Massacre 1847 nudges Cayuse down. New `townNewspaper` server action ($1) + TownStage "Read the newspaper" service card gated on the same `gossip` service flag (clerks who chat have papers). 4 new regression tests covering: 2-4 headline counts, no-repeat read tracking, Gold Rush flag flip, JSON round-trip safety.

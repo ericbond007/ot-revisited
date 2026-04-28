@@ -19,6 +19,7 @@
   import FordSummaryModal from '$lib/ui/FordSummaryModal.svelte';
   import TradeReceiptModal from '$lib/ui/TradeReceiptModal.svelte';
   import NewspaperModal from '$lib/ui/NewspaperModal.svelte';
+  import LetterModal from '$lib/ui/LetterModal.svelte';
   import WagonModal from '$lib/ui/WagonModal.svelte';
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
   import PartyModal from '$lib/ui/PartyModal.svelte';
@@ -36,6 +37,7 @@
   import type { FordResult } from '$lib/game/actions/ford';
   import type { TradeResult } from '$lib/game/actions/trade';
   import type { PaperBatch } from '$lib/game/systems/news';
+  import type { PendingLetter } from '$lib/game/systems/letters';
 
   let { data, form } = $props();
   const gs = $derived<GameState>(form?.state ?? data.state);
@@ -45,6 +47,7 @@
   const fordResult = $derived((gs.flags._fordResult as unknown as FordResult | undefined));
   const tradeResult = $derived((gs.flags._tradeResult as unknown as TradeResult | undefined));
   const paperBatch = $derived((gs.flags._paperBatch as unknown as PaperBatch | undefined));
+  const pendingLetter = $derived((gs.flags._pendingLetter as unknown as PendingLetter | undefined));
   const qp = $derived(encodeURIComponent(data.slot));
   const paceAction = $derived(`?/setPace&slot=${qp}`);
   const rationsAction = $derived(`?/setRations&slot=${qp}`);
@@ -305,6 +308,10 @@
 
 {#if paperBatch && !gs.completed}
   <NewspaperModal batch={paperBatch} slot={data.slot} />
+{/if}
+
+{#if pendingLetter && !gs.completed}
+  <LetterModal letter={pendingLetter} slot={data.slot} />
 {/if}
 
 {#if showFord && !gs.completed}

@@ -9,6 +9,7 @@ import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-even
 import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
 import { addNews, generatePostGossip, generateNewspaper, applyNewspaper } from '$lib/game/systems/news';
+import { maybeDeliverLetter } from '$lib/game/systems/letters';
 import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide } from '$lib/game/systems/town-services';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
@@ -98,6 +99,10 @@ async function runTravelLoop(
           const item = generatePostGossip(state, newsRng, here.name);
           if (item) state = addNews(state, item);
         }
+        // Letter from home — rare delivery on first arrival at a post
+        // with mail service. No-op on repeat visits.
+        const letterRng = makeRng(`${state.seed}:letter:${here.id}:${state.day}`);
+        state = maybeDeliverLetter(state, here, letterRng);
       }
       break;
     }
@@ -258,6 +263,17 @@ export const actions: Actions = {
     const state = await loadState(locals, slot);
     const flags = { ...state.flags };
     delete (flags as Record<string, unknown>)._paperBatch;
+    const next = { ...state, flags };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
+  ackLetter: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const state = await loadState(locals, slot);
+    const flags = { ...state.flags };
+    delete (flags as Record<string, unknown>)._pendingLetter;
     const next = { ...state, flags };
     await locals.repo.save(locals.deviceId, slot, next);
     return { state: next };
