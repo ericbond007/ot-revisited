@@ -3,6 +3,7 @@
   import { getLandmark } from '$lib/game/content/landmarks';
   import CardRadio from './CardRadio.svelte';
   import NumberStepper from './NumberStepper.svelte';
+  import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
   import { ICON } from '$lib/data/icon-dictionary';
 
   let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
@@ -49,7 +50,12 @@
 
 <div class="modal-backdrop">
   <div class="panel modal-body">
-    <h2 class="modal-title river-title">{riverName}</h2>
+    <div class="river-header">
+      {#if hereId && hasLandmarkIcon(hereId)}
+        <LandmarkIcon id={hereId} size={48} />
+      {/if}
+      <h2 class="modal-title river-title">{riverName}</h2>
+    </div>
     <p style="color: var(--c-wood);">
       Depth {river.depthFt.toFixed(1)} ft · Current {river.currentMph} mph · Ferry ${river.ferryPrice}
     </p>
@@ -78,6 +84,12 @@
 <style>
   /* River-blue title accent — overrides the global .modal-title rust. */
   .river-title { color: var(--c-river); }
+  .river-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+  }
+  .river-header .modal-title { margin: 0; }
 
   .modal-backdrop {
     position: fixed;

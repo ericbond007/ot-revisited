@@ -3,6 +3,7 @@
   import type { Landmark } from '$lib/game/content/landmarks';
   import { isLandmarkAbandoned } from '$lib/game/content/landmarks';
   import LandmarkArt, { hasLandmarkArt } from '$lib/ui/landmark-art/LandmarkArt.svelte';
+  import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
 
   let { state, landmark }: { state: GameState; landmark: Landmark } = $props();
 
@@ -59,7 +60,11 @@
 
 <div class="stage panel stage-{landmark.kind}">
   <div class="hero">
-    <div class="hero-icon">{icon}</div>
+    {#if !abandoned && hasLandmarkIcon(landmark.id)}
+      <LandmarkIcon id={landmark.id} size={64} className="hero-icon-svg" />
+    {:else}
+      <div class="hero-icon">{icon}</div>
+    {/if}
     <div class="hero-text">
       <div class="kind">{kindLabel}</div>
       <h2 class="name">{landmark.name}</h2>
