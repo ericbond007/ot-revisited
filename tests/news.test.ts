@@ -161,7 +161,7 @@ describe('newspaper generator', () => {
   it('marks read headlines so the same paper is not served twice', () => {
     let s = gameInYear(1849);
     const { items: items1, headlineIdsUsed: ids1 } = generateNewspaper(s, makeRng('p-a'), 'Fort Laramie');
-    s = applyNewspaper(s, items1, ids1);
+    s = applyNewspaper(s, items1, ids1, 'Fort Laramie');
     const readSet = (s.flags._headlinesRead as unknown as string[]) ?? [];
     for (const id of ids1) expect(readSet).toContain(id);
 
@@ -178,7 +178,7 @@ describe('newspaper generator', () => {
     let flipped = false;
     for (let i = 0; i < 10 && !flipped; i++) {
       const { items, headlineIdsUsed } = generateNewspaper(s, makeRng(`gold-${i}`), 'Fort Laramie');
-      s = applyNewspaper(s, items, headlineIdsUsed);
+      s = applyNewspaper(s, items, headlineIdsUsed, 'Fort Laramie');
       if (s.flags._californiaUnlocked) flipped = true;
     }
     expect(flipped).toBe(true);
@@ -187,7 +187,7 @@ describe('newspaper generator', () => {
   it('newspaper batch is JSON-serializable (no function refs survive)', () => {
     let s = gameInYear(1854);
     const { items, headlineIdsUsed } = generateNewspaper(s, makeRng('roundtrip'), 'Fort Laramie');
-    s = applyNewspaper(s, items, headlineIdsUsed);
+    s = applyNewspaper(s, items, headlineIdsUsed, 'Fort Laramie');
     // Whole flags blob must round-trip cleanly — devalue would throw on
     // a function. The Grattan Affair headline carries an effect; this
     // confirms the dispatcher fired it AND scrubbed the function.

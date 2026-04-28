@@ -252,6 +252,17 @@ export const actions: Actions = {
     return { state: next };
   },
 
+  ackPaper: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const state = await loadState(locals, slot);
+    const flags = { ...state.flags };
+    delete (flags as Record<string, unknown>)._paperBatch;
+    const next = { ...state, flags };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
   ford: async ({ url, request, locals }) => {
     const slot = url.searchParams.get('slot');
     if (!slot) throw error(400, 'slot required');
@@ -448,7 +459,7 @@ export const actions: Actions = {
         eventLog: [...state.eventLog, { day: state.day, text: `Bought a paper at ${here.name}, but the news was old.` }]
       };
     } else {
-      state = applyNewspaper(state, items, headlineIdsUsed);
+      state = applyNewspaper(state, items, headlineIdsUsed, here.name);
     }
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };

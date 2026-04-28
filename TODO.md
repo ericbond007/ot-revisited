@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-27 (post-#89). 33 open.
+As of 2026-04-27 (post-#89). 32 open.
 
 ## New mechanics
 
@@ -49,7 +49,6 @@ As of 2026-04-27 (post-#89). 33 open.
 | #171 | Laurel Hill landmark art — only gap from #89 batch               |
 | #172 | Travel mileage calibration second pass — Whitman/Barlow inserts  |
 | #173 | TownStage hero art — hoist LandmarkArt into Visit view (Phase B) |
-| #181 | Newspaper paper-styled modal — parchment + period typography     |
 
 ## For Claude Design or another SVG animation generator
 
@@ -69,6 +68,7 @@ As of 2026-04-27 (post-#89). 33 open.
 
 ## Recently shipped
 
+- **#181** newspaper paper-styled modal — `applyNewspaper` now stages a `PaperBatch` on `flags._paperBatch` (postName + dateline + items[]), `NewspaperModal.svelte` mounts when the flag is present (same pattern as PostHuntModal / CampSummaryModal), `?/ackPaper` server action clears the flag on dismiss. Modal reuses `ParchmentBg` for the grain/age-stain layer; layout is intentionally plain (small-caps masthead, dashed-rule story dividers, IM Fell English serif) — Claude Design will rework when ready. `applyNewspaper` signature gained a `postName` param; tests + +page.server.ts updated.
 - **historical pass** — period-flavor items + luxury haul + newspapers (#150 follow-up). Items: cornmeal, salt_pork, saleratus, lard, tar_bucket, vinegar; luxury haul (anvil 800 / china_tea_set 400 / feather_mattress 300); existing `sugar` re-flavored as period loaf form (loaf_sugar folded in rather than duplicated). New `news-headlines.ts` (35 curated headlines spanning 1846-1859, year+month gated), `generateNewspaper`/`applyNewspaper` interleave 2-4 historical headlines with 1-2 gossip items into the existing addNews pipeline, headline ids tracked in `flags._headlinesRead` to avoid re-serves. Headline effects use plain descriptors (`{kind: 'california_unlock'}` / `{kind: 'tribe_shift', ...}`) resolved at apply time — keeps `news-headlines.ts` a pure-data file (no circular import on systems/news.ts) and devalue-safe. Gold Rush headline flips `_californiaUnlocked` for the future California leg (#175). Treaty of Ft. Laramie 1851 nudges Sioux/Cheyenne attitude up; Grattan Affair 1854 + Harney 1855 nudge Sioux down; Whitman Massacre 1847 nudges Cayuse down. New `townNewspaper` server action ($1) + TownStage "Read the newspaper" service card gated on the same `gossip` service flag (clerks who chat have papers). 4 new regression tests covering: 2-4 headline counts, no-repeat read tracking, Gold Rush flag flip, JSON round-trip safety.
 - **#89** rich landmark display — Claude Design handoff ported (39 of 38 plotted landmarks have bespoke SVG art; only `laurel_hill` lacks dedicated art and is logged as #171). New `src/lib/ui/landmark-art/` module: `LandmarkArtFrame.svelte` chrome, `LandmarkArt.svelte` id-dispatcher, 39 per-landmark `<g>`-only Svelte components, plus `landmark-art-tokens.ts` (`LMK` palette + `LandmarkId` union). `LandmarkStage.svelte`'s placeholder slot now renders `<LandmarkArt id={landmark.id} {abandoned} />` gated by `hasLandmarkArt()`. Three id remappings (`north-platte-east → north_platte_1`, `north-platte-west → north_platte_2`, `sweetwater-ford → sweetwater_1`). Two new LANDMARKS added: `whitman_mission` (mile 1885, `abandonedAfterYear: 1847`) and `barlow_road` (mile 2013). `/dev/landmark-art` harness for visual diff against the bundled atlas + per-region showcase HTMLs.
 - **#158** ox + mule team visual revisit — full handoff port to `src/lib/ui/wagon/ox-team/` (Ox/Leg/OxHead/OxYoke/OxSingleYoke/OxPole/OxChain sub-components via Svelte snippets), `gait="walking"|"stopped"` prop with explicit at-rest pose, per-ox biological variance (deterministic phase ±0.03 + amplitude 0.88–1.12× hashed from pair-idx + near/far). Tokens refresh: OX_INK→#3a1a08, new OX_RED_LT/OX_WHITE_SH/POLE_WOOD; PAIR_PHASE_OFFSET 0.13→0.05; PAIR_SPACE 22→24. Architectural shift: OxTeam owns the shared `teamBob` over the entire hitched mass; WagonScene mirrors it on the wagon translate so they ride together (was independent double-frequency bounce that read as trotting). Mule fallback preserved.

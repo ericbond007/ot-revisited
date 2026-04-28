@@ -327,12 +327,25 @@ export function generateNewspaper(
   return { items, headlineIdsUsed: picked.map((h) => h.id) };
 }
 
-/** Apply a generated newspaper batch — fires each item via addNews and
- *  records the read headline ids. */
+/** A single rendered row in the newspaper modal — the items the player
+ *  just bought to read. Headlines first, gossip woven in. Persisted on
+ *  flags._paperBatch and cleared by the ?/ackPaper action when the
+ *  player dismisses the modal. */
+export interface PaperBatch {
+  postName: string;
+  /** "June 1849" / etc. — the masthead date. */
+  dateline: string;
+  items: Array<{ text: string; source: string }>;
+}
+
+/** Apply a generated newspaper batch — fires each item via addNews,
+ *  records the read headline ids, and stages a PaperBatch on
+ *  flags._paperBatch for the modal to pick up. */
 export function applyNewspaper(
   state: GameState,
   items: NewsItem[],
-  headlineIdsUsed: string[]
+  headlineIdsUsed: string[],
+  postName: string
 ): GameState {
   let next = state;
   for (const item of items) next = addNews(next, item);
@@ -340,6 +353,21 @@ export function applyNewspaper(
     const set = readHeadlinesRead(next);
     for (const id of headlineIdsUsed) set.add(id);
     next = writeHeadlinesRead(next, set);
+  }
+  if (items.length > 0) {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const batch: PaperBatch = {
+      postName,
+      dateline: `${monthNames[next.date.month - 1]} ${next.date.year}`,
+      items: items.map((i) => ({ text: i.text, source: i.source }))
+    };
+    next = {
+      ...next,
+      flags: { ...next.flags, _paperBatch: batch as unknown as Record<string, unknown> }
+    };
   }
   return next;
 }
