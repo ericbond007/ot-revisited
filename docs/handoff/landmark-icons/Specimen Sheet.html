@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Landmark Icons — Specimen Sheet (all 38)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  body { background: #2a1a10; margin: 0; padding: 32px; font-family: var(--f-body); color: var(--c-tan); }
+  .sheet { max-width: 1280px; margin: 0 auto; }
+  h1 { font-family: var(--f-display); font-size: 36px; color: var(--c-tan-bright); margin: 0 0 4px; }
+  .sub { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--c-wood); margin-bottom: 22px; }
+  .blurb { font-size: 13px; line-height: 1.6; max-width: 920px; margin: 0 0 24px; }
+  .blurb b { color: var(--c-tan-bright); }
+  .blurb code { font-family: var(--f-mono); font-size: 11px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 2px; color: var(--c-rust); }
+
+  .section-head { font-family: var(--f-display); font-size: 22px; color: var(--c-tan-bright); margin: 28px 0 4px; }
+  .section-meta { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--c-wood); text-transform: uppercase; margin-bottom: 14px; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .card { background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 3px; padding: 12px; }
+  .card .name { font-family: var(--f-display); font-size: 14px; color: var(--c-tan-bright); margin-bottom: 1px; line-height: 1.2; }
+  .card .id { font-family: var(--f-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--c-rust); margin-bottom: 10px; }
+  .specimens { display: flex; gap: 6px; align-items: flex-end; }
+  .spec { background: #e8d9b8; border-radius: 2px; padding: 6px 4px 3px; display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; }
+  .spec .px { font-family: var(--f-mono); font-size: 8px; color: #6a4a1a; letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Landmark Icons · Full Specimen Sheet</h1>
+  <div class="sub">All 38 landmarks · 24 / 32 / 48 px</div>
+  <p class="blurb">
+    All 38 watercolor landmark icons rendered through the unified <code>LandmarkIcon</code> dispatcher (<code>id → component</code>). Stop landmarks render in a circular hybrid badge; pass-bys render as bare silhouettes; bookends use medallion treatment. Reconciled to <code>landmarks.ts</code> exactly.
+  </p>
+
+  <div class="section-head">Trading posts</div>
+  <div class="section-meta">9 stops · warm + cool + gold tone</div>
+  <div class="grid" id="g-trading"></div>
+
+  <div class="section-head">River fords</div>
+  <div class="section-meta">8 stops · cool tone</div>
+  <div class="grid" id="g-rivers"></div>
+
+  <div class="section-head">Arrival landmarks</div>
+  <div class="section-meta">11 stops · warm tone · natural features</div>
+  <div class="grid" id="g-arrival"></div>
+
+  <div class="section-head">Pass-bys</div>
+  <div class="section-meta">8 visual-only · bare silhouette</div>
+  <div class="grid" id="g-passbys"></div>
+
+  <div class="section-head">Start &amp; End</div>
+  <div class="section-meta">2 bookends · medallion treatment</div>
+  <div class="grid" id="g-bookends"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="src/icon-base.jsx"></script>
+<script type="text/babel" src="src/icons-trading-posts.jsx"></script>
+<script type="text/babel" src="src/icons-rivers.jsx"></script>
+<script type="text/babel" src="src/icons-arrival.jsx"></script>
+<script type="text/babel" src="src/icons-passbys.jsx"></script>
+<script type="text/babel" src="src/LandmarkIcon.jsx"></script>
+
+<script type="text/babel">
+  function Card({ id, name, bare }) {
+    return (
+      <div className="card">
+        <div className="name">{name}</div>
+        <div className="id">{id}</div>
+        <div className="specimens">
+          <div className="spec"><window.LandmarkIcon id={id} size={24} /><div className="px">24</div></div>
+          <div className="spec"><window.LandmarkIcon id={id} size={32} /><div className="px">32</div></div>
+          <div className="spec"><window.LandmarkIcon id={id} size={48} /><div className="px">48</div></div>
+        </div>
+      </div>
+    );
+  }
+
+  const TRADING = [
+    ["hollenberg_ranch","Hollenberg Ranch"],["fort_kearny","Fort Kearny"],["robidoux_post","Robidoux Post"],
+    ["fort_laramie","Fort Laramie"],["fort_bridger","Fort Bridger"],["fort_hall","Fort Hall"],
+    ["fort_boise","Fort Boise"],["fort_walla_walla","Fort Walla Walla"],["the_dalles","The Dalles"],
+  ];
+  const RIVERS = [
+    ["kansas_river","Kansas River"],["big_blue_river","Big Blue River"],["north_platte_east","N. Platte (east)"],
+    ["north_platte_west","N. Platte (west)"],["sweetwater_1","Sweetwater Ford"],["green_river","Green River"],
+    ["bear_river","Bear River"],["three_island_crossing","Three Island Crossing"],
+  ];
+  const ARRIVAL = [
+    ["alcove_spring","Alcove Spring"],["ash_hollow","Ash Hollow"],["chimney_rock","Chimney Rock"],
+    ["scotts_bluff","Scotts Bluff"],["register_cliff","Register Cliff"],["independence_rock","Independence Rock"],
+    ["devils_gate","Devil's Gate"],["south_pass","South Pass"],["pacific_springs","Pacific Springs"],
+    ["soda_springs","Soda Springs"],["laurel_hill","Laurel Hill"],
+  ];
+  const PASSBYS = [
+    ["courthouse_jail_rocks","Courthouse & Jail Rocks"],["guernsey_ruts","Guernsey Ruts"],
+    ["willow_springs","Willow Springs"],["ice_slough","Ice Slough"],["parting_of_the_ways","Parting of the Ways"],
+    ["farewell_bend","Farewell Bend"],["blue_mountains","Blue Mountains"],["grande_ronde_valley","Grande Ronde Valley"],
+  ];
+  const BOOKENDS = [
+    ["independence_mo","Independence, MO (start)"],["oregon_city","Oregon City (end)"],
+  ];
+
+  const mount = (el, list) => ReactDOM.createRoot(el).render(<>{list.map(([id,name])=><Card key={id} id={id} name={name} />)}</>);
+  mount(document.getElementById("g-trading"), TRADING);
+  mount(document.getElementById("g-rivers"), RIVERS);
+  mount(document.getElementById("g-arrival"), ARRIVAL);
+  mount(document.getElementById("g-passbys"), PASSBYS);
+  mount(document.getElementById("g-bookends"), BOOKENDS);
+</script>
+</body>
+</html>
