@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OT.IO — Profession Icons</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+  body { background: var(--c-bg); color: var(--c-tan); padding: 48px 32px 80px; max-width: 1180px; margin: 0 auto; }
+  header { border-bottom: 1px solid var(--c-border); padding-bottom: 20px; margin-bottom: 32px; display:flex; align-items:baseline; gap:24px; flex-wrap:wrap; }
+  h1 { color: var(--c-rust); margin: 0; font-size: 36px; }
+  header .meta { font-family: var(--f-mono); color: var(--c-wood); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+  h2 { color: var(--c-rust); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; margin: 32px 0 14px; }
+
+  /* Hero row — large, on parchment, with badge */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+  }
+  .hero {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 3px;
+    padding: 16px 12px 12px;
+    text-align: center;
+  }
+  .hero .icon-frame {
+    background: var(--c-bg-raised);
+    border: 1px dashed var(--c-border);
+    border-radius: 50%;
+    width: 96px; height: 96px;
+    margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hero .name { color: var(--c-tan-bright); font-size: 13px; letter-spacing: 0.04em; }
+  .hero .id   { color: var(--c-wood); font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.1em; margin-top: 3px; text-transform: uppercase; }
+
+  /* Sizing strip — 12 / 16 / 24 / 32 / 48 / 64 across */
+  .size-grid {
+    display: grid;
+    grid-template-columns: 110px repeat(6, 1fr);
+    gap: 10px 12px;
+    align-items: center;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 3px;
+    padding: 14px 18px;
+  }
+  .size-grid .head { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--c-wood); text-transform: uppercase; padding-bottom: 6px; border-bottom: 1px solid var(--c-border); }
+  .size-grid .row-label { color: var(--c-tan-bright); font-size: 12px; letter-spacing: 0.06em; }
+  .size-grid .cell { display: flex; justify-content: center; align-items: center; }
+
+  /* Tone variants row */
+  .tone-row { display: flex; gap: 24px; flex-wrap: wrap; }
+  .tone-card { background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 3px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+  .tone-card .swatch { width:48px; height:48px; display:flex; align-items:center; justify-content:center; }
+  .tone-card .label { font-size: 11px; letter-spacing: 0.1em; color: var(--c-tan-bright); text-transform: uppercase; font-family: var(--f-mono); }
+  .tone-card .desc  { font-size: 10px; color: var(--c-wood); margin-top: 3px; }
+
+  /* In-context: party row mini */
+  .ctx-row {
+    background: #3d2817;
+    border: 2px solid #8a5a2a;
+    border-radius: 3px;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    max-width: 380px;
+    margin-bottom: 10px;
+  }
+  .ctx-row .name { color: #f5e6c8; font-family: 'IM Fell English', serif; font-size: 14px; }
+  .ctx-row .role { color: #c9a86a; font-family: 'Special Elite', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .legend { font-size: 11px; color: var(--c-wood); margin-top: 8px; line-height: 1.6; }
+  code { background: var(--c-bg-raised); color: var(--c-tan-bright); padding: 1px 5px; border-radius: 2px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Profession Icons</h1>
+  <div class="meta">13 ICONS · 24×24 VIEWBOX · OT.IO PARTY SYSTEM</div>
+</header>
+
+<p style="max-width:680px;line-height:1.55;color:var(--c-tan)">
+  Custom SVG icon set replacing the emoji glyphs in <code>ICON.professions</code>.
+  Drawn in the same vocabulary as the landmark icon set — line-on-parchment,
+  period-correct motifs, ink + earth + rust palette. Pair with <code>HybridBadge</code>
+  for parchment-circle treatment in pickers and modals; render bare for inline corner
+  badges on dark surfaces.
+</p>
+
+<h2>The Set — Hero View (48×48 with warm badge)</h2>
+<div class="hero-grid" id="hero-grid"></div>
+
+<h2>Size Reduction Test</h2>
+<div class="size-grid" id="size-grid">
+  <div class="head"></div>
+  <div class="head" style="text-align:center">12</div>
+  <div class="head" style="text-align:center">16</div>
+  <div class="head" style="text-align:center">24</div>
+  <div class="head" style="text-align:center">32</div>
+  <div class="head" style="text-align:center">48</div>
+  <div class="head" style="text-align:center">64</div>
+</div>
+<div class="legend">
+  Bare silhouette (no badge). The 12px size is the floor — used for the
+  party-panel avatar corner badge. Below 12px, simplify or drop the icon.
+</div>
+
+<h2>Badge Tones</h2>
+<div class="tone-row">
+  <div class="tone-card">
+    <div class="swatch" id="tone-warm"></div>
+    <div><div class="label">Warm</div><div class="desc">default — most professions</div></div>
+  </div>
+  <div class="tone-card">
+    <div class="swatch" id="tone-cool"></div>
+    <div><div class="label">Cool</div><div class="desc">trader / scout (river-adjacent)</div></div>
+  </div>
+  <div class="tone-card">
+    <div class="swatch" id="tone-gold"></div>
+    <div><div class="label">Gold</div><div class="desc">banker / merchant (money roles)</div></div>
+  </div>
+</div>
+
+<h2>In Context — Party Panel Rows</h2>
+<div id="ctx-rows"></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="src/icon-base.jsx"></script>
+<script type="text/babel" src="src/icons-professions.jsx"></script>
+
+<script type="text/babel">
+  const PROFESSIONS = [
+    { id: 'banker',         name: 'Banker',         badge: 'gold' },
+    { id: 'doctor',         name: 'Doctor',         badge: 'warm' },
+    { id: 'farmer',         name: 'Farmer',         badge: 'warm' },
+    { id: 'carpenter',      name: 'Carpenter',      badge: 'warm' },
+    { id: 'blacksmith',     name: 'Blacksmith',     badge: 'warm' },
+    { id: 'hunter',         name: 'Hunter',         badge: 'warm' },
+    { id: 'teamster',       name: 'Teamster',       badge: 'warm' },
+    { id: 'merchant',       name: 'Merchant',       badge: 'gold' },
+    { id: 'scout',          name: 'Scout',          badge: 'cool' },
+    { id: 'preacher',       name: 'Preacher',       badge: 'warm' },
+    { id: 'indian_trader',  name: 'Indian Trader',  badge: 'cool' },
+    { id: 'gunsmith',       name: 'Gunsmith',       badge: 'warm' },
+    { id: 'whore',          name: 'Whore',          badge: 'warm' },
+  ];
+
+  // Hero grid
+  const heroRoot = ReactDOM.createRoot(document.getElementById('hero-grid'));
+  heroRoot.render(
+    <>{PROFESSIONS.map(p => (
+      <div className="hero" key={p.id}>
+        <div className="icon-frame"><ProfessionIcon id={p.id} size={64} badge={p.badge}/></div>
+        <div className="name">{p.name}</div>
+        <div className="id">{p.id}</div>
+      </div>
+    ))}</>
+  );
+
+  // Size strip — append rows for each profession
+  const sizeGrid = document.getElementById('size-grid');
+  PROFESSIONS.forEach(p => {
+    const label = document.createElement('div');
+    label.className = 'row-label';
+    label.textContent = p.name;
+    sizeGrid.appendChild(label);
+    [12,16,24,32,48,64].forEach(sz => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      sizeGrid.appendChild(cell);
+      ReactDOM.createRoot(cell).render(<ProfessionIcon id={p.id} size={sz}/>);
+    });
+  });
+
+  // Tone swatches — banker exemplar
+  ['warm','cool','gold'].forEach(tone => {
+    const node = document.getElementById(`tone-${tone}`);
+    ReactDOM.createRoot(node).render(<ProfessionIcon id="banker" size={48} badge={tone}/>);
+  });
+
+  // In-context rows
+  const ctx = document.getElementById('ctx-rows');
+  ['banker','doctor','scout','preacher'].forEach(id => {
+    const p = PROFESSIONS.find(x => x.id === id);
+    const row = document.createElement('div');
+    row.className = 'ctx-row';
+    const slot = document.createElement('div');
+    slot.style.width = '32px'; slot.style.height = '32px';
+    row.appendChild(slot);
+    const text = document.createElement('div');
+    text.innerHTML = `<div class="name">Sample · ${p.name}</div><div class="role">${p.name}</div>`;
+    row.appendChild(text);
+    const hp = document.createElement('div');
+    hp.style.color = '#8bb96a'; hp.style.fontFamily = "'Special Elite', monospace"; hp.style.fontSize = '11px';
+    hp.textContent = '92';
+    row.appendChild(hp);
+    ctx.appendChild(row);
+    ReactDOM.createRoot(slot).render(<ProfessionIcon id={p.id} size={32} badge={p.badge}/>);
+  });
+</script>
+
+</body>
+</html>
