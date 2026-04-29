@@ -12,17 +12,20 @@ Layer = Literal["far", "mid", "near", "ground"]
 Terrain = Literal["prairie", "forest", "desert", "mountains", "river"]
 
 STYLE_SUFFIX = (
-    "hand-drawn cartoon illustration, painterly watercolor and ink, "
-    "late 90s adventure game background art, muted earth tones, "
-    "layered parallax depth, no people no animals no wagon, "
-    "isolated on flat sky-blue background"
+    "cinematic side-scrolling 2D game background, orthographic side view, "
+    "flat horizontal panorama band, no vanishing point, no perspective, "
+    "stylized cartoon adventure game art, soft painterly lighting, "
+    "atmospheric haze on distant elements, "
+    "isolated on flat sky-blue background, no people no animals no wagon"
 )
 
 NEGATIVE_PROMPT = (
-    "blurry, low quality, photograph, photorealistic, 3D render, CGI, "
+    "blurry low quality, photograph, photorealistic, 3D render, CGI, "
     "vector graphics, flat design, anime, manga, deformed, watermark, "
     "text, signature, people, characters, wagon, oxen, ui, hud, "
-    "multiple panels, oversaturated, neon"
+    "multiple panels, oversaturated, neon, "
+    "perspective, vanishing point, road going into distance, "
+    "trail going into distance, ink lines, sketchy, woodcut"
 )
 
 # Tile band heights — the raster occupies its band only; the rest of
@@ -59,33 +62,33 @@ def _t(layer: Layer, terrain: Terrain, seed: int, content: str) -> TilePrompt:
 
 
 PROMPTS: list[TilePrompt] = [
-    # FAR — distant horizon silhouettes, atmospheric haze
-    _t("far", "prairie",   100001, "distant rolling green prairie hills on the horizon, soft atmospheric haze, suggested low cloud shadows, slim painterly silhouette band"),
-    _t("far", "forest",    100002, "distant dark green forest line on the horizon, layered receding tree silhouettes, atmospheric blue-grey haze, painterly silhouette band"),
-    _t("far", "desert",    100003, "distant red-rock mesas and buttes on the horizon, dry warm haze, ochre and rust palette, painterly silhouette band"),
-    _t("far", "mountains", 100004, "distant snow-capped rocky mountain ridges, layered peaks receding into atmospheric haze, blue-grey palette, painterly silhouette band"),
-    _t("far", "river",     100005, "distant rolling river-valley hills on the horizon with cottonwood silhouettes, low atmospheric haze, painterly silhouette band"),
+    # FAR — distant horizon, blurred and atmospheric. Side-on band.
+    _t("far", "prairie",   100001, "distant rolling green prairie hills along the horizon, soft atmospheric blue haze, blurred by distance, side-on horizontal band"),
+    _t("far", "forest",    100002, "distant tree-covered green hills along the horizon, layered receding silhouettes, atmospheric haze, side-on horizontal band"),
+    _t("far", "desert",    100003, "distant red mesas and buttes along the horizon, dry dusty haze, side-on horizontal band"),
+    _t("far", "mountains", 100004, "distant snow-capped rocky mountain ranges along the horizon, atmospheric blue haze, layered peaks, side-on horizontal band"),
+    _t("far", "river",     100005, "distant rolling river-valley hills with cottonwood silhouettes, soft haze, side-on horizontal band"),
 
-    # MID — middle-distance hills + biome accents
-    _t("mid", "prairie",   200001, "middle-distance rolling grass hills with low brush and scattered wildflowers, painterly hand-drawn"),
-    _t("mid", "forest",    200002, "middle-distance rolling forested hills, mixed deciduous and evergreen, painterly hand-drawn"),
-    _t("mid", "desert",    200003, "middle-distance rocky desert outcrops with sagebrush and dry grass, ochre tones, painterly"),
-    _t("mid", "mountains", 200004, "middle-distance rocky foothills with pine-covered slopes and exposed grey rock, painterly"),
-    _t("mid", "river",     200005, "middle-distance riverbank willows and grass hummocks beside calm water, painterly"),
+    # MID — middle-distance content, defined but not detailed. Side-on band.
+    _t("mid", "prairie",   200001, "middle-distance rolling grass hills, scattered trees and low brush, side-on horizontal band, no path"),
+    _t("mid", "forest",    200002, "middle-distance row of mixed trees, forest edge, side-on horizontal band"),
+    _t("mid", "desert",    200003, "middle-distance rocky desert outcrops with sagebrush, side-on horizontal band"),
+    _t("mid", "mountains", 200004, "middle-distance pine-covered foothills with exposed rock, side-on horizontal band"),
+    _t("mid", "river",     200005, "middle-distance riverbank willows and grass hummocks, side-on horizontal band"),
 
-    # NEAR — foreground roadside vegetation
-    _t("near", "prairie",   300001, "foreground prairie grass clumps and wildflowers along a wagon trail, painterly hand-drawn"),
-    _t("near", "forest",    300002, "foreground forest underbrush, ferns, fallen logs and low shrubs along a trail, painterly"),
-    _t("near", "desert",    300003, "foreground sagebrush, prickly pear cacti, and dry rocks along a wagon trail, painterly"),
-    _t("near", "mountains", 300004, "foreground rocky mountain trail with boulders, alpine grass and low shrubs, painterly"),
-    _t("near", "river",     300005, "foreground riverbank reeds, rushes and smooth wet river stones, painterly"),
+    # NEAR — foreground vegetation strip. No path, no perspective.
+    _t("near", "prairie",   300001, "foreground prairie grass clumps and wildflowers, side-on horizontal band, no path"),
+    _t("near", "forest",    300002, "foreground forest underbrush, ferns, fallen logs, side-on horizontal band, no path"),
+    _t("near", "desert",    300003, "foreground sagebrush and prickly pear cacti, side-on horizontal band, no path"),
+    _t("near", "mountains", 300004, "foreground rocky terrain with boulders and alpine grass, side-on horizontal band, no path"),
+    _t("near", "river",     300005, "foreground riverbank reeds, rushes, smooth wet stones, side-on horizontal band"),
 
-    # GROUND — terrain surface texture below the trail
-    _t("ground", "prairie",   400001, "trodden dirt wagon trail running through prairie grass, top-down ground texture, painterly hand-drawn"),
-    _t("ground", "forest",    400002, "bare earth dirt path through forest, leaf litter and pine needles on soil, mossy ground, fallen leaves, pebbles, no wood planks no fence no structure no building, close-up ground level view, painterly hand-drawn cartoon"),
-    _t("ground", "desert",    400003, "sandy desert wagon trail with scattered pebbles, top-down ground texture, painterly"),
-    _t("ground", "mountains", 400004, "rocky mountain wagon trail with gravel and stone, top-down ground texture, painterly"),
-    _t("ground", "river",     400005, "muddy riverbank wagon trail with smooth wet stones, top-down ground texture, painterly"),
+    # GROUND — flat side-on ground surface texture. No path, no perspective lines.
+    _t("ground", "prairie",   400001, "side-on view of prairie grass and dirt ground texture, horizontal strip, no path, no perspective lines"),
+    _t("ground", "forest",    400002, "side-on view of forest floor with leaf litter and soil, horizontal strip, no path"),
+    _t("ground", "desert",    400003, "side-on view of sandy desert ground with scattered pebbles, horizontal strip, no path"),
+    _t("ground", "mountains", 400004, "side-on view of rocky mountain ground with gravel and stone, horizontal strip, no path"),
+    _t("ground", "river",     400005, "side-on view of muddy riverbank ground with smooth wet stones, horizontal strip"),
 ]
 
 
