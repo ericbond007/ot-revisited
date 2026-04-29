@@ -55,9 +55,12 @@
     timeOfDay?: TimeOfDay;
     /** When true, freezes all motion (parallax, wheels, gait, weather). */
     paused?: boolean;
+    /** Backdrop variant 0..N-1; only used in raster mode. Defaults to a
+     *  random pick at mount inside BackdropPainting if not provided. */
+    backdropVariant?: number;
   }
 
-  let { state: gameState, timeOfDay = 'day', paused = false }: Props = $props();
+  let { state: gameState, timeOfDay = 'day', paused = false, backdropVariant }: Props = $props();
 
   // ---------- raster mode flags ----------
   // Two independent toggles via URL query so the painted-backdrop choice
@@ -208,7 +211,8 @@
            Far + Mid + Near; SVG mode keeps the original three layers. -->
       {#if useBackdropRaster}
         <BackdropPainting terrain={gameState.location.terrain}
-                          {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
+                          {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y}
+                          variant={backdropVariant} />
       {:else}
         <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
       {/if}

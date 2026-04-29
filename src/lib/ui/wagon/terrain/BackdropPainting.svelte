@@ -20,9 +20,20 @@
     horizonY: number;
     /** Scene constant: bottom of mid band (top of GroundBand). */
     groundY: number;
+    /** Variant index 0..N-1. Defaults to a stable random pick at mount. */
+    variant?: number;
   }
 
-  let { terrain, scrollX, horizonY, groundY }: Props = $props();
+  let { terrain, scrollX, horizonY, groundY, variant }: Props = $props();
+
+  // 5 painted variants per biome (0..4). Variant 0 keeps the original
+  // unsuffixed filename (`backdrop-prairie.webp`); variants 1-4 use a
+  // numeric suffix (`backdrop-prairie-1.webp` etc.).
+  const N_VARIANTS = 5;
+  // Stable per-mount random pick when no explicit variant is passed —
+  // re-evaluated only when the component remounts (e.g., dev Restart).
+  const fallbackVariant = Math.floor(Math.random() * N_VARIANTS);
+  const v = $derived(variant ?? fallbackVariant);
 
   // Native dimensions match DIMS["backdrop"] in tools/wagon-bg/prompts.py.
   const PAINT_W = 2048;
@@ -36,12 +47,24 @@
   const SCROLL_FACTOR = 0.3;
 
   const x = $derived(-((scrollX * SCROLL_FACTOR) % PAINT_W));
-  const offsets = [0, PAINT_W];
+  // Three tile copies at offsets [-PAINT_W, 0, PAINT_W] so coverage is
+  // continuous regardless of where `x` sits in its [0, PAINT_W) cycle.
+  // Two tiles ([0, PAINT_W]) leave a gap of size `x` on the left of the
+  // viewport once the first tile slides right of x=0 — the SVG sky shows
+  // through that gap until the next wrap.
+  const offsets = [-PAINT_W, 0, PAINT_W];
 
   // 'river' terrain only appears at landmark crossings, never on the
   // open trail. Fall back to prairie there since the player approached
   // from a prairie / forest / etc leg.
   const backdropTerrain = $derived(terrain === 'river' ? 'prairie' : terrain);
+
+  // Variant 0 = unsuffixed filename; variants 1-4 = `-N` suffix.
+  const url = $derived(
+    v === 0
+      ? `/wagon-bg/backdrop-${backdropTerrain}.webp`
+      : `/wagon-bg/backdrop-${backdropTerrain}-${v}.webp`
+  );
 
   // Vertical center of the visible (horizon..ground) band.
   const middleY = $derived((horizonY + groundY) / 2);
@@ -54,7 +77,7 @@
   {#each offsets as offset (offset)}
     {@const tx = x + offset}
     <image
-      href="/wagon-bg/backdrop-{backdropTerrain}.webp"
+      href={url}
       x={tx}
       y={paintTop}
       width={PAINT_W}

@@ -24,6 +24,9 @@
   let oxCount = $state(4);
   let isMule = $state(false);
   let paused = $state(false);
+  let variant = $state(0);
+
+  const VARIANTS = [0, 1, 2, 3, 4];
 
   // Bumping `restartKey` remounts WagonScene with a fresh t=0 — the
   // rAF tick in the scene tracks scroll position internally, so this
@@ -108,6 +111,15 @@
     </label>
 
     <label>
+      <span>Backdrop variant</span>
+      <select bind:value={variant} disabled={!useRaster}>
+        {#each VARIANTS as n}
+          <option value={n}>{n}</option>
+        {/each}
+      </select>
+    </label>
+
+    <label>
       <span>Wagon</span>
       <select bind:value={wagonModel}>
         {#each WAGONS as w}
@@ -145,14 +157,14 @@
   </section>
 
   <section class="stage">
-    {#key restartKey}
-      <WagonScene state={previewState} {timeOfDay} {paused} />
+    {#key `${restartKey}-${variant}`}
+      <WagonScene state={previewState} {timeOfDay} {paused} backdropVariant={variant} />
     {/key}
   </section>
 
   <footer>
     <p class="hint">
-      Backdrop: <strong>{useRaster ? 'raster' : 'svg'}</strong> |
+      Backdrop: <strong>{useRaster ? `raster v${variant}` : 'svg'}</strong> |
       Ground: <strong>{useGroundRaster ? 'raster' : 'svg'}</strong> |
       Terrain: <strong>{terrain}</strong> |
       Weather: <strong>{weather}</strong> |

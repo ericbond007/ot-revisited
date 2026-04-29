@@ -51,19 +51,24 @@ class TilePrompt:
     height: int
     seed: int
     content: str
+    variant: int = 0
 
     @property
     def filename(self) -> str:
-        return f"{self.layer}-{self.terrain}.webp"
+        # variant 0 keeps the original unsuffixed name so existing files
+        # stay valid; variants 1+ get a `-N` suffix.
+        if self.variant == 0:
+            return f"{self.layer}-{self.terrain}.webp"
+        return f"{self.layer}-{self.terrain}-{self.variant}.webp"
 
     @property
     def full_prompt(self) -> str:
         return f"{self.content}, {STYLE_SUFFIX}"
 
 
-def _t(layer: Layer, terrain: Terrain, seed: int, content: str) -> TilePrompt:
+def _t(layer: Layer, terrain: Terrain, seed: int, content: str, variant: int = 0) -> TilePrompt:
     w, h = DIMS[layer]
-    return TilePrompt(layer=layer, terrain=terrain, width=w, height=h, seed=seed, content=content)
+    return TilePrompt(layer=layer, terrain=terrain, width=w, height=h, seed=seed, content=content, variant=variant)
 
 
 PROMPTS: list[TilePrompt] = [
@@ -76,6 +81,31 @@ PROMPTS: list[TilePrompt] = [
     _t("backdrop", "desert",    100003, "wide cinematic side-view painting of a 1840s American Southwest high-desert scene at midday, warm pale sky, distant red rock mesas and buttes in dusty haze, mid-distance sagebrush and rocky outcrops, sandy ground with scattered desert plants in the foreground, painterly cartoon adventure game backdrop, dry no water"),
     _t("backdrop", "mountains", 100004, "wide cinematic side-view painting of a 1840s Rocky Mountains scene at midday, blue mountain sky, distant snow-capped peaks in atmospheric blue haze, mid-distance pine-covered foothills with exposed grey rock, alpine grass and boulders in the foreground, painterly cartoon adventure game backdrop"),
 
+    # BACKDROP variants 1-4 per biome — same architecture, different scene.
+    # Prairie alts: stream, stormy sky, golden-hour, morning mist.
+    _t("backdrop", "prairie",   110011, "wide cinematic side-view painting of a 1840s American prairie at golden hour, warm low sun, long shadows across rolling green hills, scattered cottonwood trees, foreground prairie grass with wildflowers, painterly cartoon adventure game backdrop", variant=1),
+    _t("backdrop", "prairie",   110012, "wide cinematic side-view painting of a 1840s American prairie with a meandering shallow stream cutting across the foreground, soft midday sky with cumulus, willows along the stream, distant rolling hills, painterly cartoon adventure game backdrop", variant=2),
+    _t("backdrop", "prairie",   110013, "wide cinematic side-view painting of a 1840s American prairie with a dramatic stormy sky on the horizon, dark towering thunderhead clouds, slanted rain in the distance, prairie grass bending in wind, painterly cartoon adventure game backdrop", variant=3),
+    _t("backdrop", "prairie",   110014, "wide cinematic side-view painting of a 1840s American prairie at dawn with rolling mist hanging low over the grass, soft pink-blue sky, distant cottonwoods emerging from the mist, painterly cartoon adventure game backdrop", variant=4),
+
+    # Forest alts: brook in clearing, fog dawn, after rain mossy, autumn deciduous.
+    _t("backdrop", "forest",    120021, "wide cinematic side-view painting of a 1840s Pacific Northwest forest clearing with a small clear brook running through the foreground, soft sunbeams through evergreens, ferns along the bank, painterly cartoon adventure game backdrop, wide-angle distant view", variant=1),
+    _t("backdrop", "forest",    120022, "wide cinematic side-view painting of a 1840s Pacific Northwest forest clearing at dawn, dense fog between distant evergreen trees, soft pale light, mid-distance scattered conifers, painterly cartoon adventure game backdrop, wide-angle distant view", variant=2),
+    _t("backdrop", "forest",    120023, "wide cinematic side-view painting of a 1840s Pacific Northwest forest clearing after rain, wet ground and moss-covered fallen logs, soft sky with clearing clouds, distant evergreens with rain-darkened trunks, painterly cartoon adventure game backdrop, wide-angle distant view", variant=3),
+    _t("backdrop", "forest",    120024, "wide cinematic side-view painting of a 1840s autumn forest clearing with mixed deciduous trees in red orange and gold, fallen leaves on the ground, soft autumn sky, painterly cartoon adventure game backdrop, wide-angle distant view", variant=4),
+
+    # Desert alts: canyon, sunset, plateau-with-distant-mountains, dry wash.
+    _t("backdrop", "desert",    130031, "wide cinematic side-view painting of a 1840s Southwest desert canyon, towering red sandstone walls receding into haze, mid-distance scrub brush and yucca, sandy floor in the foreground, painterly cartoon adventure game backdrop, dry no water", variant=1),
+    _t("backdrop", "desert",    130032, "wide cinematic side-view painting of a 1840s Southwest high-desert at sunset, warm orange and pink sky, distant red mesas in cooling shadow, mid-distance sagebrush silhouettes, painterly cartoon adventure game backdrop, dry no water", variant=2),
+    _t("backdrop", "desert",    130033, "wide cinematic side-view painting of a 1840s high-desert plateau with distant snow-tipped mountains visible on the far horizon through dusty haze, mid-distance scrub brush and rocky outcrops, painterly cartoon adventure game backdrop, dry no water", variant=3),
+    _t("backdrop", "desert",    130034, "wide cinematic side-view painting of a 1840s Southwest desert with a dry rocky wash arroyo cutting across the foreground, scattered yucca and prickly pear, distant flat-topped buttes, painterly cartoon adventure game backdrop, dry no water", variant=4),
+
+    # Mountains alts: alpine meadow, narrow pass, golden hour peaks, low clouds.
+    _t("backdrop", "mountains", 140041, "wide cinematic side-view painting of a 1840s Rocky Mountains alpine meadow, scattered pines, single distant snow-capped peak rising above mid-distance pine-covered ridges, foreground meadow with low alpine flowers, painterly cartoon adventure game backdrop", variant=1),
+    _t("backdrop", "mountains", 140042, "wide cinematic side-view painting of a 1840s Rocky Mountains narrow pass between high rocky walls, distant peak visible at the end of the pass, mid-distance scattered conifers along the pass walls, painterly cartoon adventure game backdrop", variant=2),
+    _t("backdrop", "mountains", 140043, "wide cinematic side-view painting of a 1840s Rocky Mountains at golden hour, warm light on snow-capped peaks, dramatic long shadows, mid-distance pine slopes in cooler tones, painterly cartoon adventure game backdrop", variant=3),
+    _t("backdrop", "mountains", 140044, "wide cinematic side-view painting of a 1840s Rocky Mountains with low clouds wrapping around the peaks, mystical atmosphere, distant peaks emerging from cloud, mid-distance pine forest, painterly cartoon adventure game backdrop", variant=4),
+
     # GROUND — kept for now but we're not iterating; current `?groundraster=1`
     # toggle stays so we can revisit later if SVG ground proves insufficient.
     _t("ground", "prairie",   400001, "overhead view of a dirt road through prairie grass, two parallel tire tracks cut into the dirt road, grass and wildflowers grow on both sides of the road, looking straight down, no sky, no horizon, no panorama, no landscape, ground only"),
@@ -86,11 +116,11 @@ PROMPTS: list[TilePrompt] = [
 
 
 if __name__ == "__main__":
-    # Smoke check: 8 entries (4 backdrops + 4 ground), unique filenames + seeds.
-    # Skipping river — only appears at landmark crossings, never as open-trail.
-    assert len(PROMPTS) == 8, f"expected 8 prompts, got {len(PROMPTS)}"
-    assert len({p.filename for p in PROMPTS}) == 8, "duplicate filenames"
-    assert len({p.seed for p in PROMPTS}) == 8, "duplicate seeds"
+    # Smoke check: 24 entries (5 backdrops × 4 biomes + 4 ground), unique
+    # filenames and seeds. River is skipped (landmark-only).
+    assert len(PROMPTS) == 24, f"expected 24 prompts, got {len(PROMPTS)}"
+    assert len({p.filename for p in PROMPTS}) == 24, "duplicate filenames"
+    assert len({p.seed for p in PROMPTS}) == 24, "duplicate seeds"
     for p in PROMPTS:
         print(f"{p.filename:32s} seed={p.seed} {p.width}x{p.height}")
     print(f"OK: {len(PROMPTS)} tiles, no duplicates")
