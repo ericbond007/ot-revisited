@@ -88,10 +88,11 @@ def main() -> None:
         raw_path = RAW_DIR / f"{p.layer}-{p.terrain}.png"
         generate_to(raw_path, p.full_prompt, NEGATIVE_PROMPT, p.width, p.height, p.seed)
 
-        if p.layer == "ground":
-            copy_opaque_to_webp(raw_path, out_path)
-        else:
-            to_webp_with_alpha(raw_path, out_path)
+        # Both layers are opaque now: the backdrop is a full painted scene
+        # (sky baked in), the ground is a trail surface. rembg's alpha pass
+        # was useful when we had silhouette-band fragments, but the new
+        # architecture treats each tile as a complete image.
+        copy_opaque_to_webp(raw_path, out_path)
 
         elapsed = time.monotonic() - t0
         manifest[p.filename] = sig
