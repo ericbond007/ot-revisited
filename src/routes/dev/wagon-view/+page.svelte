@@ -34,6 +34,7 @@
   }
 
   const useRaster = $derived(page.url.searchParams.get('raster') === '1');
+  const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
 
   const previewState = $derived.by(() => {
     const base = createInitialState({
@@ -61,14 +62,13 @@
     };
   });
 
-  function toggleRaster() {
+  function toggleQueryFlag(flag: 'raster' | 'groundraster') {
     const url = new URL(window.location.href);
-    if (useRaster) url.searchParams.delete('raster');
-    else url.searchParams.set('raster', '1');
-    window.history.replaceState({}, '', url.toString());
-    // Force re-read of `page.url.searchParams` — Svelte 5 derives from `page`
-    // automatically on navigation; replaceState alone won't notify, so we
-    // do a no-op goto to refresh.
+    const isOn = url.searchParams.get(flag) === '1';
+    if (isOn) url.searchParams.delete(flag);
+    else url.searchParams.set(flag, '1');
+    // Full reload so SvelteKit's `page` store re-reads the URL — replaceState
+    // alone doesn't notify in Svelte 5.
     window.location.search = url.search;
   }
 </script>
@@ -134,8 +134,13 @@
     <button type="button" class="restart" onclick={restart}>↺ Restart</button>
 
     <label class="cb raster-toggle">
-      <input type="checkbox" checked={useRaster} onchange={toggleRaster} />
-      <span>Raster backgrounds (<code>?raster=1</code>)</span>
+      <input type="checkbox" checked={useRaster} onchange={() => toggleQueryFlag('raster')} />
+      <span>Raster backdrop painting (<code>?raster=1</code>)</span>
+    </label>
+
+    <label class="cb raster-toggle">
+      <input type="checkbox" checked={useGroundRaster} onchange={() => toggleQueryFlag('groundraster')} />
+      <span>Raster ground (<code>?groundraster=1</code>)</span>
     </label>
   </section>
 
@@ -147,7 +152,8 @@
 
   <footer>
     <p class="hint">
-      Mode: <strong>{useRaster ? 'raster' : 'svg'}</strong> |
+      Backdrop: <strong>{useRaster ? 'raster' : 'svg'}</strong> |
+      Ground: <strong>{useGroundRaster ? 'raster' : 'svg'}</strong> |
       Terrain: <strong>{terrain}</strong> |
       Weather: <strong>{weather}</strong> |
       ToD: <strong>{timeOfDay}</strong> |

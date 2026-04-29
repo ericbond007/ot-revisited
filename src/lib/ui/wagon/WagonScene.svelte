@@ -19,6 +19,7 @@
   // One requestAnimationFrame tick drives `t`. All motion derives
   // from `t` — no CSS animations, no setIntervals.
   import { untrack } from 'svelte';
+  import { page } from '$app/state';
   import type { GameState } from '$lib/game/types';
   import type { WagonModelId } from '$lib/game/content/wagons';
 
@@ -28,6 +29,7 @@
   import MidLayer from './terrain/MidLayer.svelte';
   import NearLayer from './terrain/NearLayer.svelte';
   import GroundBand from './terrain/GroundBand.svelte';
+  import BackdropPainting from './terrain/BackdropPainting.svelte';
   import { SCENE_W, SCENE_H, HORIZON_Y, GROUND_Y, type TimeOfDay } from './terrain';
 
   // Weather + sky
@@ -56,6 +58,15 @@
   }
 
   let { state: gameState, timeOfDay = 'day', paused = false }: Props = $props();
+
+  // ---------- raster mode flags ----------
+  // Two independent toggles via URL query so the painted-backdrop choice
+  // and the trail-strip choice can be compared independently:
+  //   ?raster=1       — use BackdropPainting (one painting per biome)
+  //                     instead of the SVG Far/Mid/Near trio
+  //   ?groundraster=1 — use the raster ground strip in GroundBand
+  //                     instead of its two-stop SVG gradient
+  const useBackdropRaster = $derived(page.url.searchParams.get('raster') === '1');
 
   // ---------- animation tick ----------
   // When `paused`, the rAF loop is fully cancelled (#164) — no
@@ -193,21 +204,31 @@
            and "stops when stopped" behavior follow ground motion. -->
       <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
 
-      <!-- 4. far parallax -->
-      <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      <!-- 4. backdrop / parallax: in raster mode one painting replaces
+           Far + Mid + Near; SVG mode keeps the original three layers. -->
+      {#if useBackdropRaster}
+        <BackdropPainting terrain={gameState.location.terrain}
+                          {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
+      {:else}
+        <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      {/if}
 
-      <!-- 5. landmarks -->
+      <!-- 5. landmarks (layered on top of the backdrop, behind mid in SVG mode) -->
       <LandmarkLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
 
-      <!-- 6. mid parallax -->
-      <MidLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
+      {#if !useBackdropRaster}
+        <!-- 6. mid parallax (SVG mode only) -->
+        <MidLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
+      {/if}
 
       <!-- 7. ground band -->
       <GroundBand terrain={gameState.location.terrain} groundY={GROUND_Y}
                   h={SCENE_H - GROUND_Y} w={SCENE_W} idPrefix="ws" />
 
-      <!-- 8. near parallax -->
-      <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
+      {#if !useBackdropRaster}
+        <!-- 8. near parallax (SVG mode only) -->
+        <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
+      {/if}
 
       <!-- 9. ox/mule team — pole tip lands at wagonTongueTipSceneX -->
       <g transform="translate({wagonTongueTipSceneX} {GROUND_Y}) scale({SCENE_SCALE})">

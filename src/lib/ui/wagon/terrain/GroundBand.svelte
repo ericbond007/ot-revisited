@@ -1,7 +1,13 @@
 <script lang="ts">
   // Solid foreground earth band. SVG mode renders a two-stop linear
-  // gradient with a horizon-shadow fade. Raster mode (?raster=1)
-  // replaces the gradient with a single per-terrain ground texture.
+  // gradient with a horizon-shadow fade. Raster mode (`?groundraster=1`)
+  // replaces the gradient with a single per-terrain ground texture
+  // generated at SDXL-friendly ratios; `xMidYMax slice` crops to the
+  // image's bottom-foreground portion so we never see a vanishing point.
+  //
+  // The ground flag is independent of the backdrop flag (`?raster=1`)
+  // — they can be toggled independently from /dev/wagon-view to compare
+  // SVG vs raster grounds with either backdrop.
   import { page } from '$app/state';
   import type { Terrain } from '$lib/game/types';
   import { GROUND_FILL } from './terrain-tokens';
@@ -17,7 +23,7 @@
 
   let { terrain, groundY, h, w, idPrefix = 'gb' }: Props = $props();
 
-  const useRaster = $derived(page.url.searchParams.get('raster') === '1');
+  const useRaster = $derived(page.url.searchParams.get('groundraster') === '1');
 
   const gradId = $derived(`${idPrefix}-${terrain}`);
   const fadeId = $derived(`${idPrefix}-${terrain}-fade`);
@@ -26,11 +32,10 @@
 
 <g>
   {#if useRaster}
-    <!-- Ground tile is generated at near-square SDXL ratios (1024×512)
-         where the model paints a perspective shot of a wagon trail.
-         `xMidYMax slice` crops to the BOTTOM of the image so we see
-         only the foreground portion — no vanishing point, just the
-         wheel-rut detail at the player's feet. -->
+    <!-- Ground tile generated at 1024×512 (SDXL-friendly). The model
+         paints a perspective view of a trail; `xMidYMax slice` shows
+         only the bottom foreground portion. -->
+
     <image
       href="/wagon-bg/ground-{terrain}.webp"
       x="0"
