@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-29 (post-merge of audit + wagon-bg). 36 open.
+As of 2026-04-29 (post-merge of town-actions confirm modal). 33 open.
 
 ## New mechanics
 
@@ -55,17 +55,14 @@ As of 2026-04-29 (post-merge of audit + wagon-bg). 36 open.
 
 ## Balance / audit
 
-| #    |                                                                                            |
-| ---- | ------------------------------------------------------------------------------------------ |
-| #182 | Hunt yields audit — tallow / animal fat as byproduct?                                      |
-| #186 | Populate per-choice EventChoice.icon across event catalog                                  |
-| #188 | BUG — town actions show no confirm button (Ft. Laramie) <- on click, should fire the event |
-| #193 | BUG — town actions take a long time to fire the event                                      |
-| #194 | Town actions costing money should let player adjust the amount on the event modal          |
-| #183 | AI art / animation pipeline — eval libs + image-gen APIs                                   |
-| #184 | Full game review — Sonnet pass on mechanics + balance                                      |
-| #185 | Playwright MCP — point at /usr/bin/chromium (fleet config)                                 |
-| #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185)                        |
+| #    |                                                                     |
+| ---- | ------------------------------------------------------------------- |
+| #182 | Hunt yields audit — tallow / animal fat as byproduct?               |
+| #186 | Populate per-choice EventChoice.icon across event catalog           |
+| #183 | AI art / animation pipeline — eval libs + image-gen APIs            |
+| #184 | Full game review — Sonnet pass on mechanics + balance               |
+| #185 | Playwright MCP — point at /usr/bin/chromium (fleet config)          |
+| #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185) |
 
 ## Known design-incoming
 
@@ -74,6 +71,7 @@ As of 2026-04-29 (post-merge of audit + wagon-bg). 36 open.
 
 ## Recently shipped
 
+- **#188 + #193 + #194** Town-actions confirm modal — replaced 5 inline forms on TownStage cards (instant POST, no acknowledgment) with click-to-open `TownActionModal.svelte` carrying the cost-stepper inside the modal. Same enhance flow on Confirm; free/fixed-cost actions (gossip, newspaper, trade) keep their direct-click. Closes all three symptoms of the same UX gap (#188 no confirm, #193 felt slow, #194 cost adjustment in modal not card).
 - **#132 + #163 + components 4d** PartyPanel wiring — replaced the 4 hand-drawn inline avatar-corner profession badges (doctor / scout / preacher / hunter only) with `<ProfessionIcon id={m.profession} size={5}>` so all 13 professions get bespoke watercolor art. Mini-stats footer now uses `<StatIcon kind="rations">` and `<StatIcon kind="pace">` (oxen stays on emoji — the ×N count is the focal cue). The panel was already substantially aligned with `docs/handoff/components/src/party-panel.html` from earlier work (sparkline header, avatars+rings, HP bars with hatch ticks, heart pulse, ill-shake, dead gravestone, morale ribbon, mini-stats existed); this commit closes the icon-wiring side. **#132** closes on the "denser" interpretation; the bundle's panel IS the rework. **#163** closes per the bundle's "keep mini-stats, intentional duplication" answer — comment in code already says so.
 - **#133** EventModal visual polish — `EventChoice.icon?: string` field added so any choice can carry a thematic action glyph (🐂, ⛺, ⚒️, etc.), not just item-gated ones. EventModal renders `req.icon` (item-gate, stronger signal) when present, falls back to `c.icon` (action flavor). The card-slide / choice-in animations and rust-bordered button styling were already in place from earlier work; this closes the infrastructure side. Content fill — populating `c.icon` across the event catalog — is logged as #186 follow-up.
 - **components/ step 4a** — ActionBar parity confirmed against `docs/handoff/components/`. The 5 sprite-symbol path data sets (`gi-travel`, `gi-rest`, `gi-hunt`, `gi-visit`, `gi-ford`) are byte-identical to the bundle; restored the inline section comments the original port stripped.
