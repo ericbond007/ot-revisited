@@ -12,7 +12,7 @@ from pathlib import Path
 
 API = "http://127.0.0.1:8188"
 COMFY_OUTPUT_DIR = Path.home() / "ComfyUI" / "output"
-CHECKPOINT = "satyrremixStylized_lycorisV1.safetensors"
+CHECKPOINT = "sd_xl_base_1.0.safetensors"
 
 
 def _build_workflow(prompt: str, negative: str, width: int, height: int, seed: int, filename_prefix: str) -> dict:

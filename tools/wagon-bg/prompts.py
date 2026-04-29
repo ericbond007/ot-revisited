@@ -12,8 +12,10 @@ Layer = Literal["far", "mid", "near", "ground"]
 Terrain = Literal["prairie", "forest", "desert", "mountains", "river"]
 
 STYLE_SUFFIX = (
-    "isolated on flat sky-blue background, no people no animals no wagon, "
-    "period 1840s pioneer aesthetic, muted earth-tone palette"
+    "hand-drawn cartoon illustration, painterly watercolor and ink, "
+    "late 90s adventure game background art, muted earth tones, "
+    "layered parallax depth, no people no animals no wagon, "
+    "isolated on flat sky-blue background"
 )
 
 NEGATIVE_PROMPT = (
