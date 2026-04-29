@@ -80,7 +80,7 @@ PROMPTS: list[TilePrompt] = [
 
     # GROUND — terrain surface texture below the trail
     _t("ground", "prairie",   400001, "trodden dirt wagon trail running through prairie grass, top-down ground texture, painterly hand-drawn"),
-    _t("ground", "forest",    400002, "forest floor with pine needles and exposed roots running through a wagon trail, top-down ground texture, painterly"),
+    _t("ground", "forest",    400002, "bare earth dirt path through forest, leaf litter and pine needles on soil, mossy ground, fallen leaves, pebbles, no wood planks no fence no structure no building, close-up ground level view, painterly hand-drawn cartoon"),
     _t("ground", "desert",    400003, "sandy desert wagon trail with scattered pebbles, top-down ground texture, painterly"),
     _t("ground", "mountains", 400004, "rocky mountain wagon trail with gravel and stone, top-down ground texture, painterly"),
     _t("ground", "river",     400005, "muddy riverbank wagon trail with smooth wet stones, top-down ground texture, painterly"),
