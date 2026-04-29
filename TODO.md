@@ -1,14 +1,14 @@
 # Remaining TODOs
 
-As of 2026-04-28 (post-#89). 34 open.
+As of 2026-04-29 (post-merge of audit + wagon-bg). 36 open.
 
 ## New mechanics
 
-| #    |                                                                   |
-| ---- | ----------------------------------------------------------------- |
-| #175 | California leg — Gold Rush headline unlocks alternate route       |
-| #176 | Wagon trains — join 20-50 caravan for safety bonus                |
-| #180 | Year-sensitive dialogue — 1849+ California talk flavor            |
+| #    |                                                             |
+| ---- | ----------------------------------------------------------- |
+| #175 | California leg — Gold Rush headline unlocks alternate route |
+| #176 | Wagon trains — join 20-50 caravan for safety bonus          |
+| #180 | Year-sensitive dialogue — 1849+ California talk flavor      |
 
 ## More animals
 
@@ -20,9 +20,9 @@ As of 2026-04-28 (post-#89). 34 open.
 
 ## System reworks
 
-| #    |                                                                  |
-| ---- | ---------------------------------------------------------------- |
-| #174 | Bullets — split into lead + powder + caps for authenticity       |
+| #    |                                                                   |
+| ---- | ----------------------------------------------------------------- |
+| #174 | Bullets — split into lead + powder + caps for authenticity        |
 | #187 | Camp multi-day rework — reset slots day 2, surface that to player |
 
 ## UI / UX polish
@@ -49,20 +49,23 @@ As of 2026-04-28 (post-#89). 34 open.
 
 ## For Claude Design or another SVG animation generator
 
-| #156 | Wagon SVG visual revisit — proportions / damage / addons        |
-| #87  | Rich event visuals                                              |
-| #162 | Components revisit — StatBar + PartyPanel avatar designer pass  |
+| #156 | Wagon SVG visual revisit — proportions / damage / addons |
+| #87 | Rich event visuals |
+| #162 | Components revisit — StatBar + PartyPanel avatar designer pass |
 
 ## Balance / audit
 
-| #    |                                                            |
-| ---- | ---------------------------------------------------------- |
-| #182 | Hunt yields audit — tallow / animal fat as byproduct?      |
-| #186 | Populate per-choice EventChoice.icon across event catalog  |
-| #188 | BUG — town actions show no confirm button (Ft. Laramie)    |
-| #183 | AI art / animation pipeline — eval libs + image-gen APIs   |
-| #184 | Full game review — Sonnet pass on mechanics + balance      |
-| #185 | Playwright MCP — point at /usr/bin/chromium (fleet config) |
+| #    |                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------ |
+| #182 | Hunt yields audit — tallow / animal fat as byproduct?                                      |
+| #186 | Populate per-choice EventChoice.icon across event catalog                                  |
+| #188 | BUG — town actions show no confirm button (Ft. Laramie) <- on click, should fire the event |
+| #193 | BUG — town actions take a long time to fire the event                                      |
+| #194 | Town actions costing money should let player adjust the amount on the event modal          |
+| #183 | AI art / animation pipeline — eval libs + image-gen APIs                                   |
+| #184 | Full game review — Sonnet pass on mechanics + balance                                      |
+| #185 | Playwright MCP — point at /usr/bin/chromium (fleet config)                                 |
+| #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185)                        |
 
 ## Known design-incoming
 
