@@ -30,6 +30,7 @@ const foul_water: GameEvent = {
   choices: [
     {
       id: 'press_on',
+      icon: '🚶',
       label: "Push on, hope for the best",
       isDefault: true,
       silentLog: true,
@@ -45,6 +46,7 @@ const foul_water: GameEvent = {
     },
     {
       id: 'dump',
+      icon: '🪣',
       label: 'Dump the bad water entirely',
       silentLog: true,
       apply: (s) => {
@@ -69,6 +71,7 @@ const alkali_pond: GameEvent = {
   choices: [
     {
       id: 'pull_them_back',
+      icon: '💪',
       label: 'Whip the team back from the water',
       isDefault: true,
       silentLog: true,
@@ -85,6 +88,7 @@ const alkali_pond: GameEvent = {
     },
     {
       id: 'too_late',
+      icon: '💧',
       label: 'Let them finish — water is water',
       silentLog: true,
       apply: (s) => {
@@ -113,6 +117,7 @@ const keg_breaks: GameEvent = {
   choices: [
     {
       id: 'salvage',
+      icon: '🤲',
       label: 'Salvage what you can',
       isDefault: true,
       silentLog: true,
@@ -137,6 +142,7 @@ const water_spill: GameEvent = {
   choices: [
     {
       id: 'shrug',
+      icon: '🚶',
       label: 'Tighten the lid and roll on',
       isDefault: true,
       silentLog: true,
@@ -162,6 +168,7 @@ const clear_spring: GameEvent = {
   choices: [
     {
       id: 'drink',
+      icon: '💧',
       label: 'Top off the kegs',
       isDefault: true,
       silentLog: true,

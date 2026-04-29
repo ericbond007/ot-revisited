@@ -71,6 +71,7 @@ const storm: GameEvent = {
   choices: [
     {
       id: 'press_on',
+      icon: '🚶',
       label: 'Press on',
       isDefault: true,
       silentLog: true,
@@ -81,6 +82,7 @@ const storm: GameEvent = {
     },
     {
       id: 'shelter',
+      icon: '⛺',
       label: 'Shelter until it passes',
       silentLog: true,
       apply: (s) => logLine({ ...s, morale: Math.max(0, s.morale - 1) }, 'Sheltered out the storm. Morale −1, no progress.')
@@ -99,6 +101,7 @@ const heat_wave: GameEvent = {
   choices: [
     {
       id: 'endure',
+      icon: '😤',
       label: 'Endure it',
       isDefault: true,
       silentLog: true,
@@ -125,6 +128,7 @@ const fog: GameEvent = {
   choices: [
     {
       id: 'wait',
+      icon: '⛺',
       label: 'Wait it out',
       isDefault: true,
       silentLog: true,
@@ -147,6 +151,7 @@ const early_snow: GameEvent = {
   choices: [
     {
       id: 'push_through',
+      icon: '💪',
       label: 'Push through',
       isDefault: true,
       silentLog: true,
@@ -173,6 +178,7 @@ const broken_wheel: GameEvent = {
   choices: [
     {
       id: 'replace',
+      icon: '⚒️',
       label: 'Replace with a spare wheel',
       isDefault: true,
       silentLog: true,
@@ -209,6 +215,7 @@ const ox_lame: GameEvent = {
   choices: [
     {
       id: 'rest_it',
+      icon: '🏕️',
       label: 'Rest it in the yoke for the day',
       isDefault: true,
       silentLog: true,
@@ -234,6 +241,7 @@ const ox_threw_shoe: GameEvent = {
   choices: [
     {
       id: 'reshoe',
+      icon: '⚒️',
       label: 'Re-shoe the ox',
       isDefault: true,
       silentLog: true,
@@ -264,6 +272,7 @@ const tongue_snaps: GameEvent = {
   choices: [
     {
       id: 'repair',
+      icon: '⚒️',
       label: 'Repair with a spare tongue',
       isDefault: true,
       silentLog: true,
@@ -295,6 +304,7 @@ const canvas_tear: GameEvent = {
   choices: [
     {
       id: 'patch',
+      icon: '⚒️',
       label: 'Patch it',
       isDefault: true,
       silentLog: true,
@@ -326,6 +336,7 @@ const ox_wanders: GameEvent = {
   choices: [
     {
       id: 'search',
+      icon: '🔍',
       label: 'Search for it (half day)',
       isDefault: true,
       silentLog: true,
@@ -350,6 +361,7 @@ const cholera_scare: GameEvent = {
   choices: [
     {
       id: 'risk_drink',
+      icon: '🥤',
       label: 'Drink anyway',
       isDefault: true,
       silentLog: true,
@@ -375,6 +387,7 @@ const cholera_scare: GameEvent = {
     },
     {
       id: 'wait',
+      icon: '💧',
       label: 'Travel upstream before drinking',
       silentLog: true,
       apply: (s) => logLine(s, 'Traveled upstream to clean water. No harm done.')
@@ -393,6 +406,7 @@ const snakebite: GameEvent = {
   choices: [
     {
       id: 'treat',
+      icon: '🩹',
       label: 'Treat with bandages & laudanum',
       isDefault: true,
       silentLog: true,
@@ -434,6 +448,7 @@ const berry_patch: GameEvent = {
   choices: [
     {
       id: 'harvest',
+      icon: '🤲',
       label: 'Harvest them',
       isDefault: true,
       silentLog: true,
@@ -462,6 +477,7 @@ const abandoned_cache: GameEvent = {
   choices: [
     {
       id: 'take',
+      icon: '🤲',
       label: 'Take everything',
       isDefault: true,
       silentLog: true,
@@ -494,6 +510,7 @@ const fresh_spring: GameEvent = {
   choices: [
     {
       id: 'fill',
+      icon: '💧',
       label: 'Fill every water skin',
       isDefault: true,
       silentLog: true,
@@ -519,6 +536,7 @@ const emigrant_party: GameEvent = {
   choices: [
     {
       id: 'talk',
+      icon: '💬',
       label: 'Trade news',
       isDefault: true,
       silentLog: true,
@@ -540,6 +558,7 @@ const abandoned_wagon: GameEvent = {
   choices: [
     {
       id: 'scavenge',
+      icon: '🤲',
       label: 'Scavenge what you can',
       isDefault: true,
       silentLog: true,
@@ -555,6 +574,7 @@ const abandoned_wagon: GameEvent = {
     },
     {
       id: 'pass',
+      icon: '🚶',
       label: 'Pass it by',
       silentLog: true,
       apply: (s) => logLine(s, 'Passed the wreck by. Nothing gained, nothing lost.')
@@ -572,6 +592,7 @@ const lost_child: GameEvent = {
   choices: [
     {
       id: 'take_in',
+      icon: '🤍',
       label: 'Take them in',
       isDefault: true,
       silentLog: true,
@@ -595,6 +616,7 @@ const lost_child: GameEvent = {
     },
     {
       id: 'leave',
+      icon: '🚫',
       label: 'Leave them — you can barely feed your own',
       silentLog: true,
       apply: (s) => logLine(
@@ -616,6 +638,7 @@ const personal_quarrel: GameEvent = {
   choices: [
     {
       id: 'mediate',
+      icon: '💬',
       label: 'Mediate',
       isDefault: true,
       silentLog: true,
@@ -637,6 +660,7 @@ const personal_prayer: GameEvent = {
   choices: [
     {
       id: 'join',
+      icon: '🙏',
       label: 'Join',
       isDefault: true,
       silentLog: true,
@@ -662,6 +686,7 @@ const donner_rumor: GameEvent = {
   choices: [
     {
       id: 'heed',
+      icon: '⚠️',
       label: 'Heed the warning',
       isDefault: true,
       silentLog: true,
@@ -684,6 +709,7 @@ const gold_rush_news: GameEvent = {
   choices: [
     {
       id: 'stay_course',
+      icon: '🚶',
       label: 'Stay on the Oregon Trail',
       isDefault: true,
       silentLog: true,
@@ -706,6 +732,7 @@ const cholera_peak_1852: GameEvent = {
   choices: [
     {
       id: 'keep_moving',
+      icon: '🚶',
       label: 'Keep moving',
       isDefault: true,
       silentLog: true,
@@ -741,6 +768,7 @@ const mormon_handcart: GameEvent = {
   choices: [
     {
       id: 'share',
+      icon: '💬',
       label: 'Share a meal',
       isDefault: true,
       silentLog: true,
@@ -767,6 +795,7 @@ const pony_express: GameEvent = {
   choices: [
     {
       id: 'cheer',
+      icon: '👋',
       label: 'Cheer him on',
       isDefault: true,
       silentLog: true,
@@ -789,6 +818,7 @@ const spring_flood: GameEvent = {
   choices: [
     {
       id: 'detour',
+      icon: '🗺️',
       label: 'Detour around the flood',
       isDefault: true,
       silentLog: true,
@@ -817,6 +847,7 @@ const burial: GameEvent = {
   choices: [
     {
       id: 'dig_grave',
+      icon: '⛏️',
       label: 'Dig a proper grave',
       isDefault: true,
       silentLog: true,
@@ -846,6 +877,7 @@ const burial: GameEvent = {
     },
     {
       id: 'moment_of_silence',
+      icon: '🙏',
       label: "Just a moment's silence — press on",
       silentLog: true,
       apply: (s) => {
@@ -873,6 +905,7 @@ const stuck_in_mud: GameEvent = {
   choices: [
     {
       id: 'dig_out',
+      icon: '⛏️',
       label: 'Dig out with the shovel',
       isDefault: true,
       silentLog: true,
@@ -889,6 +922,7 @@ const stuck_in_mud: GameEvent = {
     },
     {
       id: 'force',
+      icon: '💪',
       label: 'Force the oxen through — whip and shout',
       silentLog: true,
       apply: (s, rng) => {
@@ -902,6 +936,7 @@ const stuck_in_mud: GameEvent = {
     },
     {
       id: 'camp_wait',
+      icon: '⛺',
       label: 'Camp here and wait for it to dry',
       silentLog: true,
       apply: (s) => logLine(
@@ -929,6 +964,7 @@ const dog_snakebite: GameEvent = {
   choices: [
     {
       id: 'tend_wound',
+      icon: '🩹',
       label: 'Tend the wound through the night',
       isDefault: true,
       silentLog: true,
@@ -950,6 +986,7 @@ const dog_snakebite: GameEvent = {
     },
     {
       id: 'accept_loss',
+      icon: '🪦',
       label: 'Nothing to be done',
       silentLog: true,
       apply: (s) => {
@@ -973,6 +1010,7 @@ const dog_wolves: GameEvent = {
   choices: [
     {
       id: 'stand_with_dog',
+      icon: '🛡️',
       label: 'Stand watch alongside the dog',
       isDefault: true,
       silentLog: true,
@@ -1001,6 +1039,7 @@ const dog_wolves: GameEvent = {
     },
     {
       id: 'call_inside',
+      icon: '🚪',
       label: 'Call the dog in and hope they pass',
       silentLog: true,
       apply: (s, rng) => {
@@ -1028,6 +1067,7 @@ const dog_stolen: GameEvent = {
   choices: [
     {
       id: 'pay_reward',
+      icon: '💵',
       label: 'Offer a reward for their return ($5)',
       isDefault: true,
       silentLog: true,
@@ -1053,6 +1093,7 @@ const dog_stolen: GameEvent = {
     },
     {
       id: 'press_on',
+      icon: '🚶',
       label: 'Press on without them',
       silentLog: true,
       apply: (s) => {
@@ -1077,6 +1118,7 @@ const stray_dog_follows: GameEvent = {
   choices: [
     {
       id: 'take_in',
+      icon: '🐕',
       label: 'Feed it through the night',
       isDefault: true,
       silentLog: true,
@@ -1091,6 +1133,7 @@ const stray_dog_follows: GameEvent = {
     },
     {
       id: 'shoo_away',
+      icon: '🚫',
       label: 'Shoo it off — we have enough mouths',
       silentLog: true,
       apply: (s) => logLine(s, 'You chased the hound off. It watched from a rise before turning back the way you came.')
@@ -1108,6 +1151,7 @@ const abandoned_wagon_dog: GameEvent = {
   choices: [
     {
       id: 'take_dog',
+      icon: '🐕',
       label: 'Whistle it over',
       isDefault: true,
       silentLog: true,
@@ -1122,6 +1166,7 @@ const abandoned_wagon_dog: GameEvent = {
     },
     {
       id: 'leave_dog',
+      icon: '🚶',
       label: 'Leave it — not your burden',
       silentLog: true,
       apply: (s) => logLine(
@@ -1149,6 +1194,7 @@ const chicken_predator: GameEvent = {
   choices: [
     {
       id: 'rush_out',
+      icon: '🏃',
       label: 'Rush out with a lantern',
       isDefault: true,
       silentLog: true,
@@ -1171,6 +1217,7 @@ const chicken_predator: GameEvent = {
     },
     {
       id: 'stay_in_wagon',
+      icon: '🚪',
       label: 'Stay in the wagon — could be anything',
       silentLog: true,
       apply: (s, rng) => {
@@ -1207,6 +1254,7 @@ const mule_theft: GameEvent = {
   choices: [
     {
       id: 'track_thief',
+      icon: '🔍',
       label: 'Track the thief at first light',
       isDefault: true,
       silentLog: true,
@@ -1231,6 +1279,7 @@ const mule_theft: GameEvent = {
     },
     {
       id: 'press_on',
+      icon: '🚶',
       label: "Press on — can't afford the delay",
       silentLog: true,
       apply: (s) => {

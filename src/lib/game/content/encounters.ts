@@ -48,6 +48,7 @@ const eastbound_turnaround: GameEvent = {
   choices: [
     {
       id: 'trade',
+      icon: '💰',
       label: 'Trade for their surplus',
       isDefault: true,
       silentLog: true,
@@ -74,6 +75,7 @@ const eastbound_turnaround: GameEvent = {
     },
     {
       id: 'listen',
+      icon: '💬',
       label: 'Just hear their stories',
       silentLog: true,
       apply: (s) => {
@@ -92,6 +94,7 @@ const eastbound_turnaround: GameEvent = {
     },
     {
       id: 'pass',
+      icon: '🚶',
       label: 'Wish them luck and move on',
       silentLog: true,
       apply: (s) => logLine(s, 'Waved as the eastbound wagons passed.')
@@ -109,6 +112,7 @@ const lone_trapper: GameEvent = {
   choices: [
     {
       id: 'trade_mocs',
+      icon: '💰',
       label: 'Trade for moccasins ($6)',
       isDefault: true,
       silentLog: true,
@@ -126,6 +130,7 @@ const lone_trapper: GameEvent = {
     },
     {
       id: 'listen',
+      icon: '💬',
       label: 'Listen to his mountain stories',
       silentLog: true,
       apply: (s) => logLine(
@@ -135,6 +140,7 @@ const lone_trapper: GameEvent = {
     },
     {
       id: 'pass',
+      icon: '🚶',
       label: 'Politely move on',
       silentLog: true,
       apply: (s) => logLine(s, 'Traded nods and kept moving.')
@@ -152,6 +158,7 @@ const soldier_patrol: GameEvent = {
   choices: [
     {
       id: 'welcome',
+      icon: '💬',
       label: 'Welcome them — share supper',
       isDefault: true,
       silentLog: true,
@@ -177,6 +184,7 @@ const soldier_patrol: GameEvent = {
     },
     {
       id: 'info',
+      icon: '💬',
       label: 'Just trade information',
       silentLog: true,
       apply: (s) => logLine(
@@ -197,6 +205,7 @@ const mail_rider: GameEvent = {
   choices: [
     {
       id: 'read',
+      icon: '📬',
       label: 'Read the letter',
       isDefault: true,
       silentLog: true,
@@ -224,6 +233,7 @@ const mail_rider: GameEvent = {
     },
     {
       id: 'no_mail',
+      icon: '🚶',
       label: 'Tell him no mail for you',
       silentLog: true,
       apply: (s) => logLine(s, 'The mail rider tipped his hat and rode on.')
@@ -240,6 +250,7 @@ const emigrant_grave: GameEvent = {
   choices: [
     {
       id: 'respect',
+      icon: '🙏',
       label: 'Pause in silence',
       isDefault: true,
       silentLog: true,
@@ -250,6 +261,7 @@ const emigrant_grave: GameEvent = {
     },
     {
       id: 'pass',
+      icon: '🚶',
       label: 'Roll past without stopping',
       silentLog: true,
       apply: (s) => logLine(s, 'Rolled past the grave without a word.')
@@ -272,6 +284,7 @@ const native_trading_party: GameEvent = {
   choices: [
     {
       id: 'trade',
+      icon: '💰',
       label: 'Offer tobacco and beads for pemmican',
       isDefault: true,
       silentLog: true,
@@ -316,6 +329,7 @@ const native_trading_party: GameEvent = {
     },
     {
       id: 'refuse',
+      icon: '🚫',
       label: 'Wave them off',
       silentLog: true,
       apply: (s, rng) => {
@@ -347,6 +361,7 @@ const native_toll_demand: GameEvent = {
   choices: [
     {
       id: 'pay_tobacco',
+      icon: '💰',
       label: 'Pay 2 tobacco',
       isDefault: true,
       silentLog: true,
@@ -366,6 +381,7 @@ const native_toll_demand: GameEvent = {
     },
     {
       id: 'pay_beads',
+      icon: '💰',
       label: 'Pay 3 beads',
       silentLog: true,
       requires: { itemId: 'beads', icon: '📿', reason: 'Need beads to pay the toll' },
@@ -384,6 +400,7 @@ const native_toll_demand: GameEvent = {
     },
     {
       id: 'refuse',
+      icon: '💪',
       label: 'Refuse and push through',
       silentLog: true,
       apply: (s, rng) => {
@@ -424,6 +441,7 @@ const native_guide_offer: GameEvent = {
   choices: [
     {
       id: 'hire',
+      icon: '💰',
       label: 'Hire him (5 tobacco or $5)',
       isDefault: true,
       silentLog: true,
@@ -457,6 +475,7 @@ const native_guide_offer: GameEvent = {
     },
     {
       id: 'decline',
+      icon: '🚶',
       label: 'Thank him and decline',
       silentLog: true,
       apply: (s) => logLine(s, 'Declined the guide. He rode back the way he came.')
@@ -477,6 +496,7 @@ const native_hunters_sharing: GameEvent = {
   choices: [
     {
       id: 'accept',
+      icon: '🤲',
       label: 'Accept with thanks',
       isDefault: true,
       silentLog: true,
@@ -498,6 +518,7 @@ const native_hunters_sharing: GameEvent = {
     },
     {
       id: 'reciprocate',
+      icon: '💬',
       label: 'Accept and offer tobacco in return',
       silentLog: true,
       apply: (s, rng) => {
