@@ -102,12 +102,17 @@ def main() -> None:
         # architecture treats each tile as a complete image.
         copy_opaque_to_webp(raw_path, out_path)
 
-        # Backdrop tiles get a seam-blend pass: SDXL's circular padding
-        # gets us close to seamless, but residual VAE-decode artifacts can
-        # leave a faint vertical line at the seam. Forcing strict edge
-        # equality with a small feathered blend eliminates it.
-        if p.layer == "backdrop":
-            blend_horizontal_seam(out_path, out_path)
+        # NOTE: seam.py post-process was tested but disabled here — every
+        # variant (narrow feather, wide feather, offset+gauss-blur) made
+        # the visible artifact WORSE than the raw seamless output (created
+        # hazy washed bands or blurry strips inside the painting). The
+        # fundamental issue is that painting edges show different content
+        # (sky vs tree, mesa vs sand) so no purely-pixel post-process makes
+        # them appear continuous. Real fixes are out-of-scope for this
+        # commit: train a tileable LoRA, prompt explicitly for matching
+        # edges, or accept the residual line at scrolling speed.
+        # if p.layer == "backdrop":
+        #     blend_horizontal_seam(out_path, out_path)
 
         elapsed = time.monotonic() - t0
         manifest[p.filename] = sig
