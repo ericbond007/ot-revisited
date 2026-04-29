@@ -1,0 +1,2 @@
+rembg[cli]==2.0.59
+pillow>=11.0
