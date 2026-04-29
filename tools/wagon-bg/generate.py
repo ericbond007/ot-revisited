@@ -15,6 +15,7 @@ from pathlib import Path
 from alpha import copy_opaque_to_webp, to_webp_with_alpha
 from comfy_client import CHECKPOINT, generate_to, ping
 from prompts import NEGATIVE_PROMPT, PROMPTS, TilePrompt
+from seam import blend_horizontal_seam
 
 THIS_DIR = Path(__file__).parent
 RAW_DIR = THIS_DIR / "raw"
@@ -100,6 +101,13 @@ def main() -> None:
         # was useful when we had silhouette-band fragments, but the new
         # architecture treats each tile as a complete image.
         copy_opaque_to_webp(raw_path, out_path)
+
+        # Backdrop tiles get a seam-blend pass: SDXL's circular padding
+        # gets us close to seamless, but residual VAE-decode artifacts can
+        # leave a faint vertical line at the seam. Forcing strict edge
+        # equality with a small feathered blend eliminates it.
+        if p.layer == "backdrop":
+            blend_horizontal_seam(out_path, out_path)
 
         elapsed = time.monotonic() - t0
         manifest[p.filename] = sig
