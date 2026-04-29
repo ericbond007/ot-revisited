@@ -1,7 +1,26 @@
 {
+  "backdrop-desert-1.webp": "d791d6a9653ebe27",
+  "backdrop-desert-2.webp": "380ccae6d5648cc9",
+  "backdrop-desert-3.webp": "98a5cf9baf55ca70",
+  "backdrop-desert-4.webp": "8a14bf0475963f82",
+  "backdrop-desert.webp": "f196d102fb368a7e",
+  "backdrop-forest-1.webp": "31bb925d8b3dc647",
+  "backdrop-forest-2.webp": "d25b4ac84978de20",
+  "backdrop-forest-3.webp": "d519c5e35cd45175",
+  "backdrop-forest-4.webp": "6736a7af7c65a7a9",
+  "backdrop-forest.webp": "9691cb51b5bfc127",
+  "backdrop-mountains-1.webp": "fc7efabd12b024b5",
+  "backdrop-mountains-2.webp": "b138cd86ad82eaee",
+  "backdrop-mountains-3.webp": "9b474d38bd94f598",
+  "backdrop-mountains-4.webp": "d3299ff99dfce71a",
+  "backdrop-mountains.webp": "fe12c7a0b85a88a3",
   "backdrop-prairie-1.webp": "e4a1945fa98d3305",
   "backdrop-prairie-2.webp": "1f22723235b3da99",
   "backdrop-prairie-3.webp": "2fbc2546198fd021",
   "backdrop-prairie-4.webp": "daa358e0ac6f4f75",
-  "backdrop-prairie.webp": "5e507935af013096"
+  "backdrop-prairie.webp": "5e507935af013096",
+  "ground-desert.webp": "f13a05696a531c9a",
+  "ground-forest.webp": "a263d6a9862ef0fa",
+  "ground-mountains.webp": "6f34bd84f155599c",
+  "ground-prairie.webp": "6339be7fe350fbfe"
 }
