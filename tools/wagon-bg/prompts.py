@@ -12,15 +12,15 @@ Layer = Literal["far", "mid", "near", "ground"]
 Terrain = Literal["prairie", "forest", "desert", "mountains", "river"]
 
 STYLE_SUFFIX = (
-    "hand-drawn cartoon illustration, painterly watercolor and ink, "
-    "late 90s adventure game background art, muted earth tones, "
-    "layered parallax depth, no people no animals no wagon, "
-    "isolated on flat sky-blue background"
+    "isolated on flat sky-blue background, no people no animals no wagon, "
+    "period 1840s pioneer aesthetic, muted earth-tone palette"
 )
 
 NEGATIVE_PROMPT = (
-    "blurry, low quality, modern, photograph, deformed, watermark, text, "
-    "signature, people, characters, wagon, oxen, ui, hud, multiple panels"
+    "blurry, low quality, photograph, photorealistic, 3D render, CGI, "
+    "vector graphics, flat design, anime, manga, deformed, watermark, "
+    "text, signature, people, characters, wagon, oxen, ui, hud, "
+    "multiple panels, oversaturated, neon"
 )
 
 # Tile band heights — the raster occupies its band only; the rest of

@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 from alpha import copy_opaque_to_webp, to_webp_with_alpha
-from comfy_client import generate_to, ping
+from comfy_client import CHECKPOINT, generate_to, ping
 from prompts import NEGATIVE_PROMPT, PROMPTS, TilePrompt
 
 THIS_DIR = Path(__file__).parent
@@ -23,8 +23,9 @@ MANIFEST = THIS_DIR / ".manifest.json"
 
 
 def _signature(p: TilePrompt) -> str:
-    """Hash of everything that affects the output: prompt + neg + dims + seed."""
+    """Hash of everything that affects the output: checkpoint + prompt + neg + dims + seed."""
     h = hashlib.sha256()
+    h.update(CHECKPOINT.encode())
     h.update(p.full_prompt.encode())
     h.update(NEGATIVE_PROMPT.encode())
     h.update(f"{p.width}x{p.height}".encode())
