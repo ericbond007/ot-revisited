@@ -26,13 +26,18 @@
 
 <g>
   {#if useRaster}
+    <!-- Ground tile is generated at near-square SDXL ratios (1024×512)
+         where the model paints a perspective shot of a wagon trail.
+         `xMidYMax slice` crops to the BOTTOM of the image so we see
+         only the foreground portion — no vanishing point, just the
+         wheel-rut detail at the player's feet. -->
     <image
       href="/wagon-bg/ground-{terrain}.webp"
       x="0"
       y={groundY}
       width={w}
       height={h}
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMidYMax slice"
     />
   {:else}
     <defs>

@@ -25,6 +25,14 @@
   let isMule = $state(false);
   let paused = $state(false);
 
+  // Bumping `restartKey` remounts WagonScene with a fresh t=0 — the
+  // rAF tick in the scene tracks scroll position internally, so this
+  // is the cleanest way to rewind the parallax and gait cycle.
+  let restartKey = $state(0);
+  function restart() {
+    restartKey += 1;
+  }
+
   const useRaster = $derived(page.url.searchParams.get('raster') === '1');
 
   const previewState = $derived.by(() => {
@@ -123,6 +131,8 @@
       <span>Pause animation</span>
     </label>
 
+    <button type="button" class="restart" onclick={restart}>↺ Restart</button>
+
     <label class="cb raster-toggle">
       <input type="checkbox" checked={useRaster} onchange={toggleRaster} />
       <span>Raster backgrounds (<code>?raster=1</code>)</span>
@@ -130,7 +140,9 @@
   </section>
 
   <section class="stage">
-    <WagonScene state={previewState} {timeOfDay} {paused} />
+    {#key restartKey}
+      <WagonScene state={previewState} {timeOfDay} {paused} />
+    {/key}
   </section>
 
   <footer>
@@ -215,6 +227,22 @@
   }
   .controls input[type='number'] {
     width: 5em;
+  }
+  .restart {
+    align-self: end;
+    padding: 0.4em 0.8em;
+    background: var(--c-bg-raised, #2a1a08);
+    color: var(--c-rust, #c25a32);
+    border: 2px solid var(--c-rust, #c25a32);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.9em;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .restart:hover {
+    background: var(--c-rust, #c25a32);
+    color: var(--c-bg-raised, #2a1a08);
   }
   .stage {
     margin: 0.8em 0;

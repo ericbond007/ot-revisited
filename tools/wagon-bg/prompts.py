@@ -34,7 +34,11 @@ DIMS = {
     "far":    (2048, 512),
     "mid":    (2048, 384),
     "near":   (2048, 256),
-    "ground": (2048, 160),
+    # Ground generates at a near-square SDXL-friendly ratio — 12.8:1
+    # ground strips trigger SDXL's "landscape panorama with sky"
+    # mode no matter the prompt. The image gets stretched/tiled
+    # horizontally in GroundBand.svelte at display time.
+    "ground": (1024, 512),
 }
 
 
@@ -84,7 +88,7 @@ PROMPTS: list[TilePrompt] = [
     _t("near", "river",     300005, "continuous foreground riverbank reeds, rushes, smooth wet stones filling the entire frame edge to edge, side-on horizontal band, no empty space"),
 
     # GROUND — packed wagon trail as a horizontal strip. Side-on, no perspective.
-    _t("ground", "prairie",   400001, "horizontal strip of packed dirt wagon trail running side-to-side across the entire frame, prairie grass on both sides of the trail, side-on flat view, no perspective, no vanishing point, no road going into distance"),
+    _t("ground", "prairie",   400001, "overhead view of a dirt road through prairie grass, two parallel tire tracks cut into the dirt road, grass and wildflowers grow on both sides of the road, looking straight down, no sky, no horizon, no panorama, no landscape, ground only"),
     _t("ground", "forest",    400002, "horizontal strip of packed dirt wagon trail running side-to-side across the entire frame, forest floor leaf litter on both sides, side-on flat view, no perspective, no vanishing point, no road going into distance"),
     _t("ground", "desert",    400003, "horizontal strip of packed dry dirt wagon trail running side-to-side across the entire frame, sandy desert ground with scattered pebbles on both sides, dry, no water, no puddles, no blue, side-on flat view, no perspective, no vanishing point, no road going into distance"),
     _t("ground", "mountains", 400004, "horizontal strip of packed dirt wagon trail running side-to-side across the entire frame, rocky mountain ground with gravel and stones on both sides, side-on flat view, no perspective, no vanishing point, no road going into distance, no snow"),
