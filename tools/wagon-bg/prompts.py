@@ -62,33 +62,33 @@ def _t(layer: Layer, terrain: Terrain, seed: int, content: str) -> TilePrompt:
 
 
 PROMPTS: list[TilePrompt] = [
-    # FAR — distant horizon, blurred and atmospheric. Side-on band.
-    _t("far", "prairie",   100001, "distant rolling green prairie hills along the horizon, soft atmospheric blue haze, blurred by distance, side-on horizontal band"),
-    _t("far", "forest",    100002, "distant tree-covered green hills along the horizon, layered receding silhouettes, atmospheric haze, side-on horizontal band"),
-    _t("far", "desert",    100003, "distant red mesas and buttes along the horizon, dry dusty haze, side-on horizontal band"),
-    _t("far", "mountains", 100004, "distant snow-capped rocky mountain ranges along the horizon, atmospheric blue haze, layered peaks, side-on horizontal band"),
-    _t("far", "river",     100005, "distant rolling river-valley hills with cottonwood silhouettes, soft haze, side-on horizontal band"),
+    # FAR — distant horizon, atmospheric. Filling the entire frame edge to edge.
+    _t("far", "prairie",   100001, "distant rolling green prairie hills filling the entire horizon edge to edge, continuous unbroken silhouette across the whole frame, soft atmospheric blue haze, side-on horizontal panoramic band, no empty space"),
+    _t("far", "forest",    100002, "distant tree-covered green hills filling the entire horizon edge to edge, continuous receding tree-line silhouettes across the whole frame, atmospheric haze, side-on horizontal panoramic band, no empty space"),
+    _t("far", "desert",    100003, "distant red mesas and buttes filling the entire horizon edge to edge, continuous unbroken silhouette across the whole frame, dry dusty haze, side-on horizontal panoramic band, no empty space, no water"),
+    _t("far", "mountains", 100004, "distant snow-capped rocky mountain ranges filling the entire horizon edge to edge, continuous mountain ridgeline across the whole frame, atmospheric blue haze, layered peaks, side-on horizontal panoramic band, no empty space"),
+    _t("far", "river",     100005, "distant rolling river-valley hills filling the entire horizon edge to edge with cottonwood silhouettes, continuous skyline across the whole frame, soft haze, side-on horizontal panoramic band, no empty space"),
 
-    # MID — middle-distance content, defined but not detailed. Side-on band.
-    _t("mid", "prairie",   200001, "middle-distance rolling grass hills, scattered trees and low brush, side-on horizontal band, no path"),
-    _t("mid", "forest",    200002, "middle-distance row of mixed trees, forest edge, side-on horizontal band"),
-    _t("mid", "desert",    200003, "middle-distance rocky desert outcrops with sagebrush, side-on horizontal band"),
-    _t("mid", "mountains", 200004, "middle-distance pine-covered foothills with exposed rock, side-on horizontal band"),
-    _t("mid", "river",     200005, "middle-distance riverbank willows and grass hummocks, side-on horizontal band"),
+    # MID — middle-distance content, full frame coverage.
+    _t("mid", "prairie",   200001, "continuous middle-distance rolling grass hills filling the entire frame edge to edge, scattered trees and low brush spread across the whole strip, side-on horizontal panoramic band, no path, no empty space"),
+    _t("mid", "forest",    200002, "continuous row of mixed trees filling the entire frame edge to edge, dense forest-edge band across the whole strip, side-on horizontal panoramic band, no empty space"),
+    _t("mid", "desert",    200003, "continuous middle-distance rocky desert outcrops with sagebrush filling the entire frame edge to edge, side-on horizontal panoramic band, no empty space, no water"),
+    _t("mid", "mountains", 200004, "continuous middle-distance pine-covered foothills with exposed rock filling the entire frame edge to edge, side-on horizontal panoramic band, no empty space"),
+    _t("mid", "river",     200005, "continuous middle-distance riverbank willows and grass hummocks filling the entire frame edge to edge, side-on horizontal panoramic band, no empty space"),
 
-    # NEAR — foreground vegetation strip. No path, no perspective.
-    _t("near", "prairie",   300001, "foreground prairie grass clumps and wildflowers, side-on horizontal band, no path"),
-    _t("near", "forest",    300002, "foreground forest underbrush, ferns, fallen logs, side-on horizontal band, no path"),
-    _t("near", "desert",    300003, "foreground sagebrush and prickly pear cacti, side-on horizontal band, no path"),
-    _t("near", "mountains", 300004, "foreground rocky terrain with boulders and alpine grass, side-on horizontal band, no path"),
-    _t("near", "river",     300005, "foreground riverbank reeds, rushes, smooth wet stones, side-on horizontal band"),
+    # NEAR — foreground vegetation strip, full frame coverage.
+    _t("near", "prairie",   300001, "continuous foreground prairie grass clumps and wildflowers filling the entire frame edge to edge, side-on horizontal band, no path, no empty space"),
+    _t("near", "forest",    300002, "continuous foreground forest underbrush, ferns, fallen logs filling the entire frame edge to edge, side-on horizontal band, no path, no empty space"),
+    _t("near", "desert",    300003, "continuous foreground sagebrush and prickly pear cacti filling the entire frame edge to edge, side-on horizontal band, no path, no empty space, no water"),
+    _t("near", "mountains", 300004, "continuous foreground rocky terrain with boulders and alpine grass filling the entire frame edge to edge, side-on horizontal band, no path, no empty space"),
+    _t("near", "river",     300005, "continuous foreground riverbank reeds, rushes, smooth wet stones filling the entire frame edge to edge, side-on horizontal band, no empty space"),
 
-    # GROUND — flat side-on ground surface texture. No path, no perspective lines.
-    _t("ground", "prairie",   400001, "side-on view of prairie grass and dirt ground texture, horizontal strip, no path, no perspective lines"),
-    _t("ground", "forest",    400002, "side-on view of forest floor with leaf litter and soil, horizontal strip, no path"),
-    _t("ground", "desert",    400003, "side-on view of sandy desert ground with scattered pebbles, horizontal strip, no path"),
-    _t("ground", "mountains", 400004, "side-on view of rocky mountain ground with gravel and stone, horizontal strip, no path"),
-    _t("ground", "river",     400005, "side-on view of muddy riverbank ground with smooth wet stones, horizontal strip"),
+    # GROUND — packed wagon trail as a horizontal strip. Side-on, no perspective.
+    _t("ground", "prairie",   400001, "horizontal strip of packed dirt wagon trail running side-to-side across the entire frame, prairie grass on both sides of the trail, side-on flat view, no perspective, no vanishing point, no road going into distance"),
+    _t("ground", "forest",    400002, "horizontal strip of packed dirt wagon trail running side-to-side across the entire frame, forest floor leaf litter on both sides, side-on flat view, no perspective, no vanishing point, no road going into distance"),
+    _t("ground", "desert",    400003, "horizontal strip of packed dry dirt wagon trail running side-to-side across the entire frame, sandy desert ground with scattered pebbles on both sides, dry, no water, no puddles, no blue, side-on flat view, no perspective, no vanishing point, no road going into distance"),
+    _t("ground", "mountains", 400004, "horizontal strip of packed dirt wagon trail running side-to-side across the entire frame, rocky mountain ground with gravel and stones on both sides, side-on flat view, no perspective, no vanishing point, no road going into distance, no snow"),
+    _t("ground", "river",     400005, "horizontal strip of packed muddy wagon trail running side-to-side across the entire frame, riverbank with smooth wet stones on both sides, side-on flat view, no perspective, no vanishing point, no road going into distance"),
 ]
 
 
