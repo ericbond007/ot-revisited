@@ -15,8 +15,38 @@ COMFY_OUTPUT_DIR = Path.home() / "ComfyUI" / "output"
 CHECKPOINT = "sd_xl_base_1.0.safetensors"
 
 
-def _build_workflow(prompt: str, negative: str, width: int, height: int, seed: int, filename_prefix: str) -> dict:
-    return {
+def _build_workflow(
+    prompt: str,
+    negative: str,
+    width: int,
+    height: int,
+    seed: int,
+    filename_prefix: str,
+    *,
+    seamless: bool = False,
+) -> dict:
+    """Build a t2i workflow. When `seamless=True`, inserts the
+    `SeamlessTile` node (x_only — tiles horizontally, not vertically) and
+    the `CircularVAEDecode` node, both from the `ComfyUI-seamless-tiling`
+    custom node pack. The result is an image whose right edge matches
+    its left edge so tiled copies in BackdropPainting have no visible seam.
+    """
+    if seamless:
+        # Node 10 patches the SDXL UNet's conv padding to circular on X axis
+        # only. Node 11 replaces the standard VAEDecode with a circular one.
+        ksampler_model = ["10", 0]
+        decode_node: dict = {
+            "class_type": "CircularVAEDecode",
+            "inputs": {"samples": ["3", 0], "vae": ["4", 2], "tiling": "x_only"},
+        }
+    else:
+        ksampler_model = ["4", 0]
+        decode_node = {
+            "class_type": "VAEDecode",
+            "inputs": {"samples": ["3", 0], "vae": ["4", 2]},
+        }
+
+    workflow: dict = {
         "3": {
             "class_type": "KSampler",
             "inputs": {
@@ -26,7 +56,7 @@ def _build_workflow(prompt: str, negative: str, width: int, height: int, seed: i
                 "sampler_name": "euler",
                 "scheduler": "normal",
                 "denoise": 1.0,
-                "model": ["4", 0],
+                "model": ksampler_model,
                 "positive": ["6", 0],
                 "negative": ["7", 0],
                 "latent_image": ["5", 0],
@@ -36,9 +66,19 @@ def _build_workflow(prompt: str, negative: str, width: int, height: int, seed: i
         "5": {"class_type": "EmptyLatentImage", "inputs": {"width": width, "height": height, "batch_size": 1}},
         "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["4", 1]}},
         "7": {"class_type": "CLIPTextEncode", "inputs": {"text": negative, "clip": ["4", 1]}},
-        "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["4", 2]}},
+        "8": decode_node,
         "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": filename_prefix}},
     }
+    if seamless:
+        workflow["10"] = {
+            "class_type": "SeamlessTile",
+            "inputs": {
+                "model": ["4", 0],
+                "tiling": "x_only",
+                "copy_model": "Make a copy",
+            },
+        }
+    return workflow
 
 
 def ping() -> bool:
@@ -70,14 +110,24 @@ def _wait(prompt_id: str, timeout: float = 180.0) -> dict:
     raise TimeoutError(f"prompt {prompt_id} did not complete in {timeout}s")
 
 
-def generate_to(out_path: Path, prompt: str, negative: str, width: int, height: int, seed: int) -> None:
+def generate_to(
+    out_path: Path,
+    prompt: str,
+    negative: str,
+    width: int,
+    height: int,
+    seed: int,
+    *,
+    seamless: bool = False,
+) -> None:
     """Generate one image and copy ComfyUI's output PNG to `out_path`.
 
     `out_path` is the final destination (e.g. a path under tools/wagon-bg/raw/).
     The intermediate file in ~/ComfyUI/output/ stays in place; we copy out.
+    Pass `seamless=True` for x-axis-tileable output (used for backdrop tiles).
     """
     prefix = f"wagon-bg-{out_path.stem}"
-    workflow = _build_workflow(prompt, negative, width, height, seed, prefix)
+    workflow = _build_workflow(prompt, negative, width, height, seed, prefix, seamless=seamless)
     pid = _post(workflow)
     history = _wait(pid)
 

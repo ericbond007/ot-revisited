@@ -86,7 +86,14 @@ def main() -> None:
         print(f"[{i}/{len(selection)}] {p.filename}  ({p.width}x{p.height}, seed={p.seed})", flush=True)
         t0 = time.monotonic()
         raw_path = RAW_DIR / f"{p.layer}-{p.terrain}.png"
-        generate_to(raw_path, p.full_prompt, NEGATIVE_PROMPT, p.width, p.height, p.seed)
+        # Backdrops generate seamlessly on the X axis so adjacent tile copies
+        # in BackdropPainting have invisible seams. Ground tiles stay non-seamless
+        # (they're cropped to the bottom of a perspective shot, so tileability
+        # at the edges doesn't matter).
+        generate_to(
+            raw_path, p.full_prompt, NEGATIVE_PROMPT, p.width, p.height, p.seed,
+            seamless=(p.layer == "backdrop"),
+        )
 
         # Both layers are opaque now: the backdrop is a full painted scene
         # (sky baked in), the ground is a trail surface. rembg's alpha pass

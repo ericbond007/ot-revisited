@@ -34,11 +34,12 @@ NEGATIVE_PROMPT = (
 #             SDXL ratio; GroundBand.svelte slices the bottom-foreground portion at
 #             display time so we never see a vanishing point.
 DIMS = {
-    # Backdrop is generated wide so the second tile copy doesn't enter
-    # the visible 1280-px viewport for tens of seconds at 0.3× parallax
-    # scroll. 2048×768 is the safe ceiling on 8 GB VRAM; pushing further
-    # OOMs on the 3070 Laptop.
-    "backdrop": (2048, 768),
+    # Backdrop generated SEAMLESS (x-axis circular padding) at 3072×768.
+    # With seamless tiling the seam is invisible regardless of width, so
+    # going wider is purely about content variety per cycle. 3072 gives
+    # us 50% more world-content per painting than 2048 without exceeding
+    # 8 GB VRAM on the 3070 Laptop.
+    "backdrop": (3072, 768),
     "ground":   (1024, 512),
 }
 
