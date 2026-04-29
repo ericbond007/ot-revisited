@@ -67,6 +67,7 @@ As of 2026-04-28 (post-#89). 34 open.
 ## Known design-incoming
 
 - **Claude Design integration** — Dave is iterating on UI mockups in Claude Design (released this week, post-cutoff). Plan TBD pending the format of the handoff (mockups vs. code vs. tokens). Rework targets likely include `play/+page.svelte`, `CampStage`, `TownStage`, `OutfitView`, modals.
+- **wagon-bg passing-landmark rasters** — generate painterly raster sprites for the wagon-view passing landmarks currently in `src/lib/ui/wagon/landmarks/` (ChimneyRock, ScottsBluff, IndependenceRock, CourthouseRock, plus generic Fort, FerryPost, MountainPass, ValleyArch, TreeClump). Drop-in replacement for the SVG silhouettes inside `LandmarkLayer.svelte`, behind the same `?raster=1` flag. Stretch goal: integrate landmarks the player passes-but-doesn't-stop-at — visible-in-the-distance only, not gameplay stops — so the trail feels populated. Fits into wagon-bg Phase 1.5 alongside sky/cloud/sun rasters.
 
 ## Recently shipped
 
