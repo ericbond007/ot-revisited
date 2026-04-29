@@ -43,13 +43,13 @@ const TAG_NAMES = [
 const HANDOFF_MAPPING: Record<string, string> = {
   // Trading posts
   hollenberg_ranch:      'Lmk_Hollenberg',
-  fort_kearny:           'Lmk_FortKearny',
+  ft_kearny:             'Lmk_FortKearny',
   robidoux_post:         'Lmk_Robidoux',
-  fort_laramie:          'Lmk_FortLaramie',
-  fort_bridger:          'Lmk_FortBridger',
-  fort_hall:             'Lmk_FortHall',
-  fort_boise:            'Lmk_FortBoise',
-  fort_walla_walla:      'Lmk_FortWallaWalla',
+  ft_laramie:            'Lmk_FortLaramie',
+  ft_bridger:            'Lmk_FortBridger',
+  ft_hall:               'Lmk_FortHall',
+  ft_boise:              'Lmk_FortBoise',
+  ft_walla_walla:        'Lmk_FortWallaWalla',
   the_dalles:            'Lmk_TheDalles',
   // River fords
   kansas_river:          'Lmk_KansasRiver',

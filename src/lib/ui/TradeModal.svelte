@@ -10,6 +10,7 @@
   import { POST_THEME } from '$lib/data/post-theme';
   import ItemTooltip from './ItemTooltip.svelte';
   import NumberStepper from './NumberStepper.svelte';
+  import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
 
   let { state: gameState, slot, onclose }: {
     state: GameState;
@@ -193,7 +194,11 @@
     <aside class="side-rail">
       <section class="panel post-panel">
         <div class="post-head">
-          <span class="post-glyph">{theme.glyph}</span>
+          {#if hereId && hasLandmarkIcon(hereId)}
+            <LandmarkIcon id={hereId} size={48} className="post-glyph-svg" />
+          {:else}
+            <span class="post-glyph">{theme.glyph}</span>
+          {/if}
           <div class="post-titles">
             <span class="post-tag">{theme.tag}</span>
             <h2 class="post-name">{postName}</h2>
