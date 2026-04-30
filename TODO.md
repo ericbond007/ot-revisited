@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #190 water bar). 33 open.
+As of 2026-04-30 (post-merge of #197 fish action). 32 open.
 
 ## New mechanics
 
@@ -59,7 +59,6 @@ As of 2026-04-30 (post-merge of #190 water bar). 33 open.
 | #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185) |
 | #195 | Camp-actions audit — re-evaluate hour costs + real gameplay effect  |
 | #196 | Raw hide handling — native trade for robes, wagon repair, post sale |
-| #197 | Fish camp action — add fishing rod / line / net items + camp action |
 | #198 | Grizzly mauling risk on big-game hunts in mountain terrain          |
 | #199 | Prize-cuts vs full-butchery choice on big kills (HuntModal UI)      |
 
@@ -70,6 +69,7 @@ As of 2026-04-30 (post-merge of #190 water bar). 33 open.
 
 ## Recently shipped
 
+- **#197** Fish camp action + gear — `fishing_line` / `fishing_rod` / `fishing_net` items (0.30 / 1.50 / 4.00). New `fish` camp action: 2 hr, no ammo, requires at least one gear item. Yield depends on best gear (line 2–6 lb, rod 4–10, net 8–20) × terrain mult (river 2.0, forest 1.0, mountains 0.8, prairie 0.4, desert 0.2 — and gated off entirely in desert as "no fishable water nearby"). Catch name flavors by terrain ("cutthroat trout" at the river, "mountain trout" in the Rockies, "a few suckers" on a dry creek bed). Yields fresh `game_meat` so the existing spoilage + cure pipeline picks it up; closes the period gap of mountain-leg hunger when game runs thin past Fort Hall. 5 new tests.
 - **#190** InventoryPanel water bar — third stacked bar beneath Weight + Warmth, matching that treatment. Color goes green-when-full to red-when-empty (inverse of weight, since here "more is good"); thresholds 70/30/10. With boiling knowledge + dirty water present the bar splits into clean (color-keyed) + dirty (diagonal-hatched rust) segments, sharing the bar width. Stats line keeps its compact text gallon readout — bar is the glanceable supplement.
 - **#182** Hunt byproducts — tallow, raw hides, prize cuts. Big-game kills now drop 15–40 lb of rendered fat (`tallow`), 1–2 raw hides at 80% (`raw_hide`, untreated dried-flat — emigrants didn't tan on the trail), and 1–2 lb of tongue+hump prize cuts at 70% (`prize_cut`). Medium kills get 5–10 lb tallow + 60% chance of one hide. All scaled by yieldFraction (no kill, no skin). PostHuntModal renders new rows; per-item glyphs 🟡 tallow / 🍖 prize / 🟫 hide. Logged follow-ups #196 (hide use cases), #197 (fish action + gear), #198 (grizzly mauling), #199 (prize-cuts vs full-butchery UI choice).
 - **#174** Bullets rework — split the single `bullets` item into period-correct ammo components: `gunpowder` + `lead_balls` + `percussion_caps` (each 1:1 with a shot), `lead_pig` (raw 5-lb bar), and `bullet_mold` (tool). New camp action `cast_balls` (2 hr, mold + pig → 30 balls) lets the player ride the cheap raw-lead supply path. Caps were the historical bottleneck (fulminate-of-mercury chemistry couldn't be done on the trail). Save migration in upgradeState: each old `bullets:N` becomes 30/30/30 + 1 mold so old saves keep working. Hunt consumes min of the 3 components per shot. 9 post stocks updated; Hunter + Gunsmith starter kits split. Per-item glyphs 💥/🍫/⚫/🪙/🪩 wired through TradeModal / Inventory{Panel,Modal} / CampSummaryModal.

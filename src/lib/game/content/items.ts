@@ -114,6 +114,15 @@ export const ITEMS: Record<string, ItemMeta> = {
 
   rifle_cleaning_kit: { id: 'rifle_cleaning_kit', name: 'Rifle cleaning kit', category: 'tool', weightLbPerUnit: 2, description: 'Keeps rifles firing in rain / wet weather.' },
 
+  // #197 fishing gear. Period emigrants commonly carried a hand-line +
+  // hooks for ~$0.30; folding pole rods and seine nets were less common
+  // but yielded much more. The Snake, Sweetwater, Bear, and Columbia
+  // were stocked with cutthroat trout, salmon, and catfish — most
+  // parties under-utilized this when game ran thin past Fort Hall.
+  fishing_line: { id: 'fishing_line', name: 'Fishing line', category: 'tool', weightLbPerUnit: 0.2, description: 'Hand-line + bone hooks. Cheap and light — every party should carry one. Slow but steady at the camp action.' },
+  fishing_rod:  { id: 'fishing_rod',  name: 'Fishing rod',  category: 'tool', weightLbPerUnit: 2,   description: 'Folding pole + line. Faster than a hand-line, better yield. Heavier but worth carrying past Fort Hall.' },
+  fishing_net:  { id: 'fishing_net',  name: 'Fishing net',  category: 'tool', weightLbPerUnit: 8,   description: 'Seine net for group fishing. Heavy but the highest-yield gear at major rivers.' },
+
   coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Warmth +25 per person (one per body). Cuts ford-chill damage and cold-camp health loss.' },
   boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3, description: 'Warmth +15 per person. Helps most when wading into cold rivers.' },
   blanket: { id: 'blanket', name: 'Blanket', category: 'clothing', weightLbPerUnit: 5, description: 'Warmth +25 per person. Night chill mitigation when the fire goes out.' },
