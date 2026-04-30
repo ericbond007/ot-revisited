@@ -60,7 +60,11 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     bonusSummary: '+20% meat per hunt.',
     starterGear: [
       { item: 'rifle', qty: 1 },
-      { item: 'bullets', qty: 30 }
+      { item: 'bullet_mold', qty: 1 },
+      { item: 'gunpowder', qty: 30 },
+      { item: 'lead_balls', qty: 30 },
+      { item: 'percussion_caps', qty: 30 },
+      { item: 'lead_pig', qty: 1 }
     ]
   },
   teamster: {
@@ -128,7 +132,10 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     bonusSummary: "+20% on hunt yield (stacks with Hunter).",
     starterGear: [
       { item: 'rifle_cleaning_kit', qty: 1 },
-      { item: 'bullets', qty: 15 },
+      { item: 'bullet_mold', qty: 1 },
+      { item: 'gunpowder', qty: 15 },
+      { item: 'lead_balls', qty: 15 },
+      { item: 'percussion_caps', qty: 15 },
       { item: 'rifle', qty: 1 }
     ]
   }

@@ -90,7 +90,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: "A sod-and-timber road ranch on Cottonwood Creek. A private store run by a German emigrant — prairie staples, a little whiskey, and whatever the last train didn't buy.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack',
-      'bullets', 'bandages',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
       'ox_shoes', 'yoke', 'rope', 'spare_plank',
       'tobacco', 'whiskey'
@@ -106,7 +106,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries, and he will not buy from you.',
     stock: [
       'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack',
-      'bullets', 'bandages', 'quinine',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
       'coat', 'blanket',
       'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'rope', 'chicken', 'grain',
       'lard'
@@ -127,7 +127,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: "Joseph Robidoux's trading post at the pass south of Scotts Bluff. A fur-trader outfit with a working forge — moccasins, beads, and a few hard-won comforts.",
     stock: [
       'flour', 'bacon', 'jerky',
-      'bullets', 'bandages',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'coat', 'blanket',
       'ox_shoes', 'iron_scrap', 'rope', 'grain',
       'moccasins', 'buffalo_robe', 'beads',
@@ -142,7 +142,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
       'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
-      'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine', 'vinegar',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine', 'vinegar',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke',
       'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'grain',
@@ -181,7 +181,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: "Jim Bridger's stockade is famously thin on stock. Moccasins, buffalo robes, and whatever the mountain men happened to bring in this week. Take what you can get.",
     stock: [
       'flour', 'bacon',
-      'bullets', 'bandages',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
       'spare_plank', 'ox_shoes', 'iron_scrap', 'rope', 'grain',
       'moccasins', 'buffalo_robe'
@@ -203,7 +203,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
-      'bullets', 'bandages', 'quinine', 'laudanum',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'grain',
       'salt', 'tobacco', 'whiskey', 'harmonica'
@@ -218,7 +218,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: 'A small HBC station by the Boise River. Cottonwoods, worn travelers, and a modest stock — not a major resupply, but the water is good.',
     stock: [
       'flour', 'bacon', 'dried_fruit',
-      'bullets', 'bandages', 'quinine',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
       'coat', 'blanket',
       'canvas', 'spare_plank', 'ox_shoes', 'grain',
       'moccasins', 'buffalo_robe'
@@ -246,7 +246,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: 'A lonely HBC outpost by the Columbia. Basic but reliable stock, and a specialty in Native trade goods — Walla Walla and Cayuse networks run through here.',
     stock: [
       'flour', 'beans', 'bacon',
-      'bullets', 'bandages', 'quinine',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
       'coat', 'blanket',
       'canvas', 'tongue', 'grain',
       'moccasins', 'buffalo_robe', 'beads'
@@ -261,7 +261,7 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
-      'bullets', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
+      'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'yoke',
       'cookware', 'rope', 'salt',

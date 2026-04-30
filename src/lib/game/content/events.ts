@@ -483,17 +483,19 @@ const abandoned_cache: GameEvent = {
       silentLog: true,
       apply: (s, rng) => {
         const flour = rng.int(20, 60);
-        const bullets = rng.int(5, 15);
+        const shots = rng.int(5, 15);
         return logLine(
           {
             ...s,
             inventory: {
               ...s.inventory,
               flour: (s.inventory.flour ?? 0) + flour,
-              bullets: (s.inventory.bullets ?? 0) + bullets
+              gunpowder:       (s.inventory.gunpowder ?? 0) + shots,
+              lead_balls:      (s.inventory.lead_balls ?? 0) + shots,
+              percussion_caps: (s.inventory.percussion_caps ?? 0) + shots
             }
           },
-          `Picked the cache clean. Flour +${flour}, bullets +${bullets}.`
+          `Picked the cache clean. Flour +${flour}, ${shots} shots' worth of powder/lead/caps.`
         );
       }
     }

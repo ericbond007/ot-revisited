@@ -39,6 +39,7 @@ export type CampActionId =
   | 'read_bible'
   | 'share_the_whore'
   | 'cure_meat'
+  | 'cast_balls'
   | 'find_water'
   | 'boil_water'
   | 'dig_well'
@@ -253,6 +254,44 @@ const cureMeat: CampAction = {
     return logLine(
       { ...s, inventory, flags },
       `Cured ${meat} lb of game meat${saltLine} into ${jerkyLbs} lb of jerky${lossLine}`
+    );
+  }
+};
+
+// --- Ammunition prep ---
+// Period-correct lead-ball casting (#174). Pour molten lead from a
+// pig into a brass mold; trim sprues; quench. ~30 balls per 5-lb pig
+// is the steady yield emigrants reported (the rest is sprue + spillage,
+// reabsorbed in the next melt). Without a mold, the player must buy
+// pre-cast balls at posts.
+const BALLS_PER_PIG = 30;
+
+const castBalls: CampAction = {
+  id: 'cast_balls',
+  label: 'Cast balls from a lead pig',
+  sub: `Mold + 1 lead pig · 2 hr · +${BALLS_PER_PIG} lead balls`,
+  icon: '🔫',
+  hourCost: 2,
+  availability: (s) => {
+    if ((s.inventory.bullet_mold ?? 0) === 0) {
+      return { available: false, reason: 'Need a bullet mold' };
+    }
+    if ((s.inventory.lead_pig ?? 0) === 0) {
+      return { available: false, reason: 'Need a pig of lead' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const pigs = s.inventory.lead_pig ?? 0;
+    if (pigs <= 0 || (s.inventory.bullet_mold ?? 0) === 0) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      lead_pig: pigs - 1,
+      lead_balls: (s.inventory.lead_balls ?? 0) + BALLS_PER_PIG
+    };
+    return logLine(
+      { ...s, inventory },
+      `Cast ${BALLS_PER_PIG} lead balls from a 5-lb pig.`
     );
   }
 };
@@ -600,6 +639,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   shareTheWhore,
   // Preservation
   cureMeat,
+  // Ammunition prep
+  castBalls,
   // Practical
   gatherFirewood,
   findWater,
@@ -620,6 +661,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   read_bible: readBible,
   share_the_whore: shareTheWhore,
   cure_meat: cureMeat,
+  cast_balls: castBalls,
   gather_firewood: gatherFirewood,
   find_water: findWater,
   boil_water: boilWater,
