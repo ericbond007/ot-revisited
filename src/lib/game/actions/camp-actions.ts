@@ -170,9 +170,9 @@ const singAlong: CampAction = {
 const readBible: CampAction = {
   id: 'read_bible',
   label: 'Read the Bible',
-  sub: 'Bible · 2 hr · +2 morale (+4 with Preacher)',
+  sub: 'Bible · 1 hr · +2 morale (+4 with Preacher)',
   icon: '📖',
-  hourCost: 2,
+  hourCost: 1,
   availability: (s) =>
     (s.inventory.bible ?? 0) > 0
       ? { available: true }
@@ -669,6 +669,11 @@ const findWater: CampAction = {
   icon: '💧',
   hourCost: 3,
   availability: (s) => {
+    // Desert had no surface water — dig_well is the right action there.
+    // Same pattern as fish (#197) gating off desert "no fishable water".
+    if (s.location.terrain === 'desert') {
+      return { available: false, reason: 'No streams in this country — dig a well instead' };
+    }
     const cap = s.resources.waterCap;
     const total = s.resources.water + (s.resources.dirtyWater ?? 0);
     return total >= cap
