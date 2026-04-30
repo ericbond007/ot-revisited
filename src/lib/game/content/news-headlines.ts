@@ -212,6 +212,20 @@ export const HEADLINES: NewsHeadline[] = [
     dateline: 'Saint Louis — June 1854',
     fromYear: 1854, toYear: 1854, fromMonth: 5, toMonth: 9
   },
+  {
+    // Ward Massacre — Aug 1854 on the Snake River near present-day
+    // Middleton, Idaho. A Bannock-Shoshone party attacked the Ward
+    // wagon train; only 2 of 20 emigrants survived. Soured relations
+    // with both bands across the Snake plain leg of the trail.
+    id: 'ward_massacre',
+    text: 'Ward Wagon Train Massacred on the Snake. Bannock and Shoshone Warriors Slay Twenty Emigrants.',
+    dateline: 'Fort Boise — September 1854',
+    fromYear: 1854, toYear: 1856, fromMonth: 9,
+    effects: [
+      { kind: 'tribe_shift', tribeId: 'bannock', delta: -10 },
+      { kind: 'tribe_shift', tribeId: 'shoshone', delta: -5 }
+    ]
+  },
 
   // --- 1855-1856: Bleeding Kansas, Harney, Brown ---
   {
@@ -220,6 +234,23 @@ export const HEADLINES: NewsHeadline[] = [
     dateline: 'Nebraska — September 1855',
     fromYear: 1855, toYear: 1856, fromMonth: 9,
     effects: [{ kind: 'tribe_shift', tribeId: 'sioux', delta: -8 }]
+  },
+  {
+    // Yakima War (1855-58) and Walla Walla War (1855-56) erupted
+    // after the 1855 treaty council. Ranged across the Columbia
+    // Plateau — Yakama, Cayuse, Walla Walla, and Umatilla bands all
+    // joined the resistance. The Cayuse War (1847-55) was already
+    // running; this conflict pulled the previously-cautious
+    // neighbors into open hostility.
+    id: 'yakima_war',
+    text: 'Plateau Tribes Rise Against the Settlers. Walla Walla, Cayuse, and Umatilla Take Up Arms.',
+    dateline: 'Walla Walla — November 1855',
+    fromYear: 1855, toYear: 1858, fromMonth: 11,
+    effects: [
+      { kind: 'tribe_shift', tribeId: 'walla_walla', delta: -12 },
+      { kind: 'tribe_shift', tribeId: 'umatilla', delta: -8 },
+      { kind: 'tribe_shift', tribeId: 'cayuse', delta: -5 }
+    ]
   },
   {
     id: 'bleeding_kansas',
