@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-29 (post-merge of #172 mileage + #186 event icons). 31 open.
+As of 2026-04-29 (post-merge of #172 mileage + #186 event icons). 32 open.
 
 ## New mechanics
 
@@ -60,6 +60,7 @@ As of 2026-04-29 (post-merge of #172 mileage + #186 event icons). 31 open.
 | #183 | AI art / animation pipeline — eval libs + image-gen APIs            |
 | #184 | Full game review — Sonnet pass on mechanics + balance               |
 | #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185) |
+| #195 | Camp-actions audit — re-evaluate hour costs + real gameplay effect  |
 
 ## Known design-incoming
 
