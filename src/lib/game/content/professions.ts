@@ -48,7 +48,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   blacksmith: {
     id: 'blacksmith',
     name: 'Blacksmith',
-    bonusSummary: '40% chance to salvage iron scrap when a metal wagon part is consumed.',
+    bonusSummary: 'Town smithy repairs cost half — your Blacksmith does the work, the post charges for materials only.',
     starterGear: [
       { item: 'iron_toolkit', qty: 1 },
       { item: 'ox_shoes', qty: 10 }

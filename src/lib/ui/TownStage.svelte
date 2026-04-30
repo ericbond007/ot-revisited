@@ -7,7 +7,8 @@
     REPAIR_DOLLARS_PER_POINT,
     INN_DOLLARS_PER_PERSON_PER_NIGHT,
     BROTHEL_DOLLARS_PER_MAN,
-    GUIDE_DOLLARS_PER_DAY
+    GUIDE_DOLLARS_PER_DAY,
+    FORGE_OX_SHOES_DOLLARS_PER_PAIR
   } from '$lib/game/systems/town-services';
   import { POST_THEME } from '$lib/data/post-theme';
   import { ICON } from '$lib/data/icon-dictionary';
@@ -50,12 +51,14 @@
   const REPAIR_POINTS_DEFAULT = 20;
   const STAKE_DEFAULT = 5;
   const GUIDE_DAYS_DEFAULT = 5;
+  const FORGE_PAIRS_DEFAULT = 4;
 
   const innEstCost = $derived(aliveCount * NIGHTS_DEFAULT * innRate);
   const repairEstCost = $derived(Math.ceil(REPAIR_POINTS_DEFAULT * REPAIR_DOLLARS_PER_POINT));
   const brothelCost = $derived(adultMales * BROTHEL_DOLLARS_PER_MAN);
   const guideEstCost = $derived(GUIDE_DAYS_DEFAULT * GUIDE_DOLLARS_PER_DAY);
   const stakeEstCost = $derived(STAKE_DEFAULT);
+  const forgeEstCost = $derived(Math.ceil(FORGE_PAIRS_DEFAULT * FORGE_OX_SHOES_DOLLARS_PER_PAIR));
 
   const wagonNeedsRepair = $derived(gameState.wagon.condition < 100);
 
@@ -130,6 +133,14 @@
         <div class="svc-body">
           <span class="svc-label">Hire the blacksmith</span>
           <span class="svc-sub">~${repairEstCost} for {REPAIR_POINTS_DEFAULT} condition · adjust on the next screen</span>
+        </div>
+      </button>
+      <button type="button" class="svc-card" disabled={gameState.cash < forgeEstCost}
+              onclick={() => (pendingAction = 'forge')}>
+        <span class="svc-icon">⚒️</span>
+        <div class="svc-body">
+          <span class="svc-label">Forge ox shoes</span>
+          <span class="svc-sub">${forgeEstCost} for {FORGE_PAIRS_DEFAULT} pairs · adjust on the next screen</span>
         </div>
       </button>
     {/if}

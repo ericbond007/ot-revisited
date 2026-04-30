@@ -80,13 +80,11 @@ export const ITEMS: Record<string, ItemMeta> = {
   axle:        { id: 'axle',        name: 'Spare axle',     category: 'wagon_part', weightLbPerUnit: 60, description: 'Rare but catastrophic failure. A spare saves the day.' },
   tongue:      { id: 'tongue',      name: 'Spare tongue',   category: 'wagon_part', weightLbPerUnit: 40, description: 'Connects wagon to the oxen. Breaks more often than you\'d think.' },
   canvas:      { id: 'canvas',      name: 'Canvas cover',   category: 'wagon_part', weightLbPerUnit: 30, description: 'Replace a torn cover. Otherwise weather damages supplies.' },
-  spare_plank: { id: 'spare_plank', name: 'Spare plank',    category: 'wagon_part', weightLbPerUnit: 8, description: 'Patches minor wagon damage. Cheaper than a full replacement.' },
-  iron_scrap:  { id: 'iron_scrap',  name: 'Iron scrap',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Salvaged metal. A Blacksmith can forge it into repairs.' },
+  spare_plank: { id: 'spare_plank', name: 'Spare plank',    category: 'wagon_part', weightLbPerUnit: 8, description: 'Patches minor wagon damage. Use the patch-with-planks camp action for +5 wagon condition.' },
   // Tar bucket — pine-tar grease for axle hubs. Every emigrant diary
-  // mentions one swinging under the wagon. Slows axle wear if you keep
-  // it greased; the future axle-wear mechanic (#174 follow-up area)
-  // will hook into this directly.
-  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows axle wear.' },
+  // mentions one swinging under the wagon. Cuts frame-decay rate by
+  // 25% while in the inventory.
+  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows wagon wear by 25%.' },
 
   // #182 hunt byproducts. Period emigrants pulled three things off a
   // big-game carcass besides meat: tallow (rendered fat — cooking

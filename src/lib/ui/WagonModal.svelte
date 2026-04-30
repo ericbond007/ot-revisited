@@ -31,7 +31,6 @@
     { key: 'canvas', label: 'Canvas cover' },
     { key: 'yoke', label: 'Yoke' },
     { key: 'spare_plank', label: 'Spare plank' },
-    { key: 'iron_scrap', label: 'Iron scrap' },
     { key: 'iron_toolkit', label: 'Iron toolkit' },
     { key: 'ox_shoes', label: 'Ox shoes' }
   ];

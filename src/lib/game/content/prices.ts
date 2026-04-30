@@ -40,7 +40,6 @@ export const PRICES: Record<string, PriceEntry> = {
   tongue:      { buy: 8.00, sell: 5.00 },
   canvas:      { buy: 6.00, sell: 3.00 },
   spare_plank: { buy: 2.00, sell: 1.00 },
-  iron_scrap:  { buy: 1.50, sell: 0.75 },
   tar_bucket:  { buy: 1.50, sell: 0.50 },
 
   // Hunt byproducts — primarily sell-side at posts; #182.

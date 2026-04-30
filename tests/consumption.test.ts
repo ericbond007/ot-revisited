@@ -23,7 +23,7 @@ function baseState(overrides: Partial<GameState> = {}): GameState {
       { id: 'b', name: 'Mary', profession: 'doctor', sex: 'female', kind: 'adult', isLeader: false, age: 28, health: 100, conditions: [], dead: false },
       { id: 'c', name: 'Tom', profession: 'hunter', sex: 'male', kind: 'adult', isLeader: false, age: 22, health: 100, conditions: [], dead: false }
     ],
-    wagon: { model: 'prairie_schooner', condition: 100, carryCapacity: 2500 },
+    wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 2500 },
     oxen: [],
     inventory: { flour: 300, bacon: 100, beans: 100 },
     cash: 300,

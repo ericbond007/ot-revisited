@@ -140,7 +140,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'bacon', 'jerky',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'coat', 'blanket',
-      'ox_shoes', 'iron_scrap', 'rope', 'grain',
+      'ox_shoes', 'rope', 'grain',
       'moccasins', 'buffalo_robe', 'beads',
       'tobacco'
     ] },
@@ -194,7 +194,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'bacon',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
-      'spare_plank', 'ox_shoes', 'iron_scrap', 'rope', 'grain',
+      'spare_plank', 'ox_shoes', 'rope', 'grain',
       'moccasins', 'buffalo_robe'
     ] },
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 65,  terrain: 'river',     kind: 'river',

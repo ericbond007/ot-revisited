@@ -23,10 +23,11 @@
     BROTHEL_MORALE_PER_MAN,
     BROTHEL_POX_CHANCE_PER_MAN,
     GUIDE_DOLLARS_PER_DAY,
-    GAMBLE_WIN_CHANCE
+    GAMBLE_WIN_CHANCE,
+    FORGE_OX_SHOES_DOLLARS_PER_PAIR
   } from '$lib/game/systems/town-services';
 
-  export type TownActionKind = 'repair' | 'inn' | 'gamble' | 'guide' | 'brothel';
+  export type TownActionKind = 'repair' | 'inn' | 'gamble' | 'guide' | 'brothel' | 'forge';
 
   let {
     kind,
@@ -61,11 +62,13 @@
   // svelte-ignore state_referenced_locally
   let stake = $state(Math.min(5, gameState.cash || 1));
   let guideDays = $state(5);
+  let forgePairs = $state(4);
 
   const innCost = $derived(aliveCount * nights * innRate);
   const repairCost = $derived(Math.ceil(repairPoints * REPAIR_DOLLARS_PER_POINT));
   const guideCost = $derived(guideDays * GUIDE_DOLLARS_PER_DAY);
   const brothelCost = $derived(adultMales * BROTHEL_DOLLARS_PER_MAN);
+  const forgeCost = $derived(Math.ceil(forgePairs * FORGE_OX_SHOES_DOLLARS_PER_PAIR));
 
   // Clamp repair points if wagonRoom shifts (rare — wagon can take damage
   // mid-modal in theory, though it shouldn't while paused at a post).
@@ -81,6 +84,7 @@
     kind === 'inn'     ? innCost :
     kind === 'gamble'  ? stake :
     kind === 'guide'   ? guideCost :
+    kind === 'forge'   ? forgeCost :
     /* brothel */        brothelCost
   );
 
@@ -121,6 +125,14 @@
       summary: `${guideDays} days of +15% travel speed`,
       confirmLabel: 'Confirm'
     }
+    : kind === 'forge' ? {
+      glyph: '⚒️',
+      title: 'Forge ox shoes',
+      accent: 'var(--c-rust)',
+      formAction: `?/townForgeOxShoes&slot=${qp}`,
+      summary: `${forgePairs} ${forgePairs === 1 ? 'pair' : 'pairs'} of ox shoes`,
+      confirmLabel: 'Confirm'
+    }
     /* brothel */ : {
       glyph: ICON.town_services.brothel,
       title: 'Visit the cribs out back',
@@ -137,6 +149,7 @@
     kind === 'inn'     ? 'nights' :
     kind === 'gamble'  ? 'stake' :
     kind === 'guide'   ? 'dollars' :
+    kind === 'forge'   ? 'pairs' :
     /* brothel */        ''            // brothel takes no qty input
   );
   const hiddenValue = $derived(
@@ -144,6 +157,7 @@
     kind === 'inn'     ? nights :
     kind === 'gamble'  ? stake :
     kind === 'guide'   ? guideCost :
+    kind === 'forge'   ? forgePairs :
     /* brothel */        0
   );
 </script>
@@ -196,6 +210,12 @@
           <span class="qty-label">Days hired</span>
           <NumberStepper bind:value={guideDays} min={1} max={30} ariaLabel="Guide days" hideValue displayValue={guideDays} />
           <span class="qty-suffix">{guideDays === 1 ? 'day' : 'days'}</span>
+        </div>
+      {:else if kind === 'forge'}
+        <div class="qty-row">
+          <span class="qty-label">Pairs</span>
+          <NumberStepper bind:value={forgePairs} min={1} max={20} ariaLabel="Pairs of ox shoes" hideValue displayValue={forgePairs} />
+          <span class="qty-suffix">{forgePairs === 1 ? 'pair' : 'pairs'}</span>
         </div>
       {/if}
 

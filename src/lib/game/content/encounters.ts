@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import type { GameEvent } from './events';
-import { inTerrain, yearAtLeast } from './event-gating';
+import { inTerrain, yearAtLeast, milesBetween, and } from './event-gating';
 import { tribesAtMile, type Tribe } from './tribes';
 import {
   getTribeAttitude,
@@ -265,6 +265,53 @@ const emigrant_grave: GameEvent = {
       label: 'Roll past without stopping',
       silentLog: true,
       apply: (s) => logLine(s, 'Rolled past the grave without a word.')
+    }
+  ]
+};
+
+// Abandoned wagon (#201) — past the first 200 mi the trail starts to
+// fill with wrecks: families that turned back, axles split, oxen lost.
+// Period diaries call out "wagon graveyards" especially past Devil's
+// Gate and through the Bear River valley. The party can pick over a
+// wreck for usable wood and canvas — costs an hour of travel.
+const abandoned_wagon: GameEvent = {
+  id: 'encounter_abandoned_wagon',
+  category: 'encounter',
+  title: 'An abandoned wagon',
+  body: 'A bone-bleached wreck off the trail — wheels collapsed, oxen long gone. A note nailed to the box reads "we could not go on."',
+  weight: 2,
+  gate: and(milesBetween(200, 99999), inTerrain('prairie', 'forest', 'mountains', 'desert')),
+  choices: [
+    {
+      id: 'scavenge',
+      icon: '🔧',
+      label: 'Scavenge for parts (1 hr)',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const planks = rng.int(1, 3);
+        const tookCanvas = rng.chance(0.5);
+        const inventory: Record<string, number> = {
+          ...s.inventory,
+          spare_plank: (s.inventory.spare_plank ?? 0) + planks
+        };
+        if (tookCanvas) {
+          inventory.canvas = (inventory.canvas ?? 0) + 1;
+        }
+        const parts = [`${planks} spare plank${planks === 1 ? '' : 's'}`];
+        if (tookCanvas) parts.push('1 canvas');
+        return logLine(
+          { ...s, inventory },
+          `Picked over the wreck — found ${parts.join(' and ')}.`
+        );
+      }
+    },
+    {
+      id: 'pass',
+      icon: '🚶',
+      label: 'Roll on past',
+      silentLog: true,
+      apply: (s) => logLine(s, 'Rolled past the wreck without stopping.')
     }
   ]
 };
@@ -564,6 +611,7 @@ export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
   soldier_patrol,
   mail_rider,
   emigrant_grave,
+  abandoned_wagon,
   native_trading_party,
   native_toll_demand,
   native_guide_offer,

@@ -10,7 +10,7 @@ import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
 import { addNews, generatePostGossip, generateNewspaper, applyNewspaper } from '$lib/game/systems/news';
 import { maybeDeliverLetter } from '$lib/game/systems/letters';
-import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide } from '$lib/game/systems/town-services';
+import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide, forgeOxShoes } from '$lib/game/systems/town-services';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -418,6 +418,23 @@ export const actions: Actions = {
       throw error(409, 'no blacksmith here');
     }
     const result = repairWagon(state, dollars);
+    state = result.state;
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  townForgeOxShoes: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const pairs = parseInt(fd.get('pairs')?.toString() ?? '1', 10);
+    let state = await loadState(locals, slot);
+    if (!state.location.atLandmarkId) throw error(409, 'not at a landmark');
+    const here = getLandmark(state.location.atLandmarkId);
+    if (!(here.services ?? []).includes('blacksmith')) {
+      throw error(409, 'no blacksmith here');
+    }
+    const result = forgeOxShoes(state, pairs);
     state = result.state;
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };

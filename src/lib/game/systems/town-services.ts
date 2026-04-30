@@ -1,5 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
+import { hasLiveBlacksmith } from '../professions/predicates';
+import { BLACKSMITH_TOWN_REPAIR_DISCOUNT } from '../professions/bonuses';
 
 // Town services available at the bigger trading posts: blacksmith
 // repairs, an inn for proper rest, and gambling. Each is opt-in per
@@ -26,7 +28,9 @@ export interface RepairResult {
 }
 
 /** Pay the smith to restore wagon condition. The player picks how much
- *  to spend (passed as `dollars`); we restore points up to 100. */
+ *  to spend (passed as `dollars`); we restore points up to 100. With a
+ *  live Blacksmith in the party, the per-point rate is halved (the
+ *  smith does the work — the post charges for materials only). */
 export function repairWagon(state: GameState, dollars: number): RepairResult {
   const want = Math.max(0, Math.floor(dollars));
   if (want <= 0) {
@@ -39,16 +43,22 @@ export function repairWagon(state: GameState, dollars: number): RepairResult {
   if (room <= 0) {
     return { state, pointsRestored: 0, cost: 0 };
   }
-  const desiredPoints = Math.floor(want / REPAIR_DOLLARS_PER_POINT);
+  const ratePerPoint = hasLiveBlacksmith(state)
+    ? REPAIR_DOLLARS_PER_POINT * BLACKSMITH_TOWN_REPAIR_DISCOUNT
+    : REPAIR_DOLLARS_PER_POINT;
+  const desiredPoints = Math.floor(want / ratePerPoint);
   const points = Math.min(room, desiredPoints);
-  const cost = Math.ceil(points * REPAIR_DOLLARS_PER_POINT);
+  const cost = Math.ceil(points * ratePerPoint);
+  const flavor = hasLiveBlacksmith(state)
+    ? `Your Blacksmith worked the forge with the post smith. +${points} condition for $${cost}.`
+    : `The blacksmith patched the wagon. +${points} condition for $${cost}.`;
   const next: GameState = {
     ...state,
     cash: state.cash - cost,
     wagon: { ...state.wagon, condition: state.wagon.condition + points },
     eventLog: [
       ...state.eventLog,
-      { day: state.day, text: `The blacksmith patched the wagon. +${points} condition for $${cost}.` }
+      { day: state.day, text: flavor }
     ]
   };
   return { state: next, pointsRestored: points, cost };
@@ -254,6 +264,49 @@ export function hireGuide(state: GameState, dollars: number): GuideResult {
     ]
   };
   return { state: next, days, cost };
+}
+
+// --- Forge ox shoes ---
+//
+// Period-correct: fort smiths often re-shod oxen for emigrants and
+// pre-made shoes were a standard line item. Cost matches the trade
+// buy price ($1.50/pair) — the smith's bread-and-butter service. With
+// a live Blacksmith in the party, the per-pair rate is halved (same
+// logic as repairs — your smith does the work, the post charges
+// materials only). Available at any post with `blacksmith` service.
+
+export const FORGE_OX_SHOES_DOLLARS_PER_PAIR = 1.5;
+
+export interface ForgeOxShoesResult {
+  state: GameState;
+  pairs: number;
+  cost: number;
+}
+
+/** Forge `pairs` pairs of ox shoes at the post smithy. Adds them to
+ *  the inventory and deducts cash. Throws on insufficient funds. */
+export function forgeOxShoes(state: GameState, pairs: number): ForgeOxShoesResult {
+  const n = Math.max(0, Math.floor(pairs));
+  if (n <= 0) {
+    return { state, pairs: 0, cost: 0 };
+  }
+  const ratePerPair = hasLiveBlacksmith(state)
+    ? FORGE_OX_SHOES_DOLLARS_PER_PAIR * BLACKSMITH_TOWN_REPAIR_DISCOUNT
+    : FORGE_OX_SHOES_DOLLARS_PER_PAIR;
+  const cost = Math.ceil(n * ratePerPair);
+  if (state.cash < cost) {
+    throw new Error(`forgeOxShoes: not enough cash ($${state.cash} < $${cost})`);
+  }
+  const flavor = hasLiveBlacksmith(state)
+    ? `Forged ${n} pairs of ox shoes alongside the post smith. $${cost}.`
+    : `The post smith hammered out ${n} pairs of ox shoes. $${cost}.`;
+  const next: GameState = {
+    ...state,
+    cash: state.cash - cost,
+    inventory: { ...state.inventory, ox_shoes: (state.inventory.ox_shoes ?? 0) + n },
+    eventLog: [...state.eventLog, { day: state.day, text: flavor }]
+  };
+  return { state: next, pairs: n, cost };
 }
 
 // --- Helpers ---

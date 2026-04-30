@@ -42,6 +42,8 @@ export type CampActionId =
   | 'cast_balls'
   | 'fish'
   | 'patch_wagon'
+  | 'replace_canvas'
+  | 'replace_planks'
   | 'stitch_moccasins'
   | 'find_water'
   | 'boil_water'
@@ -376,26 +378,105 @@ const fish: CampAction = {
   }
 };
 
-// --- Rawhide repurposing (#196) ---
-// Period emigrants stockpiled raw hides from kills (they couldn't tan
-// on the trail — 3-week process). Two on-trail uses other than trade
-// at posts: rough patches for the wagon canvas (rawhide shrinks tight
-// when wet, dries hard) and quick-stitched moccasins (awl + sinew, a
-// few hours' work). No specialist required — anyone with hide and
-// time could do either.
+// --- Wagon repair (#196 + #201) ---
+// Three on-trail repair paths, each tied to a different consumable:
+//   patch_wagon     — rawhide → canvas (primitive, no toolkit needed)
+//   replace_canvas  — canvas spare → canvas (full cover swap, doubles without iron_toolkit)
+//   replace_planks  — spare_plank → frame condition (also doubles without iron_toolkit)
+// Period emigrants stockpiled rawhide from kills (they couldn't tan on
+// the trail — 3-week process). Rawhide-on-canvas is the classic field
+// repair: shrinks tight when wet, dries hard. Plank patches and
+// fresh-canvas swaps were standard among well-equipped parties.
 
 const PATCH_HIDE_COST = 1;
-const PATCH_CONDITION_GAIN = 5;
+const PATCH_CANVAS_GAIN = 8;
 
 const patchWagon: CampAction = {
   id: 'patch_wagon',
-  label: 'Patch wagon canvas with rawhide',
-  sub: `${PATCH_HIDE_COST} raw hide · 2 hr · +${PATCH_CONDITION_GAIN} wagon condition`,
+  label: 'Patch canvas with rawhide',
+  sub: `${PATCH_HIDE_COST} raw hide · 2 hr · +${PATCH_CANVAS_GAIN} canvas`,
   icon: '🩹',
   hourCost: 2,
   availability: (s) => {
     if ((s.inventory.raw_hide ?? 0) < PATCH_HIDE_COST) {
       return { available: false, reason: 'Need a raw hide' };
+    }
+    if (s.wagon.canvas >= 100) {
+      return { available: false, reason: 'Canvas is sound' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    if ((s.inventory.raw_hide ?? 0) < PATCH_HIDE_COST) return s;
+    if (s.wagon.canvas >= 100) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      raw_hide: (s.inventory.raw_hide ?? 0) - PATCH_HIDE_COST
+    };
+    const wagon = {
+      ...s.wagon,
+      canvas: Math.min(100, s.wagon.canvas + PATCH_CANVAS_GAIN)
+    };
+    return logLine(
+      { ...s, inventory, wagon },
+      `Stretched a wet rawhide patch over the tear. Canvas +${PATCH_CANVAS_GAIN}.`
+    );
+  }
+};
+
+// Without iron_toolkit, both fresh-canvas and plank repairs cost double
+// — period reality: hand tools alone could not drive proper nails or
+// stretch canvas to a tight seam, so the party simply burned more
+// material on a worse fix.
+const REPLACE_CANVAS_GAIN = 30;
+
+const replaceCanvas: CampAction = {
+  id: 'replace_canvas',
+  label: 'Replace canvas cover',
+  sub: '1 canvas · 2 hr · +30 canvas (2× without toolkit)',
+  icon: '⛺',
+  hourCost: 2,
+  availability: (s) => {
+    const cost = (s.inventory.iron_toolkit ?? 0) > 0 ? 1 : 2;
+    if ((s.inventory.canvas ?? 0) < cost) {
+      return { available: false, reason: `Need ${cost} canvas` };
+    }
+    if (s.wagon.canvas >= 100) {
+      return { available: false, reason: 'Canvas is sound' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const cost = (s.inventory.iron_toolkit ?? 0) > 0 ? 1 : 2;
+    if ((s.inventory.canvas ?? 0) < cost) return s;
+    if (s.wagon.canvas >= 100) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      canvas: (s.inventory.canvas ?? 0) - cost
+    };
+    const wagon = {
+      ...s.wagon,
+      canvas: Math.min(100, s.wagon.canvas + REPLACE_CANVAS_GAIN)
+    };
+    const flavor = cost === 1
+      ? `Stretched a fresh canvas over the bows. Canvas +${REPLACE_CANVAS_GAIN}.`
+      : `Without a toolkit the new cover went on rough — burned through 2 canvas. Canvas +${REPLACE_CANVAS_GAIN}.`;
+    return logLine({ ...s, inventory, wagon }, flavor);
+  }
+};
+
+const REPLACE_PLANK_GAIN = 5;
+
+const replacePlanks: CampAction = {
+  id: 'replace_planks',
+  label: 'Patch wagon with planks',
+  sub: '1 spare plank · 1 hr · +5 wagon condition (2× without toolkit)',
+  icon: '🪵',
+  hourCost: 1,
+  availability: (s) => {
+    const cost = (s.inventory.iron_toolkit ?? 0) > 0 ? 1 : 2;
+    if ((s.inventory.spare_plank ?? 0) < cost) {
+      return { available: false, reason: `Need ${cost} spare plank` };
     }
     if (s.wagon.condition >= 100) {
       return { available: false, reason: 'Wagon is sound' };
@@ -403,20 +484,21 @@ const patchWagon: CampAction = {
     return { available: true };
   },
   apply: (s) => {
-    if ((s.inventory.raw_hide ?? 0) < PATCH_HIDE_COST) return s;
+    const cost = (s.inventory.iron_toolkit ?? 0) > 0 ? 1 : 2;
+    if ((s.inventory.spare_plank ?? 0) < cost) return s;
     if (s.wagon.condition >= 100) return s;
     const inventory: Record<string, number> = {
       ...s.inventory,
-      raw_hide: (s.inventory.raw_hide ?? 0) - PATCH_HIDE_COST
+      spare_plank: (s.inventory.spare_plank ?? 0) - cost
     };
     const wagon = {
       ...s.wagon,
-      condition: Math.min(100, s.wagon.condition + PATCH_CONDITION_GAIN)
+      condition: Math.min(100, s.wagon.condition + REPLACE_PLANK_GAIN)
     };
-    return logLine(
-      { ...s, inventory, wagon },
-      `Cut a rawhide patch into the canvas. Wagon +${PATCH_CONDITION_GAIN}.`
-    );
+    const flavor = cost === 1
+      ? `Patched the bed and sides with a plank. Wagon +${REPLACE_PLANK_GAIN}.`
+      : `Without a toolkit the planks went on crooked — used 2. Wagon +${REPLACE_PLANK_GAIN}.`;
+    return logLine({ ...s, inventory, wagon }, flavor);
   }
 };
 
@@ -793,8 +875,10 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   castBalls,
   // Foraging — passive yield without ammo
   fish,
-  // Rawhide repurposing (#196)
+  // Wagon repair (#196 + #201)
   patchWagon,
+  replaceCanvas,
+  replacePlanks,
   stitchMoccasins,
   // Practical
   gatherFirewood,
@@ -819,6 +903,8 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   cast_balls: castBalls,
   fish,
   patch_wagon: patchWagon,
+  replace_canvas: replaceCanvas,
+  replace_planks: replacePlanks,
   stitch_moccasins: stitchMoccasins,
   gather_firewood: gatherFirewood,
   find_water: findWater,
