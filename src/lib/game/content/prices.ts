@@ -57,6 +57,11 @@ export const PRICES: Record<string, PriceEntry> = {
   bullet_mold:        { buy: 1.50,  sell: 0.75 },
   rifle_cleaning_kit: { buy: 3.00,  sell: 1.50 },
 
+  // #197 fishing gear.
+  fishing_line:       { buy: 0.30,  sell: 0.15 },
+  fishing_rod:        { buy: 1.50,  sell: 0.75 },
+  fishing_net:        { buy: 4.00,  sell: 2.00 },
+
   // Clothing
   coat:    { buy: 5.00, sell: 2.50 },
   boots:   { buy: 4.00, sell: 2.00 },

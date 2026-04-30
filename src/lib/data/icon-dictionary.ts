@@ -83,7 +83,11 @@ export const ICON = {
     // #182 hunt byproducts.
     tallow:          '🟡',
     prize_cut:       '🍖',
-    raw_hide:        '🟫'
+    raw_hide:        '🟫',
+    // #197 fishing gear.
+    fishing_line:    '🧵',
+    fishing_rod:     '🎣',
+    fishing_net:     '🕸️'
   },
   event_categories: {
     weather:    '🌩️',

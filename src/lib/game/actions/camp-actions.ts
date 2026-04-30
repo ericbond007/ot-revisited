@@ -40,6 +40,7 @@ export type CampActionId =
   | 'share_the_whore'
   | 'cure_meat'
   | 'cast_balls'
+  | 'fish'
   | 'find_water'
   | 'boil_water'
   | 'dig_well'
@@ -292,6 +293,83 @@ const castBalls: CampAction = {
     return logLine(
       { ...s, inventory },
       `Cast ${BALLS_PER_PIG} lead balls from a 5-lb pig.`
+    );
+  }
+};
+
+// --- Fishing ---
+// #197. Period emigrants under-utilized fishing — most parties had a
+// hand-line + hooks but didn't use them despite the Snake / Sweetwater
+// / Bear / Columbia being stocked with cutthroat trout, salmon, and
+// catfish. The action is gear-gated (need a line, rod, or net) and
+// terrain-modulated (river crossings best, desert nearly hopeless).
+// Yield is fresh game_meat — log line names the catch by terrain.
+type FishingTier = 'net' | 'rod' | 'line';
+
+function bestFishingGear(s: GameState): FishingTier | null {
+  if ((s.inventory.fishing_net ?? 0) > 0)  return 'net';
+  if ((s.inventory.fishing_rod ?? 0) > 0)  return 'rod';
+  if ((s.inventory.fishing_line ?? 0) > 0) return 'line';
+  return null;
+}
+
+const FISH_BASE_BY_TIER: Record<FishingTier, { min: number; max: number }> = {
+  line: { min: 2, max: 6 },
+  rod:  { min: 4, max: 10 },
+  net:  { min: 8, max: 20 }
+};
+
+const FISH_TERRAIN_MULT: Record<string, number> = {
+  river: 2.0,    // at a river ford — best fishing
+  forest: 1.0,   // mountain streams, river bottoms
+  mountains: 0.8,
+  prairie: 0.4,  // distant streams, less reliable
+  desert: 0.2    // dry; mostly dry creek beds
+};
+
+function fishCatchName(terrain: string, tier: FishingTier): string {
+  if (terrain === 'river' || terrain === 'forest') {
+    return tier === 'net' ? 'salmon and trout' : 'cutthroat trout';
+  }
+  if (terrain === 'mountains') return 'mountain trout';
+  if (terrain === 'desert') return 'a few suckers';
+  return 'catfish';
+}
+
+const fish: CampAction = {
+  id: 'fish',
+  label: 'Fish nearby waters',
+  sub: 'Line / rod / net · 2 hr · fresh game meat',
+  icon: '🎣',
+  hourCost: 2,
+  availability: (s) => {
+    if (bestFishingGear(s) === null) {
+      return { available: false, reason: 'Need a fishing line, rod, or net' };
+    }
+    const mult = FISH_TERRAIN_MULT[s.location.terrain] ?? 0.4;
+    if (mult < 0.3) {
+      return { available: false, reason: 'No fishable water nearby' };
+    }
+    return { available: true };
+  },
+  apply: (s, rng) => {
+    const tier = bestFishingGear(s);
+    if (!tier) return s;
+    const range = FISH_BASE_BY_TIER[tier];
+    const mult = FISH_TERRAIN_MULT[s.location.terrain] ?? 0.4;
+    const lbs = Math.max(0, Math.round(rng.int(range.min, range.max) * mult));
+    if (lbs <= 0) {
+      return logLine(s, 'Cast a line for two hours — water came up empty.');
+    }
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      game_meat: (s.inventory.game_meat ?? 0) + lbs
+    };
+    const flags = { ...s.flags, _gameMeatSpoilDay: s.day + 3 };
+    const catchName = fishCatchName(s.location.terrain, tier);
+    return logLine(
+      { ...s, inventory, flags },
+      `Caught ${lbs} lb of ${catchName}. Eat fresh or cure it before it spoils.`
     );
   }
 };
@@ -641,6 +719,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   cureMeat,
   // Ammunition prep
   castBalls,
+  // Foraging — passive yield without ammo
+  fish,
   // Practical
   gatherFirewood,
   findWater,
@@ -662,6 +742,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   share_the_whore: shareTheWhore,
   cure_meat: cureMeat,
   cast_balls: castBalls,
+  fish,
   gather_firewood: gatherFirewood,
   find_water: findWater,
   boil_water: boilWater,
