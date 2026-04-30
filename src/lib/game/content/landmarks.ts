@@ -74,8 +74,11 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'independence_mo',     name: 'Independence, MO',    milesFromPrevious: 0,   terrain: 'prairie',   kind: 'start' },
   { id: 'kansas_river',        name: 'Kansas River',        milesFromPrevious: 110, terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 3 } },
-  { id: 'alcove_spring',       name: 'Alcove Spring',       milesFromPrevious: 40,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 30,  terrain: 'river',     kind: 'river',
+  { id: 'alcove_spring',       name: 'Alcove Spring',       milesFromPrevious: 60,  terrain: 'prairie',   kind: 'landmark' },
+  // Alcove Spring sits at the Big Blue ford; the named camp and the
+  // crossing are essentially collocated. 5 mi covers wagons rolling
+  // down from the spring to the river bank.
+  { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 5,   terrain: 'river',     kind: 'river',
     river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
   { id: 'hollenberg_ranch',    name: 'Hollenberg Ranch',    milesFromPrevious: 40,  terrain: 'prairie',   kind: 'trading_post',
     // Private road ranch on Cottonwood Creek. Small sod-and-timber store
@@ -92,7 +95,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'ox_shoes', 'yoke', 'rope', 'spare_plank',
       'tobacco', 'whiskey'
     ] },
-  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 80,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 120, terrain: 'prairie',   kind: 'trading_post',
     // U.S. Army post. Quartermaster-issue basics — no luxuries.
     // Historical note: Army quartermasters issued to soldiers; they did
     // not buy goods from emigrants. Kearny is sell-only (for the player).
@@ -108,12 +111,12 @@ export const LANDMARKS: readonly Landmark[] = [
       'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'rope', 'chicken', 'grain',
       'lard'
     ] },
-  { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 120, terrain: 'prairie',   kind: 'landmark' },
-  { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 60, terrain: 'river', kind: 'river',
+  { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 145, terrain: 'prairie',   kind: 'landmark' },
+  { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 65, terrain: 'river', kind: 'river',
     river: { depthFt: 2.5, currentMph: 2, ferryPrice: 4 } },
-  { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 70, terrain: 'prairie', kind: 'landmark' },
+  { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 50, terrain: 'prairie', kind: 'landmark' },
   { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 25,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 30,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 22,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'robidoux_post',       name: 'Robidoux Trading Post', milesFromPrevious: 10, terrain: 'prairie',  kind: 'trading_post',
     // Joseph Robidoux's post at Robidoux Pass, just south of Scotts Bluff.
     // A small fur-trader outfit — blacksmith services, moccasins, beads,
@@ -130,7 +133,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'moccasins', 'buffalo_robe', 'beads',
       'tobacco'
     ] },
-  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 40,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post',
     // Fur-trade origin turned emigrant hub. The broadest selection on the
     // trail — and famously the highest prices.
     postKind: 'frontier',
@@ -147,26 +150,30 @@ export const LANDMARKS: readonly Landmark[] = [
       'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
-  { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 12,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'guernsey_ruts',       name: 'Guernsey Ruts',       milesFromPrevious: 5,   terrain: 'prairie',   kind: 'landmark' },
-  { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 75, terrain: 'river', kind: 'river',
+  // Register Cliff sits ~60 mi past Laramie near present-day Guernsey.
+  // The wagon ruts at Guernsey are a couple miles further along.
+  { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 60,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'guernsey_ruts',       name: 'Guernsey Ruts',       milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
+  // North Platte west crossing was at the Casper area, ~110 mi past
+  // Guernsey along the river.
+  { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 110, terrain: 'river', kind: 'river',
     river: { depthFt: 4.0, currentMph: 3, ferryPrice: 5 } },
-  { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 45,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 35,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 6,   terrain: 'mountains', kind: 'landmark' },
-  { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 40, terrain: 'river',    kind: 'river',
+  { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 25,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 12,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
+  { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 15, terrain: 'river',    kind: 'river',
     river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
-  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 50,  terrain: 'prairie',   kind: 'landmark' },
   // South Pass is the broad sage flat saddle of the Continental Divide
   // — wagons rolled through, not over. Treat as prairie for travel
   // pacing despite the elevation. Same for the rolling sage country
   // out to Fort Bridger.
-  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 70,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 5,   terrain: 'prairie',   kind: 'landmark' },
-  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 15,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 75, terrain: 'river',    kind: 'river',
+  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 60,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
+  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 10,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 45, terrain: 'river',    kind: 'river',
     river: { depthFt: 4.5, currentMph: 4, ferryPrice: 8 } },
-  { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 65,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 70,  terrain: 'prairie',   kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
     stockScale: 0.45,
@@ -179,10 +186,10 @@ export const LANDMARKS: readonly Landmark[] = [
       'spare_plank', 'ox_shoes', 'iron_scrap', 'rope', 'grain',
       'moccasins', 'buffalo_robe'
     ] },
-  { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 100, terrain: 'river',     kind: 'river',
+  { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 65,  terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
-  { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 35,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 70,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 55,  terrain: 'prairie',   kind: 'trading_post',
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
     // wool blankets, manufactured goods). California Trail splits here.
@@ -203,7 +210,7 @@ export const LANDMARKS: readonly Landmark[] = [
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
     river: { depthFt: 5.0, currentMph: 3, ferryPrice: 6 } },
-  { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 130, terrain: 'desert',    kind: 'trading_post',
+  { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 120, terrain: 'desert',    kind: 'trading_post',
     // Small HBC station. Modest stock, not a major resupply.
     postKind: 'hbc',
     stockScale: 0.6,
@@ -216,16 +223,21 @@ export const LANDMARKS: readonly Landmark[] = [
       'canvas', 'spare_plank', 'ox_shoes', 'grain',
       'moccasins', 'buffalo_robe'
     ] },
-  { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 95,  terrain: 'desert',    kind: 'landmark' },
-  { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 120, terrain: 'mountains', kind: 'landmark' },
-  { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 30,  terrain: 'forest',    kind: 'landmark' },
+  { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 130, terrain: 'desert',    kind: 'landmark' },
+  // Blue Mountains landmark fires when wagons enter the foothills, ~60
+  // mi west of Farewell Bend; the actual crossing into Grande Ronde
+  // takes another ~50 mi over the divide.
+  { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 60,  terrain: 'mountains', kind: 'landmark' },
+  { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 50,  terrain: 'forest',    kind: 'landmark' },
   // Methodist mission at Waiilatpu, headwaters of the Walla Walla. Marcus
   // + Narcissa Whitman ran it as both medical aid and a layover for
   // emigrants. The November 1847 massacre destroyed it; post-1847 parties
   // saw a ruin (LandmarkStage handles via isLandmarkAbandoned).
-  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 32,  terrain: 'prairie',   kind: 'landmark',
+  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 60,  terrain: 'prairie',   kind: 'landmark',
     abandonedAfterYear: 1847 },
-  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 8,   terrain: 'prairie',   kind: 'trading_post',
+  // Fort Walla Walla sat ~25 mi west of the mission, on the Columbia
+  // (the HBC post, not the later Army fort of the same name).
+  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 25,  terrain: 'prairie',   kind: 'trading_post',
     // HBC river post. Basic but reliable stock. Native trade goods are a
     // specialty here (Walla Walla / Cayuse trade networks).
     postKind: 'hbc',
@@ -239,7 +251,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'canvas', 'tongue', 'grain',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
-  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 100, terrain: 'prairie',   kind: 'trading_post',
+  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 130, terrain: 'prairie',   kind: 'trading_post',
     // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
@@ -259,12 +271,12 @@ export const LANDMARKS: readonly Landmark[] = [
   // overland alternative to rafting the Columbia. Sam Barlow opened it
   // in 1846; this entry marks the trail decision point just past The
   // Dalles. Laurel Hill is the steepest descent on the road itself.
-  { id: 'barlow_road',         name: 'Barlow Road',         milesFromPrevious: 20,  terrain: 'forest',    kind: 'landmark' },
+  { id: 'barlow_road',         name: 'Barlow Road',         milesFromPrevious: 30,  terrain: 'forest',    kind: 'landmark' },
   // Laurel Hill is dense Cascades forest — the Barlow Road's worst
   // stretch. Reclassed mountain → forest so the terrain descriptor
   // matches the visual + the forest mult (0.85) gives it bite.
-  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 30,  terrain: 'forest',    kind: 'landmark' },
-  { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 55,  terrain: 'forest',    kind: 'end' }
+  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 50,  terrain: 'forest',    kind: 'landmark' },
+  { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 50,  terrain: 'forest',    kind: 'end' }
 ];
 
 export function getLandmark(id: string): Landmark {

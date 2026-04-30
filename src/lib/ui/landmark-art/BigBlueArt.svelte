@@ -1,5 +1,5 @@
 <!--
-  BigBlueArt.svelte — mile 187, Big Blue River / Alcove Spring crossing.
+  BigBlueArt.svelte — mile 175, Big Blue River / Alcove Spring crossing.
 
   "One of the most romantic spots." Wagons camped waiting for the swollen
   Big Blue to fall, with the famous Alcove Spring as the composition anchor:

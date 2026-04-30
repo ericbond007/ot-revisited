@@ -78,7 +78,7 @@
     ft_kearny: { Art: FortKearnyArt, tone: 'warm' },
     ash_hollow: { Art: AshHollowArt, tone: 'warm' },
     // The new bundle ships these as `north-platte-east` and `north-platte-west`;
-    // we map to our existing `north_platte_1` (mile 480) and `_2` (mile 747).
+    // we map to our existing `north_platte_1` (mile 545) and `_2` (mile 875).
     north_platte_1: { Art: NorthPlatteEastArt, tone: 'warm' },
     courthouse_rock: { Art: CourthouseJailArt, tone: 'warm' },
     chimney_rock: { Art: ChimneyRockArt, tone: 'warm' },
@@ -91,7 +91,7 @@
     willow_springs: { Art: WillowSpringsArt, tone: 'warm' },
     independence_rock: { Art: IndependenceRockArt, tone: 'warm' },
     devils_gate: { Art: DevilsGateArt, tone: 'warm' },
-    // Bundle ships as `sweetwater-ford` → our `sweetwater_1` (mile 873).
+    // Bundle ships as `sweetwater-ford` → our `sweetwater_1` (mile 932).
     sweetwater_1: { Art: SweetwaterFordArt, tone: 'cool' },
     ice_slough: { Art: IceSloughArt, tone: 'cool' },
     south_pass: { Art: SouthPassArt, tone: 'cool' },
