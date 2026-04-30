@@ -72,7 +72,7 @@
       <div class="choice-label">WHAT DO YOU DO?</div>
 
       <div class="choices">
-        {#each event.choices as c, i}
+        {#each event.choices.filter((c) => !c.hidden?.(gameState)) as c, i}
           {@const req = requireStatus(c.requires)}
           <form
             method="POST"

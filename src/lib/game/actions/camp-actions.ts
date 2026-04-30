@@ -48,10 +48,8 @@ export type CampActionId =
   | 'find_water'
   | 'boil_water'
   | 'dig_well'
-  | 'dig_grave'
   | 'dig_out'
   | 'gather_firewood'
-  | 'cannibalism_corpse'
   | 'cannibalism_straws';
 
 function logLine(s: GameState, text: string): GameState {
@@ -565,46 +563,12 @@ const digWell: CampAction = {
   }
 };
 
-// Bury a body that died on the trail (#151). Hidden until reapDead has
-// set `_burialPending`, then mirrors the burial-event "dig grave"
-// choice (#118): clears the flag and applies +2 morale with a shovel,
-// or the rock-cairn morale penalty without one. Lets the player handle
-// the burial deliberately during a rest instead of being interrupted
-// mid-march by the burial event modal.
-const digGrave: CampAction = {
-  id: 'dig_grave',
-  label: 'Bury the dead',
-  sub: 'Shovel · 2 hr · proper farewell',
-  icon: '⚰️',
-  hourCost: 2,
-  hidden: (s) => !s.flags._burialPending,
-  availability: (s) =>
-    (s.inventory.shovel ?? 0) > 0
-      ? { available: true }
-      : { available: false, reason: 'Need a shovel' },
-  apply: (s) => {
-    // Defensive: if invoked with no burial pending (dev tools, scenarios,
-    // legacy save), no-op with a flavor line so we can't grant unearned
-    // morale. The UI hides the action otherwise.
-    if (!s.flags._burialPending) {
-      return logLine(s, 'Turned earth at camp — nothing to bury yet.');
-    }
-    const flags = { ...s.flags };
-    delete (flags as Record<string, unknown>)._burialPending;
-    const hasShovel = (s.inventory.shovel ?? 0) > 0;
-    if (hasShovel) {
-      return logLine(
-        { ...s, flags, morale: Math.min(100, s.morale + 2) },
-        'A grave was dug at camp. The party said their farewells with some comfort. Morale +2.'
-      );
-    }
-    const penalty = deathMoralePenalty(s, 4);
-    return logLine(
-      { ...s, flags, morale: Math.max(0, s.morale - penalty) },
-      `Without a shovel, the body was covered with stones at camp. A hard farewell. Morale −${penalty}.`
-    );
-  }
-};
+// (#205) — `dig_grave` camp action removed. Burial decisions belong on
+// the burial event popup right after death, where the player picks
+// from {dig proper grave / build a stone mound / eat the body}. The
+// camp grid no longer carries a duplicate path, and the cannibalism
+// corpse-eating decision is a one-shot at the popup rather than a
+// deferred camp option (see the personal_burial event in events.ts).
 
 const digOut: CampAction = {
   id: 'dig_out',
@@ -784,40 +748,14 @@ function bumpGuilt(state: GameState, weight: number): GameState {
   };
 }
 
-const cannibalism_corpse: CampAction = {
-  id: 'cannibalism_corpse',
-  label: 'Eat the dead',
-  sub: 'Recently fallen kin · 6 hr · grim, but better than dying',
-  icon: '🪦',
-  hourCost: 6,
-  hidden: (s) => !(hasNoFood(s) && recentCorpse(s) !== null),
-  availability: (s) =>
-    hasNoFood(s) && recentCorpse(s) !== null
-      ? { available: true }
-      : { available: false, reason: 'Only when starving and a body remains.' },
-  apply: (s) => {
-    const corpse = recentCorpse(s);
-    if (!corpse) return s; // hidden gate should prevent this
-    const meatLbs = 50;
-    // Clear pending burial — the body is being handled, not buried.
-    const flags = { ...s.flags };
-    delete (flags as Record<string, unknown>)._burialPending;
-    let next: GameState = {
-      ...s,
-      flags,
-      party: s.party.map((m) =>
-        m.id === corpse.id ? { ...m, consumed: true } : m
-      ),
-      inventory: { ...s.inventory, game_meat: (s.inventory.game_meat ?? 0) + meatLbs },
-      morale: Math.max(0, s.morale - 18)
-    };
-    next = bumpGuilt(next, 1);
-    return logLine(
-      next,
-      `Took ${corpse.name}'s body for meat — ${meatLbs} lb of fresh game. Nobody spoke. Morale -18.`
-    );
-  }
-};
+// (#205) — `cannibalism_corpse` camp action removed. The decision to
+// eat a fresh corpse now lives on the burial-event popup as the third
+// choice, surfaced only when the party has nothing left to eat. The
+// only cannibalism that remains in the camp grid is the draws-straws
+// path below: nobody's dead yet, the party is starving, an adult is
+// chosen by lot. recentCorpse() is still used here to gate-out
+// straws when there's already a body on the ground (the player
+// should resolve that body's burial first).
 
 const cannibalism_straws: CampAction = {
   id: 'cannibalism_straws',
@@ -891,10 +829,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   boilWater,
   // Shovel work (gated on having a shovel)
   digWell,
-  digGrave,
   digOut,
   // Desperation — hidden until starvation
-  cannibalism_corpse,
   cannibalism_straws
 ];
 
@@ -915,9 +851,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   find_water: findWater,
   boil_water: boilWater,
   dig_well: digWell,
-  dig_grave: digGrave,
   dig_out: digOut,
-  cannibalism_corpse,
   cannibalism_straws
 };
 
