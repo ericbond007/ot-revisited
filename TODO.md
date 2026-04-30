@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #195 camp-actions audit). 32 open.
+As of 2026-04-30 (post-merge of #205 + #151 burial-popup rework). 31 open.
 
 ## New mechanics
 
@@ -57,7 +57,7 @@ _(empty — items shipped or moved to other sections)_
 | #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185) |
 | #198 | Grizzly mauling risk on big-game hunts in mountain terrain          |
 | #200 | Discard-from-wagon while traveling — extend #179 beyond landmarks   |
-| #205 | Whitman Mission as a post — historical check (1843-47 only)         |
+| #206 | Whitman Mission as a post — historical check (1843-47 only)         |
 | #202 | Historical Indian trading posts — Bear Lake / Sublette rendezvous   |
 | #203 | Native-band encounter trade — hides ↔ robes via random encounter    |
 
@@ -68,6 +68,7 @@ _(empty — items shipped or moved to other sections)_
 
 ## Recently shipped
 
+- **#205 + #151** Body decisions on the burial popup — when a party member dies, the burial event now pops with three choices instead of two: **Dig a proper grave** (shovel-required, +2 morale), **Build a stone mound** (no-shovel default, -4 morale, preacher halves), and **Eat the body** (hidden unless `hasNoFood` — period reality, Donner Party precedent: survivors only turned to it when no food remained, regardless of how the deceased died). All three close the body's story (clear `_burialPending`); eat-the-body marks `consumed`, grants 50 lb game_meat, -18 morale, +1 cannibalism guilt. Dropped `dig_grave` camp action (closes #151 — the action was always situational and just duplicated the burial event) and dropped `cannibalism_corpse` camp action (folded into the new burial choice — one-shot at the popup, not a deferred camp option). `cannibalism_straws` stays in camp for the "nobody dead yet, draw lots" path. New `EventChoice.hidden?: (state) => boolean` predicate on the choice schema (filters whole choices vs `requires` which renders disabled). 6 new burial-event tests; cannibalism + camp-actions test suites trimmed for the dropped actions.
 - **#195** Camp-actions audit — reviewed all 18 actions; most carry real gameplay effects with sensible hour costs. Two adjustments: `read_bible` 2hr→1hr (was the worst morale-per-hour ratio at +2-4 for 2hr — period reality is a brief evening ritual, not a half-day commitment); `find_water` now gates off desert terrain (no streams in dry country — `dig_well` stays the desert water option). 4 new tests.
 - **#187** Multi-day camp rework — camp stays now run day-by-day with per-day activity picks. Player sets planned stay length on entry (1-7 days); each "Rest the night" advances a single day, then CampStage re-renders with "Day X of Y" + a fresh 12-hour budget + reset activity slots. Server tracks via `_campPlannedDays` + `_campDaysSoFar` flags; per-day CampSummary modal suppressed mid-stay (the dawn-fade overlay carries the transition), final-day summary still fires on stay completion. New `?/breakCamp` action + "Break camp early" button to exit at any point. /play forces CampStage open while flags say mid-stay. rest() function unchanged — multi-day flag tracking lives only in the server route, so existing tests keep passing.
 - **#201** Wagon repair audit + canvas split — `wagon.canvas` (0..100) added as a separate stat from frame condition. Canvas drains from rain (-1..2), storm (-3..6 + supply roll), snow (-1..3), desert sun (-1). At low canvas, rain-catch refill scales down (full ≥60, half ≥40, quarter ≥20, zero <20) and supply-damage rolls fire on wet days (2-5 lb of one heaviest dry good at <60 + rain; +30% gunpowder/caps roll at <40 + storm; heavier at <20 + storm/snow). Reworked `patch_wagon` (raw_hide → +8 canvas) + new `replace_canvas` (canvas spare → +30 canvas, 2× without iron_toolkit) + new `replace_planks` (1 plank → +5 condition, 2× without toolkit). New `wagon_axle` event (ungated, weight 2). `tar_bucket` cuts frame decay 25%. Dropped `iron_scrap` entirely (anvils were rare luxury cargo, smithing happened at posts). Replaced Blacksmith bonus: town smithy repair cost halved when a live Blacksmith rides along. New town service `forgeOxShoes` ($1.50/pair, 50% off w/ Blacksmith) at any post with `blacksmith` service. Audit confirmed all 8 forge posts (Kearny, Robidoux, Laramie, Bridger, Hall, Boise, Walla Walla, Dalles) match historical record. New `abandoned_wagon` encounter (post-mile-200, weight 2): pick over wreck for 1d3 spare planks + 50% canvas. WagonPanel surfaces canvas as a second stacked bar. Logged #205 (Whitman Mission as a forge post 1843-47, historical check needed).
