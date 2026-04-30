@@ -41,7 +41,11 @@ export const TRIBES: readonly Tribe[] = [
     id: 'pawnee',
     name: 'Pawnee',
     region: { fromMile: 100, toMile: 280 },
-    baselineAttitude: 55,
+    // Period diaries (Sarah Royce, the Donner letters, etc.) describe
+    // the Pawnee as friendly stock-traders pestering for tolls but rarely
+    // hostile to wagons. Baseline tuned up from 55 → 60 so they read
+    // friendly-leaning out of the gate.
+    baselineAttitude: 60,
     preferredTrade: ['tobacco', 'beads', 'bullets'],
     blurb: 'Horticulturists of the central Platte valley. Generally friendly to emigrants but often raided by Sioux — sometimes ask for tolls in tobacco or bullets.'
   },
@@ -89,7 +93,11 @@ export const TRIBES: readonly Tribe[] = [
     id: 'cayuse',
     name: 'Cayuse',
     region: { fromMile: 1700, toMile: 1900 },
-    baselineAttitude: 35,
+    // Pre-Whitman baseline. The 1847 newspaper headline already drops
+    // this −15 to land at the post-massacre wary state (~35). Setting
+    // baseline at 50 here avoids double-counting for any 1848+ start
+    // and lets a future pre-1846 start play through the actual shift.
+    baselineAttitude: 50,
     preferredTrade: ['rifle', 'bullets', 'tobacco'],
     blurb: 'Plateau people of the Umatilla country. Since the Whitman Massacre of 1847 they have been at war with the Americans — trade is tense, sometimes refused outright.'
   },
