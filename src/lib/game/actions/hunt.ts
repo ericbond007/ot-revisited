@@ -17,6 +17,16 @@ export interface HuntOptions {
   target: HuntTarget;
   ammo: AmmoBand;
   hunters: number;
+  /** Big-game only (#199): 'full' butchery takes everything (default);
+   * 'prize_only' takes tongue + hump and leaves the rest. Period truth
+   * — emigrant diaries describe shooting buffalo for the prized cuts
+   * alone. Lighter haul, less spoilage pressure, no morale penalty
+   * (celebrated as a delicacy run). */
+  style?: 'full' | 'prize_only';
+  /** Independent of `style`: render fat into tallow on medium/big kills.
+   * Default true. Setting false skips the rendering step — saves time
+   * but forfeits the tallow byproduct. */
+  renderTallow?: boolean;
 }
 
 // Structured haul summary written to flags._huntHaul by hunt(). Consumed
@@ -120,7 +130,10 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   // additional berries dressed from the kill site. Meat refreshes the
   // spoil clock on the whole pile — newer kill delays rot on everything,
   // a simplification over per-lb aging.
-  const meatGain = isGather ? 0 : Math.max(0, meatLbs);
+  // Prize-only on big game (#199): we shot the animal but only carried
+  // off the tongue + hump; meat / hide / tallow get left for wolves.
+  const isPrizeOnly = !isGather && opts.target === 'big' && opts.style === 'prize_only';
+  const meatGain = isGather || isPrizeOnly ? 0 : Math.max(0, meatLbs);
 
   // Berries: gather produces the yield itself; hunts get a 20% bonus
   // sprinkle from the processing area (3–8 lb).
@@ -159,16 +172,27 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   // partial byproducts. Period: no kill, no skin.
   const yieldFraction = isGather ? 0
     : spentBullets === 0 ? 0
-      : meatGain / Math.max(1, profile.max);
+      : Math.max(0, meatLbs) / Math.max(1, profile.max);
   let tallowGain = 0;
   let prizeCutGain = 0;
   let rawHideGain = 0;
-  if (!isGather && meatGain > 0) {
+  const renderTallow = opts.renderTallow ?? true;
+  if (isPrizeOnly && yieldFraction > 0) {
+    // #199 — kill went down but the party only carried off tongue + hump.
+    // 4–8 lb of prize cut, no meat / hide. No morale penalty; emigrant
+    // diaries describe this as a celebrated delicacy run. Tallow can
+    // still be rendered if `renderTallow` is true — the fat is right
+    // there next to the prized cuts.
+    prizeCutGain = Math.max(1, Math.round(rng.int(4, 8) * yieldFraction));
+    if (renderTallow) {
+      tallowGain = Math.round(rng.int(15, 40) * yieldFraction * 0.4);
+    }
+  } else if (!isGather && meatGain > 0) {
     if (opts.target === 'medium') {
-      tallowGain = Math.round(rng.int(5, 10) * yieldFraction);
+      if (renderTallow) tallowGain = Math.round(rng.int(5, 10) * yieldFraction);
       if (rng.chance(0.6)) rawHideGain = 1;
     } else if (opts.target === 'big') {
-      tallowGain = Math.round(rng.int(15, 40) * yieldFraction);
+      if (renderTallow) tallowGain = Math.round(rng.int(15, 40) * yieldFraction);
       if (rng.chance(0.7)) prizeCutGain = rng.int(1, 2);
       if (rng.chance(0.8)) rawHideGain = rng.int(1, 2);
     }
@@ -221,9 +245,13 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
 
   const logText = isGather
     ? `Gathered ${berriesGain} lb of berries and herbs.`
-    : meatLbs > 0
-      ? `Hunt returned ${meatLbs} lb of fresh game meat (${spentBullets} shots). Eat it or cure it before it spoils.`
-      : `Hunt returned empty-handed (${spentBullets} shots).`;
+    : isPrizeOnly
+      ? prizeCutGain > 0
+        ? `Took ${prizeCutGain} lb of tongue and hump and left the rest for the wolves (${spentBullets} shots). Feast tonight.`
+        : `Shots missed; came back empty-handed (${spentBullets} shots).`
+      : meatLbs > 0
+        ? `Hunt returned ${meatLbs} lb of fresh game meat (${spentBullets} shots). Eat it or cure it before it spoils.`
+        : `Hunt returned empty-handed (${spentBullets} shots).`;
   s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: logText }] };
 
   // Stash a structured haul summary for the post-hunt modal. The UI reads

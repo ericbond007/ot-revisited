@@ -202,9 +202,12 @@ export const actions: Actions = {
     const target = fd.get('target')?.toString() as HuntTarget;
     const ammo = fd.get('ammo')?.toString() as AmmoBand;
     const hunters = parseInt(fd.get('hunters')?.toString() ?? '1', 10);
+    const styleRaw = fd.get('style')?.toString();
+    const style: 'full' | 'prize_only' = styleRaw === 'prize_only' ? 'prize_only' : 'full';
+    const renderTallow = fd.get('render_tallow')?.toString() !== 'no';
     if (!target || !ammo) throw error(400, 'target and ammo required');
     let state = await loadState(locals, slot);
-    state = hunt(state, { target, ammo, hunters });
+    state = hunt(state, { target, ammo, hunters, style, renderTallow });
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },
