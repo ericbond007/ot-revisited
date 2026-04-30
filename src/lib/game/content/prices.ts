@@ -45,7 +45,11 @@ export const PRICES: Record<string, PriceEntry> = {
 
   // Weapons / ammo
   rifle:              { buy: 20.00, sell: 12.00 },
-  bullets:            { buy: 2.00,  sell: 1.00 },
+  gunpowder:          { buy: 0.04,  sell: 0.02 },
+  lead_pig:           { buy: 1.50,  sell: 0.75 },
+  lead_balls:         { buy: 0.05,  sell: 0.025 },
+  percussion_caps:    { buy: 0.01,  sell: 0.005 },
+  bullet_mold:        { buy: 1.50,  sell: 0.75 },
   rifle_cleaning_kit: { buy: 3.00,  sell: 1.50 },
 
   // Clothing

@@ -14,7 +14,17 @@ function newGame(): GameState {
     { id: 'o1', health: 100, fatigue: 10, shod: true },
     { id: 'o2', health: 100, fatigue: 10, shod: true }
   ];
-  return { ...s, oxen, inventory: { ...s.inventory, rifle: 1, bullets: 40 } };
+  return {
+    ...s, oxen,
+    inventory: {
+      ...s.inventory,
+      rifle: 1,
+      gunpowder: 40,
+      lead_balls: 40,
+      percussion_caps: 40,
+      bullet_mold: 1
+    }
+  };
 }
 
 describe('hunt', () => {
@@ -24,11 +34,20 @@ describe('hunt', () => {
     expect(h.day).toBe(s.day + 1);
   });
 
-  it('consumes bullets on a hunt', () => {
+  it('consumes powder + lead balls + caps on a hunt (#174)', () => {
     const s = newGame();
-    const startingBullets = s.inventory.bullets ?? 0;
+    const startPowder = s.inventory.gunpowder ?? 0;
+    const startBalls = s.inventory.lead_balls ?? 0;
+    const startCaps = s.inventory.percussion_caps ?? 0;
     const h = hunt(s, { target: 'small', ammo: 'light', hunters: 1 });
-    expect(h.inventory.bullets).toBeLessThan(startingBullets);
+    expect(h.inventory.gunpowder).toBeLessThan(startPowder);
+    expect(h.inventory.lead_balls).toBeLessThan(startBalls);
+    expect(h.inventory.percussion_caps).toBeLessThan(startCaps);
+    // All three drop by the same amount — one shot consumes one of each.
+    expect(startPowder - (h.inventory.gunpowder ?? 0))
+      .toBe(startBalls - (h.inventory.lead_balls ?? 0));
+    expect(startBalls - (h.inventory.lead_balls ?? 0))
+      .toBe(startCaps - (h.inventory.percussion_caps ?? 0));
   });
 
   it('adds fresh game meat to inventory on a successful hunt', () => {

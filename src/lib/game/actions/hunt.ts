@@ -79,9 +79,16 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   s = adjustMorale(s, rng);
 
   const profile = BASE_YIELD_BY_TARGET[opts.target];
-  const bullets = isGather ? 0 : AMMO_BY_BAND[opts.ammo];
-  const availableBullets = s.inventory.bullets ?? 0;
-  const spentBullets = Math.min(bullets, availableBullets);
+  // #174 — every shot consumes 1 charge of gunpowder + 1 cast lead ball
+  // + 1 percussion cap. Whichever component runs out first caps the
+  // hunt. Caps were the historical bottleneck (couldn't be made on the
+  // trail), and the math works out the same here: rifle, all three
+  // ammo items, and the band determine `spentBullets`.
+  const desired = isGather ? 0 : AMMO_BY_BAND[opts.ammo];
+  const availPowder = s.inventory.gunpowder ?? 0;
+  const availBalls  = s.inventory.lead_balls ?? 0;
+  const availCaps   = s.inventory.percussion_caps ?? 0;
+  const spentBullets = Math.min(desired, availPowder, availBalls, availCaps);
 
   let yieldMultiplier = 1;
   if (hasLiveHunter(s)) yieldMultiplier += 0.2;
@@ -144,7 +151,9 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
 
   const nextInventory: Record<string, number> = {
     ...s.inventory,
-    bullets: availableBullets - spentBullets
+    gunpowder:       availPowder - spentBullets,
+    lead_balls:      availBalls  - spentBullets,
+    percussion_caps: availCaps   - spentBullets
   };
   if (meatGain > 0) {
     nextInventory.game_meat = (s.inventory.game_meat ?? 0) + meatGain;
@@ -179,8 +188,8 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   const logText = isGather
     ? `Gathered ${berriesGain} lb of berries and herbs.`
     : meatLbs > 0
-      ? `Hunt returned ${meatLbs} lb of fresh game meat (${spentBullets} bullets). Eat it or cure it before it spoils.`
-      : `Hunt returned empty-handed (${spentBullets} bullets).`;
+      ? `Hunt returned ${meatLbs} lb of fresh game meat (${spentBullets} shots). Eat it or cure it before it spoils.`
+      : `Hunt returned empty-handed (${spentBullets} shots).`;
   s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: logText }] };
 
   // Stash a structured haul summary for the post-hunt modal. The UI reads

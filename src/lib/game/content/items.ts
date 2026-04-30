@@ -89,7 +89,19 @@ export const ITEMS: Record<string, ItemMeta> = {
   tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows axle wear.' },
 
   rifle: { id: 'rifle', name: 'Rifle', category: 'weapon', weightLbPerUnit: 10, description: 'Required for hunting. A second rifle lets two hunters work in parallel.' },
-  bullets: { id: 'bullets', name: 'Bullets', category: 'ammo', weightLbPerUnit: 0.1, description: 'Consumed on every hunt. Runs out faster than you expect.' },
+
+  // Period firearms ecosystem (#174). Caplock muzzle-loaders dominated
+  // the trail era (1846-1859); each shot consumes a measure of black
+  // powder, a cast lead ball, and a percussion cap. Caps are the
+  // bottleneck — couldn't be made on the trail (fulminate of mercury
+  // is hazardous chemistry), only bought at posts. Powder + lead are
+  // renewable: powder by the keg, lead recast from pigs with a mold.
+  gunpowder:       { id: 'gunpowder',       name: 'Gunpowder',       category: 'ammo', weightLbPerUnit: 0.016, description: '1 charge of black powder (≈110 grains). Consumed per shot. Sold by the canister at posts.' },
+  lead_pig:        { id: 'lead_pig',        name: 'Pig of lead',     category: 'ammo', weightLbPerUnit: 5,     description: 'Raw lead bar (~5 lb). Cast into balls at camp using a bullet mold — one pig yields ~30 balls.' },
+  lead_balls:      { id: 'lead_balls',      name: 'Lead balls',      category: 'ammo', weightLbPerUnit: 0.03,  description: 'Cast lead balls. Consumed per shot. Cast your own from pigs with a bullet mold, or buy ready-cast at posts.' },
+  percussion_caps: { id: 'percussion_caps', name: 'Percussion caps', category: 'ammo', weightLbPerUnit: 0.0001, description: 'Brass caps containing fulminate of mercury — fitted on the rifle nipple to spark the powder. The bottleneck consumable: caps run out before powder or lead.' },
+  bullet_mold:     { id: 'bullet_mold',     name: 'Bullet mold',     category: 'tool', weightLbPerUnit: 2,     description: 'Iron mold for casting lead balls from raw pigs. Required for the camp "Cast balls" action.' },
+
   rifle_cleaning_kit: { id: 'rifle_cleaning_kit', name: 'Rifle cleaning kit', category: 'tool', weightLbPerUnit: 2, description: 'Keeps rifles firing in rain / wet weather.' },
 
   coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Warmth +25 per person (one per body). Cuts ford-chill damage and cold-camp health loss.' },

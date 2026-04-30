@@ -25,7 +25,7 @@ describe('item catalog', () => {
 
   it('includes core non-food items', () => {
     const ids = Object.keys(ITEMS);
-    ['wagon', 'ox', 'yoke', 'rifle', 'bullets', 'shovel', 'bible', 'quinine', 'laudanum', 'bandages'].forEach((id) => {
+    ['wagon', 'ox', 'yoke', 'rifle', 'gunpowder', 'lead_balls', 'percussion_caps', 'bullet_mold', 'shovel', 'bible', 'quinine', 'laudanum', 'bandages'].forEach((id) => {
       expect(ids).toContain(id);
     });
   });

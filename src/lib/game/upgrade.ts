@@ -68,9 +68,24 @@ export function upgradeState(state: GameState): GameState {
   // when the inventory falls short of the wagon's needs.
   const wagonModel = getWagon(modelId);
   const haveYokes = state.inventory.yoke ?? 0;
-  const inventory = haveYokes < wagonModel.requiredYokes
+  let inventory = haveYokes < wagonModel.requiredYokes
     ? { ...state.inventory, yoke: wagonModel.requiredYokes }
     : state.inventory;
+
+  // #174 — bullets split into gunpowder + lead_balls + percussion_caps
+  // (each 1:1 with a shot) plus a bullet_mold so the player can keep
+  // making more balls with cast_balls camp action. Each old `bullets`
+  // unit represented one fully-loaded round; convert 1:1:1.
+  const oldBullets = inventory.bullets ?? 0;
+  if (oldBullets > 0 || inventory.bullets !== undefined) {
+    const next: Record<string, number> = { ...inventory };
+    delete next.bullets;
+    next.gunpowder = (next.gunpowder ?? 0) + oldBullets;
+    next.lead_balls = (next.lead_balls ?? 0) + oldBullets;
+    next.percussion_caps = (next.percussion_caps ?? 0) + oldBullets;
+    next.bullet_mold = Math.max(next.bullet_mold ?? 0, 1);
+    inventory = next;
+  }
 
   return { ...state, flags, party, wagon, weather, inventory, location };
 }
