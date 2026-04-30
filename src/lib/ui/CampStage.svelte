@@ -12,6 +12,7 @@
   import NumberStepper from './NumberStepper.svelte';
   import { CAMP_ACTIONS, hourCostFor, type CampActionId } from '$lib/game/actions/camp-actions';
   import { icon } from '$lib/data/icon-dictionary';
+  import { enhance } from '$app/forms';
 
   let { state: gameState, slot, onleave }: {
     state: GameState;
@@ -136,6 +137,13 @@
     method="POST"
     action="?/rest&slot={qp}"
     class="form-col"
+    use:enhance={() => async ({ update }) => {
+      // reset:false keeps the planned-days stepper at the player's pick.
+      // The default update() resets all form fields on success, which
+      // would snap plannedDays back to its SSR-time default (1) and
+      // tear the multi-day session.
+      await update({ reset: false });
+    }}
   >
     {#if inMidStay}
       <input type="hidden" name="plannedDays" value={plannedDaysFlag} />
@@ -229,7 +237,7 @@
   </form>
 
   {#if inMidStay}
-    <form method="POST" action="?/breakCamp&slot={qp}" class="break-form">
+    <form method="POST" action="?/breakCamp&slot={qp}" class="break-form" use:enhance={() => () => {}}>
       <button type="submit" class="break">
         Break camp early
       </button>
