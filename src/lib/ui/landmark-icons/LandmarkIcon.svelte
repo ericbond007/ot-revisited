@@ -36,6 +36,7 @@
   import GreenRiver          from './green_river.svelte';
   import GuernseyRuts        from './guernsey_ruts.svelte';
   import HollenbergRanch     from './hollenberg_ranch.svelte';
+  import NativeCamp          from './native_camp.svelte';
   import IceSlough           from './ice_slough.svelte';
   import IndependenceMo      from './independence_mo.svelte';
   import IndependenceRock    from './independence_rock.svelte';
@@ -80,6 +81,8 @@
     green_river:            GreenRiver,
     guernsey_ruts:          GuernseyRuts,
     hollenberg_ranch:       HollenbergRanch,
+    cheyenne_camp:          NativeCamp,
+    shoshone_camp:          NativeCamp,
     ice_slough:             IceSlough,
     independence_mo:        IndependenceMo,
     independence_rock:      IndependenceRock,
@@ -191,6 +194,8 @@
     'green_river',
     'guernsey_ruts',
     'hollenberg_ranch',
+    'cheyenne_camp',
+    'shoshone_camp',
     'ice_slough',
     'independence_mo',
 

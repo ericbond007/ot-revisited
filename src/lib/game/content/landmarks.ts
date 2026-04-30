@@ -15,7 +15,8 @@ export type PostKind =
   | 'hbc'          // Hudson's Bay Company — dark green, British imports
   | 'mountain'     // isolated mountain man — rust / weathered
   | 'frontier'     // mixed fur-trade / emigrant hub — default rust
-  | 'end_of_trail'; // luxurious last-chance — gold
+  | 'end_of_trail' // luxurious last-chance — gold
+  | 'native';      // tribal seasonal camp — earth tones, teepee glyph (#202)
 
 export interface Landmark {
   id: string;
@@ -66,6 +67,11 @@ export interface Landmark {
   // an empty stockade instead of a trading post. Consumers should check
   // `isLandmarkAbandoned(landmark, year)` rather than comparing directly.
   abandonedAfterYear?: number;
+  // Tribe affiliation for native trading-post landmarks (#202). Drives
+  // tribe-attitude gating: a hostile tribe's camp turns up empty/avoided,
+  // wary trades work but at worse rates, friendly+ trades flow normally.
+  // Read by isLandmarkAccessible() and the tribe-aware visit/trade flows.
+  tribeId?: string;
 }
 
 /**
@@ -76,6 +82,24 @@ export interface Landmark {
 export function isLandmarkAbandoned(landmark: Landmark, year: number): boolean {
   return typeof landmark.abandonedAfterYear === 'number'
     && year > landmark.abandonedAfterYear;
+}
+
+/**
+ * For native trading-post landmarks (#202): true if the affiliated
+ * tribe is hostile (attitude < 21). When hostile, the camp is empty
+ * — band has fled / war is on — and trade is unavailable. Stage view
+ * shows a "camp avoided" flavor instead of the usual visit affordances.
+ *
+ * Returns false (accessible) for non-native posts and for posts
+ * without a tribeId.
+ */
+export function isNativeCampHostile(
+  landmark: Landmark,
+  attitude: number
+): boolean {
+  if (landmark.postKind !== 'native') return false;
+  if (!landmark.tribeId) return false;
+  return attitude < 21;
 }
 
 export const LANDMARKS: readonly Landmark[] = [
@@ -174,7 +198,24 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
   { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 15, terrain: 'river',    kind: 'river',
     river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
-  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 50,  terrain: 'prairie',   kind: 'landmark' },
+  // Cheyenne summer camp on the Sweetwater plains (#202). Cheyenne
+  // bands ranged the high country south of the Black Hills west to
+  // the Powder and Wind River basins; summer camps near the Sweetwater
+  // would have been a normal sight to a passing wagon. Trade is
+  // hide-for-robe at a favorable rate — Cheyenne women tanned the
+  // finest robes on the plains.
+  { id: 'cheyenne_camp',       name: 'Cheyenne Summer Camp', milesFromPrevious: 20, terrain: 'prairie',   kind: 'trading_post',
+    postKind: 'native',
+    tribeId: 'cheyenne',
+    stockScale: 0.4,
+    services: ['gossip'],
+    blurb: 'A Cheyenne band has set up summer lodges along the Sweetwater. Smoke curls from a dozen teepees; horses graze in the willows. The women bring out finished robes and moccasins; the men squat at the fire and watch.',
+    stock: [
+      'buffalo_robe', 'moccasins', 'pemmican',
+      'beads', 'blanket', 'jerky'
+    ],
+    excludeBuyCategories: ['wagon_part', 'tool'] },
+  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 30,  terrain: 'prairie',   kind: 'landmark' },
   // South Pass is the broad sage flat saddle of the Continental Divide
   // — wagons rolled through, not over. Treat as prairie for travel
   // pacing despite the elevation. Same for the rolling sage country
@@ -197,7 +238,23 @@ export const LANDMARKS: readonly Landmark[] = [
       'spare_plank', 'ox_shoes', 'rope', 'grain',
       'moccasins', 'buffalo_robe'
     ] },
-  { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 65,  terrain: 'river',     kind: 'river',
+  // Shoshone summer camp on the upper Bear River (#202). Washakie's
+  // Eastern Shoshone wintered around Wind River and rode south for the
+  // summer hunt — Bear River valley was the regular gathering. Trade
+  // is excellent: Washakie's people maintained warm relations with
+  // emigrants from the Lewis & Clark generation onward.
+  { id: 'shoshone_camp',       name: 'Shoshone Summer Camp', milesFromPrevious: 60, terrain: 'prairie',   kind: 'trading_post',
+    postKind: 'native',
+    tribeId: 'shoshone',
+    stockScale: 0.5,
+    services: ['gossip'],
+    blurb: 'A Shoshone camp spreads across the willow flats above the Bear. Children play around the lodges; an old man works rawhide on a frame in the shade. Washakie himself nods a greeting as you ride in.',
+    stock: [
+      'buffalo_robe', 'moccasins', 'pemmican',
+      'beads', 'blanket', 'jerky', 'tobacco'
+    ],
+    excludeBuyCategories: ['wagon_part', 'tool'] },
+  { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 5,  terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
   { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 55,  terrain: 'prairie',   kind: 'trading_post',
