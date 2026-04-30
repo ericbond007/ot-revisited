@@ -14,9 +14,6 @@
   import { LANDMARKS } from '$lib/game/content/landmarks';
   import {
     accumulateMiles,
-    currentLeg,
-    milesToNext,
-    milesToNextOfKind,
     interpolatePosition
   } from './trail-map-helpers';
   import { LANDMARK_COORDS, TRAIL_VIEWBOX_W, TRAIL_VIEWBOX_H } from './trail-map-svg/landmark-coords';
@@ -36,9 +33,6 @@
   let { currentMileage, landmarks = LANDMARKS, onExpand }: Props = $props();
 
   const marked = $derived(accumulateMiles(landmarks));
-  const leg = $derived(currentLeg(marked, currentMileage));
-  const next = $derived(milesToNext(marked, currentMileage));
-  const nextFort = $derived(milesToNextOfKind(marked, currentMileage, 'trading_post'));
 
   // Dynamic camera — fit the wagon + ~1 plotted landmark behind +
   // ~4 plotted landmarks ahead, with padding so labels don't kiss
@@ -122,21 +116,6 @@
    *  (paintScale 0.4 at vbWidth 320 ≈ 0.00125 per modal-unit). */
   const paintScale = $derived(0.00125 * cam.w);
 
-  // HUD strings — single combined readout. Leg ordinal + day moved
-  // to the play-page status bar; this HUD focuses on the upcoming
-  // landmark + nearest trading post.
-  const fromTo = $derived(
-    leg.last && leg.next
-      ? `${leg.last.name.toUpperCase()} → ${leg.next.name.toUpperCase()}`
-      : leg.last
-        ? `${leg.last.name.toUpperCase()} → END`
-        : 'INDEPENDENCE → KANSAS RIVER'
-  );
-  const milesLabel = $derived(next ? `${next.miles} mi to ${next.name}` : "TRAIL'S END");
-  const postLabel = $derived(
-    nextFort ? `next post: ${nextFort.name} in ${nextFort.miles} mi` : 'no post ahead'
-  );
-
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -164,14 +143,9 @@
       <TrailMapPaint {landmarks} {currentMileage} wagonSize="sm" {paintScale} />
     </svg>
 
-    <!-- bottom row: HUD + legend, flex-laid so they never overlap -->
+    <!-- bottom row: legend only — Heading-West readout was moved up
+         into the ActionBar so the map can lean into being just a map. -->
     <div class="bottom-row">
-      <div class="hud">
-        <span class="hud-label">Heading West</span>
-        <span class="hud-big">{fromTo}</span>
-        <span class="hud-sub">{milesLabel}</span>
-        <span class="hud-sub">{postLabel}</span>
-      </div>
       <div class="legend">
         <div><svg width="22" height="6"><line x1="1" y1="3" x2="21" y2="3" stroke="#c96a2a" stroke-width="3" stroke-linecap="round"/></svg> trail traveled</div>
         <div><svg width="22" height="6"><line x1="1" y1="3" x2="21" y2="3" stroke="#5a3a1a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3"/></svg> trail ahead</div>
@@ -218,40 +192,6 @@
     display: flex;
     align-items: flex-end;
     gap: 12px;
-  }
-
-  .hud {
-    background: rgba(26, 15, 8, 0.86);
-    color: #f5e6c8;
-    border: 1px solid #c96a2a;
-    padding: 6px 9px;
-    border-radius: 2px;
-    font-family: 'Special Elite', 'Courier New', monospace;
-    font-size: 11px;
-    line-height: 1.35;
-    backdrop-filter: blur(2px);
-    display: flex;
-    flex-direction: column;
-    flex: 0 0 auto;
-  }
-  .hud-label {
-    color: #c96a2a;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    font-size: 9.5px;
-    margin-bottom: 2px;
-  }
-  .hud-big {
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: #f5e6c8;
-  }
-  .hud-sub {
-    color: #e8c89a;
-    font-size: 10.5px;
-    font-style: italic;
   }
 
   .compass-host {

@@ -255,16 +255,16 @@
       </div>
 
       {#if isTravelStage}
-        <!-- Travel-state bottom row (#212) — map snippet and event log
+        <!-- Travel-state bottom row (#212) — event log and map snippet
              share the column width 50/50. Map keeps its click-to-expand
              affordance to TrailMapModal. -->
         <div class="travel-bottom">
-          <TrailMapSnippet
-            currentMileage={gs.location.milesTraveled}
-            onExpand={() => (showTrailMapModal = true)} />
           <div class="log-half">
             <EventLog state={gs} />
           </div>
+          <TrailMapSnippet
+            currentMileage={gs.location.milesTraveled}
+            onExpand={() => (showTrailMapModal = true)} />
         </div>
       {:else}
         <div class="log-wrap">
