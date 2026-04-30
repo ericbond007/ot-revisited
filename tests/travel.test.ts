@@ -99,7 +99,7 @@ describe('applyTravel', () => {
     const s = newGame();
     const nearKearny = {
       ...s,
-      location: { ...s.location, nextLandmarkId: 'ft_kearny', milesTraveled: 289 }
+      location: { ...s.location, nextLandmarkId: 'ft_kearny', milesTraveled: 325 }
     };
     const next = applyTravel(nearKearny, makeRng('t:1'));
     expect(next.location.atLandmarkId).toBe('ft_kearny');
@@ -123,10 +123,11 @@ describe('applyTravel', () => {
 
   it('sets atLandmarkId when reaching a trading post (stop-worthy)', () => {
     const s = newGame();
-    // Fort Kearny is at cumulative mile 300 and is a trading_post.
+    // Fort Kearny is at cumulative mile 335 (post-#172 calibration) and
+    // is a trading_post.
     const nearKearny = {
       ...s,
-      location: { ...s.location, nextLandmarkId: 'ft_kearny', milesTraveled: 289 }
+      location: { ...s.location, nextLandmarkId: 'ft_kearny', milesTraveled: 325 }
     };
     const next = applyTravel(nearKearny, makeRng('t:1'));
     expect(next.location.atLandmarkId).toBe('ft_kearny');
