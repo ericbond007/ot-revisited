@@ -1,16 +1,18 @@
 <script lang="ts">
   // Single coherent painting per biome — sky → distant hills → mid trees →
-  // foreground edge in one painted scene. Generated at SDXL-friendly
-  // 1344×768. The painting is centered vertically in the visible
-  // (horizonY..groundY) band so its middle horizontal band — typically
-  // containing the horizon line — sits in the strip viewport. Sky above
-  // is clipped (handled by SkyGradient + SkyAccent + CloudLayer), and
-  // anything below is clipped (covered by GroundBand).
+  // foreground edge in one painted scene. Generated seamless x-axis at
+  // 3072×768 (DIMS["backdrop"] in tools/wagon-bg/prompts.py). The painting
+  // is centered vertically in the visible (horizonY..groundY) band so its
+  // middle horizontal band — typically containing the horizon line — sits
+  // in the strip viewport. Sky above is clipped (handled by SkyGradient
+  // + SkyAccent + CloudLayer), and anything below is clipped (covered
+  // by GroundBand).
   //
   // Replaces the FarLayer + MidLayer + NearLayer trio in raster mode:
   // one cohesive painting reads as a unified scene, where four separate
   // alpha-masked tiles always fought for visual coherence.
   import type { Terrain } from '$lib/game/types';
+  import { BACKDROP_HORIZONS } from './backdrop-horizons';
 
   interface Props {
     terrain: Terrain;
@@ -36,12 +38,16 @@
   const v = $derived(variant ?? fallbackVariant);
 
   // Native dimensions match DIMS["backdrop"] in tools/wagon-bg/prompts.py.
-  const PAINT_W = 2048;
+  // Must match exactly: with preserveAspectRatio="none", a mismatch makes
+  // the browser decode the full source then squish it into the viewport
+  // rect (visible distortion + wasted decode work), and the seamless
+  // x-axis wrap-meeting falls inside the painting instead of at its edge.
+  const PAINT_W = 3072;
   const PAINT_H = 768;
 
-  // 0.3× — slow background-distance scroll. Combined with the 2048-wide
+  // 0.3× — slow background-distance scroll. Combined with the 3072-wide
   // painting and a 1280-wide scene, the second copy doesn't enter the
-  // viewport for ~40 seconds of continuous travel; in actual gameplay
+  // viewport for ~60 seconds of continuous travel; in actual gameplay
   // (1.5-second pulses, ~90 px scrolled per pulse) the wrap is effectively
   // never seen.
   const SCROLL_FACTOR = 0.3;
@@ -66,11 +72,21 @@
       : `/wagon-bg/backdrop-${backdropTerrain}-${v}.webp`
   );
 
-  // Vertical center of the visible (horizon..ground) band.
+  // Auto-align: each painting's actual horizon line (detected at build
+  // time, looked up in BACKDROP_HORIZONS) is placed at the *middle* of
+  // the visible band — sky takes the upper half, foreground takes the
+  // lower half. Paintings without a detected horizon (overcast / rainy /
+  // autumn compositions where sky→ground discrimination fails) fall back
+  // to painting-center alignment, which matches the original behavior.
+  //
+  // This decouples the painting's internal composition from the strict
+  // 20.8%-of-painting visible band, so wide variance in horizon placement
+  // (LoRA-induced or otherwise) no longer leaves the viewport showing
+  // only sky or only grass.
+  const filename = $derived(url.split('/').pop() ?? '');
+  const paintingHorizonY = $derived(BACKDROP_HORIZONS[filename] ?? PAINT_H / 2);
   const middleY = $derived((horizonY + groundY) / 2);
-  // Position the painting so its middle row lands on middleY — the
-  // visible viewport then sees the painting's middle horizontal band.
-  const paintTop = $derived(middleY - PAINT_H / 2);
+  const paintTop = $derived(middleY - paintingHorizonY);
 </script>
 
 <g>

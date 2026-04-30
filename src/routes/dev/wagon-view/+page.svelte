@@ -157,7 +157,7 @@
   </section>
 
   <section class="stage">
-    {#key `${restartKey}-${variant}`}
+    {#key restartKey}
       <WagonScene state={previewState} {timeOfDay} {paused} backdropVariant={variant} />
     {/key}
   </section>

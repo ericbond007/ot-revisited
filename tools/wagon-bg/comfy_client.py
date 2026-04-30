@@ -24,29 +24,69 @@ def _build_workflow(
     filename_prefix: str,
     *,
     seamless: bool = False,
+    loras: list[tuple[str, float]] | None = None,
 ) -> dict:
     """Build a t2i workflow. When `seamless=True`, inserts the
     `SeamlessTile` node (x_only — tiles horizontally, not vertically) and
     the `CircularVAEDecode` node, both from the `ComfyUI-seamless-tiling`
     custom node pack. The result is an image whose right edge matches
     its left edge so tiled copies in BackdropPainting have no visible seam.
+
+    `loras` is an optional list of `(filename, weight)` tuples. Each entry
+    becomes a chained LoraLoader applied at the same weight to UNet and CLIP.
+    Stack order = list order; SeamlessTile sits downstream of all LoRAs.
+    Trigger words must be appended to `prompt` by the caller.
     """
+    # Track the "current" model + clip refs as we add nodes. Starts at
+    # the checkpoint loader; advances through each LoraLoader.
+    model_ref: list = ["4", 0]
+    clip_ref: list = ["4", 1]
+    workflow: dict = {
+        "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": CHECKPOINT}},
+        "5": {"class_type": "EmptyLatentImage", "inputs": {"width": width, "height": height, "batch_size": 1}},
+    }
+
+    # LoraLoaders chain at ids 20, 21, 22... so they don't collide with
+    # the fixed-numbered nodes (3-11) below.
+    for i, (lora_name, weight) in enumerate(loras or []):
+        node_id = str(20 + i)
+        workflow[node_id] = {
+            "class_type": "LoraLoader",
+            "inputs": {
+                "lora_name": lora_name,
+                "strength_model": weight,
+                "strength_clip": weight,
+                "model": model_ref,
+                "clip": clip_ref,
+            },
+        }
+        model_ref = [node_id, 0]
+        clip_ref = [node_id, 1]
+
     if seamless:
-        # Node 10 patches the SDXL UNet's conv padding to circular on X axis
-        # only. Node 11 replaces the standard VAEDecode with a circular one.
+        # Patches the (LoRA-modified) UNet's conv padding to circular on X
+        # axis only. CircularVAEDecode replaces the standard VAEDecode.
+        workflow["10"] = {
+            "class_type": "SeamlessTile",
+            "inputs": {
+                "model": model_ref,
+                "tiling": "x_only",
+                "copy_model": "Make a copy",
+            },
+        }
         ksampler_model = ["10", 0]
         decode_node: dict = {
             "class_type": "CircularVAEDecode",
             "inputs": {"samples": ["3", 0], "vae": ["4", 2], "tiling": "x_only"},
         }
     else:
-        ksampler_model = ["4", 0]
+        ksampler_model = model_ref
         decode_node = {
             "class_type": "VAEDecode",
             "inputs": {"samples": ["3", 0], "vae": ["4", 2]},
         }
 
-    workflow: dict = {
+    workflow.update({
         "3": {
             "class_type": "KSampler",
             "inputs": {
@@ -62,22 +102,11 @@ def _build_workflow(
                 "latent_image": ["5", 0],
             },
         },
-        "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": CHECKPOINT}},
-        "5": {"class_type": "EmptyLatentImage", "inputs": {"width": width, "height": height, "batch_size": 1}},
-        "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["4", 1]}},
-        "7": {"class_type": "CLIPTextEncode", "inputs": {"text": negative, "clip": ["4", 1]}},
+        "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": clip_ref}},
+        "7": {"class_type": "CLIPTextEncode", "inputs": {"text": negative, "clip": clip_ref}},
         "8": decode_node,
         "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": filename_prefix}},
-    }
-    if seamless:
-        workflow["10"] = {
-            "class_type": "SeamlessTile",
-            "inputs": {
-                "model": ["4", 0],
-                "tiling": "x_only",
-                "copy_model": "Make a copy",
-            },
-        }
+    })
     return workflow
 
 
@@ -119,15 +148,19 @@ def generate_to(
     seed: int,
     *,
     seamless: bool = False,
+    loras: list[tuple[str, float]] | None = None,
 ) -> None:
     """Generate one image and copy ComfyUI's output PNG to `out_path`.
 
     `out_path` is the final destination (e.g. a path under tools/wagon-bg/raw/).
     The intermediate file in ~/ComfyUI/output/ stays in place; we copy out.
     Pass `seamless=True` for x-axis-tileable output (used for backdrop tiles).
+    Pass `loras=[(filename, weight), ...]` to stack one or more LoRAs.
     """
     prefix = f"wagon-bg-{out_path.stem}"
-    workflow = _build_workflow(prompt, negative, width, height, seed, prefix, seamless=seamless)
+    workflow = _build_workflow(
+        prompt, negative, width, height, seed, prefix, seamless=seamless, loras=loras,
+    )
     pid = _post(workflow)
     history = _wait(pid)
 

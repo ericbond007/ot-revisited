@@ -46,6 +46,9 @@ As of 2026-04-28 (post-#89). 34 open.
 | #189 | Landmark / trading-post screen rework — better town actions      |
 | #190 | InventoryPanel: water as a bar graph (match weight treatment)    |
 | #191 | Save format: add migration runner; deserializer hard-crashes now |
+| #192 | WagonScene per-frame style flush — 13 SetNeedStyleFlush per rAF in profile, likely from `style=""` writes for transforms; switch hot animated layers to SVG attrs (`x`, `y`, transform on `<g>`) |
+| #193 | WagonScene rAF sync reflow — 1 forced-reflow per frame, suggests a layout read (getBoundingClientRect / offsetWidth) inside the rAF chain; hoist to ResizeObserver or cache |
+| #194 | Animated SVG layers should be `pointer-events: none` — synth pointermove dispatched ~1.3×/frame because hovered element keeps changing under the cursor |
 
 ## For Claude Design or another SVG animation generator
 
