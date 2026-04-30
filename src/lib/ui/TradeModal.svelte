@@ -28,6 +28,9 @@
   // Defaults to true — only explicit false-flagged posts (U.S. Army, a
   // hostile native post, etc.) refuse to buy goods from the party.
   const buysFromEmigrants = $derived(here?.buysFromEmigrants !== false);
+  // Per-post category exclusions (#204) — road ranches don't buy
+  // fur-trade specialty (raw hides, robes, beads). Used in canSell.
+  const excludedCats = $derived(new Set(here?.excludeBuyCategories ?? []));
 
   // Fallback stock for any trading_post without its own declared stock list.
   const FALLBACK_STOCK = [
@@ -318,7 +321,7 @@
                   {@const selling = sellQty[id] ?? 0}
                   {@const afterOwned = owned + buying - selling}
                   {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo' || g.cat === 'feed'}
-                  {@const canSell = buysFromEmigrants && owned > 0}
+                  {@const canSell = buysFromEmigrants && owned > 0 && !excludedCats.has(ITEMS[id].category)}
                   {@const stockLeft = inStock && here ? postRemainingQty(gameState, here, id) : 0}
                   {@const perItemIcon = (ICON.inventory_items as Record<string, string>)[id]}
                   <div class="item-row" class:out-of-stock={!inStock && owned === 0}>

@@ -73,10 +73,22 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
 
   const { buyMult, sellMult } = professionDiscount(state);
 
+  // Per-post buyer gating (#204). The post may refuse certain item
+  // categories — road ranches don't deal in fur-trade specialty (raw
+  // hides, robes, beads). Surface a clear error so the UI can echo it.
+  const here = state.location.atLandmarkId
+    ? getLandmark(state.location.atLandmarkId)
+    : null;
+  const excludedCats = new Set(here?.excludeBuyCategories ?? []);
+
   for (const { item, qty } of sells) {
     const have = state.inventory[item] ?? 0;
     if (qty > have) {
       throw new Error(`trade: attempted to sell ${qty} ${item} but only have ${have} (quantity)`);
+    }
+    const cat = ITEMS[item]?.category;
+    if (cat && excludedCats.has(cat)) {
+      throw new Error(`trade: ${here?.name ?? 'this post'} won't buy ${item} (${cat})`);
     }
   }
 
