@@ -14,45 +14,45 @@ function newGame(): GameState {
   return { ...s, inventory: {} };
 }
 
-describe('patch_wagon camp action (#196 C)', () => {
+describe('patch_wagon camp action (#196 C / #201)', () => {
   const action = getCampAction('patch_wagon');
 
   it('is unavailable without a raw hide', () => {
-    const s = { ...newGame(), wagon: { ...newGame().wagon, condition: 80 } };
+    const s = { ...newGame(), wagon: { ...newGame().wagon, canvas: 80 } };
     expect(action.availability(s).available).toBe(false);
   });
 
-  it('is unavailable when wagon is sound', () => {
+  it('is unavailable when canvas is sound', () => {
     const s = newGame();
     const ready = {
       ...s,
-      wagon: { ...s.wagon, condition: 100 },
+      wagon: { ...s.wagon, canvas: 100 },
       inventory: { raw_hide: 1 }
     };
     expect(action.availability(ready).available).toBe(false);
   });
 
-  it('consumes 1 hide and bumps wagon condition by 5', () => {
+  it('consumes 1 hide and bumps canvas by 8', () => {
     const s = newGame();
     const ready = {
       ...s,
-      wagon: { ...s.wagon, condition: 80 },
+      wagon: { ...s.wagon, canvas: 80 },
       inventory: { raw_hide: 2 }
     };
     const next = action.apply(ready, makeRng('patch:1'));
     expect(next.inventory.raw_hide).toBe(1);
-    expect(next.wagon.condition).toBe(85);
+    expect(next.wagon.canvas).toBe(88);
   });
 
-  it('does not exceed 100 condition', () => {
+  it('does not exceed 100 canvas', () => {
     const s = newGame();
     const nearFull = {
       ...s,
-      wagon: { ...s.wagon, condition: 98 },
+      wagon: { ...s.wagon, canvas: 95 },
       inventory: { raw_hide: 1 }
     };
     const next = action.apply(nearFull, makeRng('patch:2'));
-    expect(next.wagon.condition).toBe(100);
+    expect(next.wagon.canvas).toBe(100);
   });
 });
 

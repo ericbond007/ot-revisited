@@ -12,6 +12,7 @@ import {
   deathMoralePenalty,
   applyWhoreTradingPostEarnings
 } from '../src/lib/game/professions/bonuses';
+import { repairWagon } from '../src/lib/game/systems/town-services';
 import { makeRng } from '../src/lib/game/rng';
 import { milesPerDay } from '../src/lib/game/systems/travel';
 import { progressConditions } from '../src/lib/game/systems/conditions';
@@ -36,7 +37,7 @@ function baseState(partyProfs: ProfessionId[] = ['carpenter'], overrides: Partia
       terrain: 'prairie'
     },
     party: partyProfs.map((p, i) => mkMember(`m${i}`, p, `M${i}`)),
-    wagon: { model: 'prairie_schooner', condition: 100, carryCapacity: 2500 },
+    wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 2500 },
     oxen: [
       { id: 'o1', health: 100, fatigue: 10, shod: true },
       { id: 'o2', health: 100, fatigue: 10, shod: true }
@@ -196,33 +197,19 @@ describe('Doctor (#154)', () => {
   });
 });
 
-describe('Blacksmith (#154)', () => {
-  it('rolls a 40% iron-scrap salvage when a metal part is consumed', () => {
-    const s = baseState(['blacksmith'], { inventory: { flour: 0, bacon: 0, wheel: 1 } });
-    let salvages = 0;
-    for (let i = 0; i < 50; i++) {
-      const r = consumeWagonPart({ ...s, inventory: { ...s.inventory, wheel: 1 } }, makeRng(`b-${i}`), 'wheel');
-      if (r.salvaged) salvages++;
-    }
-    // ~40% expected — over 50 rolls we should see well above 0 and well below 50.
-    expect(salvages).toBeGreaterThan(5);
-    expect(salvages).toBeLessThan(45);
-  });
-
-  it('never salvages when no Blacksmith is in the party', () => {
-    const s = baseState(['carpenter'], { inventory: { flour: 0, bacon: 0, wheel: 1 } });
-    for (let i = 0; i < 10; i++) {
-      const r = consumeWagonPart({ ...s, inventory: { ...s.inventory, wheel: 1 } }, makeRng(`b-${i}`), 'wheel');
-      expect(r.salvaged).toBe(false);
-    }
-  });
-
-  it('skips salvage on non-metal parts (canvas, plank)', () => {
-    const s = baseState(['blacksmith'], { inventory: { flour: 0, bacon: 0, canvas: 1 } });
-    for (let i = 0; i < 10; i++) {
-      const r = consumeWagonPart({ ...s, inventory: { ...s.inventory, canvas: 1 } }, makeRng(`b-${i}`), 'canvas');
-      expect(r.salvaged).toBe(false);
-    }
+describe('Blacksmith (#201)', () => {
+  // Pre-#201 the bonus was iron-scrap salvage from a forge — but anvils
+  // were rare luxury cargo on the trail, real smithing happened at posts.
+  // The replacement bonus: town blacksmith repair cost halved when a
+  // live Blacksmith rides along.
+  it('halves town smithy repair cost when a Blacksmith is alive', () => {
+    const withSmith = baseState(['blacksmith'], { cash: 100, wagon: { model: 'prairie_schooner' as const, condition: 50, canvas: 100, carryCapacity: 2500 } });
+    const withoutSmith = baseState(['carpenter'], { cash: 100, wagon: { model: 'prairie_schooner' as const, condition: 50, canvas: 100, carryCapacity: 2500 } });
+    const r1 = repairWagon(withSmith, 20);
+    const r2 = repairWagon(withoutSmith, 20);
+    // $20 buys 80 points with discount, 40 without.
+    expect(r1.pointsRestored).toBeGreaterThan(r2.pointsRestored);
+    expect(r1.pointsRestored).toBe(50); // capped by room (50 → 100)
   });
 });
 

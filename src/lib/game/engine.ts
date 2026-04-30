@@ -123,6 +123,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
     wagon: {
       model: wagonModelId,
       condition: 100,
+      canvas: 100,
       carryCapacity: wagonModel.carryCapacity
     },
     oxen,

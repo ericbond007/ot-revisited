@@ -56,7 +56,11 @@ export function upgradeState(state: GameState): GameState {
   // has a nonsense model id, snap back to the default too.
   const modelId =
     state.wagon.model && getWagonOrNull(state.wagon.model) ? state.wagon.model : DEFAULT_WAGON_MODEL;
-  const wagon = { ...state.wagon, model: modelId };
+  // Pre-#201 saves don't have wagon.canvas. Default to 100 (intact)
+  // rather than mirroring `condition` — most lost canvas comes from
+  // weather and the player just played a long stretch with no canvas
+  // damage system, so they shouldn't be punished retroactively.
+  const wagon = { ...state.wagon, model: modelId, canvas: state.wagon.canvas ?? 100 };
 
   // Pre-#153 saves have no weather field. Default to 'clear' so tickWeather's
   // stickiness math has something to lerp from on day 1.

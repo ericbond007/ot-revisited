@@ -1,5 +1,11 @@
 import type { GameState, Terrain, Weather } from '../types';
 import { makeRng, type Rng } from '../rng';
+import {
+  canvasWeatherDrain,
+  canvasRainCatchMult,
+  rollCanvasSupplyDamage,
+  applyCanvasSupplyDamage
+} from './canvas';
 
 // Daily weather (#153) — Markov-ish picker driven by terrain × season,
 // with a stickiness bias toward yesterday's pattern (weather doesn't
@@ -124,24 +130,47 @@ export function tickWeather(state: GameState, _rng: Rng): GameState {
   const next = pickWeather(state, wRng);
   let s: GameState = { ...state, weather: next };
 
+  // Canvas drain — every wet/sun day chips the cover. Storm hits harder
+  // than rain, snow does mid, desert heat does a slow bleed via linseed
+  // dry-out (already a thing in period accounts of the desert leg).
+  const drain = canvasWeatherDrain(next);
+  if (drain.max > 0) {
+    const d = wRng.int(drain.min, drain.max);
+    if (d > 0) {
+      s = { ...s, wagon: { ...s.wagon, canvas: Math.max(0, s.wagon.canvas - d) } };
+    }
+  }
+
   switch (next) {
     case 'rain': {
-      // Light rain → small refill of clean water (caught in canvas).
+      // Rain refill — funnels through the canvas into kegs/buckets.
+      // Yield scales with canvas integrity (torn cover catches less).
+      const baseGain = 3;
+      const mult = canvasRainCatchMult(s.wagon.canvas);
       const room = Math.max(0, s.resources.waterCap - s.resources.water);
-      const gained = Math.min(room, 3);
+      const gained = Math.min(room, Math.floor(baseGain * mult));
       if (gained > 0) {
         s = {
           ...s,
           resources: { ...s.resources, water: s.resources.water + gained },
           eventLog: [...s.eventLog, { day: s.day, text: `Rain — gathered ${gained} gal in the wagon canvas.` }]
         };
+      } else if (mult <= 0 && room > 0) {
+        s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: 'A steady rain falls — the torn canvas sheds it through.' }] };
       } else {
         s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: 'A steady rain falls.' }] };
+      }
+      // Roll for supply damage if canvas is poor.
+      const damage = rollCanvasSupplyDamage(s, next, wRng);
+      const applied = applyCanvasSupplyDamage(s, damage);
+      s = applied.state;
+      if (applied.logLine) {
+        s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: applied.logLine }] };
       }
       break;
     }
     case 'storm': {
-      // Storm: wagon takes 1-3 condition, morale -2.
+      // Storm: wagon frame takes 1-3, morale -2, supply damage roll.
       const dmg = wRng.int(1, 3);
       s = {
         ...s,
@@ -149,6 +178,12 @@ export function tickWeather(state: GameState, _rng: Rng): GameState {
         morale: Math.max(0, s.morale - 2),
         eventLog: [...s.eventLog, { day: s.day, text: `Thunderstorm — wagon -${dmg}, morale -2.` }]
       };
+      const damage = rollCanvasSupplyDamage(s, next, wRng);
+      const applied = applyCanvasSupplyDamage(s, damage);
+      s = applied.state;
+      if (applied.logLine) {
+        s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: applied.logLine }] };
+      }
       break;
     }
     case 'snow': {
@@ -157,6 +192,12 @@ export function tickWeather(state: GameState, _rng: Rng): GameState {
         morale: Math.max(0, s.morale - 1),
         eventLog: [...s.eventLog, { day: s.day, text: 'Snow falling. The trail slows.' }]
       };
+      const damage = rollCanvasSupplyDamage(s, next, wRng);
+      const applied = applyCanvasSupplyDamage(s, damage);
+      s = applied.state;
+      if (applied.logLine) {
+        s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: applied.logLine }] };
+      }
       break;
     }
     case 'heat': {

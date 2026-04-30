@@ -13,6 +13,12 @@
     condition >= 40 ? '#f5c96a' :
     condition >= 20 ? '#c96a2a' : '#e85a4a'
   );
+  const canvas = $derived(Math.round(state.wagon.canvas));
+  const canvasColor = $derived(
+    canvas >= 60 ? '#8bb96a' :
+    canvas >= 40 ? '#f5c96a' :
+    canvas >= 20 ? '#c96a2a' : '#e85a4a'
+  );
 
   const aliveOxen = $derived(state.oxen.filter((o) => o.health > 0));
   const avgOxHealth = $derived(
@@ -64,6 +70,14 @@
       <div class="cond-fill" style="width: {condition}%; background: {conditionColor};"></div>
     </div>
     <span class="cond-num" style="color: {conditionColor};">{condition}</span>
+  </div>
+
+  <div class="condition-row" title="Canvas cover — leaks rain onto supplies and weakens rain-catch when low">
+    <span class="cond-label">Canvas</span>
+    <div class="cond-bar">
+      <div class="cond-fill" style="width: {canvas}%; background: {canvasColor};"></div>
+    </div>
+    <span class="cond-num" style="color: {canvasColor};">{canvas}</span>
   </div>
 
   <div class="ox-summary">
