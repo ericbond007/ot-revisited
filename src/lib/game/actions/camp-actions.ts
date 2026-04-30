@@ -41,6 +41,8 @@ export type CampActionId =
   | 'cure_meat'
   | 'cast_balls'
   | 'fish'
+  | 'patch_wagon'
+  | 'stitch_moccasins'
   | 'find_water'
   | 'boil_water'
   | 'dig_well'
@@ -370,6 +372,76 @@ const fish: CampAction = {
     return logLine(
       { ...s, inventory, flags },
       `Caught ${lbs} lb of ${catchName}. Eat fresh or cure it before it spoils.`
+    );
+  }
+};
+
+// --- Rawhide repurposing (#196) ---
+// Period emigrants stockpiled raw hides from kills (they couldn't tan
+// on the trail — 3-week process). Two on-trail uses other than trade
+// at posts: rough patches for the wagon canvas (rawhide shrinks tight
+// when wet, dries hard) and quick-stitched moccasins (awl + sinew, a
+// few hours' work). No specialist required — anyone with hide and
+// time could do either.
+
+const PATCH_HIDE_COST = 1;
+const PATCH_CONDITION_GAIN = 5;
+
+const patchWagon: CampAction = {
+  id: 'patch_wagon',
+  label: 'Patch wagon canvas with rawhide',
+  sub: `${PATCH_HIDE_COST} raw hide · 2 hr · +${PATCH_CONDITION_GAIN} wagon condition`,
+  icon: '🩹',
+  hourCost: 2,
+  availability: (s) => {
+    if ((s.inventory.raw_hide ?? 0) < PATCH_HIDE_COST) {
+      return { available: false, reason: 'Need a raw hide' };
+    }
+    if (s.wagon.condition >= 100) {
+      return { available: false, reason: 'Wagon is sound' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    if ((s.inventory.raw_hide ?? 0) < PATCH_HIDE_COST) return s;
+    if (s.wagon.condition >= 100) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      raw_hide: (s.inventory.raw_hide ?? 0) - PATCH_HIDE_COST
+    };
+    const wagon = {
+      ...s.wagon,
+      condition: Math.min(100, s.wagon.condition + PATCH_CONDITION_GAIN)
+    };
+    return logLine(
+      { ...s, inventory, wagon },
+      `Cut a rawhide patch into the canvas. Wagon +${PATCH_CONDITION_GAIN}.`
+    );
+  }
+};
+
+const STITCH_HIDE_COST = 1;
+
+const stitchMoccasins: CampAction = {
+  id: 'stitch_moccasins',
+  label: 'Stitch moccasins from rawhide',
+  sub: `${STITCH_HIDE_COST} raw hide · 2 hr · +1 moccasins`,
+  icon: '🥿',
+  hourCost: 2,
+  availability: (s) =>
+    (s.inventory.raw_hide ?? 0) >= STITCH_HIDE_COST
+      ? { available: true }
+      : { available: false, reason: 'Need a raw hide' },
+  apply: (s) => {
+    if ((s.inventory.raw_hide ?? 0) < STITCH_HIDE_COST) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      raw_hide: (s.inventory.raw_hide ?? 0) - STITCH_HIDE_COST,
+      moccasins: (s.inventory.moccasins ?? 0) + 1
+    };
+    return logLine(
+      { ...s, inventory },
+      'Stitched moccasins from a rawhide.'
     );
   }
 };
@@ -721,6 +793,9 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   castBalls,
   // Foraging — passive yield without ammo
   fish,
+  // Rawhide repurposing (#196)
+  patchWagon,
+  stitchMoccasins,
   // Practical
   gatherFirewood,
   findWater,
@@ -743,6 +818,8 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   cure_meat: cureMeat,
   cast_balls: castBalls,
   fish,
+  patch_wagon: patchWagon,
+  stitch_moccasins: stitchMoccasins,
   gather_firewood: gatherFirewood,
   find_water: findWater,
   boil_water: boilWater,
