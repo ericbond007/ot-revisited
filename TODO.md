@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #174 bullets). 35 open.
+As of 2026-04-30 (post-merge of #174 bullets + #182 hunt byproducts). 35 open.
 
 ## New mechanics
 
@@ -72,6 +72,8 @@ As of 2026-04-30 (post-merge of #174 bullets). 35 open.
 
 ## Recently shipped
 
+- **#182** Hunt byproducts — tallow, raw hides, prize cuts. Big-game kills now drop 15–40 lb of rendered fat (`tallow`), 1–2 raw hides at 80% (`raw_hide`, untreated dried-flat — emigrants didn't tan on the trail), and 1–2 lb of tongue+hump prize cuts at 70% (`prize_cut`). Medium kills get 5–10 lb tallow + 60% chance of one hide. All scaled by yieldFraction (no kill, no skin). PostHuntModal renders new rows; per-item glyphs 🟡 tallow / 🍖 prize / 🟫 hide. Logged follow-ups #196 (hide use cases), #197 (fish action + gear), #198 (grizzly mauling), #199 (prize-cuts vs full-butchery UI choice).
+- **#174** Bullets rework — split the single `bullets` item into period-correct ammo components: `gunpowder` + `lead_balls` + `percussion_caps` (each 1:1 with a shot), `lead_pig` (raw 5-lb bar), and `bullet_mold` (tool). New camp action `cast_balls` (2 hr, mold + pig → 30 balls) lets the player ride the cheap raw-lead supply path. Caps were the historical bottleneck (fulminate-of-mercury chemistry couldn't be done on the trail). Save migration in upgradeState: each old `bullets:N` becomes 30/30/30 + 1 mold so old saves keep working. Hunt consumes min of the 3 components per shot. 9 post stocks updated; Hunter + Gunsmith starter kits split. Per-item glyphs 💥/🍫/⚫/🪙/🪩 wired through TradeModal / Inventory{Panel,Modal} / CampSummaryModal.
 - **#172** Travel mileage calibration audit — full sweep of all 39 leg distances against historical Oregon Trail surveys + emigrant journals. Trail length 2098 → 2195 mi (now within the historical 2170-2200 band). Biggest fixes: Ft Laramie → Register Cliff 12→60 (Register Cliff is ~60 mi past Laramie near Guernsey, not 12), Farewell Bend → Blue Mountains 120→60 (was double-counting the crossing), Hollenberg → Ft Kearny 80→120 (was 40 mi short), Whitman/Barlow inserts adjusted (the original trigger). 30 leg distances corrected; travel + scoring tests updated; cosmetic mile-comments in landmark-art refreshed.
 - **#186** EventChoice.icon catalog — populated thematic action glyphs on 85 unaudited choices across events.ts / encounters.ts / party-events.ts / water-events.ts (🚶 press on, ⛺ shelter, ⚒️ repair, 🤲 take, 💪 force through, etc.). Item-gated `requires.icon` stays the primary signal; top-level `c.icon` is the action-flavor fallback per the #133 infrastructure. Pure content additions, no logic changes — Sonnet did the bulk port in one pass, intent-mapped per choice context.
 - **#185** Playwright MCP fleet config — chezmoi-tracked override on flattop's `~/.claude/settings.json` disables the plugin's default playwright MCP and replaces it with `npx @playwright/mcp@latest --browser chromium --executable-path /usr/bin/chromium`. The plugin's `chrome` channel hard-paths to `/opt/google/chrome/chrome` and ignored `--executable-path`; switching to the `chromium` channel honors the override. Flattop-only (wanda + serp are headless servers). Verification pass on TradeModal/FordModal heroes still pending — logged as #192.
