@@ -53,6 +53,14 @@ export interface Landmark {
   // `native_post` landmark kind will also use this when relations are
   // hostile (task #121).
   buysFromEmigrants?: boolean;
+  // Per-post buyer gating (#204). Categories the post will not buy
+  // from emigrants. Empty / omitted = the post buys all categories.
+  // Period: a road ranch like Hollenberg sold flour and corn — it
+  // didn't deal in fur-trade specialty (raw hides, buffalo robes,
+  // beads, native trade goods). Mountain-man and HBC posts WERE the
+  // fur trade and bought everything. The army post is gated upstream
+  // by buysFromEmigrants:false so this map can stay narrow.
+  excludeBuyCategories?: readonly string[];
   // Year after which the post is no longer open (exclusive). Fort Hall
   // was abandoned by the HBC in 1856; parties arriving in 1857+ find
   // an empty stockade instead of a trading post. Consumers should check
@@ -86,6 +94,9 @@ export const LANDMARKS: readonly Landmark[] = [
     // now, just a handful of prairie staples and a few luxuries.
     postKind: 'frontier',
     stockScale: 0.5,
+    // Road ranch — sells food, lodging, simple supplies. Doesn't deal
+    // in fur-trade specialty.
+    excludeBuyCategories: ['native_trade'],
     services: ['gossip', 'inn', 'gambling', 'brothel'],
     blurb: "A sod-and-timber road ranch on Cottonwood Creek. A private store run by a German emigrant — prairie staples, a little whiskey, and whatever the last train didn't buy.",
     stock: [
