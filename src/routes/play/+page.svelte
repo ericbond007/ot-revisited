@@ -67,7 +67,14 @@
   // back to 'clear' for legacy saves where gs.weather is undefined.
   const todayWeather = $derived(weatherInfo(gs.weather));
 
+  // showCamp is the "user clicked Make Camp" intent. When the server
+  // marks a multi-day stay (#187) via flags._campPlannedDays, we force
+  // CampStage open even after the manual showCamp flag clears so the
+  // player can keep picking actions until the stay completes or they
+  // break camp early.
   let showCamp = $state(false);
+  const inCampStay = $derived((gs.flags._campPlannedDays as number | undefined) !== undefined);
+  const showCampEffective = $derived(showCamp || inCampStay);
   let showHunt = $state(false);
   let showFord = $state(false);
   let showVisit = $state(false);
@@ -199,7 +206,7 @@
          so long lines don't stretch full-column, and height-capped in
          EventLog itself so it doesn't push the stage off-viewport. -->
     <div class="left-col">
-      {#if showCamp && !gs.completed}
+      {#if showCampEffective && !gs.completed}
         <CampStage state={gs} slot={data.slot} onleave={() => (showCamp = false)} />
       {:else if showVisit && atLandmark && atLandmark.kind === 'trading_post' && !gs.completed}
         <TownStage
@@ -224,7 +231,7 @@
       <div class="actions-row">
         {#if gs.completed}
           <EndScreen state={gs} />
-        {:else if !showCamp}
+        {:else if !showCampEffective}
           <!-- Camp stage owns its own Begin/Leave controls. Hiding the
                trail ActionBar while in camp keeps Travel/Hunt/etc from
                being clickable during camp planning. -->
