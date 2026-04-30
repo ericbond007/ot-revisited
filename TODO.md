@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #196 raw-hide uses C+D). 35 open.
+As of 2026-04-30 (post-merge of #204 per-post buyer gating). 34 open.
 
 ## New mechanics
 
@@ -63,7 +63,6 @@ As of 2026-04-30 (post-merge of #196 raw-hide uses C+D). 35 open.
 | #201 | Wagon repair audit — canvas vs frame vs wheels, blacksmith vs camp  |
 | #202 | Historical Indian trading posts — Bear Lake / Sublette rendezvous   |
 | #203 | Native-band encounter trade — hides ↔ robes via random encounter    |
-| #204 | Per-item buyer gating — road ranches shouldn't buy specialty hides  |
 
 ## Known design-incoming
 
@@ -72,6 +71,7 @@ As of 2026-04-30 (post-merge of #196 raw-hide uses C+D). 35 open.
 
 ## Recently shipped
 
+- **#204** Per-post buyer gating — road ranches like Hollenberg's didn't deal in fur-trade specialty (raw hides, buffalo robes, beads). New optional `excludeBuyCategories: readonly string[]` on Landmark; Hollenberg sets `['native_trade']`, all other posts omit (= buys all). `trade.ts` rejects sells of excluded categories with a clear "Hollenberg won't buy raw_hide (native_trade)" error; `TradeModal` filters owned-item rows so excluded items can't be selected. Mixed-purpose hubs (Ft Laramie pre-1849, Ft Bridger, Ft Hall HBC, Ft Boise) keep accepting fur trade. 6 new tests.
 - **#196 (partial)** Raw hide handling — two new camp actions for the on-trail use cases that don't need a trading partner. **`patch_wagon`** consumes 1 raw_hide + 2 hr → +5 wagon condition (gated by hide presence + sub-100 condition). **`stitch_moccasins`** consumes 1 raw_hide + 2 hr → +1 moccasins (no profession or post gating; period emigrants stitched their own with awl + sinew). The native-trade path (A) and post-sell side (B) skipped this branch — A is venue-blocked until #203 (native-band encounter trade) or wagon-party feature lands; B is mostly implicit already (raw_hide already has post sell prices, `buysFromEmigrants:false` blocks the army post). 8 new tests cover availability + state mutation. Logged follow-ups #201 (wagon repair audit), #202 (historical Indian trading post landmarks), #203 (encounter-based hide trade), #204 (per-item buyer gating).
 - **#199** Hunt approach + tallow toggle — HuntModal gains two new CardRadio controls. **Approach** (big-game only): Full butchery (default — meat + hide + tallow + prize cuts) or Prize cuts only (tongue + hump 4–8 lb, leave the rest for the wolves; period emigrants celebrated this as a delicacy run, no morale penalty). **Tallow** (medium + big): Render the fat or skip to save wagon weight. The two toggles are independent — prize-only with tallow rendered still gets you the fat next to the prize cuts, just no meat or hide. Hunt log line + `HuntOptions.style` + `HuntOptions.renderTallow` + server-side parse. 4 new tests cover the matrix.
 - **#197** Fish camp action + gear — `fishing_line` / `fishing_rod` / `fishing_net` items (0.30 / 1.50 / 4.00). New `fish` camp action: 2 hr, no ammo, requires at least one gear item. Yield depends on best gear (line 2–6 lb, rod 4–10, net 8–20) × terrain mult (river 2.0, forest 1.0, mountains 0.8, prairie 0.4, desert 0.2 — and gated off entirely in desert as "no fishable water nearby"). Catch name flavors by terrain ("cutthroat trout" at the river, "mountain trout" in the Rockies, "a few suckers" on a dry creek bed). Yields fresh `game_meat` so the existing spoilage + cure pipeline picks it up; closes the period gap of mountain-leg hunger when game runs thin past Fort Hall. 5 new tests.
