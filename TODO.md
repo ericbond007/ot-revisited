@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-29 (post-merge of town-actions confirm modal). 33 open.
+As of 2026-04-29 (post-merge of #172 mileage + #186 event icons). 31 open.
 
 ## New mechanics
 
@@ -41,7 +41,6 @@ As of 2026-04-29 (post-merge of town-actions confirm modal). 33 open.
 | #145 | Camp view — eliminate laptop scroll                              |
 | #170 | Use new ox-team design beyond the travel strip                   |
 | #171 | Laurel Hill landmark art — only gap from #89 batch               |
-| #172 | Travel mileage calibration second pass — Whitman/Barlow inserts  |
 | #173 | TownStage hero art — hoist LandmarkArt into Visit view (Phase B) |
 | #189 | Landmark / trading-post screen rework — better town actions      |
 | #190 | InventoryPanel: water as a bar graph (match weight treatment)    |
@@ -58,10 +57,8 @@ As of 2026-04-29 (post-merge of town-actions confirm modal). 33 open.
 | #    |                                                                     |
 | ---- | ------------------------------------------------------------------- |
 | #182 | Hunt yields audit — tallow / animal fat as byproduct?               |
-| #186 | Populate per-choice EventChoice.icon across event catalog           |
 | #183 | AI art / animation pipeline — eval libs + image-gen APIs            |
 | #184 | Full game review — Sonnet pass on mechanics + balance               |
-| #185 | Playwright MCP — point at /usr/bin/chromium (fleet config)          |
 | #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185) |
 
 ## Known design-incoming
@@ -71,6 +68,9 @@ As of 2026-04-29 (post-merge of town-actions confirm modal). 33 open.
 
 ## Recently shipped
 
+- **#172** Travel mileage calibration audit — full sweep of all 39 leg distances against historical Oregon Trail surveys + emigrant journals. Trail length 2098 → 2195 mi (now within the historical 2170-2200 band). Biggest fixes: Ft Laramie → Register Cliff 12→60 (Register Cliff is ~60 mi past Laramie near Guernsey, not 12), Farewell Bend → Blue Mountains 120→60 (was double-counting the crossing), Hollenberg → Ft Kearny 80→120 (was 40 mi short), Whitman/Barlow inserts adjusted (the original trigger). 30 leg distances corrected; travel + scoring tests updated; cosmetic mile-comments in landmark-art refreshed.
+- **#186** EventChoice.icon catalog — populated thematic action glyphs on 85 unaudited choices across events.ts / encounters.ts / party-events.ts / water-events.ts (🚶 press on, ⛺ shelter, ⚒️ repair, 🤲 take, 💪 force through, etc.). Item-gated `requires.icon` stays the primary signal; top-level `c.icon` is the action-flavor fallback per the #133 infrastructure. Pure content additions, no logic changes — Sonnet did the bulk port in one pass, intent-mapped per choice context.
+- **#185** Playwright MCP fleet config — chezmoi-tracked override on flattop's `~/.claude/settings.json` disables the plugin's default playwright MCP and replaces it with `npx @playwright/mcp@latest --browser chromium --executable-path /usr/bin/chromium`. The plugin's `chrome` channel hard-paths to `/opt/google/chrome/chrome` and ignored `--executable-path`; switching to the `chromium` channel honors the override. Flattop-only (wanda + serp are headless servers). Verification pass on TradeModal/FordModal heroes still pending — logged as #192.
 - **#188 + #193 + #194** Town-actions confirm modal — replaced 5 inline forms on TownStage cards (instant POST, no acknowledgment) with click-to-open `TownActionModal.svelte` carrying the cost-stepper inside the modal. Same enhance flow on Confirm; free/fixed-cost actions (gossip, newspaper, trade) keep their direct-click. Closes all three symptoms of the same UX gap (#188 no confirm, #193 felt slow, #194 cost adjustment in modal not card).
 - **#132 + #163 + components 4d** PartyPanel wiring — replaced the 4 hand-drawn inline avatar-corner profession badges (doctor / scout / preacher / hunter only) with `<ProfessionIcon id={m.profession} size={5}>` so all 13 professions get bespoke watercolor art. Mini-stats footer now uses `<StatIcon kind="rations">` and `<StatIcon kind="pace">` (oxen stays on emoji — the ×N count is the focal cue). The panel was already substantially aligned with `docs/handoff/components/src/party-panel.html` from earlier work (sparkline header, avatars+rings, HP bars with hatch ticks, heart pulse, ill-shake, dead gravestone, morale ribbon, mini-stats existed); this commit closes the icon-wiring side. **#132** closes on the "denser" interpretation; the bundle's panel IS the rework. **#163** closes per the bundle's "keep mini-stats, intentional duplication" answer — comment in code already says so.
 - **#133** EventModal visual polish — `EventChoice.icon?: string` field added so any choice can carry a thematic action glyph (🐂, ⛺, ⚒️, etc.), not just item-gated ones. EventModal renders `req.icon` (item-gate, stronger signal) when present, falls back to `c.icon` (action flavor). The card-slide / choice-in animations and rust-bordered button styling were already in place from earlier work; this closes the infrastructure side. Content fill — populating `c.icon` across the event catalog — is logged as #186 follow-up.
