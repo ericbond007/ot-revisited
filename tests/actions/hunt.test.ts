@@ -135,4 +135,70 @@ describe('hunt', () => {
     expect(anyMeat).toBe(true);
     expect(anyLiver).toBe(true);
   });
+
+  // #199 — prize-only big-game branch.
+  it('prize-only big-game hunt yields prize cuts but no meat or hide', () => {
+    let anyPrize = false;
+    for (let i = 0; i < 6; i++) {
+      const s = { ...newGame(), seed: `prize-${i}` };
+      const h = hunt(s, {
+        target: 'big', ammo: 'heavy', hunters: 1,
+        style: 'prize_only', renderTallow: false
+      });
+      const haul = h.flags._huntHaul as Record<string, unknown>;
+      // Zero meat + zero hide. With renderTallow: false also zero tallow.
+      expect(haul.meat).toBe(0);
+      expect(haul.tallow).toBe(0);
+      expect(haul.rawHides).toBe(0);
+      expect(h.inventory.game_meat ?? 0).toBe(0);
+      expect(h.inventory.raw_hide ?? 0).toBe(0);
+      expect(h.inventory.tallow ?? 0).toBe(0);
+      if ((haul.prizeCut as number) > 0) anyPrize = true;
+    }
+    expect(anyPrize).toBe(true);
+  });
+
+  it('prize-only with renderTallow=true still picks up the fat', () => {
+    let anyTallow = false;
+    for (let i = 0; i < 6; i++) {
+      const s = { ...newGame(), seed: `prize-tallow-${i}` };
+      const h = hunt(s, {
+        target: 'big', ammo: 'heavy', hunters: 1,
+        style: 'prize_only', renderTallow: true
+      });
+      const haul = h.flags._huntHaul as Record<string, unknown>;
+      // Meat + hide still skipped, but tallow may render.
+      expect(haul.meat).toBe(0);
+      expect(haul.rawHides).toBe(0);
+      if ((haul.tallow as number) > 0) anyTallow = true;
+    }
+    expect(anyTallow).toBe(true);
+  });
+
+  it('renderTallow=false on full butchery skips tallow but keeps meat + hide', () => {
+    let anyTallow = false;
+    let anyMeat = false;
+    for (let i = 0; i < 6; i++) {
+      const s = { ...newGame(), seed: `no-tallow-${i}` };
+      const h = hunt(s, {
+        target: 'big', ammo: 'heavy', hunters: 1,
+        renderTallow: false
+      });
+      const haul = h.flags._huntHaul as Record<string, unknown>;
+      if ((haul.tallow as number) > 0) anyTallow = true;
+      if ((haul.meat as number) > 0) anyMeat = true;
+    }
+    expect(anyTallow).toBe(false); // never any tallow
+    expect(anyMeat).toBe(true);    // meat still flowing
+  });
+
+  it('default style + tallow on big-game pulls full butchery', () => {
+    let anyMeat = false;
+    for (let i = 0; i < 4; i++) {
+      const s = { ...newGame(), seed: `default-${i}` };
+      const h = hunt(s, { target: 'big', ammo: 'heavy', hunters: 1 });
+      if ((h.inventory.game_meat ?? 0) > 0) anyMeat = true;
+    }
+    expect(anyMeat).toBe(true);
+  });
 });

@@ -18,10 +18,20 @@
 
   type Target = 'small' | 'medium' | 'big' | 'gather';
   type Ammo = 'light' | 'moderate' | 'heavy';
+  type Style = 'full' | 'prize_only';
 
   let target = $state<Target>('small');
   let ammo = $state<Ammo>('moderate');
   let hunters = $state(1);
+  // #199 — only consulted when target='big'. 'full' butchers the
+  // animal and brings everything; 'prize_only' takes tongue + hump
+  // and leaves the rest. Period truth — emigrant diaries describe
+  // this as a celebrated delicacy run, not a moral failing.
+  let style = $state<Style>('full');
+  // Independent of style — render the fat into tallow? Costs nothing
+  // beyond hunt time; default on. Player can opt out if their wagon
+  // weight budget is tight (tallow is heavy).
+  let tallowChoice = $state<'yes' | 'no'>('yes');
 
   // Guardrails: if rifles vanish or party shrinks while the modal is open.
   $effect(() => {
@@ -80,6 +90,26 @@
     { value: 'heavy' as const,    label: 'Heavy',    sublabel: '20 bullets', icon: '💥' }
   ];
 
+  const styleOptions = [
+    {
+      value: 'full' as const,
+      label: 'Full butchery',
+      sublabel: 'Take everything — meat, hide, prize cuts',
+      icon: '🥩'
+    },
+    {
+      value: 'prize_only' as const,
+      label: 'Prize cuts only',
+      sublabel: 'Tongue + hump · leave the rest · feast tonight',
+      icon: '🍖'
+    }
+  ];
+
+  const tallowOptions = [
+    { value: 'yes' as const, label: 'Render tallow', sublabel: 'Take the fat too — heavy, but tradeable', icon: '🟡' },
+    { value: 'no'  as const, label: 'Skip tallow',   sublabel: 'Save wagon weight, leave the fat',     icon: '🚫' }
+  ];
+
   const peopleOptions = $derived([
     {
       value: 1,
@@ -121,6 +151,18 @@
           <CardRadio label="Ammo" name="ammo" bind:value={ammo} options={ammoOptions} columns={3} />
         {:else}
           <input type="hidden" name="ammo" value="light" />
+        {/if}
+
+        {#if target === 'big'}
+          <CardRadio label="Approach" name="style" bind:value={style} options={styleOptions} columns={2} />
+        {:else}
+          <input type="hidden" name="style" value="full" />
+        {/if}
+
+        {#if target === 'medium' || target === 'big'}
+          <CardRadio label="Tallow" name="render_tallow" bind:value={tallowChoice} options={tallowOptions} columns={2} />
+        {:else}
+          <input type="hidden" name="render_tallow" value="yes" />
         {/if}
 
         <CardRadio label="Party" name="hunters" bind:value={hunters} options={peopleOptions} columns={2} />
