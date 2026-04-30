@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #201 wagon repair audit). 34 open.
+As of 2026-04-30 (post-merge of #187 multi-day camp). 33 open.
 
 ## New mechanics
 
@@ -20,9 +20,7 @@ As of 2026-04-30 (post-merge of #201 wagon repair audit). 34 open.
 
 ## System reworks
 
-| #    |                                                                   |
-| ---- | ----------------------------------------------------------------- |
-| #187 | Camp multi-day rework — reset slots day 2, surface that to player |
+_(empty — items shipped or moved to other sections)_
 
 ## UI / UX polish
 
@@ -71,6 +69,7 @@ As of 2026-04-30 (post-merge of #201 wagon repair audit). 34 open.
 
 ## Recently shipped
 
+- **#187** Multi-day camp rework — camp stays now run day-by-day with per-day activity picks. Player sets planned stay length on entry (1-7 days); each "Rest the night" advances a single day, then CampStage re-renders with "Day X of Y" + a fresh 12-hour budget + reset activity slots. Server tracks via `_campPlannedDays` + `_campDaysSoFar` flags; per-day CampSummary modal suppressed mid-stay (the dawn-fade overlay carries the transition), final-day summary still fires on stay completion. New `?/breakCamp` action + "Break camp early" button to exit at any point. /play forces CampStage open while flags say mid-stay. rest() function unchanged — multi-day flag tracking lives only in the server route, so existing tests keep passing.
 - **#201** Wagon repair audit + canvas split — `wagon.canvas` (0..100) added as a separate stat from frame condition. Canvas drains from rain (-1..2), storm (-3..6 + supply roll), snow (-1..3), desert sun (-1). At low canvas, rain-catch refill scales down (full ≥60, half ≥40, quarter ≥20, zero <20) and supply-damage rolls fire on wet days (2-5 lb of one heaviest dry good at <60 + rain; +30% gunpowder/caps roll at <40 + storm; heavier at <20 + storm/snow). Reworked `patch_wagon` (raw_hide → +8 canvas) + new `replace_canvas` (canvas spare → +30 canvas, 2× without iron_toolkit) + new `replace_planks` (1 plank → +5 condition, 2× without toolkit). New `wagon_axle` event (ungated, weight 2). `tar_bucket` cuts frame decay 25%. Dropped `iron_scrap` entirely (anvils were rare luxury cargo, smithing happened at posts). Replaced Blacksmith bonus: town smithy repair cost halved when a live Blacksmith rides along. New town service `forgeOxShoes` ($1.50/pair, 50% off w/ Blacksmith) at any post with `blacksmith` service. Audit confirmed all 8 forge posts (Kearny, Robidoux, Laramie, Bridger, Hall, Boise, Walla Walla, Dalles) match historical record. New `abandoned_wagon` encounter (post-mile-200, weight 2): pick over wreck for 1d3 spare planks + 50% canvas. WagonPanel surfaces canvas as a second stacked bar. Logged #205 (Whitman Mission as a forge post 1843-47, historical check needed).
 - **#204** Per-post buyer gating — road ranches like Hollenberg's didn't deal in fur-trade specialty (raw hides, buffalo robes, beads). New optional `excludeBuyCategories: readonly string[]` on Landmark; Hollenberg sets `['native_trade']`, all other posts omit (= buys all). `trade.ts` rejects sells of excluded categories with a clear "Hollenberg won't buy raw_hide (native_trade)" error; `TradeModal` filters owned-item rows so excluded items can't be selected. Mixed-purpose hubs (Ft Laramie pre-1849, Ft Bridger, Ft Hall HBC, Ft Boise) keep accepting fur trade. 6 new tests.
 - **#196 (partial)** Raw hide handling — two new camp actions for the on-trail use cases that don't need a trading partner. **`patch_wagon`** consumes 1 raw_hide + 2 hr → +5 wagon condition (gated by hide presence + sub-100 condition). **`stitch_moccasins`** consumes 1 raw_hide + 2 hr → +1 moccasins (no profession or post gating; period emigrants stitched their own with awl + sinew). The native-trade path (A) and post-sell side (B) skipped this branch — A is venue-blocked until #203 (native-band encounter trade) or wagon-party feature lands; B is mostly implicit already (raw_hide already has post sell prices, `buysFromEmigrants:false` blocks the army post). 8 new tests cover availability + state mutation. Logged follow-ups #201 (wagon repair audit), #202 (historical Indian trading post landmarks), #203 (encounter-based hide trade), #204 (per-item buyer gating).
