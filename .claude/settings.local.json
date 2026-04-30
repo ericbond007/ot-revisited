@@ -21,7 +21,30 @@
       "Bash(npx svelte-check *)",
       "Bash(curl -s -o /dev/null -w \"landing %{http_code}\\\\n\" http://localhost:5187/)",
       "Bash(pkill -f \"vite dev --port 5187\")",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(npx tsc *)",
+      "Bash(curl -sSL -o README.md \"https://2282e2ea-6f51-4641-9b81-6d7b51aa47ff.claudeusercontent.com/v1/design/projects/2282e2ea-6f51-4641-9b81-6d7b51aa47ff/serve/design_handoff_travel_scene/README.md?t=1854c363501e1de2266587a9b98f0afd16dcefa95117274405f197d7b5351cc1.ca30274f-448d-4388-a340-9326f95c7c84.d2e1217e-a9de-4e50-a0a6-870ca57233cd.1777171220\")",
+      "Bash(curl -sSL -o \"Wagon Showcase.html\" \"https://2282e2ea-6f51-4641-9b81-6d7b51aa47ff.claudeusercontent.com/v1/design/projects/2282e2ea-6f51-4641-9b81-6d7b51aa47ff/serve/design_handoff_travel_scene/Wagon%20Showcase.html?t=1854c363501e1de2266587a9b98f0afd16dcefa95117274405f197d7b5351cc1.ca30274f-448d-4388-a340-9326f95c7c84.d2e1217e-a9de-4e50-a0a6-870ca57233cd.1777171220\")",
+      "Bash(curl -sSL -o colors_and_type.css \"https://2282e2ea-6f51-4641-9b81-6d7b51aa47ff.claudeusercontent.com/v1/design/projects/2282e2ea-6f51-4641-9b81-6d7b51aa47ff/serve/design_handoff_travel_scene/colors_and_type.css?t=1854c363501e1de2266587a9b98f0afd16dcefa95117274405f197d7b5351cc1.ca30274f-448d-4388-a340-9326f95c7c84.d2e1217e-a9de-4e50-a0a6-870ca57233cd.1777171220\")",
+      "Bash(chromium --headless --disable-gpu --hide-scrollbars --window-size=1500,500 --virtual-time-budget=2000 --screenshot=/tmp/v5-mile580.png \"http://localhost:5173/dev/trail-map\")",
+      "Bash(chromium --headless --disable-gpu --hide-scrollbars --window-size=1500,1800 --virtual-time-budget=2500 --screenshot=/tmp/lmk-fixed.png \"http://localhost:5173/dev/landmark-art\")",
+      "Bash(xargs -n1 basename)",
+      "Bash(awk *)",
+      "Bash(curl -sf http://localhost:5173/dev/landmark-icons -o /tmp/icons-page.html -w \"HTTP %{http_code}\\\\n\")",
+      "Bash(pkill -f \"vite dev\")",
+      "Bash(curl -sf -o /dev/null -w \"dev: %{http_code}\\\\n\" http://localhost:5173/dev/landmark-icons)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "WebSearch",
+      "WebFetch(domain:)",
+      "Bash(curl -s -o /dev/null -w \"/dev/landmark-icons → %{http_code}\\\\n\" http://localhost:5173/dev/landmark-icons)",
+      "Bash(curl -s -o /dev/null -w \"/dev/stat-icons → %{http_code}\\\\n\" http://localhost:5173/dev/stat-icons)",
+      "Bash(curl -s -o /dev/null -w \"/dev/profession-icons → %{http_code}\\\\n\" http://localhost:5173/dev/profession-icons)",
+      "Bash(curl -s -o /dev/null -w \"/dev/components → %{http_code}\\\\n\" http://localhost:5173/dev/components)",
+      "Bash(curl -s -b /tmp/cookies.txt -X POST -d \"scenario=at_kearny\" -L -o /tmp/play.html -w \"loadScenario at_kearny → %{http_code} → %{url_effective}\\\\n\" 'http://localhost:5173/?/loadScenario')",
+      "Read(//tmp/**)",
+      "Bash(curl -s -b /tmp/cookies.txt -X POST -d \"scenario=at_kansas_river\" -L -o /tmp/ford.html -w \"loadScenario at_kansas_river → %{http_code} → %{url_effective}\\\\n\" 'http://localhost:5173/?/loadScenario')",
+      "Bash(claude mcp *)",
+      "Bash(gh pr *)"
     ]
   }
 }
