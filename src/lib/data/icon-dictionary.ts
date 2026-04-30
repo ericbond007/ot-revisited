@@ -79,7 +79,11 @@ export const ICON = {
     lead_pig:        '🍫',
     lead_balls:      '⚫',
     percussion_caps: '🪙',
-    bullet_mold:     '🪩'
+    bullet_mold:     '🪩',
+    // #182 hunt byproducts.
+    tallow:          '🟡',
+    prize_cut:       '🍖',
+    raw_hide:        '🟫'
   },
   event_categories: {
     weather:    '🌩️',
