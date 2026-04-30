@@ -34,60 +34,41 @@ function withCorpse(s: GameState): GameState {
   };
 }
 
-describe('cannibalism — visibility', () => {
-  it('both actions are hidden when there IS food', () => {
+describe('cannibalism_straws — visibility', () => {
+  // Per #205, the corpse-eating choice was moved off the camp grid and
+  // onto the personal_burial event popup (see tests/burial-event.test.ts).
+  // Only draws-straws remains as a camp action: starving party, no recent
+  // body around, ≥2 alive adults.
+  it('hidden when there IS food', () => {
     const s = createInitialState({
       seed: 'has-food',
       leader: { name: 'A', profession: 'farmer' },
       companions: [{ name: 'B', profession: 'doctor' }],
       startDate: { year: 1848, month: 4, day: 15 }
     });
-    const corpseAction = getCampAction('cannibalism_corpse');
-    const strawsAction = getCampAction('cannibalism_straws');
-    expect(corpseAction.hidden!(s)).toBe(true);
-    expect(strawsAction.hidden!(s)).toBe(true);
+    expect(getCampAction('cannibalism_straws').hidden!(s)).toBe(true);
   });
 
-  it('corpse action is visible only when out of food AND a corpse exists', () => {
+  it('visible when out of food, no corpse, ≥2 alive adults', () => {
     const s = newGame();
-    const corpseAction = getCampAction('cannibalism_corpse');
-    // No corpse yet → still hidden.
-    expect(corpseAction.hidden!(s)).toBe(true);
-    // Add a corpse → visible.
-    expect(corpseAction.hidden!(withCorpse(s))).toBe(false);
+    expect(getCampAction('cannibalism_straws').hidden!(s)).toBe(false);
   });
 
-  it('straws action is visible only when out of food, no corpse, ≥2 alive adults', () => {
-    const s = newGame();
-    const strawsAction = getCampAction('cannibalism_straws');
-    expect(strawsAction.hidden!(s)).toBe(false); // 3 alive adults
-    // With a corpse present, straws should hide (corpse takes priority).
-    expect(strawsAction.hidden!(withCorpse(s))).toBe(true);
+  it('hides while a recent corpse is around (resolve burial first)', () => {
+    expect(getCampAction('cannibalism_straws').hidden!(withCorpse(newGame()))).toBe(true);
   });
 
-  it('straws action hides when only one alive adult remains', () => {
+  it('hides when only one alive adult remains', () => {
     const s = newGame();
     const lonely = {
       ...s,
       party: s.party.map((m, i) => (i > 0 ? { ...m, dead: true, deathDay: 0, deathCause: 'X' } : m))
     };
-    // After fixture mutation, member at index 1 has deathDay 0 — that's >5 days back from day 1, so the
-    // recent-corpse window correctly excludes it (the straws hidden() checks for no recent corpse).
-    expect(getCampAction('cannibalism_straws').hidden!(lonely)).toBe(true); // <2 alive
+    expect(getCampAction('cannibalism_straws').hidden!(lonely)).toBe(true);
   });
 });
 
-describe('cannibalism — apply', () => {
-  it('eat-the-dead consumes the body, grants 50 lb meat, drops morale', () => {
-    const s0 = withCorpse(newGame());
-    const out = rest(s0, 1, { campActions: ['cannibalism_corpse'] });
-    expect(out.inventory.game_meat).toBe(50);
-    const consumed = out.party.find((m) => m.consumed === true);
-    expect(consumed).toBeTruthy();
-    expect(out.morale).toBeLessThan(s0.morale);
-    expect(out.flags._cannibalismCount).toBe(1);
-  });
-
+describe('cannibalism_straws — apply', () => {
   it('drawing straws kills the weakest, grants 60 lb meat, sets guilt counter', () => {
     let s0 = newGame();
     // Wound member 2 (Tom) so they're the weakest.
@@ -101,24 +82,12 @@ describe('cannibalism — apply', () => {
     expect(out.morale).toBeLessThan(s0.morale);
     expect(out.flags._cannibalismCount).toBe(3);
   });
-
-  it('eating the dead clears any pending-burial flag', () => {
-    let s0 = withCorpse(newGame());
-    s0 = { ...s0, flags: { ...s0.flags, _burialPending: true } };
-    const out = rest(s0, 1, { campActions: ['cannibalism_corpse'] });
-    expect(out.flags._burialPending).toBeUndefined();
-  });
-
-  it('eat-the-dead refuses if no corpse exists (availability gate)', () => {
-    const s = newGame();
-    expect(() => rest(s, 1, { campActions: ['cannibalism_corpse'] })).toThrow(/starving|body/i);
-  });
 });
 
 describe('cannibalism — registry', () => {
-  it('both actions exist in CAMP_ACTIONS', () => {
+  it('cannibalism_straws is the only cannibalism action in the camp grid', () => {
     const ids = CAMP_ACTIONS.map((a) => a.id);
-    expect(ids).toContain('cannibalism_corpse');
     expect(ids).toContain('cannibalism_straws');
+    expect(ids).not.toContain('cannibalism_corpse');
   });
 });

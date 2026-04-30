@@ -34,6 +34,12 @@ export interface EventChoice {
   // the modal if the party is missing the item, with a hint stating why.
   // The item's icon is also surfaced alongside the label.
   requires?: { itemId: string; icon?: string; reason?: string };
+  // Optional state-predicate gate. When set and returns false, the choice
+  // is filtered out of the modal entirely (vs `requires` which renders
+  // disabled). Use for desperation choices that shouldn't even be visible
+  // outside their narrow context (e.g. "Eat the body" — only when the
+  // party is starving).
+  hidden?: (state: GameState) => boolean;
 }
 
 export interface GameEvent {
@@ -874,6 +880,39 @@ EVENTS.push(donner_rumor, gold_rush_news, cholera_peak_1852, mormon_handcart, po
 
 // Burial — fires the day after any party member dies (reapDead sets _burialPending).
 // High weight so it's essentially guaranteed to be picked from the eligible pool.
+//
+// Body handling (#205): the body's fate is decided right here on the
+// popup. Three outcomes — bury proper (with shovel), build a stone
+// mound (no shovel), or eat the body (only when starving). All three
+// clear _burialPending and close that body's story; cannibalism
+// marks the corpse `consumed` so the party member is no longer
+// counted in the alive list. Period reality on the third path: the
+// Donner Party precedent — when survivors are starving, fresh meat
+// is fresh meat regardless of how the deceased died.
+const BURIAL_CANNIBALISM_MEAT_LBS = 50;
+const BURIAL_CANNIBALISM_MORALE = 18;
+
+function hasNoFoodAtBurial(state: GameState): boolean {
+  const ids = ['game_meat', 'berries', 'flour', 'beans', 'bacon', 'jerky', 'hardtack', 'dried_fruit', 'pemmican'];
+  const totalLb = ids.reduce((sum, id) => sum + (state.inventory[id] ?? 0), 0);
+  return totalLb === 0;
+}
+
+function freshUnconsumedDead(state: GameState): GameState['party'][number] | null {
+  // The most-recently-dead-and-unconsumed adult — same shape as the
+  // camp-action recentCorpse helper. Used by the burial cannibalism
+  // choice to pick whose body is actually on the ground.
+  const fresh = state.party.filter((m) =>
+    m.dead
+    && m.kind === 'adult'
+    && !m.consumed
+    && typeof m.deathDay === 'number'
+    && state.day - m.deathDay <= 5
+  );
+  if (fresh.length === 0) return null;
+  return fresh.sort((a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0))[0];
+}
+
 const burial: GameEvent = {
   id: 'personal_burial',
   category: 'personal',
@@ -897,34 +936,75 @@ const burial: GameEvent = {
       apply: (s) => {
         const flags = { ...s.flags };
         delete (flags as Record<string, unknown>)._burialPending;
-        // Defensive: gate enforced by the UI, but if a shovel-less state
-        // somehow reaches here, still degrade gracefully.
-        const hasShovel = (s.inventory.shovel ?? 0) > 0;
-        if (hasShovel) {
-          return logLine(
-            { ...s, flags, morale: Math.min(100, s.morale + 2) },
-            'A grave was dug. The party said their farewells with some comfort. Morale +2.'
-          );
-        }
-        const penalty = deathMoralePenalty(s, 4);
         return logLine(
-          { ...s, flags, morale: Math.max(0, s.morale - penalty) },
-          `Without a shovel, the body was covered with stones. A hard farewell. Morale −${penalty}.`
+          { ...s, flags, morale: Math.min(100, s.morale + 2) },
+          'A grave was dug. The party said their farewells with some comfort. Morale +2.'
         );
       }
     },
     {
-      id: 'moment_of_silence',
-      icon: '🙏',
-      label: "Just a moment's silence — press on",
+      id: 'stone_mound',
+      icon: '🪨',
+      label: 'Build a stone mound',
+      // Default if no shovel; otherwise the dig_grave choice takes the default.
       silentLog: true,
       apply: (s) => {
         const flags = { ...s.flags };
         delete (flags as Record<string, unknown>)._burialPending;
-        const penalty = deathMoralePenalty(s, 3);
+        const penalty = deathMoralePenalty(s, 4);
         return logLine(
           { ...s, flags, morale: Math.max(0, s.morale - penalty) },
-          `The party moved on with only a brief silence. Heavy hearts. Morale −${penalty}.`
+          `Built a stone mound over the body. A hard farewell. Morale −${penalty}.`
+        );
+      }
+    },
+    {
+      id: 'eat_the_body',
+      icon: '🍖',
+      label: 'Eat the body',
+      silentLog: true,
+      // Hidden unless the party has nothing left to eat. Period reality:
+      // Donner Party precedent — survivors only turned to this when
+      // there was no food left.
+      hidden: (s) => !hasNoFoodAtBurial(s),
+      apply: (s) => {
+        // Defensive: the hidden predicate gates UI visibility, but if
+        // a non-starving state somehow reaches here (dev tools, replay,
+        // race), fall back to stone-mound semantics so we never grant
+        // unearned meat.
+        if (!hasNoFoodAtBurial(s)) {
+          const flags = { ...s.flags };
+          delete (flags as Record<string, unknown>)._burialPending;
+          const penalty = deathMoralePenalty(s, 4);
+          return logLine(
+            { ...s, flags, morale: Math.max(0, s.morale - penalty) },
+            `Built a stone mound over the body. A hard farewell. Morale −${penalty}.`
+          );
+        }
+        const corpse = freshUnconsumedDead(s);
+        if (!corpse) {
+          const flags = { ...s.flags };
+          delete (flags as Record<string, unknown>)._burialPending;
+          return logLine({ ...s, flags }, 'Burial — but no body was fresh enough.');
+        }
+        const flags = { ...s.flags };
+        delete (flags as Record<string, unknown>)._burialPending;
+        const prevGuilt = (flags._cannibalismCount as number | undefined) ?? 0;
+        flags._cannibalismCount = prevGuilt + 1;
+        return logLine(
+          {
+            ...s,
+            flags,
+            party: s.party.map((m) =>
+              m.id === corpse.id ? { ...m, consumed: true } : m
+            ),
+            inventory: {
+              ...s.inventory,
+              game_meat: (s.inventory.game_meat ?? 0) + BURIAL_CANNIBALISM_MEAT_LBS
+            },
+            morale: Math.max(0, s.morale - BURIAL_CANNIBALISM_MORALE)
+          },
+          `Took ${corpse.name}'s body for meat — ${BURIAL_CANNIBALISM_MEAT_LBS} lb of fresh game. Nobody spoke. Morale −${BURIAL_CANNIBALISM_MORALE}.`
         );
       }
     }
