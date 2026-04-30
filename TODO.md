@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #190 water bar). 34 open.
+As of 2026-04-30 (post-merge of #190 water bar). 33 open.
 
 ## New mechanics
 
@@ -22,7 +22,6 @@ As of 2026-04-30 (post-merge of #190 water bar). 34 open.
 
 | #    |                                                                   |
 | ---- | ----------------------------------------------------------------- |
-| #174 | Bullets — split into lead + powder + caps for authenticity        |
 | #187 | Camp multi-day rework — reset slots day 2, surface that to player |
 
 ## UI / UX polish
