@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #205 + #151 burial-popup rework). 31 open.
+As of 2026-04-30 (post-merge of #207 tribe-baseline calibration). 34 open.
 
 ## New mechanics
 
@@ -60,6 +60,14 @@ _(empty — items shipped or moved to other sections)_
 | #206 | Whitman Mission as a post — historical check (1843-47 only)         |
 | #202 | Historical Indian trading posts — Bear Lake / Sublette rendezvous   |
 | #203 | Native-band encounter trade — hides ↔ robes via random encounter    |
+| #208 | Ward Massacre 1854 headline — Bannock -10, Shoshone -5              |
+| #209 | Yakima War 1855-56 headline — Walla Walla -12, Umatilla -8, Cayuse -5 |
+
+## New mechanics (extension)
+
+| #    |                                                                            |
+| ---- | -------------------------------------------------------------------------- |
+| #210 | Trail journal / atlas — leather-bound journal view aggregating tribes met, headlines read, letters, party members (living + memorial), trip stats. Accessible from the /play header. Period parchment aesthetic, IM Fell English serif. |
 
 ## Known design-incoming
 
@@ -68,6 +76,7 @@ _(empty — items shipped or moved to other sections)_
 
 ## Recently shipped
 
+- **#207** Tribe baseline calibration — audit pass on the 9-tribe relations system. Pawnee 55→60 (period diaries lean friendlier — Sarah Royce, Donner letters, etc.). Cayuse 35→50 (the previous baseline already reflected the post-1847 Whitman Massacre wary state, but the 1847 newspaper headline ALSO drops cayuse −15, so 1848+ starts double-counted into hostile-edge ~20; restoring a pre-massacre neutral baseline lets the headline land at the correct ~35). Tests updated; system-wide audit logged a clean bill of health on encounter wiring + news-headline wiring + save migration; flagged trade-post integration + UI tribe surfacing as known gaps the journal TODO (#210) and #202 will pick up.
 - **#205 + #151** Body decisions on the burial popup — when a party member dies, the burial event now pops with three choices instead of two: **Dig a proper grave** (shovel-required, +2 morale), **Build a stone mound** (no-shovel default, -4 morale, preacher halves), and **Eat the body** (hidden unless `hasNoFood` — period reality, Donner Party precedent: survivors only turned to it when no food remained, regardless of how the deceased died). All three close the body's story (clear `_burialPending`); eat-the-body marks `consumed`, grants 50 lb game_meat, -18 morale, +1 cannibalism guilt. Dropped `dig_grave` camp action (closes #151 — the action was always situational and just duplicated the burial event) and dropped `cannibalism_corpse` camp action (folded into the new burial choice — one-shot at the popup, not a deferred camp option). `cannibalism_straws` stays in camp for the "nobody dead yet, draw lots" path. New `EventChoice.hidden?: (state) => boolean` predicate on the choice schema (filters whole choices vs `requires` which renders disabled). 6 new burial-event tests; cannibalism + camp-actions test suites trimmed for the dropped actions.
 - **#195** Camp-actions audit — reviewed all 18 actions; most carry real gameplay effects with sensible hour costs. Two adjustments: `read_bible` 2hr→1hr (was the worst morale-per-hour ratio at +2-4 for 2hr — period reality is a brief evening ritual, not a half-day commitment); `find_water` now gates off desert terrain (no streams in dry country — `dig_well` stays the desert water option). 4 new tests.
 - **#187** Multi-day camp rework — camp stays now run day-by-day with per-day activity picks. Player sets planned stay length on entry (1-7 days); each "Rest the night" advances a single day, then CampStage re-renders with "Day X of Y" + a fresh 12-hour budget + reset activity slots. Server tracks via `_campPlannedDays` + `_campDaysSoFar` flags; per-day CampSummary modal suppressed mid-stay (the dawn-fade overlay carries the transition), final-day summary still fires on stay completion. New `?/breakCamp` action + "Break camp early" button to exit at any point. /play forces CampStage open while flags say mid-stay. rest() function unchanged — multi-day flag tracking lives only in the server route, so existing tests keep passing.
