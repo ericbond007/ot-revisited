@@ -76,10 +76,10 @@ export const ICON = {
   // broader inventory-display follow-up).
   inventory_items: {
     gunpowder:       '💥',
-    lead_pig:        '🟫',
+    lead_pig:        '🍫',
     lead_balls:      '⚫',
-    percussion_caps: '🟤',
-    bullet_mold:     '⚒️'
+    percussion_caps: '🪙',
+    bullet_mold:     '🪩'
   },
   event_categories: {
     weather:    '🌩️',
