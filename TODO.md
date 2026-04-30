@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #208 + #209 historical headlines). 31 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 31 open.
 
 ## New mechanics
 
@@ -73,6 +73,7 @@ _(empty — items shipped or moved to other sections)_
 
 ## Recently shipped
 
+- **#212** Travel-stage hero — `/play` layout rework. WagonScene moves to the top of the left column (where TrailMapSnippet used to be), action bar right under it. New `.travel-bottom` row places TrailMapSnippet + EventLog 50/50 below the action bar. Camp / Town / Landmark / Completed stages keep their existing layout (full-width log below the action bar). Gated on a new `isTravelStage` derived. Map snippet's hard-coded 380px height overridden via `:global(.snippet-host)` so it can flex within the new row. WagonScene at its natural strip aspect — bespoke art for the bigger canvas remains a follow-up under #156/#157/#159.
 - **#208 + #209** Two missing-history newspaper headlines flagged in #207. **#208 Ward Massacre** (Aug 1854 Snake River; fires Sep-1854 through 1856): Bannock -10, Shoshone -5. **#209 Yakima War** (Nov 1855 onward through 1858): Walla Walla -12, Umatilla -8, Cayuse -5. Both compose with the existing 1847 Whitman / 1851 Treaty / 1854 Grattan / 1855 Harney pipeline — pure data-file additions, no system changes. 6 new tests.
 - **#202 + #203** Native trade — village stops + hide encounter. Two new trail landmarks: `cheyenne_camp` (Sweetwater plains, mile ~620, postKind `native`, tribeId cheyenne) and `shoshone_camp` (upper Bear River, mile ~1075, Washakie's band). Mile inserts split existing gaps; total trail distance preserved at 2195. New `Landmark.tribeId` field + `isNativeCampHostile()` helper — TownStage shows a "lodge poles bare, fire pits cold" empty-camp flavor when the affiliated tribe drops to hostile (<21). New `native` PostKind with earth-tone theme + 🛖 glyph; placeholder teepee landmark icon registered for both ids (bespoke art logged as #211). New `native_hide_trade` random encounter (#203, weight 3, gates on raw_hide ≥1 + wary+ tribe): 4 choices — 2 hides for a finished buffalo_robe (+2 attitude), 1 hide for 5 lb pemmican (+1), 1 hide for 2 moccasins (+1), or wave them off (-1). 15 new tests; encounters count 10→11.
 - **#207** Tribe baseline calibration — audit pass on the 9-tribe relations system. Pawnee 55→60 (period diaries lean friendlier — Sarah Royce, Donner letters, etc.). Cayuse 35→50 (the previous baseline already reflected the post-1847 Whitman Massacre wary state, but the 1847 newspaper headline ALSO drops cayuse −15, so 1848+ starts double-counted into hostile-edge ~20; restoring a pre-massacre neutral baseline lets the headline land at the correct ~35). Tests updated; system-wide audit logged a clean bill of health on encounter wiring + news-headline wiring + save migration; flagged trade-post integration + UI tribe surfacing as known gaps the journal TODO (#210) and #202 will pick up.
