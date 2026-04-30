@@ -103,6 +103,25 @@
   const dirtyGal = $derived(state.resources.dirtyWater ?? 0);
   const totalGal = $derived(state.resources.water + dirtyGal);
 
+  // Water bar (#190) — matches the weight/warmth bar treatment. Color
+  // goes green-when-full to red-when-empty (inverse of weight, since
+  // here "more is good"). When the player knows boiling and has dirty
+  // water in the keg, render the bar in two segments: clean (left,
+  // water-blue) + dirty (right, rust). One bar; clean+dirty totals fill.
+  const waterCap = $derived(state.resources.waterCap);
+  const cleanPct = $derived(
+    waterCap > 0 ? Math.min(100, Math.round((state.resources.water / waterCap) * 100)) : 0
+  );
+  const dirtyPct = $derived(
+    waterCap > 0 ? Math.min(100 - cleanPct, Math.round((dirtyGal / waterCap) * 100)) : 0
+  );
+  const waterPct = $derived(cleanPct + dirtyPct);
+  const waterColor = $derived(
+    waterPct >= 70 ? '#8bb96a' :
+    waterPct >= 30 ? '#f5c96a' :
+    waterPct >= 10 ? '#c96a2a' : '#e85a4a'
+  );
+
   const totalWeight = $derived(
     Math.round(groups.reduce((s, g) => s + g.entries.reduce((a, e) => a + e.weight, 0), 0))
   );
@@ -159,6 +178,19 @@
     <span class="weight-num" style="color: {warmthColor};">{warmth}/100</span>
   </div>
 
+  <div class="weight-row" title="Water in the keg{knowsBoiling && dirtyGal > 0 ? ' — clean (left) + dirty (right). Boil at camp before drinking.' : ''}">
+    <span class="weight-label">{icon('stats', 'water')} Water</span>
+    <div class="weight-bar">
+      {#if knowsBoiling && dirtyGal > 0}
+        <div class="weight-fill" style="width: {cleanPct}%; background: {waterColor};"></div>
+        <div class="weight-fill water-dirty-fill" style="left: {cleanPct}%; width: {dirtyPct}%;"></div>
+      {:else}
+        <div class="weight-fill" style="width: {waterPct}%; background: {waterColor};"></div>
+      {/if}
+    </div>
+    <span class="weight-num" style="color: {waterColor};">{totalGal}/{waterCap}</span>
+  </div>
+
   <!-- Category-grouped items. Short enough per-group that the panel is
        scannable at a glance; full detail lives in the modal. -->
   <div class="groups">
@@ -171,8 +203,9 @@
         </div>
         <div class="group-rows">
           {#each g.entries as e}
+            {@const perItemIcon = (ICON.inventory_items as Record<string, string>)[e.id]}
             <div class="row">
-              <span class="row-name">{e.name}</span>
+              <span class="row-name">{#if perItemIcon}<span class="row-icon">{perItemIcon}</span>{/if}{e.name}</span>
               <span class="row-qty">×{e.qty}</span>
             </div>
           {/each}
@@ -280,10 +313,28 @@
     border: 1px solid var(--c-ink);
     border-radius: 2px;
     overflow: hidden;
+    position: relative;
   }
   .weight-fill {
     height: 100%;
     transition: width 0.4s, background 0.4s;
+  }
+  /* Dirty water segment — sits to the right of the clean segment, in
+     a muted rust to match `.water-dirty` in the stats line. The
+     diagonal hatch makes it read as "fouled, needs boiling" against
+     the solid clean segment. */
+  .weight-fill.water-dirty-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      #c96a2a,
+      #c96a2a 3px,
+      #8a4a1c 3px,
+      #8a4a1c 6px
+    );
+    transition: left 0.4s, width 0.4s;
   }
   .weight-num {
     font-weight: 700;

@@ -1,13 +1,16 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import type { Landmark, PostKind } from '$lib/game/content/landmarks';
+  import { isNativeCampHostile } from '$lib/game/content/landmarks';
+  import { getTribeAttitude } from '$lib/game/systems/tribe-relations';
   import { enhance } from '$app/forms';
-  import NumberStepper from './NumberStepper.svelte';
+  import TownActionModal, { type TownActionKind } from './TownActionModal.svelte';
   import {
     REPAIR_DOLLARS_PER_POINT,
     INN_DOLLARS_PER_PERSON_PER_NIGHT,
     BROTHEL_DOLLARS_PER_MAN,
-    GUIDE_DOLLARS_PER_DAY
+    GUIDE_DOLLARS_PER_DAY,
+    FORGE_OX_SHOES_DOLLARS_PER_PAIR
   } from '$lib/game/systems/town-services';
   import { POST_THEME } from '$lib/data/post-theme';
   import { ICON } from '$lib/data/icon-dictionary';
@@ -42,25 +45,40 @@
     gameState.party.filter((m) => !m.dead && m.kind === 'adult' && m.sex === 'male').length
   );
 
-  let nights = $state(1);
-  let repairPoints = $state(20);
-  let stake = $state(5);
-  let guideDays = $state(5);
+  // Cards show estimated cost using sensible defaults; the modal lets
+  // the player tune the actual amount before committing. Defaults match
+  // the modal's initial $state values so the displayed estimate is what
+  // the player actually sees on first open.
+  const NIGHTS_DEFAULT = 1;
+  const REPAIR_POINTS_DEFAULT = 20;
+  const STAKE_DEFAULT = 5;
+  const GUIDE_DAYS_DEFAULT = 5;
+  const FORGE_PAIRS_DEFAULT = 4;
 
-  const innCost = $derived(aliveCount * nights * innRate);
-  const repairCost = $derived(Math.ceil(repairPoints * REPAIR_DOLLARS_PER_POINT));
+  const innEstCost = $derived(aliveCount * NIGHTS_DEFAULT * innRate);
+  const repairEstCost = $derived(Math.ceil(REPAIR_POINTS_DEFAULT * REPAIR_DOLLARS_PER_POINT));
   const brothelCost = $derived(adultMales * BROTHEL_DOLLARS_PER_MAN);
-  const guideCost = $derived(guideDays * GUIDE_DOLLARS_PER_DAY);
+  const guideEstCost = $derived(GUIDE_DAYS_DEFAULT * GUIDE_DOLLARS_PER_DAY);
+  const stakeEstCost = $derived(STAKE_DEFAULT);
+  const forgeEstCost = $derived(Math.ceil(FORGE_PAIRS_DEFAULT * FORGE_OX_SHOES_DOLLARS_PER_PAIR));
 
-  const wagonRoom = $derived(Math.max(1, 100 - Math.round(gameState.wagon.condition)));
   const wagonNeedsRepair = $derived(gameState.wagon.condition < 100);
 
-  $effect(() => {
-    if (repairPoints > wagonRoom) repairPoints = wagonRoom;
-  });
+  // Pending action modal — set by card click, cleared by modal's onclose.
+  let pendingAction = $state<TownActionKind | null>(null);
 
   const flavor = $derived(landmark.blurb ?? 'You enter the post.');
   const guideActive = $derived(((gameState.flags._guideUntilDay as number | undefined) ?? 0) > gameState.day);
+
+  // Native camp tribe-hostility gate (#202). When the affiliated tribe
+  // is hostile, the camp is empty (band fled / war is on) — replace
+  // services with a "camp avoided" flavor and disable trade.
+  const tribeAttitude = $derived(
+    landmark.tribeId ? getTribeAttitude(gameState, landmark.tribeId) : 100
+  );
+  const campAvoided = $derived(
+    landmark.postKind === 'native' && isNativeCampHostile(landmark, tribeAttitude)
+  );
 </script>
 
 <div class="town-stage panel" style="--post-accent: {theme.accent};">
@@ -88,6 +106,11 @@
 
   <!-- Service grid -->
   <div class="services">
+    {#if campAvoided}
+      <p class="empty">
+        The lodge poles are bare and the fire pits cold — the band has fled. War is on. Best to ride past without lingering.
+      </p>
+    {:else}
     {#if landmark.kind === 'trading_post'}
       <button type="button" class="svc-card primary" onclick={ontrade}>
         <span class="svc-icon">{ICON.town_services.store}</span>
@@ -121,89 +144,71 @@
     {/if}
 
     {#if services.includes('blacksmith')}
-      <form method="POST" action="?/townRepair&slot={qp}" use:enhance={() => () => {}} class="svc-form">
-        <input type="hidden" name="dollars" value={repairCost} />
-        <div class="svc-card" class:disabled={!wagonNeedsRepair || gameState.cash < repairCost}>
-          <span class="svc-icon">{ICON.town_services.blacksmith}</span>
-          <div class="svc-body">
-            <span class="svc-label">Hire the blacksmith</span>
-            <span class="svc-sub">+{repairPoints} condition for ${repairCost}</span>
-          </div>
-          <div class="svc-controls">
-            <NumberStepper bind:value={repairPoints} min={1} max={wagonRoom} ariaLabel="Repair points" hideValue displayValue={repairPoints} />
-            <button type="submit" class="svc-go" disabled={!wagonNeedsRepair || gameState.cash < repairCost}>
-              ${repairCost}
-            </button>
-          </div>
+      <button type="button" class="svc-card" disabled={!wagonNeedsRepair || gameState.cash < repairEstCost}
+              onclick={() => (pendingAction = 'repair')}>
+        <span class="svc-icon">{ICON.town_services.blacksmith}</span>
+        <div class="svc-body">
+          <span class="svc-label">Hire the blacksmith</span>
+          <span class="svc-sub">~${repairEstCost} for {REPAIR_POINTS_DEFAULT} condition · adjust on the next screen</span>
         </div>
-      </form>
+      </button>
+      <button type="button" class="svc-card" disabled={gameState.cash < forgeEstCost}
+              onclick={() => (pendingAction = 'forge')}>
+        <span class="svc-icon">⚒️</span>
+        <div class="svc-body">
+          <span class="svc-label">Forge ox shoes</span>
+          <span class="svc-sub">${forgeEstCost} for {FORGE_PAIRS_DEFAULT} pairs · adjust on the next screen</span>
+        </div>
+      </button>
     {/if}
 
     {#if services.includes('inn')}
-      <form method="POST" action="?/townInn&slot={qp}" use:enhance={() => () => {}} class="svc-form">
-        <input type="hidden" name="nights" value={nights} />
-        <div class="svc-card" class:disabled={gameState.cash < innCost || aliveCount === 0}>
-          <span class="svc-icon">{ICON.town_services.inn}</span>
-          <div class="svc-body">
-            <span class="svc-label">Stay at the inn</span>
-            <span class="svc-sub">{nights} {nights === 1 ? 'night' : 'nights'} × {aliveCount} × ${innRate} = ${innCost} · +{nights * 5} morale, +{nights * 5} HP/member</span>
-          </div>
-          <div class="svc-controls">
-            <NumberStepper bind:value={nights} min={1} max={10} ariaLabel="Nights" hideValue displayValue={nights} />
-            <button type="submit" class="svc-go" disabled={gameState.cash < innCost}>${innCost}</button>
-          </div>
+      <button type="button" class="svc-card" disabled={gameState.cash < innEstCost || aliveCount === 0}
+              onclick={() => (pendingAction = 'inn')}>
+        <span class="svc-icon">{ICON.town_services.inn}</span>
+        <div class="svc-body">
+          <span class="svc-label">Stay at the inn</span>
+          <span class="svc-sub">${innRate}/person/night · {aliveCount} {aliveCount === 1 ? 'person' : 'people'} · adjust nights on the next screen</span>
         </div>
-      </form>
+      </button>
     {/if}
 
     {#if services.includes('guide')}
-      <form method="POST" action="?/townGuide&slot={qp}" use:enhance={() => () => {}} class="svc-form">
-        <input type="hidden" name="dollars" value={guideCost} />
-        <div class="svc-card" class:disabled={gameState.cash < guideCost}>
-          <span class="svc-icon">{ICON.town_services.guide}</span>
-          <div class="svc-body">
-            <span class="svc-label">Hire a guide</span>
-            <span class="svc-sub">{guideDays} days · ${guideCost} · +15% travel speed while along</span>
-          </div>
-          <div class="svc-controls">
-            <NumberStepper bind:value={guideDays} min={1} max={30} ariaLabel="Guide days" hideValue displayValue={guideDays} />
-            <button type="submit" class="svc-go" disabled={gameState.cash < guideCost}>${guideCost}</button>
-          </div>
+      <button type="button" class="svc-card" disabled={gameState.cash < guideEstCost}
+              onclick={() => (pendingAction = 'guide')}>
+        <span class="svc-icon">{ICON.town_services.guide}</span>
+        <div class="svc-body">
+          <span class="svc-label">Hire a guide</span>
+          <span class="svc-sub">${GUIDE_DOLLARS_PER_DAY}/day · +15% travel speed · adjust days on the next screen</span>
         </div>
-      </form>
+      </button>
     {/if}
 
     {#if services.includes('gambling')}
-      <form method="POST" action="?/townGamble&slot={qp}" use:enhance={() => () => {}} class="svc-form">
-        <input type="hidden" name="stake" value={stake} />
-        <div class="svc-card" class:disabled={gameState.cash < stake}>
-          <span class="svc-icon">{ICON.town_services.gambling}</span>
-          <div class="svc-body">
-            <span class="svc-label">Try your luck at cards</span>
-            <span class="svc-sub">${stake} stake · ~45% double, 55% lose</span>
-          </div>
-          <div class="svc-controls">
-            <NumberStepper bind:value={stake} min={1} max={Math.min(50, gameState.cash || 1)} ariaLabel="Stake" hideValue displayValue={stake} />
-            <button type="submit" class="svc-go" disabled={gameState.cash < stake}>${stake}</button>
-          </div>
+      <button type="button" class="svc-card" disabled={gameState.cash < stakeEstCost}
+              onclick={() => (pendingAction = 'gamble')}>
+        <span class="svc-icon">{ICON.town_services.gambling}</span>
+        <div class="svc-body">
+          <span class="svc-label">Try your luck at cards</span>
+          <span class="svc-sub">~45% double, 55% lose · adjust stake on the next screen</span>
         </div>
-      </form>
+      </button>
     {/if}
 
     {#if services.includes('brothel')}
-      <form method="POST" action="?/townBrothel&slot={qp}" use:enhance={() => () => {}} class="svc-form">
-        <button type="submit" class="svc-card" disabled={adultMales === 0 || gameState.cash < brothelCost}>
-          <span class="svc-icon">{ICON.town_services.brothel}</span>
-          <div class="svc-body">
-            <span class="svc-label">Visit the cribs out back</span>
-            <span class="svc-sub">${brothelCost} ({adultMales} men × ${BROTHEL_DOLLARS_PER_MAN}) · party morale up · 8% pox risk per man</span>
-          </div>
-        </button>
-      </form>
+      <button type="button" class="svc-card" disabled={adultMales === 0 || gameState.cash < brothelCost}
+              onclick={() => (pendingAction = 'brothel')}>
+        <span class="svc-icon">{ICON.town_services.brothel}</span>
+        <div class="svc-body">
+          <span class="svc-label">Visit the cribs out back</span>
+          <span class="svc-sub">${brothelCost} ({adultMales} men × ${BROTHEL_DOLLARS_PER_MAN}) · party morale up · 8% pox risk per man</span>
+        </div>
+      </button>
     {/if}
 
     {#if landmark.kind !== 'trading_post' && services.length === 0}
       <p class="empty">There's nothing to do here right now.</p>
+    {/if}
     {/if}
   </div>
 
@@ -211,6 +216,16 @@
     <button type="button" class="leave" onclick={onleave}>Leave town</button>
   </div>
 </div>
+
+{#if pendingAction}
+  <TownActionModal
+    kind={pendingAction}
+    state={gameState}
+    {landmark}
+    {slot}
+    onclose={() => (pendingAction = null)}
+  />
+{/if}
 
 <style>
   .town-stage {
@@ -313,11 +328,11 @@
     cursor: pointer;
     transition: background 0.12s, border-color 0.12s;
   }
-  .svc-card:hover:not(:disabled):not(.disabled) {
+  .svc-card:hover:not(:disabled) {
     background: var(--c-panel);
     border-color: var(--post-accent, var(--c-rust));
   }
-  .svc-card:disabled, .svc-card.disabled { opacity: 0.55; cursor: not-allowed; }
+  .svc-card:disabled { opacity: 0.55; cursor: not-allowed; }
   .svc-card.primary {
     border-color: var(--post-accent, var(--c-rust));
     background: var(--c-panel);
@@ -342,27 +357,6 @@
     letter-spacing: normal;
     line-height: 1.3;
   }
-  .svc-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    flex-shrink: 0;
-  }
-  .svc-go {
-    background: var(--c-rust-dark);
-    color: var(--c-tan-bright);
-    border: 2px solid var(--c-rust);
-    border-radius: 3px;
-    padding: 0.45em 0.7em;
-    font-family: inherit;
-    font-weight: 700;
-    font-size: 0.78em;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-  .svc-go:hover:not(:disabled) { background: var(--c-rust); }
-  .svc-go:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .empty {
     color: var(--c-wood);

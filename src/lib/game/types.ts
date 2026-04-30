@@ -94,8 +94,14 @@ export interface Ox {
 
 export interface Wagon {
   model: import('./content/wagons').WagonModelId;
-  condition: number; // 0..100
+  condition: number; // 0..100 — frame integrity (wheels, axle, tongue, planks)
   carryCapacity: number; // lb
+  // 0..100 — cotton/linen duck cover, treated with linseed oil. Decays
+  // separately from frame condition: rain, storms, sun beat it down,
+  // rawhide patches and spare canvas restore it. Low canvas leaks
+  // rain into stored supplies (powder, flour, salt) and reduces the
+  // rain-water catchment that emigrants relied on in storms.
+  canvas: number; // 0..100
 }
 
 export interface GameDate {

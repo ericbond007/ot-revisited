@@ -14,7 +14,17 @@ function newGame(): GameState {
     { id: 'o1', health: 100, fatigue: 10, shod: true },
     { id: 'o2', health: 100, fatigue: 10, shod: true }
   ];
-  return { ...s, oxen, inventory: { ...s.inventory, rifle: 1, bullets: 40 } };
+  return {
+    ...s, oxen,
+    inventory: {
+      ...s.inventory,
+      rifle: 1,
+      gunpowder: 40,
+      lead_balls: 40,
+      percussion_caps: 40,
+      bullet_mold: 1
+    }
+  };
 }
 
 describe('hunt', () => {
@@ -24,11 +34,20 @@ describe('hunt', () => {
     expect(h.day).toBe(s.day + 1);
   });
 
-  it('consumes bullets on a hunt', () => {
+  it('consumes powder + lead balls + caps on a hunt (#174)', () => {
     const s = newGame();
-    const startingBullets = s.inventory.bullets ?? 0;
+    const startPowder = s.inventory.gunpowder ?? 0;
+    const startBalls = s.inventory.lead_balls ?? 0;
+    const startCaps = s.inventory.percussion_caps ?? 0;
     const h = hunt(s, { target: 'small', ammo: 'light', hunters: 1 });
-    expect(h.inventory.bullets).toBeLessThan(startingBullets);
+    expect(h.inventory.gunpowder).toBeLessThan(startPowder);
+    expect(h.inventory.lead_balls).toBeLessThan(startBalls);
+    expect(h.inventory.percussion_caps).toBeLessThan(startCaps);
+    // All three drop by the same amount — one shot consumes one of each.
+    expect(startPowder - (h.inventory.gunpowder ?? 0))
+      .toBe(startBalls - (h.inventory.lead_balls ?? 0));
+    expect(startBalls - (h.inventory.lead_balls ?? 0))
+      .toBe(startCaps - (h.inventory.percussion_caps ?? 0));
   });
 
   it('adds fresh game meat to inventory on a successful hunt', () => {
@@ -115,5 +134,71 @@ describe('hunt', () => {
     }
     expect(anyMeat).toBe(true);
     expect(anyLiver).toBe(true);
+  });
+
+  // #199 — prize-only big-game branch.
+  it('prize-only big-game hunt yields prize cuts but no meat or hide', () => {
+    let anyPrize = false;
+    for (let i = 0; i < 6; i++) {
+      const s = { ...newGame(), seed: `prize-${i}` };
+      const h = hunt(s, {
+        target: 'big', ammo: 'heavy', hunters: 1,
+        style: 'prize_only', renderTallow: false
+      });
+      const haul = h.flags._huntHaul as Record<string, unknown>;
+      // Zero meat + zero hide. With renderTallow: false also zero tallow.
+      expect(haul.meat).toBe(0);
+      expect(haul.tallow).toBe(0);
+      expect(haul.rawHides).toBe(0);
+      expect(h.inventory.game_meat ?? 0).toBe(0);
+      expect(h.inventory.raw_hide ?? 0).toBe(0);
+      expect(h.inventory.tallow ?? 0).toBe(0);
+      if ((haul.prizeCut as number) > 0) anyPrize = true;
+    }
+    expect(anyPrize).toBe(true);
+  });
+
+  it('prize-only with renderTallow=true still picks up the fat', () => {
+    let anyTallow = false;
+    for (let i = 0; i < 6; i++) {
+      const s = { ...newGame(), seed: `prize-tallow-${i}` };
+      const h = hunt(s, {
+        target: 'big', ammo: 'heavy', hunters: 1,
+        style: 'prize_only', renderTallow: true
+      });
+      const haul = h.flags._huntHaul as Record<string, unknown>;
+      // Meat + hide still skipped, but tallow may render.
+      expect(haul.meat).toBe(0);
+      expect(haul.rawHides).toBe(0);
+      if ((haul.tallow as number) > 0) anyTallow = true;
+    }
+    expect(anyTallow).toBe(true);
+  });
+
+  it('renderTallow=false on full butchery skips tallow but keeps meat + hide', () => {
+    let anyTallow = false;
+    let anyMeat = false;
+    for (let i = 0; i < 6; i++) {
+      const s = { ...newGame(), seed: `no-tallow-${i}` };
+      const h = hunt(s, {
+        target: 'big', ammo: 'heavy', hunters: 1,
+        renderTallow: false
+      });
+      const haul = h.flags._huntHaul as Record<string, unknown>;
+      if ((haul.tallow as number) > 0) anyTallow = true;
+      if ((haul.meat as number) > 0) anyMeat = true;
+    }
+    expect(anyTallow).toBe(false); // never any tallow
+    expect(anyMeat).toBe(true);    // meat still flowing
+  });
+
+  it('default style + tallow on big-game pulls full butchery', () => {
+    let anyMeat = false;
+    for (let i = 0; i < 4; i++) {
+      const s = { ...newGame(), seed: `default-${i}` };
+      const h = hunt(s, { target: 'big', ammo: 'heavy', hunters: 1 });
+      if ((h.inventory.game_meat ?? 0) > 0) anyMeat = true;
+    }
+    expect(anyMeat).toBe(true);
   });
 });

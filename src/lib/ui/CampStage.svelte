@@ -12,6 +12,7 @@
   import NumberStepper from './NumberStepper.svelte';
   import { CAMP_ACTIONS, hourCostFor, type CampActionId } from '$lib/game/actions/camp-actions';
   import { icon } from '$lib/data/icon-dictionary';
+  import { enhance } from '$app/forms';
 
   let { state: gameState, slot, onleave }: {
     state: GameState;
@@ -20,8 +21,31 @@
   } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
-  let days = $state(1);
+  // Multi-day stay state (#187). The first time the player makes camp,
+  // _campPlannedDays is unset → show the planned-days stepper. After the
+  // first ?/rest the server populates the flag with the chosen total +
+  // _campDaysSoFar; subsequent re-renders read these to show "Day X of Y"
+  // and hide the stepper.
+  const plannedDaysFlag = $derived(
+    (gameState.flags._campPlannedDays as number | undefined) ?? null
+  );
+  const daysSoFar = $derived(
+    (gameState.flags._campDaysSoFar as number | undefined) ?? 0
+  );
+  const inMidStay = $derived(plannedDaysFlag !== null);
+  const dayOfStay = $derived(daysSoFar + 1); // human-friendly: "Day 1" on first night
+
+  let plannedDays = $state(1);
   let picked = $state<CampActionId[]>([]);
+
+  // When server clears the camp-session flags (last day completed), the
+  // CampStage re-renders one final time before /play swaps it out. Ensure
+  // the picks list resets to empty between days so a Day 2 entry doesn't
+  // inherit Day 1's selections.
+  $effect(() => {
+    void daysSoFar;
+    picked = [];
+  });
 
   const actionRows = $derived(
     CAMP_ACTIONS
@@ -94,30 +118,46 @@
       <span class="scene-glyph ox">{icon('camp_scene', 'ox')}</span>
     </div>
     <div class="head-text">
-      <div class="kind">MAKING CAMP · DAY {gameState.day}</div>
+      <div class="kind">
+        {#if inMidStay}MAKING CAMP · DAY {dayOfStay} OF {plannedDaysFlag}{:else}MAKING CAMP · DAY {gameState.day}{/if}
+      </div>
       <h2 class="title">{leader?.name ? `${leader.name}'s Camp` : 'Camp'}</h2>
       <p class="prompt">
-        Pick activities for the first day. Heals injuries, recovers ox fatigue,
-        and lets the Farmer forage. Extended rests repeat the daily recovery.
+        {#if inMidStay}
+          Pick activities for today. Sleep when ready — actions reset each morning.
+        {:else}
+          Pick activities for the first day. Heals injuries, recovers ox fatigue,
+          and lets the Farmer forage. Set how many days you plan to stay below.
+        {/if}
       </p>
     </div>
   </div>
 
-  <!-- Day count stepper -->
   <form
     method="POST"
     action="?/rest&slot={qp}"
     class="form-col"
+    use:enhance={() => async ({ update }) => {
+      // reset:false keeps the planned-days stepper at the player's pick.
+      // The default update() resets all form fields on success, which
+      // would snap plannedDays back to its SSR-time default (1) and
+      // tear the multi-day session.
+      await update({ reset: false });
+    }}
   >
-    <div class="days-row">
-      <div class="days-label">
-        <span class="pill-label">REST DAYS</span>
-        <span class="pill-hint">
-          {days === 1 ? 'Overnight' : `${days} days of recovery`}
-        </span>
+    {#if inMidStay}
+      <input type="hidden" name="plannedDays" value={plannedDaysFlag} />
+    {:else}
+      <div class="days-row">
+        <div class="days-label">
+          <span class="pill-label">PLANNED STAY</span>
+          <span class="pill-hint">
+            {plannedDays === 1 ? 'Overnight' : `${plannedDays} days here`}
+          </span>
+        </div>
+        <NumberStepper name="plannedDays" bind:value={plannedDays} min={1} max={7} ariaLabel="Planned stay" />
       </div>
-      <NumberStepper name="days" bind:value={days} min={1} max={7} ariaLabel="Rest days" />
-    </div>
+    {/if}
 
     <!-- The 12-hour clock. Horizontal timeline, each slot = one hour of
          daylight. Icons represent picked activities occupying their
@@ -180,16 +220,36 @@
     <!-- Actions -->
     <div class="actions">
       <button type="submit" class="begin" disabled={overBudget}>
-        {icon('camp_scene', 'fire')} Begin Rest
+        {icon('camp_scene', 'fire')} {inMidStay ? 'Rest the night' : 'Make camp'}
       </button>
-      <button type="button" class="leave" onclick={onleave}>
-        Leave camp
-      </button>
+      {#if inMidStay}
+        <!-- Submit a separate ?/breakCamp form. Outside this form so its
+             submit doesn't carry the campAction picks. -->
+      {:else}
+        <button type="button" class="leave" onclick={onleave}>
+          Leave camp
+        </button>
+      {/if}
       <span class="party-note">
         {aliveCount} alive · morale {gameState.morale}
       </span>
     </div>
   </form>
+
+  {#if inMidStay}
+    <form method="POST" action="?/breakCamp&slot={qp}" class="break-form" use:enhance={() => () => {}}>
+      <button type="submit" class="break">
+        Break camp early
+      </button>
+    </form>
+  {/if}
+
+  <!-- Dawn transition: fades out a warm gradient on every (re-)mount of
+       the CampStage. The first mount on entry uses it as a "settling
+       in" beat; per-day re-mounts read as night-into-morning. -->
+  {#key dayOfStay}
+    <div class="dawn-overlay" aria-hidden="true"></div>
+  {/key}
 </div>
 
 <style>
@@ -205,6 +265,7 @@
     background: linear-gradient(180deg, #1a1308 0%, #2a1d10 60%, #1f1508 100%);
     border-color: var(--c-rust);
     border-width: 3px;
+    position: relative; /* stacking context for the dawn overlay */
   }
 
   /* --- Hero / scene --- */
@@ -425,5 +486,39 @@
     font-size: 0.85em;
     color: var(--c-wood);
     font-style: italic;
+  }
+
+  /* Multi-day stay (#187) — secondary form for the early-exit. Sits
+     just below the main begin/leave row so the player has a clear
+     out without commingling its submit with the rest form. */
+  .break-form { margin-top: -0.3em; }
+  .break {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed var(--c-wood);
+    color: var(--c-wood);
+    font-size: 0.85em;
+    padding: 0.35em 1em;
+    cursor: pointer;
+  }
+  .break:hover { color: var(--c-rust); border-color: var(--c-rust); }
+
+  /* Dawn-into-morning transition. Mounts on entry + on every day of
+     stay; the {#key dayOfStay} re-mount is what re-fires the fade. */
+  .dawn-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 200, 130, 0.55) 0%,
+      rgba(255, 160, 90, 0.35) 40%,
+      rgba(40, 20, 10, 0.0) 100%
+    );
+    animation: dawn-fade 900ms ease-out forwards;
+  }
+  @keyframes dawn-fade {
+    from { opacity: 1; }
+    to   { opacity: 0; }
   }
 </style>

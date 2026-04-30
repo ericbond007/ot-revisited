@@ -190,6 +190,9 @@ export const SCENARIOS: Scenario[] = [
         meat: 180,
         berries: 6,
         liver: true,
+        tallow: 28,
+        prizeCut: 2,
+        rawHides: 1,
         bullets: 20,
         injured: null,
         spoilDay: computeSpoilDay(s.day)

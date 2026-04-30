@@ -59,11 +59,11 @@ describe('post remaining + record purchase', () => {
     const s0 = newGame();
     const laramie = getLandmark('ft_laramie');
     const s1 = recordPostPurchases(s0, laramie, { flour: 20 });
-    const s2 = recordPostPurchases(s1, laramie, { flour: 15, bullets: 50 });
+    const s2 = recordPostPurchases(s1, laramie, { flour: 15, gunpowder: 50 });
     const baselineFlour = postBaselineQty(laramie, 'flour');
-    const baselineBullets = postBaselineQty(laramie, 'bullets');
+    const baselinePowder = postBaselineQty(laramie, 'gunpowder');
     expect(postRemainingQty(s2, laramie, 'flour')).toBe(baselineFlour - 35);
-    expect(postRemainingQty(s2, laramie, 'bullets')).toBe(baselineBullets - 50);
+    expect(postRemainingQty(s2, laramie, 'gunpowder')).toBe(baselinePowder - 50);
   });
 
   it("can't underflow past 0 even if record overshoots", () => {

@@ -56,7 +56,11 @@ export function upgradeState(state: GameState): GameState {
   // has a nonsense model id, snap back to the default too.
   const modelId =
     state.wagon.model && getWagonOrNull(state.wagon.model) ? state.wagon.model : DEFAULT_WAGON_MODEL;
-  const wagon = { ...state.wagon, model: modelId };
+  // Pre-#201 saves don't have wagon.canvas. Default to 100 (intact)
+  // rather than mirroring `condition` — most lost canvas comes from
+  // weather and the player just played a long stretch with no canvas
+  // damage system, so they shouldn't be punished retroactively.
+  const wagon = { ...state.wagon, model: modelId, canvas: state.wagon.canvas ?? 100 };
 
   // Pre-#153 saves have no weather field. Default to 'clear' so tickWeather's
   // stickiness math has something to lerp from on day 1.
@@ -68,9 +72,24 @@ export function upgradeState(state: GameState): GameState {
   // when the inventory falls short of the wagon's needs.
   const wagonModel = getWagon(modelId);
   const haveYokes = state.inventory.yoke ?? 0;
-  const inventory = haveYokes < wagonModel.requiredYokes
+  let inventory = haveYokes < wagonModel.requiredYokes
     ? { ...state.inventory, yoke: wagonModel.requiredYokes }
     : state.inventory;
+
+  // #174 — bullets split into gunpowder + lead_balls + percussion_caps
+  // (each 1:1 with a shot) plus a bullet_mold so the player can keep
+  // making more balls with cast_balls camp action. Each old `bullets`
+  // unit represented one fully-loaded round; convert 1:1:1.
+  const oldBullets = inventory.bullets ?? 0;
+  if (oldBullets > 0 || inventory.bullets !== undefined) {
+    const next: Record<string, number> = { ...inventory };
+    delete next.bullets;
+    next.gunpowder = (next.gunpowder ?? 0) + oldBullets;
+    next.lead_balls = (next.lead_balls ?? 0) + oldBullets;
+    next.percussion_caps = (next.percussion_caps ?? 0) + oldBullets;
+    next.bullet_mold = Math.max(next.bullet_mold ?? 0, 1);
+    inventory = next;
+  }
 
   return { ...state, flags, party, wagon, weather, inventory, location };
 }

@@ -82,11 +82,41 @@
           </div>
         {/if}
 
+        {#if haul.prizeCut && haul.prizeCut > 0}
+          <div class="haul-row prize">
+            <span class="row-glyph">🍖</span>
+            <div class="row-body">
+              <span class="row-name">Prize cuts</span>
+              <span class="row-detail">{haul.prizeCut} lb of tongue and hump — the choicest cut, a feast tonight</span>
+            </div>
+          </div>
+        {/if}
+
+        {#if haul.tallow && haul.tallow > 0}
+          <div class="haul-row tallow">
+            <span class="row-glyph">🟡</span>
+            <div class="row-body">
+              <span class="row-name">Tallow</span>
+              <span class="row-detail">{haul.tallow} lb of rendered fat — cooking grease, candles, soap</span>
+            </div>
+          </div>
+        {/if}
+
+        {#if haul.rawHides && haul.rawHides > 0}
+          <div class="haul-row hides">
+            <span class="row-glyph">🟫</span>
+            <div class="row-body">
+              <span class="row-name">Raw hides</span>
+              <span class="row-detail">{haul.rawHides} dried flat — trade with natives or posts (no time on the trail to tan)</span>
+            </div>
+          </div>
+        {/if}
+
         {#if haul.bullets > 0}
           <div class="haul-row spent">
             <span class="row-glyph">🎯</span>
             <div class="row-body">
-              <span class="row-name">Bullets spent</span>
+              <span class="row-name">Shots fired</span>
               <span class="row-detail">{haul.bullets}</span>
             </div>
           </div>

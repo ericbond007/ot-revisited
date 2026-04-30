@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import type { GameEvent } from './events';
-import { inTerrain, yearAtLeast } from './event-gating';
+import { inTerrain, yearAtLeast, milesBetween, and } from './event-gating';
 import { tribesAtMile, type Tribe } from './tribes';
 import {
   getTribeAttitude,
@@ -48,6 +48,7 @@ const eastbound_turnaround: GameEvent = {
   choices: [
     {
       id: 'trade',
+      icon: '💰',
       label: 'Trade for their surplus',
       isDefault: true,
       silentLog: true,
@@ -74,6 +75,7 @@ const eastbound_turnaround: GameEvent = {
     },
     {
       id: 'listen',
+      icon: '💬',
       label: 'Just hear their stories',
       silentLog: true,
       apply: (s) => {
@@ -92,6 +94,7 @@ const eastbound_turnaround: GameEvent = {
     },
     {
       id: 'pass',
+      icon: '🚶',
       label: 'Wish them luck and move on',
       silentLog: true,
       apply: (s) => logLine(s, 'Waved as the eastbound wagons passed.')
@@ -109,6 +112,7 @@ const lone_trapper: GameEvent = {
   choices: [
     {
       id: 'trade_mocs',
+      icon: '💰',
       label: 'Trade for moccasins ($6)',
       isDefault: true,
       silentLog: true,
@@ -126,6 +130,7 @@ const lone_trapper: GameEvent = {
     },
     {
       id: 'listen',
+      icon: '💬',
       label: 'Listen to his mountain stories',
       silentLog: true,
       apply: (s) => logLine(
@@ -135,6 +140,7 @@ const lone_trapper: GameEvent = {
     },
     {
       id: 'pass',
+      icon: '🚶',
       label: 'Politely move on',
       silentLog: true,
       apply: (s) => logLine(s, 'Traded nods and kept moving.')
@@ -152,6 +158,7 @@ const soldier_patrol: GameEvent = {
   choices: [
     {
       id: 'welcome',
+      icon: '💬',
       label: 'Welcome them — share supper',
       isDefault: true,
       silentLog: true,
@@ -177,6 +184,7 @@ const soldier_patrol: GameEvent = {
     },
     {
       id: 'info',
+      icon: '💬',
       label: 'Just trade information',
       silentLog: true,
       apply: (s) => logLine(
@@ -197,6 +205,7 @@ const mail_rider: GameEvent = {
   choices: [
     {
       id: 'read',
+      icon: '📬',
       label: 'Read the letter',
       isDefault: true,
       silentLog: true,
@@ -224,6 +233,7 @@ const mail_rider: GameEvent = {
     },
     {
       id: 'no_mail',
+      icon: '🚶',
       label: 'Tell him no mail for you',
       silentLog: true,
       apply: (s) => logLine(s, 'The mail rider tipped his hat and rode on.')
@@ -240,6 +250,7 @@ const emigrant_grave: GameEvent = {
   choices: [
     {
       id: 'respect',
+      icon: '🙏',
       label: 'Pause in silence',
       isDefault: true,
       silentLog: true,
@@ -250,9 +261,57 @@ const emigrant_grave: GameEvent = {
     },
     {
       id: 'pass',
+      icon: '🚶',
       label: 'Roll past without stopping',
       silentLog: true,
       apply: (s) => logLine(s, 'Rolled past the grave without a word.')
+    }
+  ]
+};
+
+// Abandoned wagon (#201) — past the first 200 mi the trail starts to
+// fill with wrecks: families that turned back, axles split, oxen lost.
+// Period diaries call out "wagon graveyards" especially past Devil's
+// Gate and through the Bear River valley. The party can pick over a
+// wreck for usable wood and canvas — costs an hour of travel.
+const abandoned_wagon: GameEvent = {
+  id: 'encounter_abandoned_wagon',
+  category: 'encounter',
+  title: 'An abandoned wagon',
+  body: 'A bone-bleached wreck off the trail — wheels collapsed, oxen long gone. A note nailed to the box reads "we could not go on."',
+  weight: 2,
+  gate: and(milesBetween(200, 99999), inTerrain('prairie', 'forest', 'mountains', 'desert')),
+  choices: [
+    {
+      id: 'scavenge',
+      icon: '🔧',
+      label: 'Scavenge for parts (1 hr)',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const planks = rng.int(1, 3);
+        const tookCanvas = rng.chance(0.5);
+        const inventory: Record<string, number> = {
+          ...s.inventory,
+          spare_plank: (s.inventory.spare_plank ?? 0) + planks
+        };
+        if (tookCanvas) {
+          inventory.canvas = (inventory.canvas ?? 0) + 1;
+        }
+        const parts = [`${planks} spare plank${planks === 1 ? '' : 's'}`];
+        if (tookCanvas) parts.push('1 canvas');
+        return logLine(
+          { ...s, inventory },
+          `Picked over the wreck — found ${parts.join(' and ')}.`
+        );
+      }
+    },
+    {
+      id: 'pass',
+      icon: '🚶',
+      label: 'Roll on past',
+      silentLog: true,
+      apply: (s) => logLine(s, 'Rolled past the wreck without stopping.')
     }
   ]
 };
@@ -272,6 +331,7 @@ const native_trading_party: GameEvent = {
   choices: [
     {
       id: 'trade',
+      icon: '💰',
       label: 'Offer tobacco and beads for pemmican',
       isDefault: true,
       silentLog: true,
@@ -316,6 +376,7 @@ const native_trading_party: GameEvent = {
     },
     {
       id: 'refuse',
+      icon: '🚫',
       label: 'Wave them off',
       silentLog: true,
       apply: (s, rng) => {
@@ -347,6 +408,7 @@ const native_toll_demand: GameEvent = {
   choices: [
     {
       id: 'pay_tobacco',
+      icon: '💰',
       label: 'Pay 2 tobacco',
       isDefault: true,
       silentLog: true,
@@ -366,6 +428,7 @@ const native_toll_demand: GameEvent = {
     },
     {
       id: 'pay_beads',
+      icon: '💰',
       label: 'Pay 3 beads',
       silentLog: true,
       requires: { itemId: 'beads', icon: '📿', reason: 'Need beads to pay the toll' },
@@ -384,6 +447,7 @@ const native_toll_demand: GameEvent = {
     },
     {
       id: 'refuse',
+      icon: '💪',
       label: 'Refuse and push through',
       silentLog: true,
       apply: (s, rng) => {
@@ -424,6 +488,7 @@ const native_guide_offer: GameEvent = {
   choices: [
     {
       id: 'hire',
+      icon: '💰',
       label: 'Hire him (5 tobacco or $5)',
       isDefault: true,
       silentLog: true,
@@ -457,6 +522,7 @@ const native_guide_offer: GameEvent = {
     },
     {
       id: 'decline',
+      icon: '🚶',
       label: 'Thank him and decline',
       silentLog: true,
       apply: (s) => logLine(s, 'Declined the guide. He rode back the way he came.')
@@ -477,6 +543,7 @@ const native_hunters_sharing: GameEvent = {
   choices: [
     {
       id: 'accept',
+      icon: '🤲',
       label: 'Accept with thanks',
       isDefault: true,
       silentLog: true,
@@ -498,6 +565,7 @@ const native_hunters_sharing: GameEvent = {
     },
     {
       id: 'reciprocate',
+      icon: '💬',
       label: 'Accept and offer tobacco in return',
       silentLog: true,
       apply: (s, rng) => {
@@ -535,6 +603,118 @@ const native_hunters_sharing: GameEvent = {
   ]
 };
 
+// Hide-for-robe trade encounter (#203). Native bands tanned hides far
+// better than emigrants could on the trail (3-week process they
+// couldn't do mid-march). A band willing to trade would take 2-3 raw
+// hides for 1 finished buffalo robe — period reality. Also offers
+// pemmican and moccasins for hide. Gates on the party actually having
+// raw hides and a wary+ tribe being at hand.
+const native_hide_trade: GameEvent = {
+  id: 'encounter_native_hide_trade',
+  category: 'encounter',
+  title: 'A band offers to trade hides',
+  body: 'Riders fall in alongside the wagon — a band has spotted the bundles of raw hide on top of the load. The lead man holds up a finished buffalo robe and points at your scrape-bundles, then at his.',
+  weight: 3,
+  gate: (s) => {
+    if ((s.inventory.raw_hide ?? 0) < 1) return false;
+    const here = tribesAtMile(s.location.milesTraveled);
+    return here.some((t) => getTribeAttitude(s, t.id) >= 21);
+  },
+  choices: [
+    {
+      id: 'trade_robe',
+      icon: '🟫',
+      label: 'Trade 2 raw hides for 1 buffalo robe',
+      isDefault: true,
+      silentLog: true,
+      requires: { itemId: 'raw_hide', icon: '🟫', reason: 'Need 2 raw hides' },
+      apply: (s, rng) => {
+        if ((s.inventory.raw_hide ?? 0) < 2) {
+          return logLine(s, 'Only one raw hide on hand — they shrugged and rode on.');
+        }
+        const tribe = pickTribe(s, rng, (a) => a >= 21)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They rode on.');
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            raw_hide: (s.inventory.raw_hide ?? 0) - 2,
+            buffalo_robe: (s.inventory.buffalo_robe ?? 0) + 1
+          }
+        };
+        next = adjustTribeAttitude(next, tribe.id, 2);
+        return logLine(
+          next,
+          `The ${tribe.name} took 2 hides and handed over a finished robe — clean tanned, soft as cloth. Relations +2.`
+        );
+      }
+    },
+    {
+      id: 'trade_pemmican',
+      icon: '🍖',
+      label: 'Trade 1 raw hide for 5 lb pemmican',
+      silentLog: true,
+      requires: { itemId: 'raw_hide', icon: '🟫', reason: 'Need a raw hide' },
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 21)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They rode on.');
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            raw_hide: (s.inventory.raw_hide ?? 0) - 1,
+            pemmican: (s.inventory.pemmican ?? 0) + 5
+          }
+        };
+        next = adjustTribeAttitude(next, tribe.id, 1);
+        return logLine(
+          next,
+          `The ${tribe.name} took 1 hide and counted out 5 lb of pemmican. Relations +1.`
+        );
+      }
+    },
+    {
+      id: 'trade_moccasins',
+      icon: '🥿',
+      label: 'Trade 1 raw hide for 2 pairs of moccasins',
+      silentLog: true,
+      requires: { itemId: 'raw_hide', icon: '🟫', reason: 'Need a raw hide' },
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 21)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They rode on.');
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            raw_hide: (s.inventory.raw_hide ?? 0) - 1,
+            moccasins: (s.inventory.moccasins ?? 0) + 2
+          }
+        };
+        next = adjustTribeAttitude(next, tribe.id, 1);
+        return logLine(
+          next,
+          `The ${tribe.name} took 1 hide and traded 2 pairs of stitched moccasins. Relations +1.`
+        );
+      }
+    },
+    {
+      id: 'pass',
+      icon: '🚶',
+      label: 'Wave them off',
+      silentLog: true,
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 21);
+        if (!tribe) return logLine(s, 'Waved them off — they rode on.');
+        const next = adjustTribeAttitude(s, tribe.id, -1);
+        return logLine(next, `Waved the ${tribe.name} off. Relations -1.`);
+      }
+    }
+  ]
+};
+
 /** All trail-encounter events. events.ts spreads these into its
  *  EVENTS registry on module load. */
 export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
@@ -543,8 +723,10 @@ export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
   soldier_patrol,
   mail_rider,
   emigrant_grave,
+  abandoned_wagon,
   native_trading_party,
   native_toll_demand,
   native_guide_offer,
-  native_hunters_sharing
+  native_hunters_sharing,
+  native_hide_trade
 ];

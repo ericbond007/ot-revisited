@@ -25,5 +25,6 @@ export const POST_THEME: Record<PostKind, PostTheme> = {
   hbc:          { accent: '#1f5a3f', glyph: ICON.post_kinds.hbc,          tag: "Hudson's Bay Company" },
   mountain:     { accent: '#8a5a2a', glyph: ICON.post_kinds.mountain,     tag: 'Mountain outpost' },
   frontier:     { accent: '#b86a42', glyph: ICON.post_kinds.frontier,     tag: 'Frontier post' },
-  end_of_trail: { accent: '#c9a05a', glyph: ICON.post_kinds.end_of_trail, tag: 'End of the trail' }
+  end_of_trail: { accent: '#c9a05a', glyph: ICON.post_kinds.end_of_trail, tag: 'End of the trail' },
+  native:       { accent: '#7a5230', glyph: ICON.post_kinds.native,       tag: 'Native camp' }
 };

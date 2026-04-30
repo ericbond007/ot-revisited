@@ -1,14 +1,14 @@
 # Remaining TODOs
 
-As of 2026-04-28 (post-#89). 34 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 31 open.
 
 ## New mechanics
 
-| #    |                                                                   |
-| ---- | ----------------------------------------------------------------- |
-| #175 | California leg — Gold Rush headline unlocks alternate route       |
-| #176 | Wagon trains — join 20-50 caravan for safety bonus                |
-| #180 | Year-sensitive dialogue — 1849+ California talk flavor            |
+| #    |                                                             |
+| ---- | ----------------------------------------------------------- |
+| #175 | California leg — Gold Rush headline unlocks alternate route |
+| #176 | Wagon trains — join 20-50 caravan for safety bonus          |
+| #180 | Year-sensitive dialogue — 1849+ California talk flavor      |
 
 ## More animals
 
@@ -20,10 +20,7 @@ As of 2026-04-28 (post-#89). 34 open.
 
 ## System reworks
 
-| #    |                                                                  |
-| ---- | ---------------------------------------------------------------- |
-| #174 | Bullets — split into lead + powder + caps for authenticity       |
-| #187 | Camp multi-day rework — reset slots day 2, surface that to player |
+_(empty — items shipped or moved to other sections)_
 
 ## UI / UX polish
 
@@ -41,10 +38,8 @@ As of 2026-04-28 (post-#89). 34 open.
 | #145 | Camp view — eliminate laptop scroll                              |
 | #170 | Use new ox-team design beyond the travel strip                   |
 | #171 | Laurel Hill landmark art — only gap from #89 batch               |
-| #172 | Travel mileage calibration second pass — Whitman/Barlow inserts  |
 | #173 | TownStage hero art — hoist LandmarkArt into Visit view (Phase B) |
 | #189 | Landmark / trading-post screen rework — better town actions      |
-| #190 | InventoryPanel: water as a bar graph (match weight treatment)    |
 | #191 | Save format: add migration runner; deserializer hard-crashes now |
 | #192 | WagonScene per-frame style flush — 13 SetNeedStyleFlush per rAF in profile, likely from `style=""` writes for transforms; switch hot animated layers to SVG attrs (`x`, `y`, transform on `<g>`) |
 | #193 | WagonScene rAF sync reflow — 1 forced-reflow per frame, suggests a layout read (getBoundingClientRect / offsetWidth) inside the rAF chain; hoist to ResizeObserver or cache |
@@ -52,20 +47,27 @@ As of 2026-04-28 (post-#89). 34 open.
 
 ## For Claude Design or another SVG animation generator
 
-| #156 | Wagon SVG visual revisit — proportions / damage / addons        |
-| #87  | Rich event visuals                                              |
-| #162 | Components revisit — StatBar + PartyPanel avatar designer pass  |
+| #156 | Wagon SVG visual revisit — proportions / damage / addons |
+| #87 | Rich event visuals |
+| #162 | Components revisit — StatBar + PartyPanel avatar designer pass |
+| #211 | Bespoke teepee landmark art for `cheyenne_camp` + `shoshone_camp` — current placeholder is a single shared teepee silhouette; final art should show a small village (3-4 lodges, fire ring, drying rack, horses) keyed per tribe (Cheyenne plains-style hide painting, Shoshone Wind-River style) |
 
 ## Balance / audit
 
-| #    |                                                            |
-| ---- | ---------------------------------------------------------- |
-| #182 | Hunt yields audit — tallow / animal fat as byproduct?      |
-| #186 | Populate per-choice EventChoice.icon across event catalog  |
-| #188 | BUG — town actions show no confirm button (Ft. Laramie)    |
-| #183 | AI art / animation pipeline — eval libs + image-gen APIs   |
-| #184 | Full game review — Sonnet pass on mechanics + balance      |
-| #185 | Playwright MCP — point at /usr/bin/chromium (fleet config) |
+| #    |                                                                     |
+| ---- | ------------------------------------------------------------------- |
+| #183 | AI art / animation pipeline — eval libs + image-gen APIs            |
+| #184 | Full game review — Sonnet pass on mechanics + balance               |
+| #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185) |
+| #198 | Grizzly mauling risk on big-game hunts in mountain terrain          |
+| #200 | Discard-from-wagon while traveling — extend #179 beyond landmarks   |
+| #206 | Whitman Mission as a post — historical check (1843-47 only)         |
+
+## New mechanics (extension)
+
+| #    |                                                                            |
+| ---- | -------------------------------------------------------------------------- |
+| #210 | Trail journal / atlas — leather-bound journal view aggregating tribes met, headlines read, letters, party members (living + memorial), trip stats. Accessible from the /play header. Period parchment aesthetic, IM Fell English serif. |
 
 ## Known design-incoming
 
@@ -75,6 +77,25 @@ As of 2026-04-28 (post-#89). 34 open.
 
 ## Recently shipped
 
+- **#212** Travel-stage hero — `/play` layout rework. WagonScene moves to the top of the left column (where TrailMapSnippet used to be), action bar right under it. New `.travel-bottom` row places TrailMapSnippet + EventLog 50/50 below the action bar. Camp / Town / Landmark / Completed stages keep their existing layout (full-width log below the action bar). Gated on a new `isTravelStage` derived. Map snippet's hard-coded 380px height overridden via `:global(.snippet-host)` so it can flex within the new row. WagonScene at its natural strip aspect — bespoke art for the bigger canvas remains a follow-up under #156/#157/#159.
+- **#208 + #209** Two missing-history newspaper headlines flagged in #207. **#208 Ward Massacre** (Aug 1854 Snake River; fires Sep-1854 through 1856): Bannock -10, Shoshone -5. **#209 Yakima War** (Nov 1855 onward through 1858): Walla Walla -12, Umatilla -8, Cayuse -5. Both compose with the existing 1847 Whitman / 1851 Treaty / 1854 Grattan / 1855 Harney pipeline — pure data-file additions, no system changes. 6 new tests.
+- **#202 + #203** Native trade — village stops + hide encounter. Two new trail landmarks: `cheyenne_camp` (Sweetwater plains, mile ~620, postKind `native`, tribeId cheyenne) and `shoshone_camp` (upper Bear River, mile ~1075, Washakie's band). Mile inserts split existing gaps; total trail distance preserved at 2195. New `Landmark.tribeId` field + `isNativeCampHostile()` helper — TownStage shows a "lodge poles bare, fire pits cold" empty-camp flavor when the affiliated tribe drops to hostile (<21). New `native` PostKind with earth-tone theme + 🛖 glyph; placeholder teepee landmark icon registered for both ids (bespoke art logged as #211). New `native_hide_trade` random encounter (#203, weight 3, gates on raw_hide ≥1 + wary+ tribe): 4 choices — 2 hides for a finished buffalo_robe (+2 attitude), 1 hide for 5 lb pemmican (+1), 1 hide for 2 moccasins (+1), or wave them off (-1). 15 new tests; encounters count 10→11.
+- **#207** Tribe baseline calibration — audit pass on the 9-tribe relations system. Pawnee 55→60 (period diaries lean friendlier — Sarah Royce, Donner letters, etc.). Cayuse 35→50 (the previous baseline already reflected the post-1847 Whitman Massacre wary state, but the 1847 newspaper headline ALSO drops cayuse −15, so 1848+ starts double-counted into hostile-edge ~20; restoring a pre-massacre neutral baseline lets the headline land at the correct ~35). Tests updated; system-wide audit logged a clean bill of health on encounter wiring + news-headline wiring + save migration; flagged trade-post integration + UI tribe surfacing as known gaps the journal TODO (#210) and #202 will pick up.
+- **#205 + #151** Body decisions on the burial popup — when a party member dies, the burial event now pops with three choices instead of two: **Dig a proper grave** (shovel-required, +2 morale), **Build a stone mound** (no-shovel default, -4 morale, preacher halves), and **Eat the body** (hidden unless `hasNoFood` — period reality, Donner Party precedent: survivors only turned to it when no food remained, regardless of how the deceased died). All three close the body's story (clear `_burialPending`); eat-the-body marks `consumed`, grants 50 lb game_meat, -18 morale, +1 cannibalism guilt. Dropped `dig_grave` camp action (closes #151 — the action was always situational and just duplicated the burial event) and dropped `cannibalism_corpse` camp action (folded into the new burial choice — one-shot at the popup, not a deferred camp option). `cannibalism_straws` stays in camp for the "nobody dead yet, draw lots" path. New `EventChoice.hidden?: (state) => boolean` predicate on the choice schema (filters whole choices vs `requires` which renders disabled). 6 new burial-event tests; cannibalism + camp-actions test suites trimmed for the dropped actions.
+- **#195** Camp-actions audit — reviewed all 18 actions; most carry real gameplay effects with sensible hour costs. Two adjustments: `read_bible` 2hr→1hr (was the worst morale-per-hour ratio at +2-4 for 2hr — period reality is a brief evening ritual, not a half-day commitment); `find_water` now gates off desert terrain (no streams in dry country — `dig_well` stays the desert water option). 4 new tests.
+- **#187** Multi-day camp rework — camp stays now run day-by-day with per-day activity picks. Player sets planned stay length on entry (1-7 days); each "Rest the night" advances a single day, then CampStage re-renders with "Day X of Y" + a fresh 12-hour budget + reset activity slots. Server tracks via `_campPlannedDays` + `_campDaysSoFar` flags; per-day CampSummary modal suppressed mid-stay (the dawn-fade overlay carries the transition), final-day summary still fires on stay completion. New `?/breakCamp` action + "Break camp early" button to exit at any point. /play forces CampStage open while flags say mid-stay. rest() function unchanged — multi-day flag tracking lives only in the server route, so existing tests keep passing.
+- **#201** Wagon repair audit + canvas split — `wagon.canvas` (0..100) added as a separate stat from frame condition. Canvas drains from rain (-1..2), storm (-3..6 + supply roll), snow (-1..3), desert sun (-1). At low canvas, rain-catch refill scales down (full ≥60, half ≥40, quarter ≥20, zero <20) and supply-damage rolls fire on wet days (2-5 lb of one heaviest dry good at <60 + rain; +30% gunpowder/caps roll at <40 + storm; heavier at <20 + storm/snow). Reworked `patch_wagon` (raw_hide → +8 canvas) + new `replace_canvas` (canvas spare → +30 canvas, 2× without iron_toolkit) + new `replace_planks` (1 plank → +5 condition, 2× without toolkit). New `wagon_axle` event (ungated, weight 2). `tar_bucket` cuts frame decay 25%. Dropped `iron_scrap` entirely (anvils were rare luxury cargo, smithing happened at posts). Replaced Blacksmith bonus: town smithy repair cost halved when a live Blacksmith rides along. New town service `forgeOxShoes` ($1.50/pair, 50% off w/ Blacksmith) at any post with `blacksmith` service. Audit confirmed all 8 forge posts (Kearny, Robidoux, Laramie, Bridger, Hall, Boise, Walla Walla, Dalles) match historical record. New `abandoned_wagon` encounter (post-mile-200, weight 2): pick over wreck for 1d3 spare planks + 50% canvas. WagonPanel surfaces canvas as a second stacked bar. Logged #205 (Whitman Mission as a forge post 1843-47, historical check needed).
+- **#204** Per-post buyer gating — road ranches like Hollenberg's didn't deal in fur-trade specialty (raw hides, buffalo robes, beads). New optional `excludeBuyCategories: readonly string[]` on Landmark; Hollenberg sets `['native_trade']`, all other posts omit (= buys all). `trade.ts` rejects sells of excluded categories with a clear "Hollenberg won't buy raw_hide (native_trade)" error; `TradeModal` filters owned-item rows so excluded items can't be selected. Mixed-purpose hubs (Ft Laramie pre-1849, Ft Bridger, Ft Hall HBC, Ft Boise) keep accepting fur trade. 6 new tests.
+- **#196 (partial)** Raw hide handling — two new camp actions for the on-trail use cases that don't need a trading partner. **`patch_wagon`** consumes 1 raw_hide + 2 hr → +5 wagon condition (gated by hide presence + sub-100 condition). **`stitch_moccasins`** consumes 1 raw_hide + 2 hr → +1 moccasins (no profession or post gating; period emigrants stitched their own with awl + sinew). The native-trade path (A) and post-sell side (B) skipped this branch — A is venue-blocked until #203 (native-band encounter trade) or wagon-party feature lands; B is mostly implicit already (raw_hide already has post sell prices, `buysFromEmigrants:false` blocks the army post). 8 new tests cover availability + state mutation. Logged follow-ups #201 (wagon repair audit), #202 (historical Indian trading post landmarks), #203 (encounter-based hide trade), #204 (per-item buyer gating).
+- **#199** Hunt approach + tallow toggle — HuntModal gains two new CardRadio controls. **Approach** (big-game only): Full butchery (default — meat + hide + tallow + prize cuts) or Prize cuts only (tongue + hump 4–8 lb, leave the rest for the wolves; period emigrants celebrated this as a delicacy run, no morale penalty). **Tallow** (medium + big): Render the fat or skip to save wagon weight. The two toggles are independent — prize-only with tallow rendered still gets you the fat next to the prize cuts, just no meat or hide. Hunt log line + `HuntOptions.style` + `HuntOptions.renderTallow` + server-side parse. 4 new tests cover the matrix.
+- **#197** Fish camp action + gear — `fishing_line` / `fishing_rod` / `fishing_net` items (0.30 / 1.50 / 4.00). New `fish` camp action: 2 hr, no ammo, requires at least one gear item. Yield depends on best gear (line 2–6 lb, rod 4–10, net 8–20) × terrain mult (river 2.0, forest 1.0, mountains 0.8, prairie 0.4, desert 0.2 — and gated off entirely in desert as "no fishable water nearby"). Catch name flavors by terrain ("cutthroat trout" at the river, "mountain trout" in the Rockies, "a few suckers" on a dry creek bed). Yields fresh `game_meat` so the existing spoilage + cure pipeline picks it up; closes the period gap of mountain-leg hunger when game runs thin past Fort Hall. 5 new tests.
+- **#190** InventoryPanel water bar — third stacked bar beneath Weight + Warmth, matching that treatment. Color goes green-when-full to red-when-empty (inverse of weight, since here "more is good"); thresholds 70/30/10. With boiling knowledge + dirty water present the bar splits into clean (color-keyed) + dirty (diagonal-hatched rust) segments, sharing the bar width. Stats line keeps its compact text gallon readout — bar is the glanceable supplement.
+- **#182** Hunt byproducts — tallow, raw hides, prize cuts. Big-game kills now drop 15–40 lb of rendered fat (`tallow`), 1–2 raw hides at 80% (`raw_hide`, untreated dried-flat — emigrants didn't tan on the trail), and 1–2 lb of tongue+hump prize cuts at 70% (`prize_cut`). Medium kills get 5–10 lb tallow + 60% chance of one hide. All scaled by yieldFraction (no kill, no skin). PostHuntModal renders new rows; per-item glyphs 🟡 tallow / 🍖 prize / 🟫 hide. Logged follow-ups #196 (hide use cases), #197 (fish action + gear), #198 (grizzly mauling), #199 (prize-cuts vs full-butchery UI choice).
+- **#174** Bullets rework — split the single `bullets` item into period-correct ammo components: `gunpowder` + `lead_balls` + `percussion_caps` (each 1:1 with a shot), `lead_pig` (raw 5-lb bar), and `bullet_mold` (tool). New camp action `cast_balls` (2 hr, mold + pig → 30 balls) lets the player ride the cheap raw-lead supply path. Caps were the historical bottleneck (fulminate-of-mercury chemistry couldn't be done on the trail). Save migration in upgradeState: each old `bullets:N` becomes 30/30/30 + 1 mold so old saves keep working. Hunt consumes min of the 3 components per shot. 9 post stocks updated; Hunter + Gunsmith starter kits split. Per-item glyphs 💥/🍫/⚫/🪙/🪩 wired through TradeModal / Inventory{Panel,Modal} / CampSummaryModal.
+- **#172** Travel mileage calibration audit — full sweep of all 39 leg distances against historical Oregon Trail surveys + emigrant journals. Trail length 2098 → 2195 mi (now within the historical 2170-2200 band). Biggest fixes: Ft Laramie → Register Cliff 12→60 (Register Cliff is ~60 mi past Laramie near Guernsey, not 12), Farewell Bend → Blue Mountains 120→60 (was double-counting the crossing), Hollenberg → Ft Kearny 80→120 (was 40 mi short), Whitman/Barlow inserts adjusted (the original trigger). 30 leg distances corrected; travel + scoring tests updated; cosmetic mile-comments in landmark-art refreshed.
+- **#186** EventChoice.icon catalog — populated thematic action glyphs on 85 unaudited choices across events.ts / encounters.ts / party-events.ts / water-events.ts (🚶 press on, ⛺ shelter, ⚒️ repair, 🤲 take, 💪 force through, etc.). Item-gated `requires.icon` stays the primary signal; top-level `c.icon` is the action-flavor fallback per the #133 infrastructure. Pure content additions, no logic changes — Sonnet did the bulk port in one pass, intent-mapped per choice context.
+- **#185** Playwright MCP fleet config — chezmoi-tracked override on flattop's `~/.claude/settings.json` disables the plugin's default playwright MCP and replaces it with `npx @playwright/mcp@latest --browser chromium --executable-path /usr/bin/chromium`. The plugin's `chrome` channel hard-paths to `/opt/google/chrome/chrome` and ignored `--executable-path`; switching to the `chromium` channel honors the override. Flattop-only (wanda + serp are headless servers). Verification pass on TradeModal/FordModal heroes still pending — logged as #192.
+- **#188 + #193 + #194** Town-actions confirm modal — replaced 5 inline forms on TownStage cards (instant POST, no acknowledgment) with click-to-open `TownActionModal.svelte` carrying the cost-stepper inside the modal. Same enhance flow on Confirm; free/fixed-cost actions (gossip, newspaper, trade) keep their direct-click. Closes all three symptoms of the same UX gap (#188 no confirm, #193 felt slow, #194 cost adjustment in modal not card).
 - **#132 + #163 + components 4d** PartyPanel wiring — replaced the 4 hand-drawn inline avatar-corner profession badges (doctor / scout / preacher / hunter only) with `<ProfessionIcon id={m.profession} size={5}>` so all 13 professions get bespoke watercolor art. Mini-stats footer now uses `<StatIcon kind="rations">` and `<StatIcon kind="pace">` (oxen stays on emoji — the ×N count is the focal cue). The panel was already substantially aligned with `docs/handoff/components/src/party-panel.html` from earlier work (sparkline header, avatars+rings, HP bars with hatch ticks, heart pulse, ill-shake, dead gravestone, morale ribbon, mini-stats existed); this commit closes the icon-wiring side. **#132** closes on the "denser" interpretation; the bundle's panel IS the rework. **#163** closes per the bundle's "keep mini-stats, intentional duplication" answer — comment in code already says so.
 - **#133** EventModal visual polish — `EventChoice.icon?: string` field added so any choice can carry a thematic action glyph (🐂, ⛺, ⚒️, etc.), not just item-gated ones. EventModal renders `req.icon` (item-gate, stronger signal) when present, falls back to `c.icon` (action flavor). The card-slide / choice-in animations and rust-bordered button styling were already in place from earlier work; this closes the infrastructure side. Content fill — populating `c.icon` across the event catalog — is logged as #186 follow-up.
 - **components/ step 4a** — ActionBar parity confirmed against `docs/handoff/components/`. The 5 sprite-symbol path data sets (`gi-travel`, `gi-rest`, `gi-hunt`, `gi-visit`, `gi-ford`) are byte-identical to the bundle; restored the inline section comments the original port stripped.

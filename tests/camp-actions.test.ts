@@ -148,31 +148,8 @@ describe('camp actions', () => {
     expect([4, -2]).toContain(delta);
   });
 
-  it('dig_grave clears _burialPending and lifts morale +2 when shovel present', () => {
-    const base = newGame();
-    const s = {
-      ...base,
-      inventory: { ...base.inventory, shovel: 1 },
-      flags: { ...base.flags, _burialPending: true },
-      morale: 50
-    };
-    const out = rest(s, 1, { campActions: ['dig_grave'] });
-    expect(out.flags._burialPending).toBeUndefined();
-    expect(out.morale).toBeGreaterThan(s.morale);
-    const log = out.eventLog.map((e) => e.text).join('\n').toLowerCase();
-    expect(log).toMatch(/grave/);
-  });
-
-  it('dig_grave is a no-op flavor line when no burial is pending', () => {
-    // Defensive: UI hides the action without _burialPending, but if it
-    // gets called anyway (dev tools, scenarios), it must not grant
-    // morale.
-    const s = { ...newGame(), inventory: { ...newGame().inventory, shovel: 1 } };
-    const out = rest(s, 1, { campActions: ['dig_grave'] });
-    const log = out.eventLog.map((e) => e.text).join('\n').toLowerCase();
-    expect(log).toMatch(/nothing to bury/);
-    expect(log).not.toMatch(/farewell/);
-  });
+  // dig_grave camp action removed in #205; burial decisions now happen
+  // on the personal_burial event popup right after death.
 
   it('stashes a _campSummary flag with structured before/after data', () => {
     const s = {

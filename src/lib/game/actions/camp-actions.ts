@@ -39,13 +39,17 @@ export type CampActionId =
   | 'read_bible'
   | 'share_the_whore'
   | 'cure_meat'
+  | 'cast_balls'
+  | 'fish'
+  | 'patch_wagon'
+  | 'replace_canvas'
+  | 'replace_planks'
+  | 'stitch_moccasins'
   | 'find_water'
   | 'boil_water'
   | 'dig_well'
-  | 'dig_grave'
   | 'dig_out'
   | 'gather_firewood'
-  | 'cannibalism_corpse'
   | 'cannibalism_straws';
 
 function logLine(s: GameState, text: string): GameState {
@@ -164,9 +168,9 @@ const singAlong: CampAction = {
 const readBible: CampAction = {
   id: 'read_bible',
   label: 'Read the Bible',
-  sub: 'Bible · 2 hr · +2 morale (+4 with Preacher)',
+  sub: 'Bible · 1 hr · +2 morale (+4 with Preacher)',
   icon: '📖',
-  hourCost: 2,
+  hourCost: 1,
   availability: (s) =>
     (s.inventory.bible ?? 0) > 0
       ? { available: true }
@@ -257,6 +261,271 @@ const cureMeat: CampAction = {
   }
 };
 
+// --- Ammunition prep ---
+// Period-correct lead-ball casting (#174). Pour molten lead from a
+// pig into a brass mold; trim sprues; quench. ~30 balls per 5-lb pig
+// is the steady yield emigrants reported (the rest is sprue + spillage,
+// reabsorbed in the next melt). Without a mold, the player must buy
+// pre-cast balls at posts.
+const BALLS_PER_PIG = 30;
+
+const castBalls: CampAction = {
+  id: 'cast_balls',
+  label: 'Cast balls from a lead pig',
+  sub: `Mold + 1 lead pig · 2 hr · +${BALLS_PER_PIG} lead balls`,
+  icon: '🔫',
+  hourCost: 2,
+  availability: (s) => {
+    if ((s.inventory.bullet_mold ?? 0) === 0) {
+      return { available: false, reason: 'Need a bullet mold' };
+    }
+    if ((s.inventory.lead_pig ?? 0) === 0) {
+      return { available: false, reason: 'Need a pig of lead' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const pigs = s.inventory.lead_pig ?? 0;
+    if (pigs <= 0 || (s.inventory.bullet_mold ?? 0) === 0) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      lead_pig: pigs - 1,
+      lead_balls: (s.inventory.lead_balls ?? 0) + BALLS_PER_PIG
+    };
+    return logLine(
+      { ...s, inventory },
+      `Cast ${BALLS_PER_PIG} lead balls from a 5-lb pig.`
+    );
+  }
+};
+
+// --- Fishing ---
+// #197. Period emigrants under-utilized fishing — most parties had a
+// hand-line + hooks but didn't use them despite the Snake / Sweetwater
+// / Bear / Columbia being stocked with cutthroat trout, salmon, and
+// catfish. The action is gear-gated (need a line, rod, or net) and
+// terrain-modulated (river crossings best, desert nearly hopeless).
+// Yield is fresh game_meat — log line names the catch by terrain.
+type FishingTier = 'net' | 'rod' | 'line';
+
+function bestFishingGear(s: GameState): FishingTier | null {
+  if ((s.inventory.fishing_net ?? 0) > 0)  return 'net';
+  if ((s.inventory.fishing_rod ?? 0) > 0)  return 'rod';
+  if ((s.inventory.fishing_line ?? 0) > 0) return 'line';
+  return null;
+}
+
+const FISH_BASE_BY_TIER: Record<FishingTier, { min: number; max: number }> = {
+  line: { min: 2, max: 6 },
+  rod:  { min: 4, max: 10 },
+  net:  { min: 8, max: 20 }
+};
+
+const FISH_TERRAIN_MULT: Record<string, number> = {
+  river: 2.0,    // at a river ford — best fishing
+  forest: 1.0,   // mountain streams, river bottoms
+  mountains: 0.8,
+  prairie: 0.4,  // distant streams, less reliable
+  desert: 0.2    // dry; mostly dry creek beds
+};
+
+function fishCatchName(terrain: string, tier: FishingTier): string {
+  if (terrain === 'river' || terrain === 'forest') {
+    return tier === 'net' ? 'salmon and trout' : 'cutthroat trout';
+  }
+  if (terrain === 'mountains') return 'mountain trout';
+  if (terrain === 'desert') return 'a few suckers';
+  return 'catfish';
+}
+
+const fish: CampAction = {
+  id: 'fish',
+  label: 'Fish nearby waters',
+  sub: 'Line / rod / net · 2 hr · fresh game meat',
+  icon: '🎣',
+  hourCost: 2,
+  availability: (s) => {
+    if (bestFishingGear(s) === null) {
+      return { available: false, reason: 'Need a fishing line, rod, or net' };
+    }
+    const mult = FISH_TERRAIN_MULT[s.location.terrain] ?? 0.4;
+    if (mult < 0.3) {
+      return { available: false, reason: 'No fishable water nearby' };
+    }
+    return { available: true };
+  },
+  apply: (s, rng) => {
+    const tier = bestFishingGear(s);
+    if (!tier) return s;
+    const range = FISH_BASE_BY_TIER[tier];
+    const mult = FISH_TERRAIN_MULT[s.location.terrain] ?? 0.4;
+    const lbs = Math.max(0, Math.round(rng.int(range.min, range.max) * mult));
+    if (lbs <= 0) {
+      return logLine(s, 'Cast a line for two hours — water came up empty.');
+    }
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      game_meat: (s.inventory.game_meat ?? 0) + lbs
+    };
+    const flags = { ...s.flags, _gameMeatSpoilDay: s.day + 3 };
+    const catchName = fishCatchName(s.location.terrain, tier);
+    return logLine(
+      { ...s, inventory, flags },
+      `Caught ${lbs} lb of ${catchName}. Eat fresh or cure it before it spoils.`
+    );
+  }
+};
+
+// --- Wagon repair (#196 + #201) ---
+// Three on-trail repair paths, each tied to a different consumable:
+//   patch_wagon     — rawhide → canvas (primitive, no toolkit needed)
+//   replace_canvas  — canvas spare → canvas (full cover swap, doubles without iron_toolkit)
+//   replace_planks  — spare_plank → frame condition (also doubles without iron_toolkit)
+// Period emigrants stockpiled rawhide from kills (they couldn't tan on
+// the trail — 3-week process). Rawhide-on-canvas is the classic field
+// repair: shrinks tight when wet, dries hard. Plank patches and
+// fresh-canvas swaps were standard among well-equipped parties.
+
+const PATCH_HIDE_COST = 1;
+const PATCH_CANVAS_GAIN = 8;
+
+const patchWagon: CampAction = {
+  id: 'patch_wagon',
+  label: 'Patch canvas with rawhide',
+  sub: `${PATCH_HIDE_COST} raw hide · 2 hr · +${PATCH_CANVAS_GAIN} canvas`,
+  icon: '🩹',
+  hourCost: 2,
+  availability: (s) => {
+    if ((s.inventory.raw_hide ?? 0) < PATCH_HIDE_COST) {
+      return { available: false, reason: 'Need a raw hide' };
+    }
+    if (s.wagon.canvas >= 100) {
+      return { available: false, reason: 'Canvas is sound' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    if ((s.inventory.raw_hide ?? 0) < PATCH_HIDE_COST) return s;
+    if (s.wagon.canvas >= 100) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      raw_hide: (s.inventory.raw_hide ?? 0) - PATCH_HIDE_COST
+    };
+    const wagon = {
+      ...s.wagon,
+      canvas: Math.min(100, s.wagon.canvas + PATCH_CANVAS_GAIN)
+    };
+    return logLine(
+      { ...s, inventory, wagon },
+      `Stretched a wet rawhide patch over the tear. Canvas +${PATCH_CANVAS_GAIN}.`
+    );
+  }
+};
+
+// Without iron_toolkit, both fresh-canvas and plank repairs cost double
+// — period reality: hand tools alone could not drive proper nails or
+// stretch canvas to a tight seam, so the party simply burned more
+// material on a worse fix.
+const REPLACE_CANVAS_GAIN = 30;
+
+const replaceCanvas: CampAction = {
+  id: 'replace_canvas',
+  label: 'Replace canvas cover',
+  sub: '1 canvas · 2 hr · +30 canvas (2× without toolkit)',
+  icon: '⛺',
+  hourCost: 2,
+  availability: (s) => {
+    const cost = (s.inventory.iron_toolkit ?? 0) > 0 ? 1 : 2;
+    if ((s.inventory.canvas ?? 0) < cost) {
+      return { available: false, reason: `Need ${cost} canvas` };
+    }
+    if (s.wagon.canvas >= 100) {
+      return { available: false, reason: 'Canvas is sound' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const cost = (s.inventory.iron_toolkit ?? 0) > 0 ? 1 : 2;
+    if ((s.inventory.canvas ?? 0) < cost) return s;
+    if (s.wagon.canvas >= 100) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      canvas: (s.inventory.canvas ?? 0) - cost
+    };
+    const wagon = {
+      ...s.wagon,
+      canvas: Math.min(100, s.wagon.canvas + REPLACE_CANVAS_GAIN)
+    };
+    const flavor = cost === 1
+      ? `Stretched a fresh canvas over the bows. Canvas +${REPLACE_CANVAS_GAIN}.`
+      : `Without a toolkit the new cover went on rough — burned through 2 canvas. Canvas +${REPLACE_CANVAS_GAIN}.`;
+    return logLine({ ...s, inventory, wagon }, flavor);
+  }
+};
+
+const REPLACE_PLANK_GAIN = 5;
+
+const replacePlanks: CampAction = {
+  id: 'replace_planks',
+  label: 'Patch wagon with planks',
+  sub: '1 spare plank · 1 hr · +5 wagon condition (2× without toolkit)',
+  icon: '🪵',
+  hourCost: 1,
+  availability: (s) => {
+    const cost = (s.inventory.iron_toolkit ?? 0) > 0 ? 1 : 2;
+    if ((s.inventory.spare_plank ?? 0) < cost) {
+      return { available: false, reason: `Need ${cost} spare plank` };
+    }
+    if (s.wagon.condition >= 100) {
+      return { available: false, reason: 'Wagon is sound' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const cost = (s.inventory.iron_toolkit ?? 0) > 0 ? 1 : 2;
+    if ((s.inventory.spare_plank ?? 0) < cost) return s;
+    if (s.wagon.condition >= 100) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      spare_plank: (s.inventory.spare_plank ?? 0) - cost
+    };
+    const wagon = {
+      ...s.wagon,
+      condition: Math.min(100, s.wagon.condition + REPLACE_PLANK_GAIN)
+    };
+    const flavor = cost === 1
+      ? `Patched the bed and sides with a plank. Wagon +${REPLACE_PLANK_GAIN}.`
+      : `Without a toolkit the planks went on crooked — used 2. Wagon +${REPLACE_PLANK_GAIN}.`;
+    return logLine({ ...s, inventory, wagon }, flavor);
+  }
+};
+
+const STITCH_HIDE_COST = 1;
+
+const stitchMoccasins: CampAction = {
+  id: 'stitch_moccasins',
+  label: 'Stitch moccasins from rawhide',
+  sub: `${STITCH_HIDE_COST} raw hide · 2 hr · +1 moccasins`,
+  icon: '🥿',
+  hourCost: 2,
+  availability: (s) =>
+    (s.inventory.raw_hide ?? 0) >= STITCH_HIDE_COST
+      ? { available: true }
+      : { available: false, reason: 'Need a raw hide' },
+  apply: (s) => {
+    if ((s.inventory.raw_hide ?? 0) < STITCH_HIDE_COST) return s;
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      raw_hide: (s.inventory.raw_hide ?? 0) - STITCH_HIDE_COST,
+      moccasins: (s.inventory.moccasins ?? 0) + 1
+    };
+    return logLine(
+      { ...s, inventory },
+      'Stitched moccasins from a rawhide.'
+    );
+  }
+};
+
 // --- Shovel-work actions ---
 // Previously lived in rest.ts under a separate `ShovelAction` type; folded
 // into the unified camp-actions registry so the budget check, UI grid, and
@@ -294,46 +563,12 @@ const digWell: CampAction = {
   }
 };
 
-// Bury a body that died on the trail (#151). Hidden until reapDead has
-// set `_burialPending`, then mirrors the burial-event "dig grave"
-// choice (#118): clears the flag and applies +2 morale with a shovel,
-// or the rock-cairn morale penalty without one. Lets the player handle
-// the burial deliberately during a rest instead of being interrupted
-// mid-march by the burial event modal.
-const digGrave: CampAction = {
-  id: 'dig_grave',
-  label: 'Bury the dead',
-  sub: 'Shovel · 2 hr · proper farewell',
-  icon: '⚰️',
-  hourCost: 2,
-  hidden: (s) => !s.flags._burialPending,
-  availability: (s) =>
-    (s.inventory.shovel ?? 0) > 0
-      ? { available: true }
-      : { available: false, reason: 'Need a shovel' },
-  apply: (s) => {
-    // Defensive: if invoked with no burial pending (dev tools, scenarios,
-    // legacy save), no-op with a flavor line so we can't grant unearned
-    // morale. The UI hides the action otherwise.
-    if (!s.flags._burialPending) {
-      return logLine(s, 'Turned earth at camp — nothing to bury yet.');
-    }
-    const flags = { ...s.flags };
-    delete (flags as Record<string, unknown>)._burialPending;
-    const hasShovel = (s.inventory.shovel ?? 0) > 0;
-    if (hasShovel) {
-      return logLine(
-        { ...s, flags, morale: Math.min(100, s.morale + 2) },
-        'A grave was dug at camp. The party said their farewells with some comfort. Morale +2.'
-      );
-    }
-    const penalty = deathMoralePenalty(s, 4);
-    return logLine(
-      { ...s, flags, morale: Math.max(0, s.morale - penalty) },
-      `Without a shovel, the body was covered with stones at camp. A hard farewell. Morale −${penalty}.`
-    );
-  }
-};
+// (#205) — `dig_grave` camp action removed. Burial decisions belong on
+// the burial event popup right after death, where the player picks
+// from {dig proper grave / build a stone mound / eat the body}. The
+// camp grid no longer carries a duplicate path, and the cannibalism
+// corpse-eating decision is a one-shot at the popup rather than a
+// deferred camp option (see the personal_burial event in events.ts).
 
 const digOut: CampAction = {
   id: 'dig_out',
@@ -398,6 +633,11 @@ const findWater: CampAction = {
   icon: '💧',
   hourCost: 3,
   availability: (s) => {
+    // Desert had no surface water — dig_well is the right action there.
+    // Same pattern as fish (#197) gating off desert "no fishable water".
+    if (s.location.terrain === 'desert') {
+      return { available: false, reason: 'No streams in this country — dig a well instead' };
+    }
     const cap = s.resources.waterCap;
     const total = s.resources.water + (s.resources.dirtyWater ?? 0);
     return total >= cap
@@ -508,40 +748,14 @@ function bumpGuilt(state: GameState, weight: number): GameState {
   };
 }
 
-const cannibalism_corpse: CampAction = {
-  id: 'cannibalism_corpse',
-  label: 'Eat the dead',
-  sub: 'Recently fallen kin · 6 hr · grim, but better than dying',
-  icon: '🪦',
-  hourCost: 6,
-  hidden: (s) => !(hasNoFood(s) && recentCorpse(s) !== null),
-  availability: (s) =>
-    hasNoFood(s) && recentCorpse(s) !== null
-      ? { available: true }
-      : { available: false, reason: 'Only when starving and a body remains.' },
-  apply: (s) => {
-    const corpse = recentCorpse(s);
-    if (!corpse) return s; // hidden gate should prevent this
-    const meatLbs = 50;
-    // Clear pending burial — the body is being handled, not buried.
-    const flags = { ...s.flags };
-    delete (flags as Record<string, unknown>)._burialPending;
-    let next: GameState = {
-      ...s,
-      flags,
-      party: s.party.map((m) =>
-        m.id === corpse.id ? { ...m, consumed: true } : m
-      ),
-      inventory: { ...s.inventory, game_meat: (s.inventory.game_meat ?? 0) + meatLbs },
-      morale: Math.max(0, s.morale - 18)
-    };
-    next = bumpGuilt(next, 1);
-    return logLine(
-      next,
-      `Took ${corpse.name}'s body for meat — ${meatLbs} lb of fresh game. Nobody spoke. Morale -18.`
-    );
-  }
-};
+// (#205) — `cannibalism_corpse` camp action removed. The decision to
+// eat a fresh corpse now lives on the burial-event popup as the third
+// choice, surfaced only when the party has nothing left to eat. The
+// only cannibalism that remains in the camp grid is the draws-straws
+// path below: nobody's dead yet, the party is starving, an adult is
+// chosen by lot. recentCorpse() is still used here to gate-out
+// straws when there's already a body on the ground (the player
+// should resolve that body's burial first).
 
 const cannibalism_straws: CampAction = {
   id: 'cannibalism_straws',
@@ -600,16 +814,23 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   shareTheWhore,
   // Preservation
   cureMeat,
+  // Ammunition prep
+  castBalls,
+  // Foraging — passive yield without ammo
+  fish,
+  // Wagon repair (#196 + #201)
+  patchWagon,
+  replaceCanvas,
+  replacePlanks,
+  stitchMoccasins,
   // Practical
   gatherFirewood,
   findWater,
   boilWater,
   // Shovel work (gated on having a shovel)
   digWell,
-  digGrave,
   digOut,
   // Desperation — hidden until starvation
-  cannibalism_corpse,
   cannibalism_straws
 ];
 
@@ -620,13 +841,17 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   read_bible: readBible,
   share_the_whore: shareTheWhore,
   cure_meat: cureMeat,
+  cast_balls: castBalls,
+  fish,
+  patch_wagon: patchWagon,
+  replace_canvas: replaceCanvas,
+  replace_planks: replacePlanks,
+  stitch_moccasins: stitchMoccasins,
   gather_firewood: gatherFirewood,
   find_water: findWater,
   boil_water: boilWater,
   dig_well: digWell,
-  dig_grave: digGrave,
   dig_out: digOut,
-  cannibalism_corpse,
   cannibalism_straws
 };
 

@@ -4,8 +4,12 @@ import { rest } from '../../src/lib/game/actions/rest';
 import type { GameState, Ox } from '../../src/lib/game/types';
 
 function freshParty(): GameState {
+  // Seed picked so the random event roll lands clear of disease + injury
+  // events on the 49-day passage; full-journey tests are inherently
+  // brittle to event-pool changes, so the seed gets re-picked when the
+  // pool grows (#201 added wagon_axle + abandoned_wagon).
   const s = createInitialState({
-    seed: 'journey',
+    seed: 'journey-201',
     leader: { name: 'Ezra', profession: 'farmer' },
     companions: [
       { name: 'Mary', profession: 'doctor' },

@@ -1,8 +1,14 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
-  import { getLandmark, isLandmarkAbandoned } from '$lib/game/content/landmarks';
+  import { getLandmark, isLandmarkAbandoned, LANDMARKS } from '$lib/game/content/landmarks';
   import { enhance } from '$app/forms';
   import NumberStepper from './NumberStepper.svelte';
+  import {
+    accumulateMiles,
+    currentLeg,
+    milesToNext,
+    milesToNextOfKind
+  } from './trail-map/trail-map-helpers';
   // Action glyphs come from IconSprite (mounted in +layout.svelte). The
   // sprite's symbol ids are gi-travel / gi-rest / gi-hunt / gi-visit /
   // gi-ford. Travel paints itself in tan-bright; the others inherit
@@ -69,9 +75,31 @@
       }
     }
   });
+
+  // Heading-west readout — moved up from the trail-map snippet so it
+  // sits with the action bar where the player's eye is. Text-only
+  // (no compass / glyphs); the snippet now just paints the map.
+  const marked = $derived(accumulateMiles(LANDMARKS));
+  const leg = $derived(currentLeg(marked, gameState.location.milesTraveled));
+  const next = $derived(milesToNext(marked, gameState.location.milesTraveled));
+  const nextFort = $derived(
+    milesToNextOfKind(marked, gameState.location.milesTraveled, 'trading_post')
+  );
+  const fromTo = $derived(
+    leg.last && leg.next
+      ? `${leg.last.name.toUpperCase()} → ${leg.next.name.toUpperCase()}`
+      : leg.last
+        ? `${leg.last.name.toUpperCase()} → END`
+        : 'INDEPENDENCE → KANSAS RIVER'
+  );
+  const milesLabel = $derived(next ? `${next.miles} mi to ${next.name}` : "TRAIL'S END");
+  const postLabel = $derived(
+    nextFort ? `next post: ${nextFort.name} in ${nextFort.miles} mi` : 'no post ahead'
+  );
 </script>
 
 <div class="panel action-panel {atLandmark ? `panel-${atLandmark.kind}` : ''}">
+  <div class="button-row">
   <form
     method="POST"
     action="?/travel&slot={qp}"
@@ -144,15 +172,65 @@
     <svg class="gi gi-wide-ford" viewBox="0 0 64 40" aria-hidden="true"><use href="#gi-ford" /></svg>
     <span class="action-label">Ford</span>
   </button>
+  </div>
+
+  <div class="heading-line">
+    <span class="heading-label">Heading West</span>
+    <span class="heading-sep">·</span>
+    <span class="heading-leg">{fromTo}</span>
+    <span class="heading-sep">·</span>
+    <span class="heading-sub">{milesLabel}</span>
+    <span class="heading-sep">·</span>
+    <span class="heading-sub">{postLabel}</span>
+  </div>
 </div>
 
 <style>
+  /* Action panel splits 50/50 (#212): button row on the left,
+     heading-west readout on the right. The 0.5em gap matches the
+     bottom row (EventLog | TrailMapSnippet) so the heading text
+     left-aligns with the map below. */
   .action-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5em;
+    align-items: center;
+    transition: border-color 0.25s;
+  }
+  .button-row {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5em;
     align-items: stretch;
-    transition: border-color 0.25s;
+  }
+  /* Heading-west readout — text-only port of the strip that used to
+     sit on the trail-map snippet. */
+  .heading-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4em;
+    color: var(--c-tan);
+    font-size: 0.85em;
+  }
+  .heading-label {
+    color: var(--c-rust);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.78em;
+  }
+  .heading-leg {
+    color: var(--c-tan-bright);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .heading-sub {
+    color: var(--c-wood);
+  }
+  .heading-sep {
+    color: var(--c-wood);
+    opacity: 0.6;
   }
   .travel-form {
     display: flex;

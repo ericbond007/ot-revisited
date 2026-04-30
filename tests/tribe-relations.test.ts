@@ -32,9 +32,11 @@ describe('tribes catalog', () => {
     }
   });
 
-  it('Nez Perce are friendly, Cayuse are wary, Shoshone are friendly', () => {
+  it('Nez Perce are friendly, Cayuse pre-Whitman is neutral, Shoshone are friendly', () => {
     expect(attitudeLevel(getTribe('nez_perce').baselineAttitude)).toBe('friendly');
-    expect(attitudeLevel(getTribe('cayuse').baselineAttitude)).toBe('wary');
+    // Cayuse baseline is the pre-1847 neutral level — the 1847 newspaper
+    // headline drops them −15 to land at the post-Whitman wary state.
+    expect(attitudeLevel(getTribe('cayuse').baselineAttitude)).toBe('neutral');
     expect(attitudeLevel(getTribe('shoshone').baselineAttitude)).toBe('friendly');
   });
 });

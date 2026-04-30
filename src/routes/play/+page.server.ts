@@ -10,7 +10,7 @@ import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
 import { addNews, generatePostGossip, generateNewspaper, applyNewspaper } from '$lib/game/systems/news';
 import { maybeDeliverLetter } from '$lib/game/systems/letters';
-import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide } from '$lib/game/systems/town-services';
+import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide, forgeOxShoes } from '$lib/game/systems/town-services';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -177,20 +177,56 @@ export const actions: Actions = {
   },
 
   rest: async ({ url, request, locals }) => {
+    // Multi-day camp (#187): each ?/rest call advances exactly ONE day.
+    // The first call sets `_campPlannedDays` from the form's
+    // `plannedDays` field; subsequent days reuse that flag and increment
+    // `_campDaysSoFar`. When sofar >= planned we clear both flags so the
+    // page returns to play. The player can also abort the stay early
+    // via ?/breakCamp.
     const slot = url.searchParams.get('slot');
     if (!slot) throw error(400, 'slot required');
     const fd = await request.formData();
-    const days = Math.max(1, Math.min(7, parseInt(fd.get('days')?.toString() ?? '1', 10)));
     const rawCamp = fd.getAll('campAction').map((v) => v.toString());
-    // Whitelist against the registry — unknown ids become 400 rather
-    // than bubbling up as a generic runtime error from rest().
     const campActions: CampActionId[] = [];
     for (const id of rawCamp) {
       if (id in CAMP_ACTIONS_BY_ID) campActions.push(id as CampActionId);
       else throw error(400, `unknown camp action: ${id}`);
     }
     let state = await loadState(locals, slot);
-    state = rest(state, days, campActions.length > 0 ? { campActions } : {});
+    const plannedFromFlag = state.flags._campPlannedDays as number | undefined;
+    const plannedFromForm = Math.max(1, Math.min(7, parseInt(fd.get('plannedDays')?.toString() ?? '1', 10)));
+    const planned = plannedFromFlag ?? plannedFromForm;
+    const sofarBefore = (state.flags._campDaysSoFar as number | undefined) ?? 0;
+    state = rest(state, 1, campActions.length > 0 ? { campActions } : {});
+    const sofarAfter = sofarBefore + 1;
+    const flags: typeof state.flags = { ...state.flags };
+    if (sofarAfter >= planned) {
+      delete flags._campPlannedDays;
+      delete flags._campDaysSoFar;
+    } else {
+      flags._campPlannedDays = planned;
+      flags._campDaysSoFar = sofarAfter;
+      // Mid-stay days: suppress the CampSummary modal — the dawn fade
+      // carries the day transition. The final day's summary still fires
+      // when the stay ends (sofarAfter >= planned branch above).
+      delete flags._campSummary;
+    }
+    state = { ...state, flags };
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  breakCamp: async ({ url, locals }) => {
+    // Early-exit a multi-day stay (#187). Clears the camp-session flags
+    // without advancing a day. Idempotent — fine to call when no stay
+    // is active.
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    const flags: typeof state.flags = { ...state.flags };
+    delete flags._campPlannedDays;
+    delete flags._campDaysSoFar;
+    state = { ...state, flags };
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },
@@ -202,9 +238,12 @@ export const actions: Actions = {
     const target = fd.get('target')?.toString() as HuntTarget;
     const ammo = fd.get('ammo')?.toString() as AmmoBand;
     const hunters = parseInt(fd.get('hunters')?.toString() ?? '1', 10);
+    const styleRaw = fd.get('style')?.toString();
+    const style: 'full' | 'prize_only' = styleRaw === 'prize_only' ? 'prize_only' : 'full';
+    const renderTallow = fd.get('render_tallow')?.toString() !== 'no';
     if (!target || !ammo) throw error(400, 'target and ammo required');
     let state = await loadState(locals, slot);
-    state = hunt(state, { target, ammo, hunters });
+    state = hunt(state, { target, ammo, hunters, style, renderTallow });
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },
@@ -415,6 +454,23 @@ export const actions: Actions = {
       throw error(409, 'no blacksmith here');
     }
     const result = repairWagon(state, dollars);
+    state = result.state;
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  townForgeOxShoes: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const pairs = parseInt(fd.get('pairs')?.toString() ?? '1', 10);
+    let state = await loadState(locals, slot);
+    if (!state.location.atLandmarkId) throw error(409, 'not at a landmark');
+    const here = getLandmark(state.location.atLandmarkId);
+    if (!(here.services ?? []).includes('blacksmith')) {
+      throw error(409, 'no blacksmith here');
+    }
+    const result = forgeOxShoes(state, pairs);
     state = result.state;
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };

@@ -80,17 +80,46 @@ export const ITEMS: Record<string, ItemMeta> = {
   axle:        { id: 'axle',        name: 'Spare axle',     category: 'wagon_part', weightLbPerUnit: 60, description: 'Rare but catastrophic failure. A spare saves the day.' },
   tongue:      { id: 'tongue',      name: 'Spare tongue',   category: 'wagon_part', weightLbPerUnit: 40, description: 'Connects wagon to the oxen. Breaks more often than you\'d think.' },
   canvas:      { id: 'canvas',      name: 'Canvas cover',   category: 'wagon_part', weightLbPerUnit: 30, description: 'Replace a torn cover. Otherwise weather damages supplies.' },
-  spare_plank: { id: 'spare_plank', name: 'Spare plank',    category: 'wagon_part', weightLbPerUnit: 8, description: 'Patches minor wagon damage. Cheaper than a full replacement.' },
-  iron_scrap:  { id: 'iron_scrap',  name: 'Iron scrap',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Salvaged metal. A Blacksmith can forge it into repairs.' },
+  spare_plank: { id: 'spare_plank', name: 'Spare plank',    category: 'wagon_part', weightLbPerUnit: 8, description: 'Patches minor wagon damage. Use the patch-with-planks camp action for +5 wagon condition.' },
   // Tar bucket — pine-tar grease for axle hubs. Every emigrant diary
-  // mentions one swinging under the wagon. Slows axle wear if you keep
-  // it greased; the future axle-wear mechanic (#174 follow-up area)
-  // will hook into this directly.
-  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows axle wear.' },
+  // mentions one swinging under the wagon. Cuts frame-decay rate by
+  // 25% while in the inventory.
+  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows wagon wear by 25%.' },
+
+  // #182 hunt byproducts. Period emigrants pulled three things off a
+  // big-game carcass besides meat: tallow (rendered fat — cooking
+  // grease, candle/soap making, axle dressing), the prized "tongue +
+  // hump" delicacy cuts, and the raw hide. Hides were rarely tanned on
+  // the trail (3-week process); parties dried them flat and either
+  // traded to natives / posts or used as rough wagon-canvas patches.
+  tallow:      { id: 'tallow',      name: 'Tallow',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Rendered animal fat. Cooking grease, candle stock, soap-making — eaten as a desperation calorie if it comes to that.' },
+  prize_cut:   { id: 'prize_cut',   name: 'Prize cut',    category: 'food', weightLbPerUnit: 1, foodDrawOrder: 0.3, description: 'Tongue and hump, the choicest cuts of a big-game kill. A trail-side delicacy — emigrant diaries write about it with relish.' },
+  raw_hide:    { id: 'raw_hide',    name: 'Raw hide',     category: 'native_trade', weightLbPerUnit: 5, description: 'Untreated dried hide. Tanning takes weeks; on the trail you stockpile rawhide for trade with natives or posts (or rough wagon repair).' },
 
   rifle: { id: 'rifle', name: 'Rifle', category: 'weapon', weightLbPerUnit: 10, description: 'Required for hunting. A second rifle lets two hunters work in parallel.' },
-  bullets: { id: 'bullets', name: 'Bullets', category: 'ammo', weightLbPerUnit: 0.1, description: 'Consumed on every hunt. Runs out faster than you expect.' },
+
+  // Period firearms ecosystem (#174). Caplock muzzle-loaders dominated
+  // the trail era (1846-1859); each shot consumes a measure of black
+  // powder, a cast lead ball, and a percussion cap. Caps are the
+  // bottleneck — couldn't be made on the trail (fulminate of mercury
+  // is hazardous chemistry), only bought at posts. Powder + lead are
+  // renewable: powder by the keg, lead recast from pigs with a mold.
+  gunpowder:       { id: 'gunpowder',       name: 'Gunpowder',       category: 'ammo', weightLbPerUnit: 0.016, description: '1 charge of black powder (≈110 grains). Consumed per shot. Sold by the canister at posts.' },
+  lead_pig:        { id: 'lead_pig',        name: 'Pig of lead',     category: 'ammo', weightLbPerUnit: 5,     description: 'Raw lead bar (~5 lb). Cast into balls at camp using a bullet mold — one pig yields ~30 balls.' },
+  lead_balls:      { id: 'lead_balls',      name: 'Lead balls',      category: 'ammo', weightLbPerUnit: 0.03,  description: 'Cast lead balls. Consumed per shot. Cast your own from pigs with a bullet mold, or buy ready-cast at posts.' },
+  percussion_caps: { id: 'percussion_caps', name: 'Percussion caps', category: 'ammo', weightLbPerUnit: 0.0001, description: 'Brass caps containing fulminate of mercury — fitted on the rifle nipple to spark the powder. The bottleneck consumable: caps run out before powder or lead.' },
+  bullet_mold:     { id: 'bullet_mold',     name: 'Bullet mold',     category: 'tool', weightLbPerUnit: 2,     description: 'Iron mold for casting lead balls from raw pigs. Required for the camp "Cast balls" action.' },
+
   rifle_cleaning_kit: { id: 'rifle_cleaning_kit', name: 'Rifle cleaning kit', category: 'tool', weightLbPerUnit: 2, description: 'Keeps rifles firing in rain / wet weather.' },
+
+  // #197 fishing gear. Period emigrants commonly carried a hand-line +
+  // hooks for ~$0.30; folding pole rods and seine nets were less common
+  // but yielded much more. The Snake, Sweetwater, Bear, and Columbia
+  // were stocked with cutthroat trout, salmon, and catfish — most
+  // parties under-utilized this when game ran thin past Fort Hall.
+  fishing_line: { id: 'fishing_line', name: 'Fishing line', category: 'tool', weightLbPerUnit: 0.2, description: 'Hand-line + bone hooks. Cheap and light — every party should carry one. Slow but steady at the camp action.' },
+  fishing_rod:  { id: 'fishing_rod',  name: 'Fishing rod',  category: 'tool', weightLbPerUnit: 2,   description: 'Folding pole + line. Faster than a hand-line, better yield. Heavier but worth carrying past Fort Hall.' },
+  fishing_net:  { id: 'fishing_net',  name: 'Fishing net',  category: 'tool', weightLbPerUnit: 8,   description: 'Seine net for group fishing. Heavy but the highest-yield gear at major rivers.' },
 
   coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Warmth +25 per person (one per body). Cuts ford-chill damage and cold-camp health loss.' },
   boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3, description: 'Warmth +15 per person. Helps most when wading into cold rivers.' },

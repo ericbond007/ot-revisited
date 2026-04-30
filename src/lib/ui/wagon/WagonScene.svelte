@@ -180,14 +180,13 @@
 </script>
 
 <div class="status panel">
-  <div class="status-head">DAY TRAVEL STATUS</div>
   <div class="landscape">
     <!-- Cropped viewBox: wagon (y 456..540) stays the centerpiece
          while sky takes a larger share than ground. Vertical band:
          sky 42% / wagon 47% / ground 11%. Container CSS aspect-ratio
          matches the viewBox so the SVG scales cleanly with no slice
          or letterbox at any column width. -->
-    <svg viewBox="0 380 {SCENE_W} 180" preserveAspectRatio="xMidYMid meet">
+    <svg viewBox="0 380 {SCENE_W} 180" preserveAspectRatio="none">
       <defs>
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
@@ -281,22 +280,17 @@
     background: var(--c-panel);
     gap: 0.35em;
   }
-  .status-head {
-    font-size: 0.7em;
-    letter-spacing: var(--ls-loose);
-    color: var(--c-rust);
-    font-weight: 700;
-  }
-  /* Horizontal strip at 1280:180 ≈ 7.1:1 — matches the cropped
-     viewBox. Wagon dominates the vertical band (~47%), sky ~42%,
-     ground ~11%. The strip fills the card's full width; height
-     grows proportionally with it. On wider columns this means a
-     taller strip, but the proportional balance and the wagon's
-     visual prominence stay the same. */
+  /* Hero strip (#212): aspect bumped from 1280:180 (~7.1:1) to
+     1280:400 (~3.2:1) so the wagon scene reads as the page's star,
+     not a thin band. The 1280:180 viewBox stays — SVG paints with
+     preserveAspectRatio="none" to stretch the content vertically.
+     Background art (sky / wagon / ground) is therefore taller than
+     the original drawing intent; bespoke art for the bigger canvas
+     is logged under #156/#157/#159. */
   .landscape {
     position: relative;
     width: 100%;
-    aspect-ratio: 1280 / 180;
+    aspect-ratio: 1280 / 400;
     overflow: hidden;
     border-radius: var(--r-xs);
     border: 1px solid rgba(0, 0, 0, 0.35);

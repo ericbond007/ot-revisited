@@ -34,6 +34,12 @@ export interface EventChoice {
   // the modal if the party is missing the item, with a hint stating why.
   // The item's icon is also surfaced alongside the label.
   requires?: { itemId: string; icon?: string; reason?: string };
+  // Optional state-predicate gate. When set and returns false, the choice
+  // is filtered out of the modal entirely (vs `requires` which renders
+  // disabled). Use for desperation choices that shouldn't even be visible
+  // outside their narrow context (e.g. "Eat the body" — only when the
+  // party is starving).
+  hidden?: (state: GameState) => boolean;
 }
 
 export interface GameEvent {
@@ -71,6 +77,7 @@ const storm: GameEvent = {
   choices: [
     {
       id: 'press_on',
+      icon: '🚶',
       label: 'Press on',
       isDefault: true,
       silentLog: true,
@@ -81,6 +88,7 @@ const storm: GameEvent = {
     },
     {
       id: 'shelter',
+      icon: '⛺',
       label: 'Shelter until it passes',
       silentLog: true,
       apply: (s) => logLine({ ...s, morale: Math.max(0, s.morale - 1) }, 'Sheltered out the storm. Morale −1, no progress.')
@@ -99,6 +107,7 @@ const heat_wave: GameEvent = {
   choices: [
     {
       id: 'endure',
+      icon: '😤',
       label: 'Endure it',
       isDefault: true,
       silentLog: true,
@@ -125,6 +134,7 @@ const fog: GameEvent = {
   choices: [
     {
       id: 'wait',
+      icon: '⛺',
       label: 'Wait it out',
       isDefault: true,
       silentLog: true,
@@ -147,6 +157,7 @@ const early_snow: GameEvent = {
   choices: [
     {
       id: 'push_through',
+      icon: '💪',
       label: 'Push through',
       isDefault: true,
       silentLog: true,
@@ -173,18 +184,17 @@ const broken_wheel: GameEvent = {
   choices: [
     {
       id: 'replace',
+      icon: '⚒️',
       label: 'Replace with a spare wheel',
       isDefault: true,
       silentLog: true,
       apply: (s, rng) => {
         const have = s.inventory.wheel ?? 0;
         if (have > 0) {
-          const { state: after, saved, salvaged } = consumeWagonPart(s, rng, 'wheel');
+          const { state: after, saved } = consumeWagonPart(s, rng, 'wheel');
           const log = saved
             ? 'The carpenter pieced the old wheel back together — the spare was kept.'
-            : salvaged
-              ? 'Mounted a spare wheel. The blacksmith hammered iron scrap from the broken hub. Wagon condition +10, +1 iron scrap.'
-              : 'Mounted a spare wheel. Wagon condition +10.';
+            : 'Mounted a spare wheel. Wagon condition +10.';
           return logLine(
             { ...after, wagon: { ...after.wagon, condition: Math.min(100, after.wagon.condition + 10) } },
             log
@@ -209,6 +219,7 @@ const ox_lame: GameEvent = {
   choices: [
     {
       id: 'rest_it',
+      icon: '🏕️',
       label: 'Rest it in the yoke for the day',
       isDefault: true,
       silentLog: true,
@@ -234,6 +245,7 @@ const ox_threw_shoe: GameEvent = {
   choices: [
     {
       id: 'reshoe',
+      icon: '⚒️',
       label: 'Re-shoe the ox',
       isDefault: true,
       silentLog: true,
@@ -264,6 +276,7 @@ const tongue_snaps: GameEvent = {
   choices: [
     {
       id: 'repair',
+      icon: '⚒️',
       label: 'Repair with a spare tongue',
       isDefault: true,
       silentLog: true,
@@ -295,6 +308,7 @@ const canvas_tear: GameEvent = {
   choices: [
     {
       id: 'patch',
+      icon: '⚒️',
       label: 'Patch it',
       isDefault: true,
       silentLog: true,
@@ -308,8 +322,8 @@ const canvas_tear: GameEvent = {
           return logLine(after, log);
         }
         return logLine(
-          { ...s, wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 8) }, morale: Math.max(0, s.morale - 1) },
-          'No spare canvas. Tied off the tear — wagon condition −8, morale −1.'
+          { ...s, wagon: { ...s.wagon, canvas: Math.max(0, s.wagon.canvas - 15) }, morale: Math.max(0, s.morale - 1) },
+          'No spare canvas. Tied off the tear with rope — canvas −15, morale −1.'
         );
       }
     }
@@ -326,6 +340,7 @@ const ox_wanders: GameEvent = {
   choices: [
     {
       id: 'search',
+      icon: '🔍',
       label: 'Search for it (half day)',
       isDefault: true,
       silentLog: true,
@@ -337,7 +352,45 @@ const ox_wanders: GameEvent = {
   ]
 };
 
-EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, ox_wanders);
+// Axle break (#201) — historically frequent everywhere on the trail:
+// heat-split in dry summer, shock damage at fords, overload anywhere,
+// long descents. Not gated by terrain — emigrant journals show axles
+// breaking in the prairie as often as in the rocks.
+const axle_breaks: GameEvent = {
+  id: 'wagon_axle',
+  category: 'wagon',
+  title: 'The axle splits',
+  body: 'A loud crack from beneath the wagon — the lead axle has broken.',
+  bodyKey: 'wagon_axle.body',
+  weight: 2,
+  choices: [
+    {
+      id: 'replace',
+      icon: '⚒️',
+      label: 'Fit the spare axle',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const have = s.inventory.axle ?? 0;
+        if (have > 0) {
+          const { state: after, saved } = consumeWagonPart(s, rng, 'axle');
+          const log = saved
+            ? 'The carpenter fished the broken axle and saved the spare.'
+            : 'Mounted the spare axle. Heavy work but it holds.';
+          return logLine(after, log);
+        }
+        // No spare → catastrophic. Emigrant solution was to fish (splice)
+        // the broken axle with a hardwood pole and keep moving slowly.
+        return logLine(
+          { ...s, wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 25) } },
+          'No spare axle. Fished the break with a hardwood pole — wagon condition −25.'
+        );
+      }
+    }
+  ]
+};
+
+EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, axle_breaks, ox_wanders);
 
 // --- Health ---
 const cholera_scare: GameEvent = {
@@ -350,6 +403,7 @@ const cholera_scare: GameEvent = {
   choices: [
     {
       id: 'risk_drink',
+      icon: '🥤',
       label: 'Drink anyway',
       isDefault: true,
       silentLog: true,
@@ -375,6 +429,7 @@ const cholera_scare: GameEvent = {
     },
     {
       id: 'wait',
+      icon: '💧',
       label: 'Travel upstream before drinking',
       silentLog: true,
       apply: (s) => logLine(s, 'Traveled upstream to clean water. No harm done.')
@@ -393,6 +448,7 @@ const snakebite: GameEvent = {
   choices: [
     {
       id: 'treat',
+      icon: '🩹',
       label: 'Treat with bandages & laudanum',
       isDefault: true,
       silentLog: true,
@@ -434,6 +490,7 @@ const berry_patch: GameEvent = {
   choices: [
     {
       id: 'harvest',
+      icon: '🤲',
       label: 'Harvest them',
       isDefault: true,
       silentLog: true,
@@ -462,22 +519,25 @@ const abandoned_cache: GameEvent = {
   choices: [
     {
       id: 'take',
+      icon: '🤲',
       label: 'Take everything',
       isDefault: true,
       silentLog: true,
       apply: (s, rng) => {
         const flour = rng.int(20, 60);
-        const bullets = rng.int(5, 15);
+        const shots = rng.int(5, 15);
         return logLine(
           {
             ...s,
             inventory: {
               ...s.inventory,
               flour: (s.inventory.flour ?? 0) + flour,
-              bullets: (s.inventory.bullets ?? 0) + bullets
+              gunpowder:       (s.inventory.gunpowder ?? 0) + shots,
+              lead_balls:      (s.inventory.lead_balls ?? 0) + shots,
+              percussion_caps: (s.inventory.percussion_caps ?? 0) + shots
             }
           },
-          `Picked the cache clean. Flour +${flour}, bullets +${bullets}.`
+          `Picked the cache clean. Flour +${flour}, ${shots} shots' worth of powder/lead/caps.`
         );
       }
     }
@@ -494,6 +554,7 @@ const fresh_spring: GameEvent = {
   choices: [
     {
       id: 'fill',
+      icon: '💧',
       label: 'Fill every water skin',
       isDefault: true,
       silentLog: true,
@@ -519,6 +580,7 @@ const emigrant_party: GameEvent = {
   choices: [
     {
       id: 'talk',
+      icon: '💬',
       label: 'Trade news',
       isDefault: true,
       silentLog: true,
@@ -540,6 +602,7 @@ const abandoned_wagon: GameEvent = {
   choices: [
     {
       id: 'scavenge',
+      icon: '🤲',
       label: 'Scavenge what you can',
       isDefault: true,
       silentLog: true,
@@ -555,6 +618,7 @@ const abandoned_wagon: GameEvent = {
     },
     {
       id: 'pass',
+      icon: '🚶',
       label: 'Pass it by',
       silentLog: true,
       apply: (s) => logLine(s, 'Passed the wreck by. Nothing gained, nothing lost.')
@@ -572,6 +636,7 @@ const lost_child: GameEvent = {
   choices: [
     {
       id: 'take_in',
+      icon: '🤍',
       label: 'Take them in',
       isDefault: true,
       silentLog: true,
@@ -595,6 +660,7 @@ const lost_child: GameEvent = {
     },
     {
       id: 'leave',
+      icon: '🚫',
       label: 'Leave them — you can barely feed your own',
       silentLog: true,
       apply: (s) => logLine(
@@ -616,6 +682,7 @@ const personal_quarrel: GameEvent = {
   choices: [
     {
       id: 'mediate',
+      icon: '💬',
       label: 'Mediate',
       isDefault: true,
       silentLog: true,
@@ -637,6 +704,7 @@ const personal_prayer: GameEvent = {
   choices: [
     {
       id: 'join',
+      icon: '🙏',
       label: 'Join',
       isDefault: true,
       silentLog: true,
@@ -662,6 +730,7 @@ const donner_rumor: GameEvent = {
   choices: [
     {
       id: 'heed',
+      icon: '⚠️',
       label: 'Heed the warning',
       isDefault: true,
       silentLog: true,
@@ -684,6 +753,7 @@ const gold_rush_news: GameEvent = {
   choices: [
     {
       id: 'stay_course',
+      icon: '🚶',
       label: 'Stay on the Oregon Trail',
       isDefault: true,
       silentLog: true,
@@ -706,6 +776,7 @@ const cholera_peak_1852: GameEvent = {
   choices: [
     {
       id: 'keep_moving',
+      icon: '🚶',
       label: 'Keep moving',
       isDefault: true,
       silentLog: true,
@@ -741,6 +812,7 @@ const mormon_handcart: GameEvent = {
   choices: [
     {
       id: 'share',
+      icon: '💬',
       label: 'Share a meal',
       isDefault: true,
       silentLog: true,
@@ -767,6 +839,7 @@ const pony_express: GameEvent = {
   choices: [
     {
       id: 'cheer',
+      icon: '👋',
       label: 'Cheer him on',
       isDefault: true,
       silentLog: true,
@@ -789,6 +862,7 @@ const spring_flood: GameEvent = {
   choices: [
     {
       id: 'detour',
+      icon: '🗺️',
       label: 'Detour around the flood',
       isDefault: true,
       silentLog: true,
@@ -806,6 +880,39 @@ EVENTS.push(donner_rumor, gold_rush_news, cholera_peak_1852, mormon_handcart, po
 
 // Burial — fires the day after any party member dies (reapDead sets _burialPending).
 // High weight so it's essentially guaranteed to be picked from the eligible pool.
+//
+// Body handling (#205): the body's fate is decided right here on the
+// popup. Three outcomes — bury proper (with shovel), build a stone
+// mound (no shovel), or eat the body (only when starving). All three
+// clear _burialPending and close that body's story; cannibalism
+// marks the corpse `consumed` so the party member is no longer
+// counted in the alive list. Period reality on the third path: the
+// Donner Party precedent — when survivors are starving, fresh meat
+// is fresh meat regardless of how the deceased died.
+const BURIAL_CANNIBALISM_MEAT_LBS = 50;
+const BURIAL_CANNIBALISM_MORALE = 18;
+
+function hasNoFoodAtBurial(state: GameState): boolean {
+  const ids = ['game_meat', 'berries', 'flour', 'beans', 'bacon', 'jerky', 'hardtack', 'dried_fruit', 'pemmican'];
+  const totalLb = ids.reduce((sum, id) => sum + (state.inventory[id] ?? 0), 0);
+  return totalLb === 0;
+}
+
+function freshUnconsumedDead(state: GameState): GameState['party'][number] | null {
+  // The most-recently-dead-and-unconsumed adult — same shape as the
+  // camp-action recentCorpse helper. Used by the burial cannibalism
+  // choice to pick whose body is actually on the ground.
+  const fresh = state.party.filter((m) =>
+    m.dead
+    && m.kind === 'adult'
+    && !m.consumed
+    && typeof m.deathDay === 'number'
+    && state.day - m.deathDay <= 5
+  );
+  if (fresh.length === 0) return null;
+  return fresh.sort((a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0))[0];
+}
+
 const burial: GameEvent = {
   id: 'personal_burial',
   category: 'personal',
@@ -817,6 +924,7 @@ const burial: GameEvent = {
   choices: [
     {
       id: 'dig_grave',
+      icon: '⛏️',
       label: 'Dig a proper grave',
       isDefault: true,
       silentLog: true,
@@ -828,33 +936,75 @@ const burial: GameEvent = {
       apply: (s) => {
         const flags = { ...s.flags };
         delete (flags as Record<string, unknown>)._burialPending;
-        // Defensive: gate enforced by the UI, but if a shovel-less state
-        // somehow reaches here, still degrade gracefully.
-        const hasShovel = (s.inventory.shovel ?? 0) > 0;
-        if (hasShovel) {
-          return logLine(
-            { ...s, flags, morale: Math.min(100, s.morale + 2) },
-            'A grave was dug. The party said their farewells with some comfort. Morale +2.'
-          );
-        }
-        const penalty = deathMoralePenalty(s, 4);
         return logLine(
-          { ...s, flags, morale: Math.max(0, s.morale - penalty) },
-          `Without a shovel, the body was covered with stones. A hard farewell. Morale −${penalty}.`
+          { ...s, flags, morale: Math.min(100, s.morale + 2) },
+          'A grave was dug. The party said their farewells with some comfort. Morale +2.'
         );
       }
     },
     {
-      id: 'moment_of_silence',
-      label: "Just a moment's silence — press on",
+      id: 'stone_mound',
+      icon: '🪨',
+      label: 'Build a stone mound',
+      // Default if no shovel; otherwise the dig_grave choice takes the default.
       silentLog: true,
       apply: (s) => {
         const flags = { ...s.flags };
         delete (flags as Record<string, unknown>)._burialPending;
-        const penalty = deathMoralePenalty(s, 3);
+        const penalty = deathMoralePenalty(s, 4);
         return logLine(
           { ...s, flags, morale: Math.max(0, s.morale - penalty) },
-          `The party moved on with only a brief silence. Heavy hearts. Morale −${penalty}.`
+          `Built a stone mound over the body. A hard farewell. Morale −${penalty}.`
+        );
+      }
+    },
+    {
+      id: 'eat_the_body',
+      icon: '🍖',
+      label: 'Eat the body',
+      silentLog: true,
+      // Hidden unless the party has nothing left to eat. Period reality:
+      // Donner Party precedent — survivors only turned to this when
+      // there was no food left.
+      hidden: (s) => !hasNoFoodAtBurial(s),
+      apply: (s) => {
+        // Defensive: the hidden predicate gates UI visibility, but if
+        // a non-starving state somehow reaches here (dev tools, replay,
+        // race), fall back to stone-mound semantics so we never grant
+        // unearned meat.
+        if (!hasNoFoodAtBurial(s)) {
+          const flags = { ...s.flags };
+          delete (flags as Record<string, unknown>)._burialPending;
+          const penalty = deathMoralePenalty(s, 4);
+          return logLine(
+            { ...s, flags, morale: Math.max(0, s.morale - penalty) },
+            `Built a stone mound over the body. A hard farewell. Morale −${penalty}.`
+          );
+        }
+        const corpse = freshUnconsumedDead(s);
+        if (!corpse) {
+          const flags = { ...s.flags };
+          delete (flags as Record<string, unknown>)._burialPending;
+          return logLine({ ...s, flags }, 'Burial — but no body was fresh enough.');
+        }
+        const flags = { ...s.flags };
+        delete (flags as Record<string, unknown>)._burialPending;
+        const prevGuilt = (flags._cannibalismCount as number | undefined) ?? 0;
+        flags._cannibalismCount = prevGuilt + 1;
+        return logLine(
+          {
+            ...s,
+            flags,
+            party: s.party.map((m) =>
+              m.id === corpse.id ? { ...m, consumed: true } : m
+            ),
+            inventory: {
+              ...s.inventory,
+              game_meat: (s.inventory.game_meat ?? 0) + BURIAL_CANNIBALISM_MEAT_LBS
+            },
+            morale: Math.max(0, s.morale - BURIAL_CANNIBALISM_MORALE)
+          },
+          `Took ${corpse.name}'s body for meat — ${BURIAL_CANNIBALISM_MEAT_LBS} lb of fresh game. Nobody spoke. Morale −${BURIAL_CANNIBALISM_MORALE}.`
         );
       }
     }
@@ -873,6 +1023,7 @@ const stuck_in_mud: GameEvent = {
   choices: [
     {
       id: 'dig_out',
+      icon: '⛏️',
       label: 'Dig out with the shovel',
       isDefault: true,
       silentLog: true,
@@ -889,6 +1040,7 @@ const stuck_in_mud: GameEvent = {
     },
     {
       id: 'force',
+      icon: '💪',
       label: 'Force the oxen through — whip and shout',
       silentLog: true,
       apply: (s, rng) => {
@@ -902,6 +1054,7 @@ const stuck_in_mud: GameEvent = {
     },
     {
       id: 'camp_wait',
+      icon: '⛺',
       label: 'Camp here and wait for it to dry',
       silentLog: true,
       apply: (s) => logLine(
@@ -929,6 +1082,7 @@ const dog_snakebite: GameEvent = {
   choices: [
     {
       id: 'tend_wound',
+      icon: '🩹',
       label: 'Tend the wound through the night',
       isDefault: true,
       silentLog: true,
@@ -950,6 +1104,7 @@ const dog_snakebite: GameEvent = {
     },
     {
       id: 'accept_loss',
+      icon: '🪦',
       label: 'Nothing to be done',
       silentLog: true,
       apply: (s) => {
@@ -973,6 +1128,7 @@ const dog_wolves: GameEvent = {
   choices: [
     {
       id: 'stand_with_dog',
+      icon: '🛡️',
       label: 'Stand watch alongside the dog',
       isDefault: true,
       silentLog: true,
@@ -1001,6 +1157,7 @@ const dog_wolves: GameEvent = {
     },
     {
       id: 'call_inside',
+      icon: '🚪',
       label: 'Call the dog in and hope they pass',
       silentLog: true,
       apply: (s, rng) => {
@@ -1028,6 +1185,7 @@ const dog_stolen: GameEvent = {
   choices: [
     {
       id: 'pay_reward',
+      icon: '💵',
       label: 'Offer a reward for their return ($5)',
       isDefault: true,
       silentLog: true,
@@ -1053,6 +1211,7 @@ const dog_stolen: GameEvent = {
     },
     {
       id: 'press_on',
+      icon: '🚶',
       label: 'Press on without them',
       silentLog: true,
       apply: (s) => {
@@ -1077,6 +1236,7 @@ const stray_dog_follows: GameEvent = {
   choices: [
     {
       id: 'take_in',
+      icon: '🐕',
       label: 'Feed it through the night',
       isDefault: true,
       silentLog: true,
@@ -1091,6 +1251,7 @@ const stray_dog_follows: GameEvent = {
     },
     {
       id: 'shoo_away',
+      icon: '🚫',
       label: 'Shoo it off — we have enough mouths',
       silentLog: true,
       apply: (s) => logLine(s, 'You chased the hound off. It watched from a rise before turning back the way you came.')
@@ -1108,6 +1269,7 @@ const abandoned_wagon_dog: GameEvent = {
   choices: [
     {
       id: 'take_dog',
+      icon: '🐕',
       label: 'Whistle it over',
       isDefault: true,
       silentLog: true,
@@ -1122,6 +1284,7 @@ const abandoned_wagon_dog: GameEvent = {
     },
     {
       id: 'leave_dog',
+      icon: '🚶',
       label: 'Leave it — not your burden',
       silentLog: true,
       apply: (s) => logLine(
@@ -1149,6 +1312,7 @@ const chicken_predator: GameEvent = {
   choices: [
     {
       id: 'rush_out',
+      icon: '🏃',
       label: 'Rush out with a lantern',
       isDefault: true,
       silentLog: true,
@@ -1171,6 +1335,7 @@ const chicken_predator: GameEvent = {
     },
     {
       id: 'stay_in_wagon',
+      icon: '🚪',
       label: 'Stay in the wagon — could be anything',
       silentLog: true,
       apply: (s, rng) => {
@@ -1207,6 +1372,7 @@ const mule_theft: GameEvent = {
   choices: [
     {
       id: 'track_thief',
+      icon: '🔍',
       label: 'Track the thief at first light',
       isDefault: true,
       silentLog: true,
@@ -1231,6 +1397,7 @@ const mule_theft: GameEvent = {
     },
     {
       id: 'press_on',
+      icon: '🚶',
       label: "Press on — can't afford the delay",
       silentLog: true,
       apply: (s) => {

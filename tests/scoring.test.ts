@@ -11,7 +11,7 @@ function fixture(over: Partial<GameState> = {}): GameState {
   return {
     party,
     inventory: {},
-    location: { milesTraveled: 2098, atLandmarkId: 'oregon_city', terrain: 'forest' },
+    location: { milesTraveled: 2195, atLandmarkId: 'oregon_city', terrain: 'forest' },
     outcome: 'arrived',
     completed: true,
     ...over
@@ -21,18 +21,18 @@ function fixture(over: Partial<GameState> = {}): GameState {
 describe('score', () => {
   it('arrived + 3 survivors + no luxuries', () => {
     const s = score(fixture());
-    // 2098 miles + 3 × 200 + 1000 arrival = 3698
-    expect(s.miles).toBe(2098);
+    // 2195 miles + 3 × 200 + 1000 arrival = 3795
+    expect(s.miles).toBe(2195);
     expect(s.survivors).toBe(600);
     expect(s.arrival).toBe(1000);
     expect(s.luxuries).toBe(0);
-    expect(s.total).toBe(3698);
+    expect(s.total).toBe(3795);
   });
 
   it('grandfather clock contributes 1000 on arrival', () => {
     const s = score(fixture({ inventory: { grandfather_clock: 1 } }));
     expect(s.luxuries).toBe(1000);
-    expect(s.total).toBe(3698 + 1000);
+    expect(s.total).toBe(3795 + 1000);
     expect(s.luxuryItems[0].id).toBe('grandfather_clock');
     expect(s.luxuryItems[0].points).toBe(1000);
   });

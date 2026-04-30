@@ -21,6 +21,21 @@ export class SavesRepo {
     return id;
   }
 
+  /**
+   * Verify a device id exists in the DB. If the cookie carries a stale
+   * id (DB wipe, fresh migration, branch swap) the parent caller can
+   * rotate the cookie before the next save attempt — saves are FK-bound
+   * to devices and would otherwise fail with a constraint error.
+   */
+  async deviceExists(deviceId: string): Promise<boolean> {
+    const row = await this.db
+      .select({ id: devices.id })
+      .from(devices)
+      .where(eq(devices.id, deviceId))
+      .get();
+    return row !== undefined;
+  }
+
   async list(deviceId: string): Promise<SaveRow[]> {
     const rows = await this.db
       .select({

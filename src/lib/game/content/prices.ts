@@ -40,13 +40,26 @@ export const PRICES: Record<string, PriceEntry> = {
   tongue:      { buy: 8.00, sell: 5.00 },
   canvas:      { buy: 6.00, sell: 3.00 },
   spare_plank: { buy: 2.00, sell: 1.00 },
-  iron_scrap:  { buy: 1.50, sell: 0.75 },
   tar_bucket:  { buy: 1.50, sell: 0.50 },
+
+  // Hunt byproducts — primarily sell-side at posts; #182.
+  tallow:             { buy: 0.30, sell: 0.15 },
+  prize_cut:          { buy: 0.50, sell: 0.30 },
+  raw_hide:           { buy: 1.00, sell: 0.60 },
 
   // Weapons / ammo
   rifle:              { buy: 20.00, sell: 12.00 },
-  bullets:            { buy: 2.00,  sell: 1.00 },
+  gunpowder:          { buy: 0.04,  sell: 0.02 },
+  lead_pig:           { buy: 1.50,  sell: 0.75 },
+  lead_balls:         { buy: 0.05,  sell: 0.025 },
+  percussion_caps:    { buy: 0.01,  sell: 0.005 },
+  bullet_mold:        { buy: 1.50,  sell: 0.75 },
   rifle_cleaning_kit: { buy: 3.00,  sell: 1.50 },
+
+  // #197 fishing gear.
+  fishing_line:       { buy: 0.30,  sell: 0.15 },
+  fishing_rod:        { buy: 1.50,  sell: 0.75 },
+  fishing_net:        { buy: 4.00,  sell: 2.00 },
 
   // Clothing
   coat:    { buy: 5.00, sell: 2.50 },

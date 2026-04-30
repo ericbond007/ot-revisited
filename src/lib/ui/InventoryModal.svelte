@@ -110,10 +110,13 @@
         </div>
         <div class="item-grid">
           {#each g.entries as e}
+            {@const perItemIcon = (ICON.inventory_items as Record<string, string>)[e.id]}
             <div class="item-row">
               <ItemTooltip id={e.id}>
                 {#snippet children()}
-                  <span class="item-name">{e.name}</span>
+                  <span class="item-name">
+                    {#if perItemIcon}<span class="item-icon">{perItemIcon}</span>{/if}{e.name}
+                  </span>
                 {/snippet}
               </ItemTooltip>
               <span class="item-qty">×{e.qty}</span>
