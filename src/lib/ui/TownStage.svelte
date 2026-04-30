@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import type { Landmark, PostKind } from '$lib/game/content/landmarks';
+  import { isNativeCampHostile } from '$lib/game/content/landmarks';
+  import { getTribeAttitude } from '$lib/game/systems/tribe-relations';
   import { enhance } from '$app/forms';
   import TownActionModal, { type TownActionKind } from './TownActionModal.svelte';
   import {
@@ -67,6 +69,16 @@
 
   const flavor = $derived(landmark.blurb ?? 'You enter the post.');
   const guideActive = $derived(((gameState.flags._guideUntilDay as number | undefined) ?? 0) > gameState.day);
+
+  // Native camp tribe-hostility gate (#202). When the affiliated tribe
+  // is hostile, the camp is empty (band fled / war is on) — replace
+  // services with a "camp avoided" flavor and disable trade.
+  const tribeAttitude = $derived(
+    landmark.tribeId ? getTribeAttitude(gameState, landmark.tribeId) : 100
+  );
+  const campAvoided = $derived(
+    landmark.postKind === 'native' && isNativeCampHostile(landmark, tribeAttitude)
+  );
 </script>
 
 <div class="town-stage panel" style="--post-accent: {theme.accent};">
@@ -94,6 +106,11 @@
 
   <!-- Service grid -->
   <div class="services">
+    {#if campAvoided}
+      <p class="empty">
+        The lodge poles are bare and the fire pits cold — the band has fled. War is on. Best to ride past without lingering.
+      </p>
+    {:else}
     {#if landmark.kind === 'trading_post'}
       <button type="button" class="svc-card primary" onclick={ontrade}>
         <span class="svc-icon">{ICON.town_services.store}</span>
@@ -191,6 +208,7 @@
 
     {#if landmark.kind !== 'trading_post' && services.length === 0}
       <p class="empty">There's nothing to do here right now.</p>
+    {/if}
     {/if}
   </div>
 

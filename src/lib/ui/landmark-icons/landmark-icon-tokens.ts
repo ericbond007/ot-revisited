@@ -45,6 +45,8 @@ export type LandmarkIconTone = 'warm' | 'cool' | 'gold';
 export type LandmarkIconId =
   // Stops — circular badge
   | 'hollenberg_ranch'
+  | 'cheyenne_camp'
+  | 'shoshone_camp'
   | 'ft_kearny'
   | 'robidoux_post'
   | 'ft_laramie'

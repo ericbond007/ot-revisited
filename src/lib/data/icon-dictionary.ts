@@ -122,7 +122,8 @@ export const ICON = {
     hbc:          '🦫',
     mountain:     '⛰️',
     frontier:     '🏪',
-    end_of_trail: '✨'
+    end_of_trail: '✨',
+    native:       '🛖'
   },
   // Profession glyphs — used by ProfessionPicker, party-detail badges,
   // outfit page, etc.
