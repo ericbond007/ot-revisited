@@ -43,6 +43,11 @@ export const PRICES: Record<string, PriceEntry> = {
   iron_scrap:  { buy: 1.50, sell: 0.75 },
   tar_bucket:  { buy: 1.50, sell: 0.50 },
 
+  // Hunt byproducts — primarily sell-side at posts; #182.
+  tallow:             { buy: 0.30, sell: 0.15 },
+  prize_cut:          { buy: 0.50, sell: 0.30 },
+  raw_hide:           { buy: 1.00, sell: 0.60 },
+
   // Weapons / ammo
   rifle:              { buy: 20.00, sell: 12.00 },
   gunpowder:          { buy: 0.04,  sell: 0.02 },

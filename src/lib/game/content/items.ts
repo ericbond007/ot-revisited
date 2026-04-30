@@ -88,6 +88,16 @@ export const ITEMS: Record<string, ItemMeta> = {
   // will hook into this directly.
   tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows axle wear.' },
 
+  // #182 hunt byproducts. Period emigrants pulled three things off a
+  // big-game carcass besides meat: tallow (rendered fat — cooking
+  // grease, candle/soap making, axle dressing), the prized "tongue +
+  // hump" delicacy cuts, and the raw hide. Hides were rarely tanned on
+  // the trail (3-week process); parties dried them flat and either
+  // traded to natives / posts or used as rough wagon-canvas patches.
+  tallow:      { id: 'tallow',      name: 'Tallow',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Rendered animal fat. Cooking grease, candle stock, soap-making — eaten as a desperation calorie if it comes to that.' },
+  prize_cut:   { id: 'prize_cut',   name: 'Prize cut',    category: 'food', weightLbPerUnit: 1, foodDrawOrder: 0.3, description: 'Tongue and hump, the choicest cuts of a big-game kill. A trail-side delicacy — emigrant diaries write about it with relish.' },
+  raw_hide:    { id: 'raw_hide',    name: 'Raw hide',     category: 'native_trade', weightLbPerUnit: 5, description: 'Untreated dried hide. Tanning takes weeks; on the trail you stockpile rawhide for trade with natives or posts (or rough wagon repair).' },
+
   rifle: { id: 'rifle', name: 'Rifle', category: 'weapon', weightLbPerUnit: 10, description: 'Required for hunting. A second rifle lets two hunters work in parallel.' },
 
   // Period firearms ecosystem (#174). Caplock muzzle-loaders dominated

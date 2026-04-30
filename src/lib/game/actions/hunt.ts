@@ -27,6 +27,10 @@ export interface HuntHaul {
   meat: number;       // lb of fresh game_meat added
   berries: number;    // lb of wild berries gathered
   liver: boolean;     // organ eaten fresh — morale/health already applied
+  // #182 byproducts — set on medium/big kills.
+  tallow: number;     // lb of rendered fat (medium 5–10, big 15–40)
+  prizeCut: number;   // lb of tongue+hump delicacy (big only, 1–2)
+  rawHides: number;   // count of raw hides taken (medium 60% ×1, big 80% ×1–2)
   bullets: number;    // bullets spent
   injured: string | null; // name of injured member, if any
   spoilDay: number | null; // day meat pile spoils; null when no meat
@@ -149,6 +153,27 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     };
   }
 
+  // #182 hunt byproducts — tallow, prize cuts (big only), raw hides.
+  // All scaled by yieldFraction so an empty-handed hunt (spentBullets=0
+  // or whiff) doesn't pay byproducts; a partial-success haul gives
+  // partial byproducts. Period: no kill, no skin.
+  const yieldFraction = isGather ? 0
+    : spentBullets === 0 ? 0
+      : meatGain / Math.max(1, profile.max);
+  let tallowGain = 0;
+  let prizeCutGain = 0;
+  let rawHideGain = 0;
+  if (!isGather && meatGain > 0) {
+    if (opts.target === 'medium') {
+      tallowGain = Math.round(rng.int(5, 10) * yieldFraction);
+      if (rng.chance(0.6)) rawHideGain = 1;
+    } else if (opts.target === 'big') {
+      tallowGain = Math.round(rng.int(15, 40) * yieldFraction);
+      if (rng.chance(0.7)) prizeCutGain = rng.int(1, 2);
+      if (rng.chance(0.8)) rawHideGain = rng.int(1, 2);
+    }
+  }
+
   const nextInventory: Record<string, number> = {
     ...s.inventory,
     gunpowder:       availPowder - spentBullets,
@@ -160,6 +185,15 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   }
   if (berriesGain > 0) {
     nextInventory.berries = (s.inventory.berries ?? 0) + berriesGain;
+  }
+  if (tallowGain > 0) {
+    nextInventory.tallow = (s.inventory.tallow ?? 0) + tallowGain;
+  }
+  if (prizeCutGain > 0) {
+    nextInventory.prize_cut = (s.inventory.prize_cut ?? 0) + prizeCutGain;
+  }
+  if (rawHideGain > 0) {
+    nextInventory.raw_hide = (s.inventory.raw_hide ?? 0) + rawHideGain;
   }
   const nextFlags = meatGain > 0
     ? { ...s.flags, _gameMeatSpoilDay: computeSpoilDay(s.day) }
@@ -200,6 +234,9 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     meat: meatGain,
     berries: berriesGain,
     liver: liverFound,
+    tallow: tallowGain,
+    prizeCut: prizeCutGain,
+    rawHides: rawHideGain,
     bullets: spentBullets,
     injured: injuredName,
     spoilDay: meatGain > 0 ? computeSpoilDay(s.day) : null

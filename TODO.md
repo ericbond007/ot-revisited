@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-29 (post-merge of #172 mileage + #186 event icons). 32 open.
+As of 2026-04-30 (post-merge of #174 bullets). 35 open.
 
 ## New mechanics
 
@@ -56,11 +56,14 @@ As of 2026-04-29 (post-merge of #172 mileage + #186 event icons). 32 open.
 
 | #    |                                                                     |
 | ---- | ------------------------------------------------------------------- |
-| #182 | Hunt yields audit — tallow / animal fat as byproduct?               |
 | #183 | AI art / animation pipeline — eval libs + image-gen APIs            |
 | #184 | Full game review — Sonnet pass on mechanics + balance               |
 | #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185) |
 | #195 | Camp-actions audit — re-evaluate hour costs + real gameplay effect  |
+| #196 | Raw hide handling — native trade for robes, wagon repair, post sale |
+| #197 | Fish camp action — add fishing rod / line / net items + camp action |
+| #198 | Grizzly mauling risk on big-game hunts in mountain terrain          |
+| #199 | Prize-cuts vs full-butchery choice on big kills (HuntModal UI)      |
 
 ## Known design-incoming
 
