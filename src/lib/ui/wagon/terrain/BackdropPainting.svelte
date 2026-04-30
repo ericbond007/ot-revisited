@@ -77,12 +77,13 @@
   // the visible band — sky takes the upper half, foreground takes the
   // lower half. Paintings without a detected horizon (overcast / rainy /
   // autumn compositions where sky→ground discrimination fails) fall back
-  // to painting-center alignment, which matches the original behavior.
+  // to painting-center alignment.
   //
-  // This decouples the painting's internal composition from the strict
-  // 20.8%-of-painting visible band, so wide variance in horizon placement
-  // (LoRA-induced or otherwise) no longer leaves the viewport showing
-  // only sky or only grass.
+  // Hero viewport (#212): the visible band is now 400 SVG-units tall
+  // (y=200..600). With the painting at native 768 tall, ~52% of each
+  // painting is visible; bumping painted height to 960 (planned under
+  // #156/#157/#159) brings that to ~42% but with the full content
+  // sized for the hero band.
   const filename = $derived(url.split('/').pop() ?? '');
   const paintingHorizonY = $derived(BACKDROP_HORIZONS[filename] ?? PAINT_H / 2);
   const middleY = $derived((horizonY + groundY) / 2);
