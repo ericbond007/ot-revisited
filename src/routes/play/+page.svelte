@@ -84,6 +84,17 @@
   let selectedMemberId = $state<string | null>(null);
   let showInventory = $state(false);
   let showTrailMapModal = $state(false);
+
+  // True when the left-column stage is the WagonScene travel view (no
+  // camp, no town visit, not at a landmark, not completed). Travel
+  // state has its own bottom-row layout (#212) — TrailMapSnippet and
+  // EventLog split width 50/50 below the action bar.
+  const isTravelStage = $derived(
+    !gs.completed
+    && !showCampEffective
+    && !(showVisit && atLandmark && atLandmark.kind === 'trading_post')
+    && !atLandmark
+  );
   const selectedMember = $derived(
     selectedMemberId ? gs.party.find((m) => m.id === selectedMemberId) ?? null : null
   );
@@ -219,12 +230,11 @@
       {:else if atLandmark}
         <LandmarkStage state={gs} landmark={atLandmark} />
       {:else}
-        <TrailMapSnippet
-          currentMileage={gs.location.milesTraveled}
-          onExpand={() => (showTrailMapModal = true)} />
-        <!-- Side view of the wagon traveling. Animation is gated on
-             `wagonRolling` so the wheels + parallax only run for ~1.5s
-             after a day-tick — between turns the scene is parked. -->
+        <!-- Travel hero (#212): WagonScene is the star of the show.
+             Animation gated on `wagonRolling` so wheels + parallax only
+             run for ~1.5s after a day-tick — between turns the scene
+             is parked. The trail-map snippet moves to the bottom row
+             alongside the event log. -->
         <WagonScene state={gs} paused={!wagonRolling} />
       {/if}
 
@@ -244,9 +254,23 @@
         {/if}
       </div>
 
-      <div class="log-wrap">
-        <EventLog state={gs} />
-      </div>
+      {#if isTravelStage}
+        <!-- Travel-state bottom row (#212) — map snippet and event log
+             share the column width 50/50. Map keeps its click-to-expand
+             affordance to TrailMapModal. -->
+        <div class="travel-bottom">
+          <TrailMapSnippet
+            currentMileage={gs.location.milesTraveled}
+            onExpand={() => (showTrailMapModal = true)} />
+          <div class="log-half">
+            <EventLog state={gs} />
+          </div>
+        </div>
+      {:else}
+        <div class="log-wrap">
+          <EventLog state={gs} />
+        </div>
+      {/if}
     </div>
 
     <!-- Right rail: party + wagon + inventory -->
@@ -405,6 +429,34 @@
     flex: 1;
   }
   .log-wrap > :global(.event-log) {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Travel-state bottom row (#212) — TrailMapSnippet + EventLog share
+     width 50/50, height grows to fill the column. Map snippet's own
+     fixed height is overridden via :global so it can flex. */
+  .travel-bottom {
+    display: flex;
+    gap: 0.5em;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+  .travel-bottom > :global(*) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .travel-bottom > :global(.snippet-host) {
+    height: auto;
+    min-height: 0;
+  }
+  .log-half {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+  }
+  .log-half > :global(.event-log) {
     flex: 1;
     min-height: 0;
   }
