@@ -69,6 +69,18 @@ export const ICON = {
     comfort:      '🎁',
     native_trade: '🪶'
   },
+  // Per-item overrides where the category default loses identity (#174).
+  // The 4 ammo components + bullet_mold all rendered as 🎯 / 🔨 before;
+  // these glyphs give each its own readable shape. Other categories can
+  // grow this map as need arises (rich-per-item icons is logged as a
+  // broader inventory-display follow-up).
+  inventory_items: {
+    gunpowder:       '💥',
+    lead_pig:        '🟫',
+    lead_balls:      '⚫',
+    percussion_caps: '🟤',
+    bullet_mold:     '⚒️'
+  },
   event_categories: {
     weather:    '🌩️',
     health:     '🏥',

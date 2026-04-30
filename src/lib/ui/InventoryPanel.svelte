@@ -171,8 +171,9 @@
         </div>
         <div class="group-rows">
           {#each g.entries as e}
+            {@const perItemIcon = (ICON.inventory_items as Record<string, string>)[e.id]}
             <div class="row">
-              <span class="row-name">{e.name}</span>
+              <span class="row-name">{#if perItemIcon}<span class="row-icon">{perItemIcon}</span>{/if}{e.name}</span>
               <span class="row-qty">×{e.qty}</span>
             </div>
           {/each}

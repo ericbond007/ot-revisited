@@ -16,15 +16,16 @@
   const gained = $derived(summary.inventoryDelta.filter((e) => e.delta > 0));
   const consumed = $derived(summary.inventoryDelta.filter((e) => e.delta < 0));
 
-  // Item name + category-based icon pulled from the catalog. Falls back
-  // to the id if an item somehow isn't catalogued.
-  // Decorative '📦' fallback isn't in the icon dictionary — see #161.
+  // Item name + per-item or category-based icon. Per-item overrides
+  // (ICON.inventory_items, #174) win when present; otherwise fall back
+  // to the category default; finally a decorative '📦'.
   function itemDisplay(id: string) {
     const meta = ITEMS[id];
+    const perItem = (ICON.inventory_items as Record<string, string>)[id];
     const cat = meta?.category as keyof typeof ICON.inventory_categories | undefined;
     return {
       name: meta?.name ?? id.replace(/_/g, ' '),
-      icon: cat && ICON.inventory_categories[cat] ? ICON.inventory_categories[cat] : '📦'
+      icon: perItem ?? (cat && ICON.inventory_categories[cat] ? ICON.inventory_categories[cat] : '📦')
     };
   }
 

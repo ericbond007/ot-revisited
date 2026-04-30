@@ -320,11 +320,14 @@
                   {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo' || g.cat === 'feed'}
                   {@const canSell = buysFromEmigrants && owned > 0}
                   {@const stockLeft = inStock && here ? postRemainingQty(gameState, here, id) : 0}
+                  {@const perItemIcon = (ICON.inventory_items as Record<string, string>)[id]}
                   <div class="item-row" class:out-of-stock={!inStock && owned === 0}>
                     <div class="item-label">
                       <ItemTooltip {id}>
                         {#snippet children()}
-                          <span class="item-name">{ITEMS[id].name}</span>
+                          <span class="item-name">
+                            {#if perItemIcon}<span class="item-icon">{perItemIcon}</span>{/if}{ITEMS[id].name}
+                          </span>
                         {/snippet}
                       </ItemTooltip>
                       <div class="price-row">
