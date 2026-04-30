@@ -63,6 +63,7 @@ const food_hoarding: GameEvent = {
   choices: [
     {
       id: 'mediate',
+      icon: '💬',
       label: 'Step in and mediate',
       isDefault: true,
       silentLog: true,
@@ -80,6 +81,7 @@ const food_hoarding: GameEvent = {
     },
     {
       id: 'ignore',
+      icon: '🚫',
       label: 'Let them have it out',
       silentLog: true,
       apply: (s, rng) => {
@@ -107,6 +109,7 @@ const fistfight: GameEvent = {
   choices: [
     {
       id: 'break_up',
+      icon: '🛡️',
       label: 'Pull them apart',
       isDefault: true,
       silentLog: true,
@@ -126,6 +129,7 @@ const fistfight: GameEvent = {
     },
     {
       id: 'let_settle',
+      icon: '👊',
       label: "Let them settle it",
       silentLog: true,
       apply: (s, rng) => {
@@ -160,6 +164,7 @@ const shared_burden: GameEvent = {
   choices: [
     {
       id: 'note',
+      icon: '🤝',
       label: 'Note the kindness',
       isDefault: true,
       silentLog: true,
@@ -188,6 +193,7 @@ const reconciliation: GameEvent = {
   choices: [
     {
       id: 'accept',
+      icon: '🤝',
       label: 'Let them have the moment',
       isDefault: true,
       silentLog: true,
@@ -205,6 +211,7 @@ const reconciliation: GameEvent = {
     },
     {
       id: 'distract',
+      icon: '🚶',
       label: 'Push everyone to keep working',
       silentLog: true,
       apply: (s) => logLine(
@@ -230,6 +237,7 @@ const romance_kindling: GameEvent = {
   choices: [
     {
       id: 'leave_be',
+      icon: '❤️',
       label: 'Leave them to it',
       isDefault: true,
       silentLog: true,
