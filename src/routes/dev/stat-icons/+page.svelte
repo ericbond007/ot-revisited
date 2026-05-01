@@ -8,7 +8,7 @@
 
   const KINDS: StatIconKind[] = [
     'day', 'date', 'pace', 'rations', 'morale',
-    'health', 'cash', 'water', 'leg', 'weather'
+    'health', 'cash', 'water', 'keg', 'leg', 'weather'
   ];
 
   // Sample top-bar readout values, one per kind, for context preview.
@@ -21,6 +21,7 @@
     health:  '82',
     cash:    '$248',
     water:   'FULL',
+    keg:     '18 / 30 GAL',
     leg:     'III',
     weather: 'CLEAR'
   };
