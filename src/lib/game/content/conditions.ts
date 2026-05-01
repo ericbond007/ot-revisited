@@ -17,26 +17,27 @@ export const CONDITIONS: Record<ConditionId, ConditionMeta> = {
     name: 'Cholera',
     dailyHealthDelta: -10,
     contagious: true,
-    treatmentItems: ['quinine']
+    treatmentItems: ['quinine', 'dovers_powder', 'camphor']
   },
   dysentery: {
     id: 'dysentery',
     name: 'Dysentery',
     dailyHealthDelta: -3,
-    treatmentItems: ['calomel']
+    treatmentItems: ['calomel', 'epsom_salts', 'paregoric', 'castor_oil']
   },
   typhoid: {
     id: 'typhoid',
     name: 'Typhoid',
     dailyHealthDelta: -5,
     contagious: true,
-    treatmentItems: ['quinine']
+    treatmentItems: ['quinine', 'dovers_powder']
   },
   measles: {
     id: 'measles',
     name: 'Measles',
     dailyHealthDelta: -3,
-    contagious: true
+    contagious: true,
+    treatmentItems: ['dovers_powder']
   },
   exhaustion: {
     id: 'exhaustion',
@@ -55,7 +56,7 @@ export const CONDITIONS: Record<ConditionId, ConditionMeta> = {
     name: 'Snakebite',
     dailyHealthDelta: -5,
     immediateDamage: 15,
-    treatmentItems: ['bandages', 'laudanum']
+    treatmentItems: ['bandages', 'laudanum', 'hartshorn']
   },
   frostbite: {
     id: 'frostbite',

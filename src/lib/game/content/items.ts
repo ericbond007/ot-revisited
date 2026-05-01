@@ -153,6 +153,16 @@ export const ITEMS: Record<string, ItemMeta> = {
   // antiscorbutic and food preservative. Modest scurvy edge for parties
   // running out of dried fruit on long stretches.
   vinegar: { id: 'vinegar', name: 'Vinegar', category: 'medicine', weightLbPerUnit: 8, description: 'Stoneware jug. Wards off scurvy and preserves food when dried fruit runs thin.' },
+  // Period medicine kit fill-out (#213). Each was a real wagon-chest
+  // staple per Marcy / Gunn's Domestic Medicine. Mechanical role: gentler
+  // alternatives to the harsh calomel + quinine tier. They list as
+  // treatmentItems so events / future treat-action surfaces them.
+  epsom_salts: { id: 'epsom_salts', name: 'Epsom salts', category: 'medicine', weightLbPerUnit: 0.5, description: 'Magnesium-sulfate crystals. Mild purgative for "bilious complaints" and a wound soak. Gentler than calomel.' },
+  camphor: { id: 'camphor', name: 'Camphor', category: 'medicine', weightLbPerUnit: 0.2, description: 'Aromatic gum. Rubbed on the chest for colds; widely (mistakenly) carried as a cholera prophylactic.' },
+  paregoric: { id: 'paregoric', name: 'Paregoric', category: 'medicine', weightLbPerUnit: 0.2, description: 'Camphorated opium tincture, weaker than laudanum. The era\'s standard for children\'s diarrhea and teething.' },
+  hartshorn: { id: 'hartshorn', name: 'Hartshorn', category: 'medicine', weightLbPerUnit: 0.2, description: 'Smelling salts (ammonium carbonate). Revives faints; folk-applied to snakebite for nervous shock.' },
+  dovers_powder: { id: 'dovers_powder', name: "Dover's powder", category: 'medicine', weightLbPerUnit: 0.2, description: 'Opium + ipecac. Induces sweating; given for fever — the period go-to for cholera, typhoid, measles.' },
+  castor_oil: { id: 'castor_oil', name: 'Castor oil', category: 'medicine', weightLbPerUnit: 0.5, description: 'Vegetable purgative. The mild children\'s laxative; gentler than calomel for dysentery.' },
 
   tobacco: { id: 'tobacco', name: 'Tobacco', category: 'comfort', weightLbPerUnit: 1, description: 'Morale consumable. Also Native American trade currency.' },
   whiskey: { id: 'whiskey', name: 'Whiskey', category: 'comfort', weightLbPerUnit: 4, description: 'Morale bump. Small cold-exposure heal. Rare dependency risk.' },

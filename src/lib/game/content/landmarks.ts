@@ -178,6 +178,7 @@ export const LANDMARKS: readonly Landmark[] = [
     stock: [
       'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine', 'vinegar',
+      'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke',
       'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'grain',
@@ -272,6 +273,7 @@ export const LANDMARKS: readonly Landmark[] = [
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum',
+      'epsom_salts', 'camphor', 'paregoric',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'grain',
       'salt', 'tobacco', 'whiskey', 'harmonica'
@@ -330,6 +332,7 @@ export const LANDMARKS: readonly Landmark[] = [
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
+      'epsom_salts', 'camphor', 'paregoric', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket',
       'wheel', 'axle', 'tongue', 'canvas', 'yoke',
       'cookware', 'rope', 'salt',
