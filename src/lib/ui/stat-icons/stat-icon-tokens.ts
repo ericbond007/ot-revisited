@@ -54,5 +54,6 @@ export type StatIconKind =
   | 'health'
   | 'cash'
   | 'water'
+  | 'keg'      // fresh — wood-staved barrel for the wagon's water container (#134)
   | 'leg'      // fresh — compass-style for "leg of the trail"
   | 'weather'; // fresh — sun-behind-cloud for current weather state

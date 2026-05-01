@@ -33,7 +33,8 @@ export const ICON = {
     morale:  '🎵',
     health:  '❤️',
     cash:    '💵',
-    water:   '💧'
+    water:   '💧',
+    keg:     '🛢️'
   },
   weather_states: {
     clear:    '☀️',
