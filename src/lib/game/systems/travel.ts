@@ -5,6 +5,7 @@ import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../content/landmarks'
 import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
 import { gatherFirewoodOnTravel } from './fire';
+import { applyAxleGrease } from './wagon';
 import { hasLiveScout } from '../professions/predicates';
 import { weatherTravelMult } from './weather';
 
@@ -129,6 +130,7 @@ export function applyTravel(state: GameState, rng: Rng): GameState {
   // plains, scarce fuel in the desert.
   if (miles > 0) {
     next = gatherFirewoodOnTravel(next, rng);
+    next = applyAxleGrease(next, miles);
   }
 
   const nextLandmark = getLandmark(startState.location.nextLandmarkId);
