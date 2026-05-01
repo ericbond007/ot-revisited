@@ -51,7 +51,6 @@ _(empty — items shipped or moved to other sections)_
 - **#184** — Full game review — Sonnet pass on mechanics + balance
 - **#192** — Verify TradeModal + FordModal hero icons (audit branch, needs #185)
 - **#198** — Grizzly mauling risk on big-game hunts in mountain terrain
-- **#200** — Discard-from-wagon while traveling — extend #179 beyond landmarks
 - **#206** — [H] Whitman Mission as a post — historical check (1843-47 only)
 
 ## New mechanics (extension)
@@ -142,6 +141,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#200** Discard-from-wagon while traveling — dropped the `atLandmarkId` gate on the `discardItem` server action and the matching `{#if atLandmark}` in `InventoryModal`. Log line now flexes between "at <landmark>" and "on the trail" depending on context. Forcing the player to a fort or rock just to pitch a busted wheel was fiddly UX; emigrants did dump on the open trail when desperate.
 - **#214** Axle grease consumable — `tar_bucket` no longer "own one = forever bonus"; new `applyAxleGrease(state, miles)` in `wagon.ts` burns one bucket every 500 mi of travel via a `flags._greaseSinceLastDose` counter. `tickWagon` math unchanged: tar_bucket > 0 → -25% wagon decay; runs out → back to baseline. Counter saturates at threshold while empty so a freshly-bought bucket auto-applies on the next mile. Wired into `applyTravel` alongside `gatherFirewoodOnTravel`. Event-log line on the dry-out transition. ~4-5 buckets across a 2195-mi journey. Item description updated. 10 new tests; 856/856 green.
 - **#213** Period medicine kit fill-out — added 6 historically-real wagon-chest staples to `items.ts` (epsom_salts, camphor, paregoric, hartshorn, dovers_powder, castor_oil). Each plugs into the existing `treatmentItems` arrays as gentler alternatives: epsom/paregoric/castor_oil for dysentery (avoid calomel mercury risk), Dover's powder + camphor for cholera/typhoid/measles fever-sweat treatment, hartshorn for snakebite folk-remedy. Prices in `prices.ts` follow Marcy 1850s Missouri-River rates. Fort Laramie stocks the full line; The Dalles + Fort Hall partial. Available at Independence outfitter. 9 new tests; 846/846 green.
 
