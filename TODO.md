@@ -35,7 +35,6 @@ _(empty — items shipped or moved to other sections)_
 - **#167** — Trail-map cluster labels overlap at modal tier 1
 - **#86** — Expand hover tooltips across all data points
 - **#102** — Pre-made vs custom starter kit choice
-- **#134** — Water keg/barrel glyph next to water amount
 - **#145** — Camp view — eliminate laptop scroll
 - **#170** — Use new ox-team design beyond the travel strip
 - **#171** — Laurel Hill landmark art — only gap from #89 batch
@@ -147,6 +146,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#134** Water keg glyph — new bespoke `keg.svelte` stat-icon (wood-staved barrel with iron hoops, side view, watercolor SI vocabulary). Wired through `StatIconKind` + `StatIcon.svelte` REGISTRY + `icon-dictionary.stats.keg` (`🛢️` text fallback). InventoryPanel's three water-amount lines now render `<StatIcon kind="keg">` instead of the droplet emoji — the wagon's water container is a keg, not a droplet. /dev/stat-icons specimen route updated.
 - **#173** TownStage hero art — hoisted `<LandmarkArt id={landmark.id} {abandoned} />` into TownStage between the hero header and the service grid, gated on `hasLandmarkArt(landmark.id)` so unmapped posts fall through cleanly. Same `isLandmarkAbandoned` derived as LandmarkStage so a shuttered Fort Hall (1856+) tints correctly. New `.art-canvas` style with 16:5 aspect, slightly tighter than LandmarkStage's 16:7 since the post hero already eats vertical room.
 - **#200** Discard-from-wagon while traveling — dropped the `atLandmarkId` gate on the `discardItem` server action and the matching `{#if atLandmark}` in `InventoryModal`. Log line now flexes between "at <landmark>" and "on the trail" depending on context. Forcing the player to a fort or rock just to pitch a busted wheel was fiddly UX; emigrants did dump on the open trail when desperate.
 - **#214** Axle grease consumable — `tar_bucket` no longer "own one = forever bonus"; new `applyAxleGrease(state, miles)` in `wagon.ts` burns one bucket every 500 mi of travel via a `flags._greaseSinceLastDose` counter. `tickWagon` math unchanged: tar_bucket > 0 → -25% wagon decay; runs out → back to baseline. Counter saturates at threshold while empty so a freshly-bought bucket auto-applies on the next mile. Wired into `applyTravel` alongside `gatherFirewoodOnTravel`. Event-log line on the dry-out transition. ~4-5 buckets across a 2195-mi journey. Item description updated. 10 new tests; 856/856 green.
