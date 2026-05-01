@@ -66,6 +66,9 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 - **#216** — [H] Trade goods bundle — mirrors, vermilion, awls, thimbles, calico, pocket knives
 - **#217** — [H] Guidebook item (Marcy / Palmer / Ware) — owning unlocks fork previews + ETA
 - **#218** — [H] Tent (canvas A-frame) — reduces cold-camp morale drain
+- **#264** — [H] Bran barrel — wagon accessory; halves heat-spoil rate on bacon + salt pork (Marcy spec)
+- **#265** — [H] Spoilage pass — bacon/salt_pork in heat, eggs ~14d, berries ~3d; mostly diary-attested
+- **#266** — BUG: `prize_cut` is fresh meat but bypasses the game_meat 3-day spoil clock
 
 ### Daily routine mechanics
 
