@@ -2,6 +2,7 @@ import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { hasLivePreacher, hasLiveWhore } from '../professions/predicates';
 import { canBoilWater } from '../systems/water-purity';
+import { fuelFlavorFor } from '../systems/fire';
 import { deathMoralePenalty } from '../professions/bonuses';
 
 // Camp actions are one-shot activities the party can do during a rest
@@ -585,11 +586,13 @@ const digOut: CampAction = {
 
 // Firewood gathering — always available. Yield scales with terrain
 // (same mean table as passive travel-day gather, but bigger because
-// you're focused on it instead of walking). 3-hour slot.
+// you're focused on it instead of walking). 3-hour slot. Label and
+// log flex by terrain (#219) — "buffalo chips" on the plains,
+// "sage brush" on desert; the resource bucket stays `firewood`.
 const gatherFirewood: CampAction = {
   id: 'gather_firewood',
-  label: 'Gather firewood',
-  sub: '3 hr · terrain-dependent yield',
+  label: 'Gather fuel',
+  sub: '3 hr · chips on plains, sage in desert, wood elsewhere',
   icon: '🪵',
   hourCost: 3,
   availability: () => ({ available: true }),
@@ -601,6 +604,7 @@ const gatherFirewood: CampAction = {
     };
     const mean = baseByTerrain[s.location.terrain] ?? 10;
     const gained = rng.int(Math.round(mean * 0.7), Math.round(mean * 1.3));
+    const fuel = fuelFlavorFor(s.location.terrain);
     return logLine(
       {
         ...s,
@@ -609,7 +613,7 @@ const gatherFirewood: CampAction = {
           firewood: (s.resources.firewood ?? 0) + gained
         }
       },
-      `Gathered ${gained} lb of firewood from the ${s.location.terrain}.`
+      `Gathered ${gained} lb of ${fuel.material} from the ${fuel.source}.`
     );
   }
 };
