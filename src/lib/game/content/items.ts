@@ -84,7 +84,7 @@ export const ITEMS: Record<string, ItemMeta> = {
   // Tar bucket — pine-tar grease for axle hubs. Every emigrant diary
   // mentions one swinging under the wagon. Cuts frame-decay rate by
   // 25% while in the inventory.
-  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows wagon wear by 25%.' },
+  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing. Greases hubs to slow wagon wear by 25%. Consumed at ~one bucket per 500 miles of travel.' },
 
   // #182 hunt byproducts. Period emigrants pulled three things off a
   // big-game carcass besides meat: tallow (rendered fat — cooking

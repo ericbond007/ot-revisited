@@ -21,6 +21,13 @@ const TERRAIN_MULTIPLIER: Record<Terrain, number> = {
 // slows axle wear; keeping one stocked cuts frame decay by 25%.
 const TAR_BUCKET_DECAY_MULT = 0.75;
 
+// Axle-grease consumption cycle (#214). Period reality: hubs got
+// re-smeared every 200 mi or so. A single bucket carried multiple
+// applications — we let it cover GREASE_CYCLE_MI of travel before the
+// next dose draws another bucket. ~500 mi/bucket means a 2195-mi
+// trail consumes ~4-5 buckets across the run.
+const GREASE_CYCLE_MI = 500;
+
 export function tickWagon(state: GameState, _rng: Rng): GameState {
   const base = PACE_DECAY[state.pace];
   const terrain = TERRAIN_MULTIPLIER[state.location.terrain];
@@ -32,4 +39,40 @@ export function tickWagon(state: GameState, _rng: Rng): GameState {
   // sites Math.round() it.
   const condition = Math.max(0, Math.round((state.wagon.condition - decay) * 10) / 10);
   return { ...state, wagon: { ...state.wagon, condition } };
+}
+
+/**
+ * Burn axle grease against miles travelled (#214). Each
+ * GREASE_CYCLE_MI of travel consumes one tar_bucket; once the
+ * stockpile runs out the existing tickWagon math drops back to
+ * baseline decay (i.e. the -25% bonus disappears). Counter
+ * saturates at threshold while empty, so a freshly-bought bucket
+ * applies immediately on the next travel tick.
+ */
+export function applyAxleGrease(state: GameState, miles: number): GameState {
+  if (miles <= 0) return state;
+  const prevCounter = (state.flags?._greaseSinceLastDose as number | undefined) ?? 0;
+  const prevBuckets = state.inventory.tar_bucket ?? 0;
+  let bucketsLeft = prevBuckets;
+  let remaining = prevCounter + miles;
+  while (remaining >= GREASE_CYCLE_MI && bucketsLeft > 0) {
+    bucketsLeft -= 1;
+    remaining -= GREASE_CYCLE_MI;
+  }
+  if (remaining > GREASE_CYCLE_MI) remaining = GREASE_CYCLE_MI;
+  let next: GameState = {
+    ...state,
+    inventory: { ...state.inventory, tar_bucket: bucketsLeft },
+    flags: { ...state.flags, _greaseSinceLastDose: remaining }
+  };
+  if (prevBuckets > 0 && bucketsLeft === 0) {
+    next = {
+      ...next,
+      eventLog: [
+        ...next.eventLog,
+        { day: next.day, text: 'The tar bucket runs dry — hubs going unsmeared.' }
+      ]
+    };
+  }
+  return next;
 }
