@@ -3,6 +3,7 @@
   import { ITEMS, type ItemCategory } from '$lib/game/content/items';
   import { ICON } from '$lib/data/icon-dictionary';
   import ItemTooltip from './ItemTooltip.svelte';
+  import StatIcon from './stat-icons/StatIcon.svelte';
 
   let { state, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
@@ -84,7 +85,10 @@
       </div>
       <div class="stat-cell">
         <div class="stat-head">WATER</div>
-        <div class="stat-val">{state.resources.water} / {state.resources.waterCap} gal</div>
+        <div class="stat-val">
+          <StatIcon kind="keg" size={16} className="keg-svg" />
+          {state.resources.water} / {state.resources.waterCap} gal
+        </div>
       </div>
       <div class="stat-cell wide">
         <div class="stat-head">WEIGHT</div>
