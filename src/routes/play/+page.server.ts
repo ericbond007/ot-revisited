@@ -315,17 +315,19 @@ export const actions: Actions = {
     const qty = Math.max(1, parseInt(fd.get('qty')?.toString() ?? '0', 10));
     if (!itemId) throw error(400, 'itemId required');
     const state = await loadState(locals, slot);
-    // Lightening is gated to landmarks — diaries record this happening
-    // at the rocks (Independence, Devil's Gate) and at the forts; on
-    // the open trail you'd usually push through, not pull out of formation.
-    if (!state.location.atLandmarkId) throw error(409, 'must be at a landmark to lighten the wagon');
+    // Lightening is allowed any time (#200). Diaries do mostly record
+    // this at the rocks and forts, but desperate parties dumped on the
+    // open trail too — and forcing the player to a landmark just to
+    // pitch a busted wheel is fiddly UX.
     const have = state.inventory[itemId] ?? 0;
     if (have <= 0) throw error(409, `no ${itemId} in inventory`);
     const drop = Math.min(qty, have);
     const inventory = { ...state.inventory };
     if (have - drop <= 0) delete inventory[itemId];
     else inventory[itemId] = have - drop;
-    const here = getLandmark(state.location.atLandmarkId);
+    const where = state.location.atLandmarkId
+      ? `at ${getLandmark(state.location.atLandmarkId).name}`
+      : 'on the trail';
     const next = {
       ...state,
       inventory,
@@ -333,7 +335,7 @@ export const actions: Actions = {
         ...state.eventLog,
         {
           day: state.day,
-          text: `Lightened the wagon at ${here.name}: dropped ${drop} ${itemId.replace(/_/g, ' ')}.`
+          text: `Lightened the wagon ${where}: dropped ${drop} ${itemId.replace(/_/g, ' ')}.`
         }
       ]
     };
