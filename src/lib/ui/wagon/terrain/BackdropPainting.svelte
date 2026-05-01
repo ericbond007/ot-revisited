@@ -12,7 +12,6 @@
   // one cohesive painting reads as a unified scene, where four separate
   // alpha-masked tiles always fought for visual coherence.
   import type { Terrain } from '$lib/game/types';
-  import { BACKDROP_HORIZONS } from './backdrop-horizons';
 
   interface Props {
     terrain: Terrain;
@@ -37,13 +36,16 @@
   const fallbackVariant = Math.floor(Math.random() * N_VARIANTS);
   const v = $derived(variant ?? fallbackVariant);
 
-  // Native dimensions match DIMS["backdrop"] in tools/wagon-bg/prompts.py.
-  // Must match exactly: with preserveAspectRatio="none", a mismatch makes
-  // the browser decode the full source then squish it into the viewport
-  // rect (visible distortion + wasted decode work), and the seamless
-  // x-axis wrap-meeting falls inside the painting instead of at its edge.
-  const PAINT_W = 3072;
-  const PAINT_H = 768;
+  // SVG render dimensions for the painting. Source webp is 3072×768
+  // native (4:1, see DIMS["backdrop"] in tools/wagon-bg/prompts.py).
+  // We render at 1600×400 in SVG coords — uniform 0.52x scale that
+  // preserves the 4:1 aspect with no distortion AND fits exactly into
+  // the hero viewBox's 400-unit height, so the whole painting is
+  // visible top-to-bottom. Width 1600 > viewBox width 1280 leaves
+  // 320 SVG-units of horizontal extent for parallax scroll before
+  // the seamless tile wrap kicks in.
+  const PAINT_W = 1600;
+  const PAINT_H = 400;
 
   // 0.3× — slow background-distance scroll. Combined with the 3072-wide
   // painting and a 1280-wide scene, the second copy doesn't enter the
@@ -72,22 +74,15 @@
       : `/wagon-bg/backdrop-${backdropTerrain}-${v}.webp`
   );
 
-  // Auto-align: each painting's actual horizon line (detected at build
-  // time, looked up in BACKDROP_HORIZONS) is placed at the *middle* of
-  // the visible band — sky takes the upper half, foreground takes the
-  // lower half. Paintings without a detected horizon (overcast / rainy /
-  // autumn compositions where sky→ground discrimination fails) fall back
-  // to painting-center alignment.
-  //
-  // Hero viewport (#212): the visible band is now 400 SVG-units tall
-  // (y=200..600). With the painting at native 768 tall, ~52% of each
-  // painting is visible; bumping painted height to 960 (planned under
-  // #156/#157/#159) brings that to ~42% but with the full content
-  // sized for the hero band.
-  const filename = $derived(url.split('/').pop() ?? '');
-  const paintingHorizonY = $derived(BACKDROP_HORIZONS[filename] ?? PAINT_H / 2);
-  const middleY = $derived((horizonY + groundY) / 2);
-  const paintTop = $derived(middleY - paintingHorizonY);
+  // With the painting now sized exactly to the hero viewBox height
+  // (400 SVG-units), there's no spare vertical room — painting fills
+  // viewport top-to-bottom. paintTop pins to the viewBox top constant
+  // (y=200, see WagonScene viewBox="0 200 1280 400"). The previous
+  // BACKDROP_HORIZONS auto-align is no longer needed in this mode but
+  // the table is kept in source for the eventual 4-layer rebuild
+  // (#156/#157/#159) where the far layer might overflow vertically.
+  const VIEWBOX_TOP_Y = 200;
+  const paintTop = VIEWBOX_TOP_Y;
 </script>
 
 <g>
