@@ -391,17 +391,18 @@ const axle_breaks: GameEvent = {
 };
 
 // Ox bow cracks (#215) — load-bearing U-loop on the yoke gives way.
-// Period reality: by far the most-broken hitch part on the trail
-// (Marcy 1859 prescribed 2 spares per wagon for a reason). Lighter
-// than the yoke event because the team can hobble on with one bow
-// down — but the ox dragging that bow gets stressed.
+// Period reality: the most-broken hitch part on the trail (Marcy 1859
+// prescribed 2 spares per wagon — more than for any other part). The
+// weight 4 here matches that — bows crack more often than wheels (3)
+// or tongues (2). Yokes by contrast are rarely broken; no event for
+// them, in line with the historical record.
 const ox_bow_cracks: GameEvent = {
   id: 'ox_bow',
   category: 'wagon',
   title: 'An ox bow splits',
   body: 'The hickory cracks with a sound like a gunshot. The lead ox lurches sideways before the team halts.',
   bodyKey: 'ox_bow.body',
-  weight: 3,
+  weight: 4,
   choices: [
     {
       id: 'replace',
