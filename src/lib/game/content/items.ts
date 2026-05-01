@@ -64,6 +64,10 @@ export const ITEMS: Record<string, ItemMeta> = {
 
   ox: { id: 'ox', name: 'Ox', category: 'livestock', weightLbPerUnit: 0, description: 'Draft animal. Pulls the wagon. More oxen = faster travel and higher carry cap.' },
   yoke: { id: 'yoke', name: 'Yoke', category: 'livestock', weightLbPerUnit: 15, description: 'Harnesses the oxen to the wagon. Replaces broken yokes.' },
+  // Ox bow (#215) — the steam-bent U-loop that fits up through the
+  // yoke and around an ox's neck. Two per yoke; cracks under shear
+  // load. Marcy 1859 explicitly prescribes 2 spares per wagon.
+  ox_bow: { id: 'ox_bow', name: 'Ox bow', category: 'livestock', weightLbPerUnit: 5, description: 'Steam-bent hickory neck loop. Cracks under load — Marcy spec\'d 2 spares per wagon.' },
   // Live chickens — carried in a coop strapped to the wagon bed.
   // Wagon-capped per model (light: 3 / prairie: 5 / heavy: 8). Lay
   // eggs daily. Can die to predator events or drown in rough fords.

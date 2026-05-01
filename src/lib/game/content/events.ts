@@ -390,7 +390,47 @@ const axle_breaks: GameEvent = {
   ]
 };
 
-EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, axle_breaks, ox_wanders);
+// Ox bow cracks (#215) — load-bearing U-loop on the yoke gives way.
+// Period reality: by far the most-broken hitch part on the trail
+// (Marcy 1859 prescribed 2 spares per wagon for a reason). Lighter
+// than the yoke event because the team can hobble on with one bow
+// down — but the ox dragging that bow gets stressed.
+const ox_bow_cracks: GameEvent = {
+  id: 'ox_bow',
+  category: 'wagon',
+  title: 'An ox bow splits',
+  body: 'The hickory cracks with a sound like a gunshot. The lead ox lurches sideways before the team halts.',
+  bodyKey: 'ox_bow.body',
+  weight: 3,
+  choices: [
+    {
+      id: 'replace',
+      icon: '⚒️',
+      label: 'Fit a spare ox bow',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const have = s.inventory.ox_bow ?? 0;
+        if (have > 0) {
+          const { state: after, saved } = consumeWagonPart(s, rng, 'ox_bow');
+          const log = saved
+            ? 'The carpenter steamed and re-bent the cracked bow — the spare was kept.'
+            : 'Fitted the spare bow. Spare ox bow −1.';
+          return logLine(after, log);
+        }
+        // No spare: lash with rope. The team limps with one ox under-
+        // hitched until the next post. Wagon condition shrug-off; this
+        // is more about pace than frame damage.
+        return logLine(
+          { ...s, wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 5) } },
+          'No spare bow. Lashed the cracked one with rope — wagon condition −5, the team will limp.'
+        );
+      }
+    }
+  ]
+};
+
+EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, axle_breaks, ox_wanders, ox_bow_cracks);
 
 // --- Health ---
 const cholera_scare: GameEvent = {
