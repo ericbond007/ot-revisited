@@ -87,6 +87,15 @@ export const PRICES: Record<string, PriceEntry> = {
   herbal_poultice: { buy: 1.00, sell: 0.50 },
   patent_medicine: { buy: 3.00, sell: 1.50 },
   vinegar:         { buy: 1.00, sell: 0.40 },
+  // Period medicine kit fill-out (#213). Pricing tracks Marcy / 1850s
+  // Missouri-River outfitter rates: gentle purgatives cheap, opiate
+  // derivatives mid-tier, fever-sweat compounds (Dover's) priciest.
+  epsom_salts:     { buy: 0.50, sell: 0.20 },
+  camphor:         { buy: 1.50, sell: 0.70 },
+  paregoric:       { buy: 1.20, sell: 0.55 },
+  hartshorn:       { buy: 0.80, sell: 0.35 },
+  dovers_powder:   { buy: 1.80, sell: 0.85 },
+  castor_oil:      { buy: 0.40, sell: 0.18 },
 
   // Comfort
   tobacco:   { buy: 1.00, sell: 0.50 },

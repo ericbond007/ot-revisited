@@ -19,6 +19,7 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   'iron_toolkit', 'cookware', 'rope', 'shovel', 'salt', 'saleratus', 'lard', 'compass', 'water_skin', 'ox_shoes', 'spyglass',
   // Medicine
   'quinine', 'laudanum', 'calomel', 'bandages', 'herbal_poultice', 'patent_medicine', 'vinegar',
+  'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
   // Comfort
   'tobacco', 'whiskey', 'harmonica', 'fiddle', 'bible',
   // Luxuries — useless on the trail, prestige score on arrival (#148).
