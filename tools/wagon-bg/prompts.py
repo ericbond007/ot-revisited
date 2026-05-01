@@ -8,8 +8,14 @@ to regenerate just that tile.
 from dataclasses import dataclass
 from typing import Literal
 
-Layer = Literal["backdrop", "ground"]
+Layer = Literal["backdrop", "ground", "sky", "far", "mid", "close"]
 Terrain = Literal["prairie", "forest", "desert", "mountains", "river"]
+
+# Layers whose prompts already carry their full intent and DON'T need
+# STYLE_SUFFIX appended. The legacy "backdrop"/"ground" layers describe
+# whole scenes from a 6-foot side-on viewpoint — that suffix doesn't
+# apply to sky-only canvases or silhouette-on-magenta canvases.
+LAYERS_WITHOUT_STYLE_SUFFIX = {"sky", "far", "mid", "close"}
 
 STYLE_SUFFIX = (
     "cinematic 2D side-scrolling adventure game backdrop, "
@@ -45,6 +51,13 @@ DIMS = {
     # 8 GB VRAM on the 3070 Laptop.
     "backdrop": (3072, 768),
     "ground":   (1024, 512),
+    # 4-layer rebuild (#212 follow-up): sky / far / mid / close all share
+    # the same source dims as the legacy backdrop. SVG-render dims are
+    # 1600×400 (uniform 0.52x scale, see BackdropPainting.svelte).
+    "sky":   (3072, 768),
+    "far":   (3072, 768),
+    "mid":   (3072, 768),
+    "close": (3072, 768),
 }
 
 
@@ -62,12 +75,20 @@ class TilePrompt:
     def filename(self) -> str:
         # variant 0 keeps the original unsuffixed name so existing files
         # stay valid; variants 1+ get a `-N` suffix.
+        if self.layer == "sky":
+            # Sky is biome-agnostic; the variant index encodes weather.
+            # `terrain` field is a placeholder to satisfy the type — its
+            # value doesn't appear in the output filename.
+            weathers = ("clear", "overcast", "storm", "dawn", "dusk", "night")
+            return f"sky-{weathers[self.variant]}.webp"
         if self.variant == 0:
             return f"{self.layer}-{self.terrain}.webp"
         return f"{self.layer}-{self.terrain}-{self.variant}.webp"
 
     @property
     def full_prompt(self) -> str:
+        if self.layer in LAYERS_WITHOUT_STYLE_SUFFIX:
+            return self.content
         return f"{self.content}, {STYLE_SUFFIX}"
 
 
@@ -117,15 +138,56 @@ PROMPTS: list[TilePrompt] = [
     _t("ground", "forest",    400002, "overhead view of a dirt path through a forest, two parallel tire tracks in packed earth, ferns and fallen leaves on both sides, looking straight down, no sky, no horizon, no panorama, ground only"),
     _t("ground", "desert",    400003, "overhead view of a dry dirt path across desert ground, two parallel tire tracks in dust, sagebrush and pebbles on both sides, looking straight down, no sky, no horizon, no panorama, no water, ground only"),
     _t("ground", "mountains", 400004, "overhead view of a rocky dirt path across mountain ground, two parallel tire tracks in packed earth, gravel and stones on both sides, looking straight down, no sky, no horizon, no panorama, no snow, ground only"),
+
+    # ============================================================
+    # 4-LAYER REBUILD — sky / far / mid / close
+    # ============================================================
+    # Plan: /home/eric/.claude/plans/2026-04-30-backdrop-4-layer.md
+    # Variant axis is independent per layer (sky-clear can pair with
+    # far-prairie-2 + mid-prairie-0 + close-prairie-3 in any combo).
+    # Source dims are 3072x768 (LoRA's sweet spot); SVG renders at
+    # 1600x400 (uniform 0.52x scale, full-bleed in hero band).
+
+    # SKY — biome-agnostic. Initial set: clear only, for prairie validation.
+    # Remaining 5 (overcast/storm/dawn/dusk/night) come after gates 1-3.
+    _t("sky", "prairie", 200001, "panoramic painterly clear blue sky with scattered painterly cumulus clouds, soft afternoon light, no land, no horizon, no trees, just sky and clouds, painterly cartoon adventure game backdrop"),
+
+    # FAR — distant horizon + atmospheric haze + sky. Chroma-key extracts
+    # the sky region post-gen. Variants vary the horizon mood/content.
+    _t("far", "prairie", 210001, "1840s American prairie far horizon at midday, distant cottonwood tree silhouettes on the far horizon line in pale atmospheric haze, soft pale blue sky filling upper portion of frame, painterly cartoon adventure game backdrop, panoramic far view, only the receding horizon line, no foreground, no midground"),
+    _t("far", "prairie", 210002, "1840s American prairie far horizon, distant cool blue mountain ridges sitting on the far horizon in pale atmospheric haze, sharply defined horizon line, soft afternoon sky, painterly cartoon, panoramic far view", variant=1),
+    _t("far", "prairie", 210003, "1840s American prairie far horizon, distant rolling green prairie hills receding into haze, soft midday sky, painterly cartoon, panoramic far view", variant=2),
+    _t("far", "prairie", 210004, "1840s American prairie far horizon at high noon, flat plains horizon with heat shimmer distortion, pale washed-out sky, painterly cartoon, panoramic far view", variant=3),
+    _t("far", "prairie", 210005, "1840s American prairie far horizon under stormy sky, distant slanted rain on the horizon line, dark thunderhead clouds, painterly cartoon, panoramic far view", variant=4),
+
+    # MID — middle-distance leafy painterly trees / brush. Natural composition
+    # (no magenta key trick — that confused the LoRA into scratchy dead-tree
+    # silhouettes). rembg's u2net handles the foreground/background split
+    # post-gen; the compositor then masks to the middle band.
+    _t("mid", "prairie", 220001, "1840s American prairie middle-distance, scattered leafy cottonwood tree clusters of varying sizes painted in the middle and lower portions of frame, full summer foliage, sparse spacing to read as open plains, painterly cartoon, atmospheric haze separating clusters at different depths, no large foreground tree, no foreground grass detail"),
+    _t("mid", "prairie", 220002, "1840s American prairie middle-distance, dense line of leafy cottonwood and willow trees clustered along a hidden stream channel, full summer foliage, painterly cartoon, atmospheric haze, no large foreground tree", variant=1),
+    _t("mid", "prairie", 220003, "1840s American prairie middle-distance, low sagebrush bushes spread through the frame and a few isolated leafy cottonwood trees with full foliage, painterly cartoon, sparse open plains, atmospheric haze", variant=2),
+    _t("mid", "prairie", 220004, "1840s American prairie middle-distance, prairie bush clumps and a few weathered standing dead trees with bare branches, painterly cartoon, sparse open plains, dry late-summer mood, atmospheric haze", variant=3),
+    _t("mid", "prairie", 220005, "1840s American prairie middle-distance, dense clumps of tall golden prairie grass at varying depths, no trees just an ocean of grass receding into mid-distance, painterly cartoon, sparse small bushes scattered through the frame", variant=4),
+
+    # CLOSE — foreground specimens at the very bottom edge. "Sparse" and
+    # "lots of breathing room" language to avoid the dense flower-carpet
+    # the magenta-key v1 produced. Compositor masks to the bottom band.
+    _t("close", "prairie", 230001, "1840s American prairie foreground, sparse scattered tall grass clumps with a few lupine and indian paintbrush wildflowers, painterly cartoon detail along the very bottom edge of frame, lots of breathing room between specimens, no dense flower carpet, no large flowers"),
+    _t("close", "prairie", 230002, "1840s American prairie foreground, sparse golden mid-summer prairie grass and a few small yellow sunflowers, painterly cartoon detail at the very bottom edge of frame, lots of breathing room, no dense carpet of flowers", variant=1),
+    _t("close", "prairie", 230003, "1840s American prairie foreground, sparse short brown late-summer grass with a few small dry brush tufts, painterly cartoon detail at the very bottom edge of frame, dry late-summer mood, lots of empty space between specimens", variant=2),
+    _t("close", "prairie", 230004, "1840s American prairie foreground, sparse prairie grass bent low in wind with a few hardy small purple thistle flowers, painterly cartoon detail at the very bottom edge of frame, windswept feel, lots of breathing room", variant=3),
+    _t("close", "prairie", 230005, "1840s American prairie foreground, sparse fresh green spring grass with a few small yellow buttercups and white wildflowers, painterly cartoon detail at the very bottom edge of frame, lots of breathing room between flowers", variant=4),
 ]
 
 
 if __name__ == "__main__":
-    # Smoke check: 24 entries (5 backdrops × 4 biomes + 4 ground), unique
+    # Smoke check: 40 entries — 24 legacy (20 backdrops + 4 ground) + 16
+    # for prairie 4-layer (1 sky + 5 far + 5 mid + 5 close). Unique
     # filenames and seeds. River is skipped (landmark-only).
-    assert len(PROMPTS) == 24, f"expected 24 prompts, got {len(PROMPTS)}"
-    assert len({p.filename for p in PROMPTS}) == 24, "duplicate filenames"
-    assert len({p.seed for p in PROMPTS}) == 24, "duplicate seeds"
+    assert len(PROMPTS) == 40, f"expected 40 prompts, got {len(PROMPTS)}"
+    assert len({p.filename for p in PROMPTS}) == 40, "duplicate filenames"
+    assert len({p.seed for p in PROMPTS}) == 40, "duplicate seeds"
     for p in PROMPTS:
         print(f"{p.filename:32s} seed={p.seed} {p.width}x{p.height}")
     print(f"OK: {len(PROMPTS)} tiles, no duplicates")

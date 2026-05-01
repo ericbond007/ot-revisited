@@ -165,8 +165,11 @@ def main() -> None:
         print(f"[{i}/{len(selection)}] {out_filename}  ({p.width}x{p.height}, seed={p.seed})", flush=True)
         t0 = time.monotonic()
         raw_path = RAW_DIR / f"{p.layer}-{p.terrain}{lora_suffix}.png"
-        # Backdrops generate seamlessly on the X axis so adjacent tile copies
-        # in BackdropPainting have invisible seams. Ground tiles stay non-seamless.
+        # Parallax-scrolling layers generate seamlessly on the X axis so
+        # adjacent tile copies have invisible seams. Ground tiles stay
+        # non-seamless (no horizontal scroll). The 4-layer rebuild
+        # (sky/far/mid/close) all parallax-scroll, so they get seamless too.
+        is_parallax_layer = p.layer in ("backdrop", "sky", "far", "mid", "close")
         generate_to(
             raw_path,
             f"{lora_triggers}{p.full_prompt}",
@@ -174,15 +177,20 @@ def main() -> None:
             p.width,
             p.height,
             p.seed,
-            seamless=(p.layer == "backdrop"),
+            seamless=is_parallax_layer,
             loras=lora_stack or None,
         )
 
-        # Both layers are opaque now: the backdrop is a full painted scene
-        # (sky baked in), the ground is a trail surface. rembg's alpha pass
-        # was useful when we had silhouette-band fragments, but the new
-        # architecture treats each tile as a complete image.
-        copy_opaque_to_webp(raw_path, out_path)
+        # Alpha dispatch by layer:
+        #   - backdrop / sky / ground: opaque (full scene or full sky;
+        #     alpha would just throw away pixels we want)
+        #   - far / mid / close: alpha-keyed (rembg/u2net extracts the
+        #     painted subject from sky-blue or magenta-key background;
+        #     the resulting WebP composites cleanly over the layer behind)
+        if p.layer in ("backdrop", "sky", "ground"):
+            copy_opaque_to_webp(raw_path, out_path)
+        else:
+            to_webp_with_alpha(raw_path, out_path)
         manifest_key = out_filename
 
         # NOTE: seam.py post-process was tested but disabled here — every

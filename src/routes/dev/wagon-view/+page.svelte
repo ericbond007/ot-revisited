@@ -37,6 +37,7 @@
   }
 
   const useRaster = $derived(page.url.searchParams.get('raster') === '1');
+  const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
   const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
 
   const previewState = $derived.by(() => {
@@ -65,7 +66,7 @@
     };
   });
 
-  function toggleQueryFlag(flag: 'raster' | 'groundraster') {
+  function toggleQueryFlag(flag: 'raster' | 'fourlayer' | 'groundraster') {
     const url = new URL(window.location.href);
     const isOn = url.searchParams.get(flag) === '1';
     if (isOn) url.searchParams.delete(flag);
@@ -146,8 +147,13 @@
     <button type="button" class="restart" onclick={restart}>↺ Restart</button>
 
     <label class="cb raster-toggle">
+      <input type="checkbox" checked={useFourLayer} onchange={() => toggleQueryFlag('fourlayer')} />
+      <span>4-layer painted backdrop (<code>?fourlayer=1</code>) — sky/far/mid/close stack</span>
+    </label>
+
+    <label class="cb raster-toggle">
       <input type="checkbox" checked={useRaster} onchange={() => toggleQueryFlag('raster')} />
-      <span>Raster backdrop painting (<code>?raster=1</code>)</span>
+      <span>Raster backdrop painting (<code>?raster=1</code>) — single panorama</span>
     </label>
 
     <label class="cb raster-toggle">
@@ -164,7 +170,7 @@
 
   <footer>
     <p class="hint">
-      Backdrop: <strong>{useRaster ? `raster v${variant}` : 'svg'}</strong> |
+      Backdrop: <strong>{useFourLayer ? `4-layer v${variant}` : (useRaster ? `raster v${variant}` : 'svg')}</strong> |
       Ground: <strong>{useGroundRaster ? 'raster' : 'svg'}</strong> |
       Terrain: <strong>{terrain}</strong> |
       Weather: <strong>{weather}</strong> |

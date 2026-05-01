@@ -30,6 +30,7 @@
   import NearLayer from './terrain/NearLayer.svelte';
   import GroundBand from './terrain/GroundBand.svelte';
   import BackdropPainting from './terrain/BackdropPainting.svelte';
+  import PaintedBackdrop from './terrain/painted/PaintedBackdrop.svelte';
   import { SCENE_W, SCENE_H, HORIZON_Y, GROUND_Y, type TimeOfDay } from './terrain';
 
   // Weather + sky
@@ -63,12 +64,15 @@
   let { state: gameState, timeOfDay = 'day', paused = false, backdropVariant }: Props = $props();
 
   // ---------- raster mode flags ----------
-  // Two independent toggles via URL query so the painted-backdrop choice
-  // and the trail-strip choice can be compared independently:
-  //   ?raster=1       — use BackdropPainting (one painting per biome)
-  //                     instead of the SVG Far/Mid/Near trio
+  // Independent toggles via URL query so each backdrop strategy can be
+  // compared:
+  //   ?fourlayer=1    — use PaintedBackdrop (sky/far/mid/close stack);
+  //                     takes precedence over ?raster=1 if both are set
+  //   ?raster=1       — use BackdropPainting (single 4:1 panorama per
+  //                     biome) instead of the SVG Far/Mid/Near trio
   //   ?groundraster=1 — use the raster ground strip in GroundBand
   //                     instead of its two-stop SVG gradient
+  const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
   const useBackdropRaster = $derived(page.url.searchParams.get('raster') === '1');
 
   // ---------- animation tick ----------
@@ -195,24 +199,32 @@
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
 
-      <!-- 1. sky -->
-      <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill="url(#ws-sky)" />
+      {#if !useFourLayer}
+        <!-- 1. sky gradient (rect filled with SkyGradient) — suppressed
+             in fourlayer mode where PaintedBackdrop draws its own sky. -->
+        <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill="url(#ws-sky)" />
 
-      <!-- 2. sun / moon — left side (clear of wagon) at y=410, which
-           sits in the upper third of the strip's sky band (visible
-           range y=380..456). -->
-      <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={410} t={tEff} />
+        <!-- 2. sun / moon — left side (clear of wagon) at y=410, which
+             sits in the upper third of the strip's sky band (visible
+             range y=380..456). Suppressed in fourlayer mode (sun is
+             painted into the sky tile). -->
+        <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={410} t={tEff} />
 
-      <!-- 3. clouds — bandY=400 plants the cloud band a bit lower
-           in the sky (spread y=400..472) so the puffs don't kiss
-           the top edge of the strip. Drift is parallax-coupled to
-           the same scrollX the terrain layers use, so direction
-           and "stops when stopped" behavior follow ground motion. -->
-      <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
+        <!-- 3. clouds — bandY=400 plants the cloud band a bit lower
+             in the sky. Suppressed in fourlayer mode (clouds are in the
+             painted sky tile). -->
+        <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
+      {/if}
 
-      <!-- 4. backdrop / parallax: in raster mode one painting replaces
-           Far + Mid + Near; SVG mode keeps the original three layers. -->
-      {#if useBackdropRaster}
+      <!-- 4. backdrop / parallax — three modes:
+             fourlayer mode: PaintedBackdrop (sky/far/mid/close stack)
+             raster mode:    BackdropPainting (single 4:1 panorama)
+             default:        SVG Far + Mid + Near layers -->
+      {#if useFourLayer}
+        <PaintedBackdrop terrain={gameState.location.terrain}
+                         weather={gameState.weather}
+                         {scrollX} variant={backdropVariant} />
+      {:else if useBackdropRaster}
         <BackdropPainting terrain={gameState.location.terrain}
                           {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y}
                           variant={backdropVariant} />
@@ -221,9 +233,11 @@
       {/if}
 
       <!-- 5. landmarks (layered on top of the backdrop, behind mid in SVG mode) -->
-      <LandmarkLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      {#if !useFourLayer}
+        <LandmarkLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      {/if}
 
-      {#if !useBackdropRaster}
+      {#if !useBackdropRaster && !useFourLayer}
         <!-- 6. mid parallax (SVG mode only) -->
         <MidLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
       {/if}
@@ -232,7 +246,7 @@
       <GroundBand terrain={gameState.location.terrain} groundY={GROUND_Y}
                   h={SCENE_H - GROUND_Y} w={SCENE_W} idPrefix="ws" />
 
-      {#if !useBackdropRaster}
+      {#if !useBackdropRaster && !useFourLayer}
         <!-- 8. near parallax (SVG mode only) -->
         <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
       {/if}
