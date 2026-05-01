@@ -74,7 +74,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 | #    |                                                                                                                  |
 | ---- | ---------------------------------------------------------------------------------------------------------------- |
-| #213 | Epsom salts + medicine kit fill-out (camphor, paregoric, hartshorn, Dover's powder, castor oil) — period-real    |
+| #213 | ✅ shipped — see Recently shipped                                                                                  |
 | #214 | Axle grease consumable — auto-burns ~1 unit/200mi; running out raises wheel-failure odds                         |
 | #215 | Spare ox bow inventory item — period-real wear-and-replace; bows crack under load (Marcy spec'd 2 spares/wagon)  |
 | #216 | Trade goods bundle expansion — mirrors, vermilion, awls, brass thimbles, calico cloth, pocket knives             |
@@ -167,6 +167,9 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 - **wagon-bg passing-landmark rasters** — generate painterly raster sprites for the wagon-view passing landmarks currently in `src/lib/ui/wagon/landmarks/` (ChimneyRock, ScottsBluff, IndependenceRock, CourthouseRock, plus generic Fort, FerryPost, MountainPass, ValleyArch, TreeClump). Drop-in replacement for the SVG silhouettes inside `LandmarkLayer.svelte`, behind the same `?raster=1` flag. Stretch goal: integrate landmarks the player passes-but-doesn't-stop-at — visible-in-the-distance only, not gameplay stops — so the trail feels populated. Fits into wagon-bg Phase 1.5 alongside sky/cloud/sun rasters.
 
 ## Recently shipped
+
+- **#213** Period medicine kit fill-out — added 6 historically-real wagon-chest staples to `items.ts` (epsom_salts, camphor, paregoric, hartshorn, dovers_powder, castor_oil). Each plugs into the existing `treatmentItems` arrays as gentler alternatives: epsom/paregoric/castor_oil for dysentery (avoid calomel mercury risk), Dover's powder + camphor for cholera/typhoid/measles fever-sweat treatment, hartshorn for snakebite folk-remedy. Prices in `prices.ts` follow Marcy 1850s Missouri-River rates. Fort Laramie stocks the full line; The Dalles + Fort Hall partial. Available at Independence outfitter. 9 new tests; 846/846 green.
+
 
 - **#212** Travel-stage hero — `/play` layout rework. WagonScene moves to the top of the left column (where TrailMapSnippet used to be), action bar right under it. New `.travel-bottom` row places TrailMapSnippet + EventLog 50/50 below the action bar. Camp / Town / Landmark / Completed stages keep their existing layout (full-width log below the action bar). Gated on a new `isTravelStage` derived. Map snippet's hard-coded 380px height overridden via `:global(.snippet-host)` so it can flex within the new row. WagonScene at its natural strip aspect — bespoke art for the bigger canvas remains a follow-up under #156/#157/#159.
 - **#208 + #209** Two missing-history newspaper headlines flagged in #207. **#208 Ward Massacre** (Aug 1854 Snake River; fires Sep-1854 through 1856): Bannock -10, Shoshone -5. **#209 Yakima War** (Nov 1855 onward through 1858): Walla Walla -12, Umatilla -8, Cayuse -5. Both compose with the existing 1847 Whitman / 1851 Treaty / 1854 Grattan / 1855 Harney pipeline — pure data-file additions, no system changes. 6 new tests.
