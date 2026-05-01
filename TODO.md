@@ -66,7 +66,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Items / inventory expansion
 
-- **#215** — [H] Spare ox bow — Marcy specs 2 spares/wagon, bows crack under load
 - **#216** — [H] Trade goods bundle — mirrors, vermilion, awls, thimbles, calico, pocket knives
 - **#217** — [H] Guidebook item (Marcy / Palmer / Ware) — owning unlocks fork previews + ETA
 - **#218** — [H] Tent (canvas A-frame) — reduces cold-camp morale drain
@@ -146,6 +145,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#215** Spare ox bow — new `ox_bow` item (livestock, 5 lb, $2.00) sits next to the existing `yoke` (Marcy 1859 spec'd 2 spares/wagon; the bow takes the shear load and is what cracks, not the yoke beam itself). Outfitter + 5 forge posts (Hollenberg, Kearny, Laramie, Hall, Dalles) stock it. New `ox_bow_cracks` travel event (weight 3, wagon category): consumes a spare bow if held; rope-lash fallback drops wagon condition by 5 with a "team will limp" log line. Carpenter's part-save chance applies. 7 new tests; 864/864 green.
 - **#134** Water keg glyph — new bespoke `keg.svelte` stat-icon (wood-staved barrel with iron hoops, side view, watercolor SI vocabulary). Wired through `StatIconKind` + `StatIcon.svelte` REGISTRY + `icon-dictionary.stats.keg` (`🛢️` text fallback). InventoryPanel's three water-amount lines now render `<StatIcon kind="keg">` instead of the droplet emoji — the wagon's water container is a keg, not a droplet. /dev/stat-icons specimen route updated.
 - **#173** TownStage hero art — hoisted `<LandmarkArt id={landmark.id} {abandoned} />` into TownStage between the hero header and the service grid, gated on `hasLandmarkArt(landmark.id)` so unmapped posts fall through cleanly. Same `isLandmarkAbandoned` derived as LandmarkStage so a shuttered Fort Hall (1856+) tints correctly. New `.art-canvas` style with 16:5 aspect, slightly tighter than LandmarkStage's 16:7 since the post hero already eats vertical room.
 - **#200** Discard-from-wagon while traveling — dropped the `atLandmarkId` gate on the `discardItem` server action and the matching `{#if atLandmark}` in `InventoryModal`. Log line now flexes between "at <landmark>" and "on the trail" depending on context. Forcing the player to a fort or rock just to pitch a busted wheel was fiddly UX; emigrants did dump on the open trail when desperate.
