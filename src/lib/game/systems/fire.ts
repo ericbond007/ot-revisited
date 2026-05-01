@@ -115,6 +115,30 @@ export function attemptFire(state: GameState, _rng: Rng): GameState {
  * Note: takes `_rng` for call-site symmetry with other systems, but
  * ignores it in favor of a deterministic day-seeded draw.
  */
+/**
+ * Fuel flavor by terrain (#219). Wood was scarce-to-absent on the
+ * plains and the high desert; emigrants burned what they had:
+ *   prairie → buffalo chips ("dried bison dung," gathered in canvas
+ *             aprons by women + kids — a near-universal surprise to
+ *             eastern travelers).
+ *   desert  → sage brush (greasewood, sage roots; smoky and bitter
+ *             but it lit).
+ *   forest / mountains / river → firewood as normal.
+ *
+ * The mechanic stays unchanged — it's all `state.resources.firewood`
+ * — but the label and log line read terrain-correct.
+ */
+export function fuelFlavorFor(terrain: string): { material: string; source: string } {
+  switch (terrain) {
+    case 'prairie': return { material: 'buffalo chips', source: 'plains' };
+    case 'desert':  return { material: 'sage brush', source: 'sagebrush flats' };
+    case 'forest':  return { material: 'firewood', source: 'forest' };
+    case 'mountains': return { material: 'firewood', source: 'mountains' };
+    case 'river':   return { material: 'firewood', source: 'river bank' };
+    default:        return { material: 'firewood', source: terrain };
+  }
+}
+
 export function gatherFirewoodOnTravel(state: GameState, _rng: Rng): GameState {
   const baseMean = FIREWOOD_GATHER_MEAN[state.location.terrain];
   if (baseMean <= 0) return state;
@@ -151,9 +175,10 @@ export function gatherFirewoodOnTravel(state: GameState, _rng: Rng): GameState {
   // against the clear-day mean (baseMean), not the wet-discounted one,
   // so the threshold tracks "how much you'd normally get here".
   if (gained < baseMean * WET_GATHER_LOG_THRESHOLD && factor < 1.0) {
+    const fuel = fuelFlavorFor(state.location.terrain);
     const woodNote = gained <= 0
-      ? 'Wet weather kept any firewood out of reach today.'
-      : `Wet weather kept the firewood pile thin today — only ${gained} lb gathered.`;
+      ? `Wet weather kept any ${fuel.material} out of reach today.`
+      : `Wet weather kept the ${fuel.material} pile thin today — only ${gained} lb gathered.`;
     next = {
       ...next,
       eventLog: [...next.eventLog, { day: state.day, text: woodNote }]
