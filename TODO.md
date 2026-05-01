@@ -75,7 +75,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 | #    |                                                                                                                  |
 | ---- | ---------------------------------------------------------------------------------------------------------------- |
 | #213 | ✅ shipped — see Recently shipped                                                                                  |
-| #214 | Axle grease consumable — auto-burns ~1 unit/200mi; running out raises wheel-failure odds                         |
+| #214 | ✅ shipped — see Recently shipped                                                                                  |
 | #215 | Spare ox bow inventory item — period-real wear-and-replace; bows crack under load (Marcy spec'd 2 spares/wagon)  |
 | #216 | Trade goods bundle expansion — mirrors, vermilion, awls, brass thimbles, calico cloth, pocket knives             |
 | #217 | Guidebook item (Marcy / Palmer / Ware) — owning unlocks fork previews + ETA                                      |
@@ -168,6 +168,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#214** Axle grease consumable — `tar_bucket` no longer "own one = forever bonus"; new `applyAxleGrease(state, miles)` in `wagon.ts` burns one bucket every 500 mi of travel via a `flags._greaseSinceLastDose` counter. `tickWagon` math unchanged: tar_bucket > 0 → -25% wagon decay; runs out → back to baseline. Counter saturates at threshold while empty so a freshly-bought bucket auto-applies on the next mile. Wired into `applyTravel` alongside `gatherFirewoodOnTravel`. Event-log line on the dry-out transition. ~4-5 buckets across a 2195-mi journey. Item description updated. 10 new tests; 856/856 green.
 - **#213** Period medicine kit fill-out — added 6 historically-real wagon-chest staples to `items.ts` (epsom_salts, camphor, paregoric, hartshorn, dovers_powder, castor_oil). Each plugs into the existing `treatmentItems` arrays as gentler alternatives: epsom/paregoric/castor_oil for dysentery (avoid calomel mercury risk), Dover's powder + camphor for cholera/typhoid/measles fever-sweat treatment, hartshorn for snakebite folk-remedy. Prices in `prices.ts` follow Marcy 1850s Missouri-River rates. Fort Laramie stocks the full line; The Dalles + Fort Hall partial. Available at Independence outfitter. 9 new tests; 846/846 green.
 
 
