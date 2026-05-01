@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import type { Landmark, PostKind } from '$lib/game/content/landmarks';
-  import { isNativeCampHostile } from '$lib/game/content/landmarks';
+  import { isNativeCampHostile, isLandmarkAbandoned } from '$lib/game/content/landmarks';
   import { getTribeAttitude } from '$lib/game/systems/tribe-relations';
   import { enhance } from '$app/forms';
+  import LandmarkArt, { hasLandmarkArt } from '$lib/ui/landmark-art/LandmarkArt.svelte';
   import TownActionModal, { type TownActionKind } from './TownActionModal.svelte';
   import {
     REPAIR_DOLLARS_PER_POINT,
@@ -69,6 +70,9 @@
 
   const flavor = $derived(landmark.blurb ?? 'You enter the post.');
   const guideActive = $derived(((gameState.flags._guideUntilDay as number | undefined) ?? 0) > gameState.day);
+  // Mirror LandmarkStage's abandoned-tinting on the hero art (#173). The
+  // post can be shuttered (Fort Hall 1856+) or a fled native camp.
+  const abandoned = $derived(isLandmarkAbandoned(landmark, gameState.date.year));
 
   // Native camp tribe-hostility gate (#202). When the affiliated tribe
   // is hostile, the camp is empty (band fled / war is on) — replace
@@ -103,6 +107,15 @@
       {/if}
     </div>
   </div>
+
+  <!-- Hero artwork (#173). Same per-landmark SVG used by LandmarkStage,
+       hoisted here so trading-post visits get the bespoke painting too.
+       Falls back gracefully when the post has no registered art yet. -->
+  {#if hasLandmarkArt(landmark.id)}
+    <div class="art-canvas">
+      <LandmarkArt id={landmark.id} {abandoned} />
+    </div>
+  {/if}
 
   <!-- Service grid -->
   <div class="services">
@@ -236,6 +249,16 @@
     border-color: var(--post-accent, var(--c-rust));
     border-width: 2px;
     background: linear-gradient(180deg, var(--c-panel) 0%, #1a1612 100%);
+  }
+
+  /* Hero artwork canvas (#173) — bespoke per-landmark SVG between
+     header and the service grid. Aspect locked to a wide cinematic
+     band that matches LandmarkStage's framing. */
+  .art-canvas {
+    border-radius: 3px;
+    overflow: hidden;
+    aspect-ratio: 16 / 5;
+    border: 1px solid rgba(138, 90, 42, 0.35);
   }
 
   /* Hero block — kind tag, title, flavor, cash readout. */
