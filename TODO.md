@@ -22,12 +22,17 @@ _(empty — items shipped or moved to other sections)_
 
 ## UI / UX polish
 
+### In Progress
+
 - **#157** — Terrain + weather visual revisit — parallax, clouds, rain/snow
 - **#159** — WagonScene strip framing pass — viewBox crop + cloud anchoring
-- **#167** — Trail-map cluster labels overlap at modal tier 1
 - **#169** — WagonScene paused state still reads as motion
 - **#147** — Success/arrival view rework — richer than current score panel
+
+### TODO
+
 - **#112** — Wagon modal visual redesign
+- **#167** — Trail-map cluster labels overlap at modal tier 1
 - **#86** — Expand hover tooltips across all data points
 - **#102** — Pre-made vs custom starter kit choice
 - **#134** — Water keg/barrel glyph next to water amount
