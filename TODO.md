@@ -74,7 +74,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Daily routine mechanics
 
-- **#219** — [H] Buffalo chips on plains/desert — folds into gather_firewood
 - **#220** — [H] Teamster upgrade — stray-oxen mitigation bonus
 - **#221** — [H] Stray oxen morning delay — 2-4hr; Teamster/dog/picket gates
 - **#222** — [H] Wagon-churned butter — passive when milk cow + crock (#139)
@@ -145,6 +144,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#219** Terrain-flavored fuel — `gather_firewood` camp action and the passive travel-day gather both now use a new `fuelFlavorFor(terrain)` helper. Plains → "buffalo chips" (women + kids gathering chips in canvas aprons was a near-universal surprise to eastern emigrants); desert → "sage brush"; forest/mountains/river → unchanged firewood. Resource bucket stays `firewood` — purely flavor on the log + action sub-label. Camp action label generalized from "Gather firewood" to "Gather fuel". 8 new tests; 872/872 green.
 - **#215** Spare ox bow — new `ox_bow` item (livestock, 5 lb, $2.00) sits next to the existing `yoke` (Marcy 1859 spec'd 2 spares/wagon; the bow takes the shear load and is what cracks, not the yoke beam itself). Outfitter + 5 forge posts (Hollenberg, Kearny, Laramie, Hall, Dalles) stock it. New `ox_bow_cracks` travel event (weight 3, wagon category): consumes a spare bow if held; rope-lash fallback drops wagon condition by 5 with a "team will limp" log line. Carpenter's part-save chance applies. 7 new tests; 864/864 green.
 - **#134** Water keg glyph — new bespoke `keg.svelte` stat-icon (wood-staved barrel with iron hoops, side view, watercolor SI vocabulary). Wired through `StatIconKind` + `StatIcon.svelte` REGISTRY + `icon-dictionary.stats.keg` (`🛢️` text fallback). InventoryPanel's three water-amount lines now render `<StatIcon kind="keg">` instead of the droplet emoji — the wagon's water container is a keg, not a droplet. /dev/stat-icons specimen route updated.
 - **#173** TownStage hero art — hoisted `<LandmarkArt id={landmark.id} {abandoned} />` into TownStage between the hero header and the service grid, gated on `hasLandmarkArt(landmark.id)` so unmapped posts fall through cleanly. Same `isLandmarkAbandoned` derived as LandmarkStage so a shuttered Fort Hall (1856+) tints correctly. New `.art-canvas` style with 16:5 aspect, slightly tighter than LandmarkStage's 16:7 since the post hero already eats vertical room.
