@@ -1520,3 +1520,11 @@ EVENTS.push(...PARTY_EVENTS);
 // clear spring bonus.
 import { WATER_EVENTS } from './water-events';
 EVENTS.push(...WATER_EVENTS);
+
+// #225 nooning event slot — midday flavor encounters that join the
+// regular road-event pool. Period reality: the noon stop was the
+// trail's most-described social moment. Most events are small flavor
+// + ±1 morale; the daily fatigue benefit of nooning stays implicit
+// in the existing ox-fatigue calibration.
+import { NOON_EVENTS } from './noon-events';
+EVENTS.push(...NOON_EVENTS);
