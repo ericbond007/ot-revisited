@@ -140,16 +140,51 @@ function pickUpcomingLandmark(state: GameState, rng: Rng): Landmark | null {
   return ahead[rng.int(0, ahead.length - 1)];
 }
 
+/** Pool of California-bound chatter that surfaces post-1849 (#180).
+ *  Fires when `_californiaUnlocked` is set — the Gold Rush headline
+ *  flips that flag (see news-headlines.ts). Authored from period diaries
+ *  + emigrant letters: forty-niner talk, Hudspeth Cutoff, Hangtown
+ *  yields, the eastward emptying of Indiana / Iowa towns. */
+const CALIFORNIA_GOSSIP_POOL: readonly string[] = [
+  'A man from Hangtown swore the diggings paid an ounce a day — and the rich ones never bragged.',
+  'Half this train\'s bound for the gold fields. Schoonmaker\'s wife wouldn\'t go past Fort Hall.',
+  'Forty-niners stripped the Sierra streams. They\'re prospecting south of the Mokelumne now.',
+  'Letters home from Marysville say a man saves a thousand dollars in a season.',
+  'The Sublette Cutoff\'s seeing more wagons than the main route this year.',
+  'There\'s a new road south from Fort Hall — Hudspeth\'s — saves a week to the diggings.',
+  'Whole counties back east are empty. Last winter four farms in our township pulled stakes for California.',
+  'Mormon ferry up at the Green is fat on Californian gold-traffic.',
+  'A train of forty-niners passed two days ago — most of \'em farmers who\'d never held a pan.',
+  'San Francisco\'s a city of tents now. They say a square meal costs a dollar in dust.'
+];
+
+/** Chance a post-1849 post-gossip roll surfaces a California line
+ *  instead of the normal topic mix. 25% means roughly one in four
+ *  arrivals after the Gold Rush has Californian flavor — high enough
+ *  to feel like the trail's mood shifted, low enough that other gossip
+ *  topics (tribes, weather, hazards) still come through. */
+const CALIFORNIA_GOSSIP_CHANCE = 0.25;
+
 /** Generate a single piece of gossip for a trading-post arrival. */
 export function generatePostGossip(
   state: GameState,
   rng: Rng,
   postName: string
 ): NewsItem | null {
-  // Five-way coin flip across topic templates.
-  const roll = rng.int(0, 4);
   const source = `${postName} clerk`;
   const day = state.day;
+
+  // California-flavor gossip (#180) — after the Gold Rush headline
+  // unlocks the flag, ~25% of posts buzz about the diggings.
+  if (state.flags._californiaUnlocked && rng.chance(CALIFORNIA_GOSSIP_CHANCE)) {
+    return {
+      text: rng.pick(CALIFORNIA_GOSSIP_POOL),
+      source, topic: 'opportunity', day
+    };
+  }
+
+  // Five-way coin flip across topic templates.
+  const roll = rng.int(0, 4);
 
   if (roll === 0) {
     const { tribe, level } = pickTribeForRumor(state, rng);
