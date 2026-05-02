@@ -20,7 +20,8 @@ import { hasLiveDoctor } from '../professions/predicates';
  *
  * Ties into:
  *   - day-tick (decay + threshold morale + filth-disease roll)
- *   - wash_clothes camp action (+30 across alive party)
+ *   - wash_clothes camp action (+30, or +50 with soap — #269)
+ *   - bath-house town service at Laramie / Dalles (+50 — #270)
  *   - first-Sweetwater arrival event (+50 one-time set-piece)
  */
 

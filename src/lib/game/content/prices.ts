@@ -93,6 +93,9 @@ export const PRICES: Record<string, PriceEntry> = {
   shovel:       { buy: 4.00,  sell: 2.00 },
   salt:         { buy: 1.50,  sell: 0.60 },
   saleratus:    { buy: 0.20,  sell: 0.08 },
+  // #269 Lye soap. Per Marcy 1859 — "soap, 5¢ a bar" wholesale; emigrant
+  // outfitters charged 8-10× markup at Independence and more on the trail.
+  soap:         { buy: 0.50,  sell: 0.20 },
   lard:         { buy: 0.25,  sell: 0.10 },
   compass:      { buy: 8.00,  sell: 4.00 },
   water_skin:   { buy: 2.00,  sell: 1.00 },

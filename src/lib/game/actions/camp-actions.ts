@@ -54,6 +54,7 @@ export type CampActionId =
   | 'gather_firewood'
   | 'wash_clothes'
   | 'press_cheese'
+  | 'make_soap'
   | 'cannibalism_straws';
 
 function logLine(s: GameState, text: string): GameState {
@@ -667,10 +668,19 @@ const pressCheese: CampAction = {
 // boiled lye and beat clothes on rocks, kids splashed, men shaved.
 // Took most of a day; we charge 3 hours for the wash itself and
 // trust the camp-day budget for the rest.
+//
+// #269: with at least one bar of soap on hand, the wash lifts +50
+// cleanliness (matches the bath-house single-visit boost) and consumes
+// one bar. Without soap, +30 — the original behavior. Frizzell 1852 /
+// Royce 1849 describe trail laundry as "barely better than a rinse"
+// without soap; with a fresh bar the same wash was "the cleanest we've
+// been since St. Joseph."
+const WASH_WITH_SOAP_BOOST = 50;
+const WASH_WITHOUT_SOAP_BOOST = 30;
 const washClothes: CampAction = {
   id: 'wash_clothes',
   label: 'Wash clothes & bathe',
-  sub: '3 hr · river camp only · +30 cleanliness all',
+  sub: '3 hr · river camp only · +30 cleanliness (+50 with soap)',
   icon: '🧺',
   hourCost: 3,
   availability: (s) => {
@@ -680,10 +690,55 @@ const washClothes: CampAction = {
     return { available: true };
   },
   apply: (s) => {
-    const next = washAll(s, 30);
+    const hasSoap = (s.inventory.soap ?? 0) >= 1;
+    const boost = hasSoap ? WASH_WITH_SOAP_BOOST : WASH_WITHOUT_SOAP_BOOST;
+    const next = washAll(s, boost);
+    const inventory = hasSoap
+      ? { ...next.inventory, soap: (next.inventory.soap ?? 0) - 1 }
+      : next.inventory;
+    const flavor = hasSoap
+      ? `Boiled water, lathered the lye soap, beat the clothes on the rocks, and bathed in the river. Cleanliness +${boost}, one bar of soap used. Morale +2.`
+      : `Boiled water, beat the clothes on the rocks, and bathed in the river. Cleanliness +${boost}. Morale +2.`;
     return logLine(
-      { ...next, morale: Math.min(100, next.morale + 2) },
-      'Boiled water, beat the clothes on the rocks, and bathed in the river. Cleanliness restored. Morale +2.'
+      { ...next, inventory, morale: Math.min(100, next.morale + 2) },
+      flavor
+    );
+  }
+};
+
+// #269 Lye-soap making. Period reality: a pioneer staple chore — leach
+// lye from hardwood ashes (we abstract this; the cookfire produces ash
+// daily), then boil with rendered tallow until the mix saponifies into
+// a hard cake. Beecher 1846 + Frizzell 1852 record roughly 1.5 lb
+// tallow per bar; we round to 3 lb tallow → 2 bars to keep the math
+// friendly and the trade-off real — tallow is a desperation food
+// (draw order 6.5), so burning 3 lb of it for soap is a real choice.
+const SOAP_TALLOW_INPUT = 3;
+const SOAP_OUTPUT_BARS = 2;
+
+const makeSoap: CampAction = {
+  id: 'make_soap',
+  label: 'Make lye soap',
+  sub: `2 hr · ${SOAP_TALLOW_INPUT} lb tallow → ${SOAP_OUTPUT_BARS} bars soap`,
+  icon: '🧼',
+  hourCost: 2,
+  availability: (s) => {
+    if ((s.inventory.tallow ?? 0) < SOAP_TALLOW_INPUT) {
+      return { available: false, reason: `Need ${SOAP_TALLOW_INPUT} lb of tallow — render it from a hunt kill.` };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    return logLine(
+      {
+        ...s,
+        inventory: {
+          ...s.inventory,
+          tallow: (s.inventory.tallow ?? 0) - SOAP_TALLOW_INPUT,
+          soap: (s.inventory.soap ?? 0) + SOAP_OUTPUT_BARS
+        }
+      },
+      `Boiled ${SOAP_TALLOW_INPUT} lb of tallow with cookfire ash. ${SOAP_OUTPUT_BARS} hard bars of lye soap.`
     );
   }
 };
@@ -900,6 +955,7 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   // Practical
   gatherFirewood,
   washClothes,
+  makeSoap,
   findWater,
   boilWater,
   // Shovel work (gated on having a shovel)
@@ -925,6 +981,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   gather_firewood: gatherFirewood,
   wash_clothes: washClothes,
   press_cheese: pressCheese,
+  make_soap: makeSoap,
   find_water: findWater,
   boil_water: boilWater,
   dig_well: digWell,
