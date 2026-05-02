@@ -121,6 +121,16 @@ export function milesPerDay(state: GameState): number {
 // Scenic landmarks just flavor-log and keep rolling.
 const STOP_WORTHY_KINDS = new Set<string>(['trading_post', 'river', 'end']);
 
+// Detour flags that bypass an otherwise-stop-worthy landmark — the
+// player committed to a strategic route in an earlier choice and the
+// landmark is being walked past, not visited. Centralized here so #235
+// (Barlow Road vs Columbia raft) and any future bypass plug in the
+// same way.
+function isBypassed(state: GameState, landmarkId: string): boolean {
+  if (landmarkId === 'snake_three_island' && state.flags._threeIslandDetour) return true;
+  return false;
+}
+
 export function applyTravel(state: GameState, rng: Rng): GameState {
   if (state.completed) return state;
 
@@ -168,7 +178,7 @@ export function applyTravel(state: GameState, rng: Rng): GameState {
     // Adopt the next leg's terrain — but river landmarks are decision waypoints,
     // not travel legs. Keep the current terrain instead when the next landmark is a river.
     const newTerrain = after?.kind === 'river' ? next.location.terrain : (after?.terrain ?? next.location.terrain);
-    const stopHere = STOP_WORTHY_KINDS.has(nextLandmark.kind);
+    const stopHere = STOP_WORTHY_KINDS.has(nextLandmark.kind) && !isBypassed(startState, nextLandmark.id);
 
     next = {
       ...next,

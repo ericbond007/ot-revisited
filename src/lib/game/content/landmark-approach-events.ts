@@ -16,6 +16,64 @@ function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
 }
 
+// #234 — Three Island Crossing decision. Period reality: at the Snake's
+// gravel braid by the three islands, parties chose between fording north
+// (riskier wet crossing, then easier going past Boise) or staying on the
+// south bank through the Bruneau / Birds-of-Prey arid stretch (no river,
+// but a 60-mile dry pull — alkali springs, sage, and sun). This vignette
+// fires ~10 miles out so the player sets the route before reaching the
+// braided gravel. Default: ford here. Detour: skip the river entirely
+// via a flag that applyTravel reads, plus inline penalties representing
+// the desert pull.
+const threeIslandRouteChoice: GameEvent = {
+  id: 'approach_three_island_routes',
+  category: 'historical',
+  title: 'The Snake — ford or skirt?',
+  body: "The trail forks. North across the Snake at the three gravel islands — wet, swift, but the trail past Boise runs easy. Or you can stay south through the Bruneau, a sun-baked sixty miles of sage, alkali springs, and worn cattle. Diaries call it the Birds-of-Prey country. Pick before you hit the gravel.",
+  weight: 1,
+  choices: [
+    {
+      id: 'ford_north',
+      icon: '🌊',
+      label: 'Ford at Three Island',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => logLine(
+        s,
+        'Decided on the Three Island ford. The river is ahead.'
+      )
+    },
+    {
+      id: 'detour_south',
+      icon: '🏜️',
+      label: 'Skirt south through the Bruneau',
+      silentLog: true,
+      apply: (s) => {
+        // Commit the route. The engine's stop-worthy check honors the
+        // flag and walks past the river without parking.
+        const flags = { ...s.flags, _threeIslandDetour: true };
+        // Desert pull penalty applied at decision time, modeling the
+        // ~60-mile waterless stretch.
+        const water = Math.max(0, Math.floor(s.resources.water * 0.5));
+        const oxen = s.oxen.map((o) =>
+          o.health > 0 ? { ...o, fatigue: Math.min(100, (o.fatigue ?? 0) + 18) } : o
+        );
+        const morale = Math.max(0, s.morale - 4);
+        return logLine(
+          {
+            ...s,
+            flags,
+            resources: { ...s.resources, water },
+            oxen,
+            morale
+          },
+          'Took the south-bank detour. Sage, sun, alkali. Water -50%, oxen worn, morale -4.'
+        );
+      }
+    }
+  ]
+};
+
 const chimneyRockFirstSight: GameEvent = {
   id: 'approach_chimney_rock',
   category: 'historical',
@@ -55,7 +113,8 @@ interface ApproachEntry {
 }
 
 export const LANDMARK_APPROACH_EVENTS: readonly ApproachEntry[] = [
-  { landmarkId: 'chimney_rock', milesAway: 30, event: chimneyRockFirstSight }
+  { landmarkId: 'chimney_rock', milesAway: 30, event: chimneyRockFirstSight },
+  { landmarkId: 'snake_three_island', milesAway: 10, event: threeIslandRouteChoice }
 ];
 
 /** Per-landmark one-shot flag key. */
