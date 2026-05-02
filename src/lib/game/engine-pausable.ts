@@ -17,6 +17,7 @@ import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyHolidays } from './systems/holidays';
+import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import type { GameEvent } from './content/events';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickText } from './content/text-pools';
@@ -50,6 +51,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // are zeroed out first; heat-day rancidity nibbles bacon + salt_pork.
   s = applySpoilage(s);
   s = applyHeatSpoilage(s);
+  // Cleanliness (#230) — decay first, then threshold morale + filth
+  // disease before consumption so today's dirt nicks today's mood.
+  s = decayCleanliness(s);
+  s = applyDirtyMorale(s);
+  s = applyFilthDiseaseRisk(s, rng);
   s = applyDailyConsumption(s);
   s = applyDietVariety(s);
   s = applyHotDrinks(s);

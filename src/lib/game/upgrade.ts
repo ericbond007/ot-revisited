@@ -21,12 +21,15 @@ function inferSex(name: string): Sex {
 }
 
 function upgradeMember(m: PartyMember): PartyMember {
-  // Already migrated: both fields present.
-  if (m.sex && m.kind) return m;
+  // Pre-#230 saves don't have cleanliness; default to 100 (don't punish
+  // existing parties retroactively for a mechanic they couldn't see).
+  const cleanliness = typeof m.cleanliness === 'number' ? m.cleanliness : 100;
+  if (m.sex && m.kind && typeof m.cleanliness === 'number') return m;
   return {
     ...m,
     sex: m.sex ?? inferSex(m.name),
-    kind: m.kind ?? 'adult'
+    kind: m.kind ?? 'adult',
+    cleanliness
   };
 }
 

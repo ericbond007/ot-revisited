@@ -77,6 +77,7 @@ function makeMember(
     isLeader,
     age: 30,
     health: 100,
+    cleanliness: 100,
     conditions: [],
     dead: false
   };
