@@ -9,6 +9,7 @@ import {
 } from '../systems/tribe-relations';
 import { addNews, effectHuntBonus, effectCholeraScare } from '../systems/news';
 import { hasLiveIndianTrader } from '../professions/predicates';
+import { setSpoilClock } from '../systems/spoilage';
 
 // Random trail encounters — wagon trains, soldiers, traders, natives.
 // These fire through the same rollEvent pipeline as weather / wagon
@@ -745,6 +746,138 @@ const native_hide_trade: GameEvent = {
   ]
 };
 
+// #239 — Salmon trade in the Snake / Columbia corridor. Period reality:
+// Salmon Falls (mile ~1450), Three Island, the Dalles fisheries — the
+// Shoshone-Bannock and the Plateau peoples (Nez Perce, Cayuse, Walla
+// Walla) ran extensive salmon trade with emigrants. Drying racks miles
+// long at the falls. Diaries describe whole 8-lb salmon for a knife
+// (Frizzell 1852) or a few rounds of beads (Royce 1849).
+//
+// Yields land in `game_meat` — same fresh-meat slot as a hunt kill,
+// same 3-day spoil clock. The log line names it salmon for flavor.
+const native_salmon_trade: GameEvent = {
+  id: 'encounter_native_salmon',
+  category: 'encounter',
+  title: 'Salmon at the river',
+  body: "A fishing party at a rapids — drying racks behind them, fresh-caught salmon laid on cedar. They wave you over. Whole fish for a few trade goods.",
+  weight: 3,
+  // Snake / Columbia salmon corridor — Three Island onward through the
+  // Dalles. Tribes in that range: Bannock, Nez Perce, Cayuse, Walla
+  // Walla. Friendly+ attitude required (>= 41) — hostile bands wouldn't
+  // trade.
+  gate: (s) => {
+    if (s.location.milesTraveled < 1200) return false;
+    if (s.location.milesTraveled > 2050) return false;
+    const here = tribesAtMile(s.location.milesTraveled);
+    if (!here.some((t) => getTribeAttitude(s, t.id) >= 41)) return false;
+    // Need at least one trade item in hand, otherwise the encounter
+    // dead-ends and just irritates the player.
+    return (s.inventory.beads ?? 0) > 0
+      || (s.inventory.tobacco ?? 0) > 0
+      || (s.inventory.fishing_line ?? 0) > 0;
+  },
+  choices: [
+    {
+      id: 'trade_fishhook',
+      icon: '🎣',
+      label: 'Trade a fishing line for ~8 lb salmon',
+      isDefault: true,
+      silentLog: true,
+      requires: { itemId: 'fishing_line', icon: '🎣', reason: 'Need a fishing line (hooks)' },
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 41)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They waved you on without trading.');
+        const yieldLb = hasLiveIndianTrader(s) ? 12 : 8;
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            fishing_line: Math.max(0, (s.inventory.fishing_line ?? 0) - 1),
+            game_meat: (s.inventory.game_meat ?? 0) + yieldLb
+          }
+        };
+        next = setSpoilClock(next, 'game_meat');
+        next = adjustTribeAttitude(next, tribe.id, 3);
+        return logLine(
+          next,
+          `Traded a fishing line to the ${tribe.name} — ${yieldLb} lb of fresh salmon. Eat soon. Relations +3.`
+        );
+      }
+    },
+    {
+      id: 'trade_tobacco',
+      icon: '🌿',
+      label: 'Trade tobacco for ~5 lb salmon',
+      silentLog: true,
+      requires: { itemId: 'tobacco', icon: '🌿', reason: 'Need tobacco' },
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 41)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They waved you on.');
+        const yieldLb = hasLiveIndianTrader(s) ? 8 : 5;
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            tobacco: Math.max(0, (s.inventory.tobacco ?? 0) - 1),
+            game_meat: (s.inventory.game_meat ?? 0) + yieldLb
+          }
+        };
+        next = setSpoilClock(next, 'game_meat');
+        next = adjustTribeAttitude(next, tribe.id, 2);
+        return logLine(
+          next,
+          `Tobacco for ${yieldLb} lb of fresh salmon. Relations +2.`
+        );
+      }
+    },
+    {
+      id: 'trade_beads',
+      icon: '📿',
+      label: 'Trade 2 strings of beads for ~4 lb salmon',
+      silentLog: true,
+      requires: { itemId: 'beads', icon: '📿', reason: 'Need beads' },
+      apply: (s, rng) => {
+        if ((s.inventory.beads ?? 0) < 2) {
+          return logLine(s, 'Only one string on hand — they shrugged and turned back to the racks.');
+        }
+        const tribe = pickTribe(s, rng, (a) => a >= 41)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They waved you on.');
+        const yieldLb = hasLiveIndianTrader(s) ? 6 : 4;
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            beads: (s.inventory.beads ?? 0) - 2,
+            game_meat: (s.inventory.game_meat ?? 0) + yieldLb
+          }
+        };
+        next = setSpoilClock(next, 'game_meat');
+        next = adjustTribeAttitude(next, tribe.id, 2);
+        return logLine(
+          next,
+          `Two strings of beads for ${yieldLb} lb of fresh salmon. Relations +2.`
+        );
+      }
+    },
+    {
+      id: 'wave_off',
+      icon: '✋',
+      label: 'Wave them off — keep moving',
+      silentLog: true,
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 41)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'Kept moving past the rapids.');
+        const next = adjustTribeAttitude(s, tribe.id, -1);
+        return logLine(next, `Passed the ${tribe.name} fishery without trading. Relations -1.`);
+      }
+    }
+  ]
+};
+
 /** All trail-encounter events. events.ts spreads these into its
  *  EVENTS registry on module load. */
 export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
@@ -758,5 +891,6 @@ export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
   native_toll_demand,
   native_guide_offer,
   native_hunters_sharing,
-  native_hide_trade
+  native_hide_trade,
+  native_salmon_trade
 ];

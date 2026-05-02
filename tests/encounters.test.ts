@@ -17,8 +17,8 @@ function newGame(): GameState {
 }
 
 describe('encounter registry', () => {
-  it('registers 11 encounter events into the global pool', () => {
-    expect(ENCOUNTER_EVENTS.length).toBe(11);
+  it('registers 12 encounter events into the global pool', () => {
+    expect(ENCOUNTER_EVENTS.length).toBe(12);
     const ids = ENCOUNTER_EVENTS.map((e) => e.id);
     for (const id of ids) {
       expect(EVENTS.some((e) => e.id === id)).toBe(true);

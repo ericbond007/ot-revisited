@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 18 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 17 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -81,7 +81,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 ### Native interaction expansion (extends #121)
 
 - **#238** — [H] Native-run ferry option — Shoshone / Cayuse ferries at Green / Snake / Columbia
-- **#239** — [H] Salmon trade stops — Snake / Columbia corridor; trinkets for fresh salmon
 - **#240** — [H] Hire-a-guide for the Sublette Cutoff (Bridger detour past South Pass). Barlow side shipped via #235.
 - **#241** — [H] Gift-first parlay — small tobacco / sugar gift opens better trade rates on first contact
 
@@ -126,6 +125,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#239** Salmon trade stops (Snake / Columbia corridor) — new `encounter_native_salmon` random encounter, gates on miles 1200-2050 + at least one of {beads, tobacco, fishing_line} + a friendly+ tribe nearby. Four choices: trade fishing line → 8 lb fresh salmon (12 with Indian Trader, period reality: Frizzell 1852 traded a knife for an 8 lb fish), trade tobacco → 5 lb (8 with trader), trade 2 strings of beads → 4 lb (6 with trader), wave off → -1 relations. Yields land in `game_meat` + refresh the 3-day spoil clock — same fresh-meat slot as a hunt kill, log line names it salmon for flavor. 18 new tests; 1203/1203 green. (Updated encounter-pool count test from 11 → 12.)
 - **#237** Grass / passage toll — closed as no-op; spec was already met by `encounter_native_toll` (encounters.ts:425). Title "Warriors block the trail," choices: pay 2 tobacco (+4 relations), pay 3 beads (+3), refuse (35% skirmish, -12 relations, possible wagon damage). Gates on any tribe at the current mile with attitude in the 15-55 band — naturally hits Pawnee / Sioux / Cheyenne in their Plains regions. Period reality from Sarah Royce / Catherine Sager / Frizzell diaries (Pawnees demanded flour and beef; refusal cost a horse) is the design source.
 - **#225** Nooning event slot — 10 new midday flavor encounters that join the regular road-event roll. Period reality: noon stops were the trail's most-described social moment — passing trains chatted, native riders stopped by, news traveled. The fatigue benefit of nooning stays implicit in the existing ox-fatigue calibration (per Dave's note, no per-day stop UI — game would slow to a crawl). Events span the categories: passing-train chat (+2 morale), native rider greeting (tobacco trade, +1), roadside grave (-1 reflection or pass), clear spring (+water), circuit preacher (+2/+3 with party Preacher), squeaky wheel (lard or wagon -2), lost emigrant (flour for kindness or morale -1), antelope curiosity, forgotten pail (claim or leave-with-conscience), buffalo wallow flavor. New `content/noon-events.ts` with `NOON_EVENTS` array; pushed to global EVENTS at module load following the same pattern as PARTY_EVENTS / WATER_EVENTS. 18 new tests; 1181/1181 green.
 - **#224** Sunday lay-by — period Sabbath rhythm with real trade-off. New `utils/calendar.ts` (`dayOfWeek`, `isSunday`, `dayName` — JS Date + Gregorian). New `actions/sunday-lay-by.ts` delegates to `rest(state, 1)` and adds a Sabbath morale bonus (+3, +5 with live Preacher). New `?/sundayLayBy` server action gated to actual Sundays (409 otherwise). ActionBar shows a 🕊️ "Lay by" button only on Sundays, alongside Travel. **Sabbath debit on Travel**: `tickDayPausable` applies -2 morale (-3 with Preacher) at the start of any Sunday tick, with a "Traveled on the Sabbath" log line. Travel button title warns the player. Period reality: Sager / Royce / Frizzell describe the standard Sunday rhythm — prayer, scripture, hymns by hand-clap, mending, baking ahead, evening singing. Donner Party notably skipped the Sabbath. Trade-off: lay by every Sunday = ~17-20 lost days but morale stays topped up; push through = real morale debt over the journey. Pairs with #258 (lay-preacher service) on the future TODO. 16 new tests; 1146/1146 green.
