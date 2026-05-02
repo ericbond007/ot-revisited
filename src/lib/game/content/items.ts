@@ -52,6 +52,13 @@ export const ITEMS: Record<string, ItemMeta> = {
   // trail-journey timescale. foodDrawOrder 3 places it after fresh
   // food and bacon — eaten as a daily protein, not the first draw.
   cheese:      { id: 'cheese',      name: "Farmer's cheese", category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: "Pressed from milk in the cheese hoop. Salty, dense, keeps for weeks. A 'fresh' nutrition group for variety." },
+  // Wagon-pail butter (#222) — passive on travel days when the party
+  // owns a butter_crock + has ≥2 gal of fresh milk. The day's jostling
+  // does the churn for free; emigrant diaries (Royce, Sager, Williams)
+  // describe hanging the covered pail under the seat and finding
+  // butter by evening. 2 gal milk → 1 lb butter, salted for shelf
+  // life, eaten as a flavor staple on biscuits and johnnycakes.
+  butter:      { id: 'butter',      name: 'Butter',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 2.5, description: "Churned by the wagon's bouncing on travel days. Salty, shelf-stable, heaven on hot biscuits. A 'fresh' nutrition group." },
   flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten after fresh meat.' },
   // Cornmeal — period staple alongside (or instead of) wheat flour. Cheaper,
   // ground locally, the foundation of johnnycakes and cornbread on the trail.
@@ -178,6 +185,11 @@ export const ITEMS: Record<string, ItemMeta> = {
   // weight stones gathered at camp. Period dairying staple for
   // emigrant families with milk cows. One kit, many cheeses.
   cheese_press: { id: 'cheese_press', name: 'Cheese press', category: 'tool', weightLbPerUnit: 8, description: 'Hoop, cheesecloth, and rennet jar for pressing farmer\'s cheese. 2 gal milk → 2 lb cheese in a 2-hour camp action.' },
+  // Butter crock (#222) — covered tin pail with paddle dasher mounted
+  // in the lid. Hung under the wagon seat; the day's bouncing churns
+  // cream into butter automatically. Period-perfect emigrant kitchen
+  // gear, mentioned by name in dozens of trail diaries.
+  butter_crock: { id: 'butter_crock', name: 'Butter crock', category: 'tool', weightLbPerUnit: 6, description: 'Covered tin pail with a paddle dasher in the lid. Hung in the wagon, churns 2 gal milk into 1 lb butter on every travel day.' },
   salt: { id: 'salt', name: 'Salt', category: 'tool', weightLbPerUnit: 1, description: 'Preserves fresh game meat. Multiplies curing speed, reduces spoilage loss during the jerk process.' },
   // Saleratus — sodium bicarbonate (period name for baking soda). Tiny
   // bag, big quality-of-life: leavens biscuits, settles upset stomachs,

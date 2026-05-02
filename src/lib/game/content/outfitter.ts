@@ -16,7 +16,7 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   // Clothing
   'coat', 'boots', 'blanket', 'tent',
   // Tools
-  'iron_toolkit', 'cookware', 'rope', 'shovel', 'salt', 'saleratus', 'lard', 'compass', 'water_skin', 'ox_shoes', 'spyglass', 'cheese_press',
+  'iron_toolkit', 'cookware', 'rope', 'shovel', 'salt', 'saleratus', 'lard', 'compass', 'water_skin', 'ox_shoes', 'spyglass', 'cheese_press', 'butter_crock',
   // Medicine
   'quinine', 'laudanum', 'calomel', 'bandages', 'herbal_poultice', 'patent_medicine', 'vinegar',
   'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',

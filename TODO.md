@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 21 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 20 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -70,7 +70,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Daily routine mechanics
 
-- **#222** — [H] Wagon-churned butter — passive when milk cow + crock (#139)
 - **#224** — [H] Sunday lay-by — religious morale vs. lost travel day
 - **#225** — [H] Nooning mid-day beat — small fatigue tick + event slot
 
@@ -125,6 +124,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#222** Wagon-pail butter — the headline period dairy mechanic, automatic on travel days. New `butter` food item ($0.40/lb buy, 1 lb/unit, 'fresh' nutrition group, foodDrawOrder 2.5) and `butter_crock` tool ($2.50, 6 lb — covered tin pail with paddle dasher in the lid). New `applyButterChurn(state)` runs in the engine pipeline BEFORE `applyDailyConsumption` — period reality: women set the crock at dawn before anyone drank coffee, so the morning's surplus lands in butter rather than breakfast. Inside `tickDayPausable` is by definition a travel day (camp/visit go through different routes), so the wagon's bouncing is the churn — no player input needed. Yield: 1 lb butter per 2 gal milk consumed (period ratio). Butter is shelf-stable (no spoil clock — salted for keeping). Stocked at: Independence outfitter, Ft Laramie, Ft Hall, The Dalles. 22 new tests; 1130/1130 green. Pairs with #139 — cow → milk → automatic butter on the road, no player friction.
 - **#139** Milk cow + cheese press — three new items (`milk_cow` $25 / 0 lb, `milk` 0.30 ¢/gal / 1 lb-equiv, `cheese` 0.50 ¢/lb, `cheese_press` $3 / 8 lb) plus a new `systems/dairy.ts` module and `press_cheese` camp action. **Daily yield**: per-cow base 2 gal × `grazingQuality(state)` × heat mult 0.7×; below grazing 0.25 the cow goes dry (winter mountains, deep desert). **Pace tax**: -5% miles/day per cow, capped at -10% (2+ cows are still 2 cows' worth of drag). **Spoilage**: weather-sensitive — heat 1d / normal 2d / frost+snow 4d, via new `daysOverride` param on `setSpoilClock`. Period reality: emigrants almost never lost milk because they used it constantly (drink fresh, wagon-pail butter, clabber-for-biscuits, cheese press); the spoilage is a quiet safety net for abandoned/heat-stressed pile, not a clock the player fights. **Cheese press** (`press_cheese` camp action): 2 hr · 2 gal milk + cheese_press → 2 lb cheese (1 lb/gal yield, period-accurate per Beecher 1846 / Marcy 1859). Cheese is shelf-stable and a 'fresh' nutrition group. Milk also a 'fresh' group, foodDrawOrder 0.6 (between berries and eggs). Stocked at: Independence outfitter, Ft Laramie, Ft Hall, The Dalles. Wagon-pail butter (#222) deferred — that's the headline travel-day mechanic. 32 new tests; 1108/1108 green.
 - **#268** Cold-weather food bump — new `WEATHER_FOOD_MULT` constant in `consumption.ts` (snow / frost both 1.20×, all other weathers 1.0×) wired into `foodConsumedToday` between the pace mult and the farmer mult. Period reality: emigrant diaries crossing the Wasatch and Blue Mountain frosts record sharply higher food draw — a body burns more calories holding core temperature in the cold. Composes cleanly with #267 pace mults — grueling pace + snow stacks to ~1.50× clear-moderate baseline. 16 new tests; 1076/1076 green.
 - **#218** Tent (canvas A-frame) — new `tent` item ($8 / 35 lb / clothing) that halves the cold-camp morale hit (2 → 1) when present in inventory. Period reality: ~30% of emigrants carried canvas A-frame tents (Marcy 1859 priced them $5-10); the rest slept under wagons or in the open. Cuts wind, rain, and dust off the bedrolls — morale layer, not warmth layer. Health hit on cold mountain nights still mitigated by clothing; tent doesn't stack on that. Doesn't apply on lit-fire nights. Stocked at: Independence outfitter, Ft Kearny (army quartermaster), Ft Laramie, Ft Hall, The Dalles. NOT at sparse posts (Bridger, road ranches). 13 new tests; 1060/1060 green.

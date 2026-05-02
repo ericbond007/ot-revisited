@@ -80,6 +80,11 @@ export const PRICES: Record<string, PriceEntry> = {
   cheese:   { buy: 0.50, sell: 0.20 },
   // Cheese press kit — wooden hoop + cheesecloth + rennet jar.
   cheese_press: { buy: 3.00, sell: 1.50 },
+  // Wagon butter — pricier than fresh milk, less than cheese. Period-
+  // accurate trade goods slot.
+  butter:   { buy: 0.40, sell: 0.15 },
+  // Butter crock kit — tin pail with a paddle dasher in the lid.
+  butter_crock: { buy: 2.50, sell: 1.20 },
 
   // Tools
   iron_toolkit: { buy: 40.00, sell: 25.00 },

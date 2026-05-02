@@ -181,7 +181,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins',
-      'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'milk_cow', 'cheese_press', 'grain',
+      'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'milk_cow', 'cheese_press', 'butter_crock', 'grain',
       'tobacco', 'whiskey', 'bible',
       'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
       'moccasins', 'buffalo_robe', 'beads'
@@ -275,7 +275,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum',
       'epsom_salts', 'camphor', 'paregoric',
       'coat', 'boots', 'blanket', 'tent',
-      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'grain', 'milk_cow', 'cheese_press',
+      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'grain', 'milk_cow', 'cheese_press', 'butter_crock',
       'salt', 'tobacco', 'whiskey', 'harmonica'
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
@@ -335,7 +335,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'epsom_salts', 'camphor', 'paregoric', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'yoke', 'ox_bow', 'picket_pins',
-      'cookware', 'rope', 'salt', 'milk_cow', 'cheese_press',
+      'cookware', 'rope', 'salt', 'milk_cow', 'cheese_press', 'butter_crock',
       'tobacco', 'whiskey', 'bible', 'harmonica', 'fiddle'
     ] },
   // Barlow Road junction — the toll road south around Mt. Hood, the

@@ -21,7 +21,8 @@ const NUTRITION_GROUP: Record<string, NutritionGroup> = {
   egg:         'fresh',
   dried_fruit: 'fresh',
   milk:        'fresh',
-  cheese:      'fresh'
+  cheese:      'fresh',
+  butter:      'fresh'
 };
 
 const FOOD_PER_ADULT: Record<Rations, number> = {

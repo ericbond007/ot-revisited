@@ -58,3 +58,44 @@ export function applyDairy(state: GameState): GameState {
     : 2;
   return setSpoilClock(next, 'milk', days);
 }
+
+// #222 — Wagon-pail butter. The headline period dairy mechanic: a
+// covered crock with a paddle dasher in the lid, hung from a hook
+// inside the wagon. The day's jostling churns the cream automatically.
+// Fires only inside tickDayPausable (= a travel day by definition,
+// since camp/visit go through different routes). Runs BEFORE
+// applyDailyConsumption so the morning's surplus lands in butter
+// rather than breakfast — period reality: women set the crock at
+// dawn before anyone drank coffee.
+
+const MILK_PER_BUTTER = 2;
+const BUTTER_LB_PER_BATCH = 1;
+
+export function dailyButterYield(state: GameState): number {
+  if ((state.inventory.butter_crock ?? 0) < 1) return 0;
+  const milk = state.inventory.milk ?? 0;
+  return Math.floor(milk / MILK_PER_BUTTER) * BUTTER_LB_PER_BATCH;
+}
+
+export function applyButterChurn(state: GameState): GameState {
+  if ((state.inventory.butter_crock ?? 0) < 1) return state;
+  const milk = state.inventory.milk ?? 0;
+  if (milk < MILK_PER_BUTTER) return state;
+
+  const batches = Math.floor(milk / MILK_PER_BUTTER);
+  const milkUsed = batches * MILK_PER_BUTTER;
+  const butterMade = batches * BUTTER_LB_PER_BATCH;
+
+  return {
+    ...state,
+    inventory: {
+      ...state.inventory,
+      milk: milk - milkUsed,
+      butter: (state.inventory.butter ?? 0) + butterMade
+    },
+    eventLog: [
+      ...state.eventLog,
+      { day: state.day, text: `Wagon-pail churn: ${milkUsed} gal milk → ${butterMade} lb butter.` }
+    ]
+  };
+}
