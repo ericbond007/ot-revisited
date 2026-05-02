@@ -80,9 +80,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 ### Set-piece landmark events
 
 - **#230** — [H] Washday on the Sweetwater — laundry camp at first Sweetwater crossing
-- **#231** — [H] Ash Hollow descent (Windlass Hill) — rope-lower scene; damage-on-fail check
-- **#232** — [H] South Pass crest beat — symbolic "you've reached the top" morale moment
-- **#233** — [H] Chimney Rock first-sight day — emigrant-awe text 2-3 days out
+- **#233** — [H] Chimney Rock FIRST-SIGHT (days out, not at-arrival) — needs separate trigger from existing arrival event
 - **#234** — [H] Three Island Crossing — explicit ford vs south-bank desert detour modal
 - **#235** — [H] Barlow Road toll vs Columbia raft — 1846+ explicit decision modal ($5/wagon + 10c/head vs raft-disaster)
 - **#236** — [H] Disease-camp landmark events — Ash Hollow / Chimney Rock cluster burials in cholera years
@@ -136,6 +134,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#231 + #232** Ash Hollow descent + South Pass crest — already implemented before the historical-pass TODOs were logged. `ashHollow` already has rope-lower (rope-gated) vs lock-wheels (35% mishap, 8-18 wagon damage); `southPass` already does the symbolic Continental Divide crossing with +8 morale. No-op closeouts.
 - **#229** Soda Springs taste-test — already implemented before the historical-pass TODO was logged. The existing `sodaSprings` arrival event already has 3 choices (drink with upset-stomach risk, bottle 5 gal + morale, skip) that exceed the "+2 morale carbonated novelty" spec. No-op closeout.
 - **#228** Register Cliff inscription persists — the existing `carve` choice on the Register Cliff arrival event now writes `flags._registerCliffInscription` in the period format `LEADER · MMM YYYY` (e.g. `EZRA THOMPSON · Jun 1849`, matching real cliff signatures like `J.M. KEEN 1850`). EndScreen reads the flag and renders a chiseled-letter inscription block on both the arrived and wiped outcomes — the carving outlasts the party. Sandstone-band styling (parchment wash, IM Fell English serif, period dot separator). 7 new tests covering serialization round-trip and 12-month formatting; 933/933 green.
 - **#227** 4th of July at Independence Rock — date-gated set-piece arrival event. New `independenceRockJuly4` GameEvent replaces the regular sign-the-rock variant when arrival lands on month=7, day=4. Three choices: (1) **Fire 30-gun salute + feast** — costs 5 each of gunpowder/lead_balls/percussion_caps for +10 morale, falls back to feast-only (+8) if powder is short; (2) **Sign and dance** — +8 morale, no cost; (3) **Press on** — +3 morale, walk away. Upgraded `getLandmarkArrivalEvent(landmarkId, state?)` to accept optional state for date-gated branches; engine-pausable.ts now passes state. Pattern extends naturally to other day-at-landmark set-pieces (Christmas at Fort Hall, etc.). 9 new tests; 926/926 green.
