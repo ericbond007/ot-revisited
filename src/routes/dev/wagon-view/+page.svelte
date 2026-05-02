@@ -1,8 +1,8 @@
 <script lang="ts">
   // Standalone preview for the wagon travel view. Pick terrain / weather /
   // time-of-day / wagon model / ox count / pause and see WagonScene render
-  // immediately with no save-game machinery in the way. Especially handy
-  // for iterating on the raster-tile aesthetic via `?raster=1`.
+  // immediately with no save-game machinery in the way. Default is the
+  // single-painting backdrop; `?svg=1` falls back to legacy SVG layers.
   import { page } from '$app/state';
   import { createInitialState } from '$lib/game/engine';
   import WagonScene from '$lib/ui/wagon/WagonScene.svelte';
@@ -24,6 +24,9 @@
   let oxCount = $state(4);
   let isMule = $state(false);
   let paused = $state(false);
+  let variant = $state(0);
+
+  const VARIANTS = [0, 1, 2, 3, 4];
 
   // Bumping `restartKey` remounts WagonScene with a fresh t=0 — the
   // rAF tick in the scene tracks scroll position internally, so this
@@ -33,7 +36,11 @@
     restartKey += 1;
   }
 
-  const useRaster = $derived(page.url.searchParams.get('raster') === '1');
+  const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
+  const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
+  const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
+  // Default = painted backdrop (no flags). Either override turns it off.
+  const usePainting = $derived(!useSvgLayers && !useFourLayer);
 
   const previewState = $derived.by(() => {
     const base = createInitialState({
@@ -61,14 +68,13 @@
     };
   });
 
-  function toggleRaster() {
+  function toggleQueryFlag(flag: 'svg' | 'fourlayer' | 'groundraster') {
     const url = new URL(window.location.href);
-    if (useRaster) url.searchParams.delete('raster');
-    else url.searchParams.set('raster', '1');
-    window.history.replaceState({}, '', url.toString());
-    // Force re-read of `page.url.searchParams` — Svelte 5 derives from `page`
-    // automatically on navigation; replaceState alone won't notify, so we
-    // do a no-op goto to refresh.
+    const isOn = url.searchParams.get(flag) === '1';
+    if (isOn) url.searchParams.delete(flag);
+    else url.searchParams.set(flag, '1');
+    // Full reload so SvelteKit's `page` store re-reads the URL — replaceState
+    // alone doesn't notify in Svelte 5.
     window.location.search = url.search;
   }
 </script>
@@ -76,7 +82,7 @@
 <div class="page">
   <header>
     <h1>Wagon View — dev preview</h1>
-    <p class="hint">Standalone WagonScene with controls. Add <code>?raster=1</code> to see the raster background tiles; toggle below.</p>
+    <p class="hint">Standalone WagonScene with controls. Default is the single-painting backdrop; toggle <code>?svg=1</code> for the legacy SVG layers fallback.</p>
   </header>
 
   <section class="controls">
@@ -108,6 +114,15 @@
     </label>
 
     <label>
+      <span>Backdrop variant</span>
+      <select bind:value={variant} disabled={useSvgLayers}>
+        {#each VARIANTS as n}
+          <option value={n}>{n}</option>
+        {/each}
+      </select>
+    </label>
+
+    <label>
       <span>Wagon</span>
       <select bind:value={wagonModel}>
         {#each WAGONS as w}
@@ -134,20 +149,31 @@
     <button type="button" class="restart" onclick={restart}>↺ Restart</button>
 
     <label class="cb raster-toggle">
-      <input type="checkbox" checked={useRaster} onchange={toggleRaster} />
-      <span>Raster backgrounds (<code>?raster=1</code>)</span>
+      <input type="checkbox" checked={useSvgLayers} onchange={() => toggleQueryFlag('svg')} />
+      <span>Legacy SVG layers (<code>?svg=1</code>) — Far/Mid/Near trio fallback</span>
+    </label>
+
+    <label class="cb raster-toggle">
+      <input type="checkbox" checked={useFourLayer} onchange={() => toggleQueryFlag('fourlayer')} />
+      <span>4-layer painted backdrop (<code>?fourlayer=1</code>) — sky/far/mid/close stack (scaffolding)</span>
+    </label>
+
+    <label class="cb raster-toggle">
+      <input type="checkbox" checked={useGroundRaster} onchange={() => toggleQueryFlag('groundraster')} />
+      <span>Raster ground (<code>?groundraster=1</code>)</span>
     </label>
   </section>
 
   <section class="stage">
     {#key restartKey}
-      <WagonScene state={previewState} {timeOfDay} {paused} />
+      <WagonScene state={previewState} {timeOfDay} {paused} backdropVariant={variant} />
     {/key}
   </section>
 
   <footer>
     <p class="hint">
-      Mode: <strong>{useRaster ? 'raster' : 'svg'}</strong> |
+      Backdrop: <strong>{useFourLayer ? `4-layer v${variant}` : (useSvgLayers ? 'svg layers' : `painting v${variant}`)}</strong> |
+      Ground: <strong>{useGroundRaster ? 'raster' : 'svg'}</strong> |
       Terrain: <strong>{terrain}</strong> |
       Weather: <strong>{weather}</strong> |
       ToD: <strong>{timeOfDay}</strong> |

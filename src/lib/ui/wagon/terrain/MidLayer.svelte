@@ -1,7 +1,7 @@
 <script lang="ts">
   // Mid parallax layer — rolling hills, mid-distance trees, and biome
-  // accents. Scrolls at 0.4x; tile width 400 (SVG) or 2048 (raster).
-  import { page } from '$app/state';
+  // accents. Scrolls at 0.4x; tile width 400. In raster mode the
+  // BackdropPainting replaces this entirely; this component stays SVG-only.
   import type { Terrain } from '$lib/game/types';
 
   interface Props {
@@ -13,17 +13,10 @@
 
   let { terrain, scrollX, horizonY, groundY }: Props = $props();
 
-  const useRaster = $derived(page.url.searchParams.get('raster') === '1');
-
   const TILE_W = 400;
   const SCROLL_FACTOR = 0.4;
-  const RASTER_TILE_W = 2048;
-  const RASTER_TILE_H = 384;
-
-  const x = $derived(
-    -((scrollX * SCROLL_FACTOR) % (useRaster ? RASTER_TILE_W : TILE_W))
-  );
-  const offsets = $derived(useRaster ? [0, RASTER_TILE_W] : [0, TILE_W]);
+  const x = $derived(-((scrollX * SCROLL_FACTOR) % TILE_W));
+  const offsets = [0, TILE_W];
   const midY = $derived(horizonY + (groundY - horizonY) * 0.45);
 
   const mountainPineXs = [40, 100, 180, 260, 340];
@@ -36,16 +29,7 @@
 <g>
   {#each offsets as offset (offset)}
     {@const tx = x + offset}
-    {#if useRaster}
-      <image
-        href="/wagon-bg/mid-{terrain}.webp"
-        x={tx}
-        y={midY - RASTER_TILE_H}
-        width={RASTER_TILE_W}
-        height={RASTER_TILE_H}
-        preserveAspectRatio="none"
-      />
-    {:else if terrain === 'mountains'}
+    {#if terrain === 'mountains'}
       <g transform="translate({tx} {midY})">
         <path d="M 0 0 Q 80 -20 160 -8 Q 240 -24 320 -10 Q 400 -22 400 0 L 0 0 Z"
               fill="#6e5a45" stroke="#3a2818" stroke-width="0.7" />

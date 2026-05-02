@@ -1,9 +1,9 @@
 """Wagon-bg pipeline orchestrator.
 
-Iterates the prompt config, generates each tile through ComfyUI, runs
-the alpha post-process, writes the final WebP to ../../static/wagon-bg/.
-A manifest at .manifest.json tracks which tiles have been built so a
-re-run only regenerates what changed.
+Iterates the prompt config, generates each tile through ComfyUI, writes
+the opaque WebP to ../../static/wagon-bg/. A manifest at .manifest.json
+tracks which tiles have been built so a re-run only regenerates what
+changed.
 """
 
 import argparse
@@ -12,7 +12,7 @@ import json
 import time
 from pathlib import Path
 
-from alpha import copy_opaque_to_webp, to_webp_with_alpha
+from alpha import copy_opaque_to_webp
 from comfy_client import CHECKPOINT, generate_to, ping
 from prompts import NEGATIVE_PROMPT, PROMPTS, TilePrompt
 
@@ -21,15 +21,57 @@ RAW_DIR = THIS_DIR / "raw"
 STATIC_DIR = THIS_DIR.parent.parent / "static" / "wagon-bg"
 MANIFEST = THIS_DIR / ".manifest.json"
 
+# Per-layer default LoRAs — applied silently for production runs.
+# These are considered part of the canonical generation pipeline for that
+# layer (no filename suffix, no opt-in flag needed). The trigger word for
+# the default LoRA is BAKED INTO the prompt content in prompts.py, so we
+# don't prepend anything here.
+#
+# Override via `--lora <key>` (see LORA_REGISTRY below) for experiments —
+# overrides REPLACE the default for the current run, and produce filename
+# suffixes (`--<key>@<weight>.webp`) so experimental output doesn't clobber
+# the canonical tiles.
+DEFAULT_LORAS_BY_LAYER: dict[str, list[tuple[str, float]]] = {
+    "backdrop": [("ht_landscape_v2_2000.safetensors", 1.0)],
+    "ground":   [],
+}
 
-def _signature(p: TilePrompt) -> str:
-    """Hash of everything that affects the output: checkpoint + prompt + neg + dims + seed."""
+# Known LoRAs we can stack via `--lora <key>` (or `--lora a,b` for stacks).
+# Each entry: (filename in ~/ComfyUI/models/loras/, default weight, trigger words to prepend).
+# Phase 1.5b spike — testing whether style LoRAs alone resolve the framing
+# / palette complaints before committing to a custom train.
+LORA_REGISTRY: dict[str, tuple[str, float, str]] = {
+    "cottagecore": (
+        "cottagecore-gouache-v1.safetensors",
+        0.8,
+        "novuschroma23 style, ",
+    ),
+    # Custom-trained LoRA — Phase 1.5b first run. 37 hand-picked Hudson River
+    # School + Whittredge plains references at rank 32, Adafactor, UNet-only
+    # (text encoder LoRA wasn't trained). Three checkpoints captured to A/B
+    # for the right convergence sweet spot.
+    "ht_500":  ("ht_landscape_v1_500.safetensors",  1.0, "ht_landscape, "),
+    "ht_1000": ("ht_landscape_v1_1000.safetensors", 1.0, "ht_landscape, "),
+    "ht_1500": ("ht_landscape_v1_1500.safetensors", 1.0, "ht_landscape, "),
+    # v2: rank 64, 896 res, per-image composition-tagged captions, PagedAdamW8bit.
+    # Final loss 0.131 vs v1's 0.142. Trigger word same: ht_landscape.
+    "v2_500":  ("ht_landscape_v2_500.safetensors",  1.0, "ht_landscape, "),
+    "v2_1000": ("ht_landscape_v2_1000.safetensors", 1.0, "ht_landscape, "),
+    "v2_1500": ("ht_landscape_v2_1500.safetensors", 1.0, "ht_landscape, "),
+    "v2_2000": ("ht_landscape_v2_2000.safetensors", 1.0, "ht_landscape, "),
+}
+
+
+def _signature(p: TilePrompt, loras: list[tuple[str, float]]) -> str:
+    """Hash of everything that affects the output: checkpoint + prompt + neg + dims + seed + LoRA stack."""
     h = hashlib.sha256()
     h.update(CHECKPOINT.encode())
     h.update(p.full_prompt.encode())
     h.update(NEGATIVE_PROMPT.encode())
     h.update(f"{p.width}x{p.height}".encode())
     h.update(str(p.seed).encode())
+    for name, weight in loras:
+        h.update(f"|lora:{name}@{weight}".encode())
     return h.hexdigest()[:16]
 
 
@@ -60,14 +102,69 @@ def _filter(args: argparse.Namespace, all_prompts: list[TilePrompt]) -> list[Til
     return out
 
 
+def _resolve_loras(spec: str | None) -> tuple[list[tuple[str, float]], str, str]:
+    """Resolve --lora spec into (lora_stack, trigger_prefix, out_suffix).
+
+    `spec` is either None (no LoRAs), a single registry key ("cottagecore"),
+    or comma-separated keys ("cottagecore,classipeint"). Each key may carry
+    an explicit weight via "@N.NN" (e.g. "cottagecore@0.6").
+
+    The trigger prefix is the concatenation of registry trigger strings in
+    stack order; callers prepend it to the per-tile content prompt.
+    The out_suffix is appended to filenames so LoRA outputs don't clobber
+    base outputs.
+    """
+    if not spec:
+        return [], "", ""
+    keys = []
+    for raw in spec.split(","):
+        key, _, weight_s = raw.strip().partition("@")
+        if key not in LORA_REGISTRY:
+            raise SystemExit(
+                f"unknown --lora key '{key}'. known: {sorted(LORA_REGISTRY)}"
+            )
+        filename, default_w, trigger = LORA_REGISTRY[key]
+        weight = float(weight_s) if weight_s else default_w
+        keys.append((key, filename, weight, trigger))
+    stack = [(filename, weight) for _, filename, weight, _ in keys]
+    triggers = "".join(trigger for _, _, _, trigger in keys)
+    suffix = "--" + "_".join(f"{k}@{w}" for k, _, w, _ in keys)
+    return stack, triggers, suffix
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--only", help="layer[,terrain] filter, e.g. 'far,prairie'", default=None)
     parser.add_argument("--regen", action="store_true", help="force regenerate even if manifest matches")
+    parser.add_argument(
+        "--lora",
+        default=None,
+        help=(
+            "Stack one or more registered LoRAs. Comma-separated, "
+            "optional @weight, e.g. --lora cottagecore or --lora cottagecore@0.6,classipeint@0.5. "
+            "Output filenames get a suffix so they don't clobber base output. "
+            f"Known: {sorted(LORA_REGISTRY)}"
+        ),
+    )
+    parser.add_argument(
+        "--cooldown",
+        type=int,
+        default=15,
+        help=(
+            "Seconds to sleep between successive tile generations to let the "
+            "GPU cool. Default 15s after a 3070 Laptop hit 101°C generating "
+            "back-to-back at full tilt. Pass 0 to disable."
+        ),
+    )
     args = parser.parse_args()
 
     if not ping():
         raise SystemExit("ComfyUI not reachable at http://127.0.0.1:8188 — start it first")
+
+    override_stack, override_triggers, override_suffix = _resolve_loras(args.lora)
+    override_active = args.lora is not None
+    if override_active:
+        print(f"LoRA OVERRIDE: {override_stack}  (triggers prepended: {override_triggers!r})\n")
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -77,26 +174,81 @@ def main() -> None:
     print(f"Generating {len(selection)} tile(s) of {len(PROMPTS)} total\n")
 
     for i, p in enumerate(selection, 1):
-        sig = _signature(p)
-        out_path = STATIC_DIR / p.filename
-        if not args.regen and manifest.get(p.filename) == sig and out_path.exists():
-            print(f"[{i}/{len(selection)}] {p.filename}  -- up to date, skip")
+        # Per-tile LoRA resolution: explicit --lora override REPLACES the
+        # layer default; otherwise fall back to the layer default (silent,
+        # no filename suffix, no trigger prepend since trigger is baked
+        # into the prompt content).
+        if override_active:
+            lora_stack = override_stack
+            lora_triggers = override_triggers
+            lora_suffix = override_suffix
+        else:
+            lora_stack = DEFAULT_LORAS_BY_LAYER.get(p.layer, [])
+            lora_triggers = ""
+            lora_suffix = ""
+
+        sig = _signature(p, lora_stack)
+        # Override LoRA writes to a sibling filename so canonical output
+        # remains intact for A/B comparison. Default LoRA flow uses the
+        # canonical filename.
+        out_filename = (
+            p.filename.replace(".webp", f"{lora_suffix}.webp")
+            if lora_suffix
+            else p.filename
+        )
+        out_path = STATIC_DIR / out_filename
+        if not args.regen and manifest.get(out_filename) == sig and out_path.exists():
+            print(f"[{i}/{len(selection)}] {out_filename}  -- up to date, skip")
             continue
 
-        print(f"[{i}/{len(selection)}] {p.filename}  ({p.width}x{p.height}, seed={p.seed})", flush=True)
+        print(f"[{i}/{len(selection)}] {out_filename}  ({p.width}x{p.height}, seed={p.seed})", flush=True)
         t0 = time.monotonic()
-        raw_path = RAW_DIR / f"{p.layer}-{p.terrain}.png"
-        generate_to(raw_path, p.full_prompt, NEGATIVE_PROMPT, p.width, p.height, p.seed)
+        raw_path = RAW_DIR / f"{p.layer}-{p.terrain}{lora_suffix}.png"
+        # Backdrop tiles parallax-scroll horizontally → seamless x-axis
+        # tiling so adjacent copies have invisible seams. Ground tiles
+        # are static (no horizontal scroll) → non-seamless.
+        is_parallax_layer = p.layer == "backdrop"
+        generate_to(
+            raw_path,
+            f"{lora_triggers}{p.full_prompt}",
+            NEGATIVE_PROMPT,
+            p.width,
+            p.height,
+            p.seed,
+            seamless=is_parallax_layer,
+            loras=lora_stack or None,
+        )
 
-        if p.layer == "ground":
-            copy_opaque_to_webp(raw_path, out_path)
-        else:
-            to_webp_with_alpha(raw_path, out_path)
+        # Single-backdrop architecture: every tile is opaque. The alpha
+        # / matting / band-crop machinery from the 4-layer rebuild was
+        # removed; layer-isolation is no longer attempted post-gen.
+        copy_opaque_to_webp(raw_path, out_path)
+        manifest_key = out_filename
+
+        # NOTE: seam.py post-process was tested but disabled here — every
+        # variant (narrow feather, wide feather, offset+gauss-blur) made
+        # the visible artifact WORSE than the raw seamless output (created
+        # hazy washed bands or blurry strips inside the painting). The
+        # fundamental issue is that painting edges show different content
+        # (sky vs tree, mesa vs sand) so no purely-pixel post-process makes
+        # them appear continuous. Real fixes are out-of-scope for this
+        # commit: train a tileable LoRA, prompt explicitly for matching
+        # edges, or accept the residual line at scrolling speed.
+        # if p.layer == "backdrop":
+        #     blend_horizontal_seam(out_path, out_path)
 
         elapsed = time.monotonic() - t0
-        manifest[p.filename] = sig
+        manifest[manifest_key] = sig
         _save_manifest(manifest)
         print(f"   -> {out_path.relative_to(THIS_DIR.parent.parent)}  ({elapsed:.1f}s)\n")
+
+        # Thermal cooldown — back-to-back SDXL generations push the
+        # 3070 Laptop's GPU above 100°C. Pause briefly so the cooler
+        # can catch up before the next tile starts. Skipped after the
+        # final tile.
+        if args.cooldown > 0 and i < len(selection):
+            print(f"   ...cooldown {args.cooldown}s\n", flush=True)
+            time.sleep(args.cooldown)
 
     print("done.")
 

@@ -29,3 +29,14 @@ dev.db
 dev.db-*
 *.log
 drizzle/meta
+
+# wagon-bg pipeline scratch
+# 2.5GB of LoRA training data — produced once, lives outside git
+tools/wagon-bg/lora-train/
+# Experimental LoRA-suffix outputs from generate.py's --lora override flag.
+# Production tiles live at static/wagon-bg/<layer>-<terrain>[-<variant>].webp
+# (no suffix). Already-tracked --v2_2000@1.0 files are 4-layer-era artifacts
+# that git won't re-ignore even though they match this pattern.
+static/wagon-bg/*--cottagecore@*.webp
+static/wagon-bg/*--ht_*@*.webp
+static/wagon-bg/*--v2_*@*.webp

@@ -1,8 +1,8 @@
 <script lang="ts">
   // Near parallax layer — foreground tufts, rocks, and biome accents
   // the wagon walks past. Scrolls at 0.85x of the scene scrollX,
-  // tile width 200 (SVG) or 2048 (raster).
-  import { page } from '$app/state';
+  // tile width 200; three tile copies for seamless scrolling.
+  // In raster mode, BackdropPainting replaces this layer entirely.
   import type { Terrain } from '$lib/game/types';
 
   interface Props {
@@ -13,19 +13,10 @@
 
   let { terrain, scrollX, groundY }: Props = $props();
 
-  const useRaster = $derived(page.url.searchParams.get('raster') === '1');
-
   const TILE_W = 200;
   const SCROLL_FACTOR = 0.85;
-  const RASTER_TILE_W = 2048;
-  const RASTER_TILE_H = 256;
-
-  const x = $derived(
-    -((scrollX * SCROLL_FACTOR) % (useRaster ? RASTER_TILE_W : TILE_W))
-  );
-  const offsets = $derived(
-    useRaster ? [0, RASTER_TILE_W] : [0, TILE_W, TILE_W * 2]
-  );
+  const x = $derived(-((scrollX * SCROLL_FACTOR) % TILE_W));
+  const offsets = [0, TILE_W, TILE_W * 2];
 
   const prairieGrassXs = [10, 35, 70, 110, 140, 175];
   const forestStumpXs = [20, 80, 140];
@@ -34,17 +25,7 @@
 <g>
   {#each offsets as offset (offset)}
     {@const tx = x + offset}
-    {#if useRaster}
-      <image
-        href="/wagon-bg/near-{terrain}.webp"
-        x={tx}
-        y={groundY - RASTER_TILE_H}
-        width={RASTER_TILE_W}
-        height={RASTER_TILE_H}
-        preserveAspectRatio="none"
-      />
-    {:else}
-      <g transform="translate({tx} {groundY})">
+    <g transform="translate({tx} {groundY})">
         {#if terrain === 'prairie'}
           <g stroke="#4a3818" stroke-width="0.5" fill="none" stroke-linecap="round">
             {#each prairieGrassXs as px (px)}
@@ -87,6 +68,5 @@
           </g>
         {/if}
       </g>
-    {/if}
   {/each}
 </g>

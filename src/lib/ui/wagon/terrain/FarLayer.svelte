@@ -1,13 +1,11 @@
 <script lang="ts">
   // Far parallax layer — distant horizon silhouettes per biome.
-  // Scrolls at 0.15x of the scene scrollX, tile width 600 (SVG mode) or
-  // 2048 (raster mode). Drawn at horizonY in the parent's coordinate
-  // system; each terrain renders a different silhouette shape.
+  // Scrolls at 0.15x of the scene scrollX, tile width 600. Drawn at
+  // horizonY in the parent's coordinate system; each terrain renders
+  // a different silhouette shape.
   //
-  // When the URL query has `?raster=1`, the SVG-path branches are
-  // replaced by a per-terrain raster tile (`/wagon-bg/far-{terrain}.webp`).
-  // Both branches use the same tile-and-scroll structure.
-  import { page } from '$app/state';
+  // In raster mode, BackdropPainting replaces this layer entirely —
+  // WagonScene chooses one or the other. So this component stays SVG-only.
   import type { Terrain } from '$lib/game/types';
 
   interface Props {
@@ -19,22 +17,10 @@
 
   let { terrain, scrollX, horizonY }: Props = $props();
 
-  const useRaster = $derived(page.url.searchParams.get('raster') === '1');
-
-  // SVG-mode parallax tiling parameters
   const TILE_W = 600;
   const SCROLL_FACTOR = 0.15;
-
-  // Raster-mode parallax tiling parameters. Wider tile = larger wrap
-  // distance; the spec accepts the seam since it appears once per
-  // ~22 Travel pulses and is barely visible in motion.
-  const RASTER_TILE_W = 2048;
-  const RASTER_TILE_H = 512;
-
-  const x = $derived(
-    -((scrollX * SCROLL_FACTOR) % (useRaster ? RASTER_TILE_W : TILE_W))
-  );
-  const offsets = $derived(useRaster ? [0, RASTER_TILE_W] : [0, TILE_W]);
+  const x = $derived(-((scrollX * SCROLL_FACTOR) % TILE_W));
+  const offsets = [0, TILE_W];
 
   // Forest needs 60 conifer triangles per tile; precompute the indices
   // so the markup stays readable.
@@ -44,16 +30,7 @@
 <g>
   {#each offsets as offset (offset)}
     {@const tx = x + offset}
-    {#if useRaster}
-      <image
-        href="/wagon-bg/far-{terrain}.webp"
-        x={tx}
-        y={horizonY - RASTER_TILE_H}
-        width={RASTER_TILE_W}
-        height={RASTER_TILE_H}
-        preserveAspectRatio="none"
-      />
-    {:else if terrain === 'mountains'}
+    {#if terrain === 'mountains'}
       <g transform="translate({tx} {horizonY})">
         <path d="M 0 0 L 60 -34 L 100 -10 L 140 -42 L 200 -8 L 260 -28 L 320 -4 L 380 -36 L 460 -10 L 540 -32 L 600 0 Z"
               fill="#5a6a7a" stroke="#2a3a4a" stroke-width="0.8" />

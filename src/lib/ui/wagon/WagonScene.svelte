@@ -19,6 +19,7 @@
   // One requestAnimationFrame tick drives `t`. All motion derives
   // from `t` — no CSS animations, no setIntervals.
   import { untrack } from 'svelte';
+  import { page } from '$app/state';
   import type { GameState } from '$lib/game/types';
   import type { WagonModelId } from '$lib/game/content/wagons';
 
@@ -28,6 +29,8 @@
   import MidLayer from './terrain/MidLayer.svelte';
   import NearLayer from './terrain/NearLayer.svelte';
   import GroundBand from './terrain/GroundBand.svelte';
+  import BackdropPainting from './terrain/BackdropPainting.svelte';
+  import PaintedBackdrop from './terrain/painted/PaintedBackdrop.svelte';
   import { SCENE_W, SCENE_H, HORIZON_Y, GROUND_Y, type TimeOfDay } from './terrain';
 
   // Weather + sky
@@ -53,9 +56,31 @@
     timeOfDay?: TimeOfDay;
     /** When true, freezes all motion (parallax, wheels, gait, weather). */
     paused?: boolean;
+    /** Backdrop variant 0..N-1; only used in raster mode. Defaults to a
+     *  random pick at mount inside BackdropPainting if not provided. */
+    backdropVariant?: number;
   }
 
-  let { state: gameState, timeOfDay = 'day', paused = false }: Props = $props();
+  let { state: gameState, timeOfDay = 'day', paused = false, backdropVariant }: Props = $props();
+
+  // ---------- backdrop mode flags ----------
+  // Default: BackdropPainting — single 3072×768 horizon-vista painting per
+  // biome+variant (5 variants), opaque, parallax-scrolled. The painting
+  // contains its own sky/horizon/foreground, so SkyGradient + SkyAccent +
+  // CloudLayer are suppressed.
+  //
+  // Override via URL query:
+  //   ?svg=1        — legacy SVG Far/Mid/Near trio with sky elements rendered
+  //                   on top. Used as a fallback if a painted backdrop tile
+  //                   is missing or for stylistic comparison.
+  //   ?fourlayer=1  — experimental sky/far/mid/close compositing rig
+  //                   (kept as scaffolding; not actively used).
+  //   ?groundraster=1 — raster ground strip instead of the SVG gradient.
+  const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
+  const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
+  // Default rendering path — single painted backdrop. Either override
+  // turns this off.
+  const usePainting = $derived(!useFourLayer && !useSvgLayers);
 
   // ---------- animation tick ----------
   // When `paused`, the rAF loop is fully cancelled (#164) — no
@@ -167,46 +192,81 @@
 
 <div class="status panel">
   <div class="landscape">
-    <!-- Cropped viewBox: wagon (y 456..540) stays the centerpiece
-         while sky takes a larger share than ground. Vertical band:
-         sky 42% / wagon 47% / ground 11%. Container CSS aspect-ratio
-         matches the viewBox so the SVG scales cleanly with no slice
-         or letterbox at any column width. -->
-    <svg viewBox="0 380 {SCENE_W} 180" preserveAspectRatio="none">
+    <!-- Hero viewBox (#212): 400 SVG-units of vertical content matched
+         to the 1280:400 container aspect — preserveAspectRatio="none" no
+         longer stretches anything since SVG aspect now equals container
+         aspect. Vertical band y 200..600 in scene coords:
+           sky        y=200..380  (45%)
+           horizon    y=380..480  (25%)
+           wagon      y=480..540  (15%)
+           ground     y=540..600  (15%)
+         Sun (y=410) sits ~52% from top; ground band visible past wagon. -->
+    <svg viewBox="0 200 {SCENE_W} 400" preserveAspectRatio="none">
       <defs>
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
 
-      <!-- 1. sky -->
-      <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill="url(#ws-sky)" />
+      {#if useSvgLayers}
+        <!-- 1. sky gradient — SVG mode only. The painted backdrop and the
+             4-layer rig both contain their own sky; this rect would be
+             hidden under them. -->
+        <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill="url(#ws-sky)" />
 
-      <!-- 2. sun / moon — left side (clear of wagon) at y=410, which
-           sits in the upper third of the strip's sky band (visible
-           range y=380..456). -->
-      <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={410} t={tEff} />
+        <!-- 2. sun / moon — left side (clear of wagon) at y=410.
+             SVG mode only; painting modes have the sun painted in. -->
+        <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={410} t={tEff} />
 
-      <!-- 3. clouds — bandY=400 plants the cloud band a bit lower
-           in the sky (spread y=400..472) so the puffs don't kiss
-           the top edge of the strip. Drift is parallax-coupled to
-           the same scrollX the terrain layers use, so direction
-           and "stops when stopped" behavior follow ground motion. -->
-      <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
+        <!-- 3. clouds — SVG mode only; painting modes have clouds painted in. -->
+        <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
+      {/if}
 
-      <!-- 4. far parallax -->
-      <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      <!-- 4. backdrop — three modes:
+             default:       BackdropPainting (single horizon-vista painting)
+             ?svg=1:        SVG Far + Mid + Near layers (legacy)
+             ?fourlayer=1:  PaintedBackdrop (sky/far/mid/close stack — scaffolding) -->
+      {#if useFourLayer}
+        <PaintedBackdrop terrain={gameState.location.terrain}
+                         weather={gameState.weather}
+                         {scrollX} variant={backdropVariant} />
+      {:else if useSvgLayers}
+        <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      {:else}
+        <BackdropPainting terrain={gameState.location.terrain}
+                          {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y}
+                          variant={backdropVariant} />
+      {/if}
 
-      <!-- 5. landmarks -->
-      <LandmarkLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      <!-- 5. landmarks — game-progress markers. Currently SVG-mode only.
+           TODO (approach-backdrop concept): wire landmarks back into the
+           painting path as visible features. The vision is bespoke
+           painted backdrops loaded when the wagon is near a named
+           landmark, so the landmark appears in the horizon / mid-distance
+           of the painted scene itself rather than as an SVG overlay.
+           Suppressed in painting + 4-layer modes for now (the SVG glyphs
+           clash against painted backdrops; a couple were "popping in"
+           during scroll). -->
+      {#if useSvgLayers}
+        <LandmarkLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      {/if}
 
-      <!-- 6. mid parallax -->
-      <MidLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
+      {#if useSvgLayers}
+        <!-- 6. mid parallax — SVG mode only -->
+        <MidLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
+      {/if}
 
-      <!-- 7. ground band -->
+      <!-- 7. ground band — always rendered. Sits on top of the painted
+           backdrop's own ground in painting mode; the visible separation
+           between painted backdrop and the SVG ground band is intentional
+           (the wagon plants on the ground band, not the painting). A
+           detailed-ground follow-up will replace the gradient with
+           textured / animated content. -->
       <GroundBand terrain={gameState.location.terrain} groundY={GROUND_Y}
                   h={SCENE_H - GROUND_Y} w={SCENE_W} idPrefix="ws" />
 
-      <!-- 8. near parallax -->
-      <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
+      {#if useSvgLayers}
+        <!-- 8. near parallax — SVG mode only -->
+        <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
+      {/if}
 
       <!-- 9. ox/mule team — pole tip lands at wagonTongueTipSceneX -->
       <g transform="translate({wagonTongueTipSceneX} {GROUND_Y}) scale({SCENE_SCALE})">
@@ -255,13 +315,12 @@
     background: var(--c-panel);
     gap: 0.35em;
   }
-  /* Hero strip (#212): aspect bumped from 1280:180 (~7.1:1) to
-     1280:400 (~3.2:1) so the wagon scene reads as the page's star,
-     not a thin band. The 1280:180 viewBox stays — SVG paints with
-     preserveAspectRatio="none" to stretch the content vertically.
-     Background art (sky / wagon / ground) is therefore taller than
-     the original drawing intent; bespoke art for the bigger canvas
-     is logged under #156/#157/#159. */
+  /* Hero strip (#212): 1280:400 (~3.2:1) so the wagon scene reads as
+     the page's star, not a thin band. SVG viewBox now matches at
+     1280:400 (0 200 1280 400) so preserveAspectRatio="none" doesn't
+     visibly stretch anything — content is shown at its natural ratio.
+     Bespoke art (3072×960 painted backdrops sized for the hero) is
+     queued under #156/#157/#159. */
   .landscape {
     position: relative;
     width: 100%;
