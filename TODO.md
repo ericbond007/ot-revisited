@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 25 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 24 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -52,7 +52,6 @@ _(empty — items shipped or moved to other sections)_
 - **#183** — AI art / animation pipeline — eval libs + image-gen APIs
 - **#184** — Full game review — Sonnet pass on mechanics + balance
 - **#192** — Verify TradeModal + FordModal hero icons (audit branch, needs #185)
-- **#198** — Grizzly mauling risk on big-game hunts in mountain terrain
 - **#206** — [H] Whitman Mission as a post — historical check (1843-47 only)
 - **#268** — [H] Cold-weather food bump — frost / snow days +20% calorie need (audit gap from #266)
 - **#269** — [H] Soap as a craftable item — boosts wash_clothes efficacy (#230 follow-up)
@@ -129,6 +128,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#198** Grizzly mauling on big-game mountain hunts — 5% per-hunt risk on `target='big' && terrain='mountains'`, halved by Hunter profession (reads bear sign, hunts in pairs). On hit: -25 to -45 HP on a random alive adult + new `bear_mauling` condition (-3 HP/day, -1 morale/day, treated by bandages + laudanum, mirrors broken-leg shape). Independent of the routine 8% big-game injury roll, so a hunter can be both sprained AND mauled on the same trip — the maul is the headline. PostHuntModal swaps "🩹 was injured" for "🐻 was mauled by a grizzly" when `haul.mauled` is set. Period reality: Lewis & Clark catalogued grizzlies as the trail's most-feared animal; Snake / Sierra / Yellowstone diaries record maulings of solo hunters who startled sows or bears guarding kills. New `bear_mauling` ConditionId; `mauled?: boolean` added to HuntHaul (save-format compatible). 13 new tests; 1047/1047 green. (Updated conditions-catalog test from 11 → 12 conditions.)
 - **#260** Rifle salute on burial — new 4th choice on the existing burial event. Spends 3× gunpowder + 3× lead_balls + 3× percussion_caps (single 3-rifle volley, period custom for veteran or train-officer burials), grants +4 morale, clears `_burialPending`. Gated via `hidden: (s) => !canFireSalute(s)` so the choice doesn't render at all when ammo is short — the player only sees the option when they can actually take it. Caps are the natural bottleneck (1846+ split makes them the period-accurate scarce component). Defensive fallback to stone-mound semantics if hidden somehow lapses. 16 new tests; 1034/1034 green. (Updated #205 burial test to expect 4 choices.)
 - **#223** Washday camp action — closed as no-op; spec was already met by `wash_clothes` shipped in #230 (river-only camp action, +30 cleanliness across the alive party + 2 morale, 3 hr cost). The codebase has no separate degrading "clothing freshness" stat — the cleanliness 0-100 stat IS the modeled outcome of period emigrants washing their bodies and clothes at the same camp.
 - **#236** Cholera-year graves overlay — Ash Hollow + Chimney Rock arrival events get period-accurate cholera-cluster variants in 1849-1852 (peak Platte-corridor mortality, ~5,000 emigrant deaths). New `withGravesOverlay(base, body, debit, log)` helper composes a cholera variant from any base arrival event: same choices + gates (rope-down still requires rope, etc.), but each apply runs the base then layers a flat morale debit + "passed graves" log line, and the body text is rewritten to acknowledge the burials. `ash_hollow` cholera variant: -3 morale ("forty new graves between here and the bluff"). `chimney_rock` cholera variant: -2 morale ("scatter of fresh wooden crosses"). `getLandmarkArrivalEvent` returns the cholera variant when `state.date.year ∈ [1849, 1852]`. Pre-1849 + post-1852 unchanged. 16 new tests; 1017/1017 green. (Updated #227 test to seed 1848 so its chimney_rock isolation check isn't shadowed by the cholera variant.)

@@ -124,10 +124,10 @@
 
         {#if haul.injured}
           <div class="haul-row injury">
-            <span class="row-glyph">🩹</span>
+            <span class="row-glyph">{haul.mauled ? '🐻' : '🩹'}</span>
             <div class="row-body">
-              <span class="row-name"><strong>{haul.injured}</strong> was injured</span>
-              <span class="row-detail">Broken leg from the chase. Will need rest.</span>
+              <span class="row-name"><strong>{haul.injured}</strong> {haul.mauled ? 'was mauled by a grizzly' : 'was injured'}</span>
+              <span class="row-detail">{haul.mauled ? 'Severe wounds. Bleeding bad. Bandages and laudanum, fast.' : 'Broken leg from the chase. Will need rest.'}</span>
             </div>
           </div>
         {/if}
@@ -151,10 +151,10 @@
 
       {#if haul.injured}
         <div class="haul-row injury standalone">
-          <span class="row-glyph">🩹</span>
+          <span class="row-glyph">{haul.mauled ? '🐻' : '🩹'}</span>
           <div class="row-body">
-            <span class="row-name"><strong>{haul.injured}</strong> was injured</span>
-            <span class="row-detail">Broken leg from the chase. Will need rest.</span>
+            <span class="row-name"><strong>{haul.injured}</strong> {haul.mauled ? 'was mauled by a grizzly' : 'was injured'}</span>
+            <span class="row-detail">{haul.mauled ? 'Severe wounds. Bleeding bad. Bandages and laudanum, fast.' : 'Broken leg from the chase. Will need rest.'}</span>
           </div>
         </div>
       {/if}

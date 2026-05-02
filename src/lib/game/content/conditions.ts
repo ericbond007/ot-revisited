@@ -91,6 +91,18 @@ export const CONDITIONS: Record<ConditionId, ConditionMeta> = {
     name: 'The Pox',
     dailyHealthDelta: -1,
     dailyMoraleDelta: -1
+  },
+  // #198 — grizzly mauling. Initial damage is applied at the hit site
+  // by the hunt() roll; this condition models the wound bleeding out
+  // over the days that follow. Bandages + laudanum mirror the broken-leg
+  // treatment shape — period emigrant care for severe wounds was
+  // identical: clean, wrap, dose for pain, hope for no infection.
+  bear_mauling: {
+    id: 'bear_mauling',
+    name: 'Bear Mauling',
+    dailyHealthDelta: -3,
+    dailyMoraleDelta: -1,
+    treatmentItems: ['bandages', 'laudanum']
   }
 };
 
