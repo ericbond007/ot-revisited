@@ -240,8 +240,9 @@ PROMPTS: list[TilePrompt] = [
        "panorama, no water, ground only, painterly cartoon adventure game art"),
     _t("ground", "mountains", 610004,
        "overhead view of a rocky dirt path across mountain ground, two parallel tire tracks in "
-       "packed earth, gravel and stones on both sides, looking straight down, no sky, no horizon, "
-       "no panorama, no snow, ground only, painterly cartoon adventure game art"),
+       "packed earth, gravel and stones on both sides, looking straight down, no sky, no horizon,"
+       " no panorama, no snow, ground only, painterly cartoon adventure game art"),
+
 ]
 
 

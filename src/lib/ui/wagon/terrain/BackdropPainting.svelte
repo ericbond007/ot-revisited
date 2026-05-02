@@ -11,7 +11,7 @@
   // Replaces the FarLayer + MidLayer + NearLayer trio in raster mode:
   // one cohesive painting reads as a unified scene, where four separate
   // alpha-masked tiles always fought for visual coherence.
-  import type { Terrain } from '$lib/game/types';
+  import type { Terrain, Weather } from '$lib/game/types';
 
   interface Props {
     terrain: Terrain;
@@ -21,20 +21,55 @@
     horizonY: number;
     /** Scene constant: bottom of mid band (top of GroundBand). */
     groundY: number;
-    /** Variant index 0..N-1. Defaults to a stable random pick at mount. */
+    /** Explicit variant index 0..N-1. When set, wins over weather-driven
+     *  selection — used by the dev viewer's variant dropdown. */
     variant?: number;
+    /** Current game weather. When set, picks a weather-appropriate
+     *  variant from the per-terrain pool (e.g. overcast → fog/cloud
+     *  variant, rain → after-rain variant). Falls through to random
+     *  when no mapping fits (clear, heat, frost, snow). */
+    weather?: Weather;
   }
 
-  let { terrain, scrollX, horizonY, groundY, variant }: Props = $props();
+  let { terrain, scrollX, horizonY, groundY, variant, weather }: Props = $props();
 
   // 5 painted variants per biome (0..4). Variant 0 keeps the original
   // unsuffixed filename (`backdrop-prairie.webp`); variants 1-4 use a
   // numeric suffix (`backdrop-prairie-1.webp` etc.).
   const N_VARIANTS = 5;
+
+  // Weather → variant mapping. Only weather states with fitting art get
+  // a forced variant; everything else falls through to the random pool.
+  // Phase 2 storm-mood LoRA retrain will populate the gaps for storms
+  // and snow specifically (current LoRA's storm priors are sky-dominant).
+  const WEATHER_VARIANT_MAP: Partial<Record<Terrain, Partial<Record<Weather, number>>>> = {
+    prairie: {
+      // overcast / fog / rain / storm → p2 (overcast w/ horizon rain band)
+      overcast: 2, fog: 2, rain: 2, storm: 2,
+    },
+    forest: {
+      overcast: 2, fog: 2,           // p2 morning fog
+      rain: 3, storm: 3,             // p3 after rain
+    },
+    mountains: {
+      overcast: 3, fog: 3, rain: 3, storm: 3,  // p3 low clouds
+    },
+    // desert has no weather-fitting variants — falls through to random.
+  };
+
   // Stable per-mount random pick when no explicit variant is passed —
   // re-evaluated only when the component remounts (e.g., dev Restart).
   const fallbackVariant = Math.floor(Math.random() * N_VARIANTS);
-  const v = $derived(variant ?? fallbackVariant);
+
+  // Resolution order: explicit `variant` prop > weather-driven > random.
+  const v = $derived.by(() => {
+    if (variant !== undefined) return variant;
+    if (weather) {
+      const mapped = WEATHER_VARIANT_MAP[terrain]?.[weather];
+      if (mapped !== undefined) return mapped;
+    }
+    return fallbackVariant;
+  });
 
   // SVG render dimensions for the painting. Source webp is 3072×768
   // native (4:1, see DIMS["backdrop"] in tools/wagon-bg/prompts.py).

@@ -24,9 +24,12 @@
   let oxCount = $state(4);
   let isMule = $state(false);
   let paused = $state(false);
-  let variant = $state(0);
+  // -1 → "auto" (no explicit override → BackdropPainting picks based on
+  // weather → fallback random). 0..4 → forced variant.
+  let variant = $state<number>(-1);
 
-  const VARIANTS = [0, 1, 2, 3, 4];
+  const VARIANTS = [-1, 0, 1, 2, 3, 4];
+  const variantLabel = (n: number) => (n === -1 ? 'auto (weather-driven)' : String(n));
 
   // Bumping `restartKey` remounts WagonScene with a fresh t=0 — the
   // rAF tick in the scene tracks scroll position internally, so this
@@ -38,6 +41,7 @@
 
   const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
   const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
+  const useGroundTex = $derived(page.url.searchParams.get('groundtex') === '1');
 
   const previewState = $derived.by(() => {
     const base = createInitialState({
@@ -65,7 +69,7 @@
     };
   });
 
-  function toggleQueryFlag(flag: 'svg' | 'groundraster') {
+  function toggleQueryFlag(flag: 'svg' | 'groundraster' | 'groundtex') {
     const url = new URL(window.location.href);
     const isOn = url.searchParams.get(flag) === '1';
     if (isOn) url.searchParams.delete(flag);
@@ -114,7 +118,7 @@
       <span>Backdrop variant</span>
       <select bind:value={variant} disabled={useSvgLayers}>
         {#each VARIANTS as n}
-          <option value={n}>{n}</option>
+          <option value={n}>{variantLabel(n)}</option>
         {/each}
       </select>
     </label>
@@ -154,11 +158,17 @@
       <input type="checkbox" checked={useGroundRaster} onchange={() => toggleQueryFlag('groundraster')} />
       <span>Raster ground (<code>?groundraster=1</code>)</span>
     </label>
+
+    <label class="cb raster-toggle">
+      <input type="checkbox" checked={useGroundTex} onchange={() => toggleQueryFlag('groundtex')} />
+      <span>Textured ground (<code>?groundtex=1</code>) — seamless biome texture, scrolling pattern</span>
+    </label>
   </section>
 
   <section class="stage">
     {#key restartKey}
-      <WagonScene state={previewState} {timeOfDay} {paused} backdropVariant={variant} />
+      <WagonScene state={previewState} {timeOfDay} {paused}
+                  backdropVariant={variant === -1 ? undefined : variant} />
     {/key}
   </section>
 

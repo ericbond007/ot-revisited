@@ -39,11 +39,17 @@
   }: Props = $props();
 
   // ---------- RAIN ----------
-  const RAIN_COUNT = 140;
-  const RAIN_ANGLE_DEG = 18;
-  const RAIN_ANGLE = (RAIN_ANGLE_DEG * Math.PI) / 180;
-  const RAIN_SPEED = 600;
-  const SPLASH_COUNT = 30;
+  // showLightning fires only on weather='storm' — use it as the
+  // signal to crank rain density / speed for Kurosawa-feel committed
+  // weather. Plain rain stays moderate.
+  const isStorm = $derived(showLightning);
+  const RAIN_COUNT = $derived(isStorm ? 260 : 140);
+  const RAIN_ANGLE_DEG = $derived(isStorm ? 22 : 18);
+  const RAIN_ANGLE = $derived((RAIN_ANGLE_DEG * Math.PI) / 180);
+  const RAIN_SPEED = $derived(isStorm ? 780 : 600);
+  const RAIN_OPACITY = $derived(isStorm ? 0.7 : 0.55);
+  const RAIN_STROKE = $derived(isStorm ? 0.9 : 0.7);
+  const SPLASH_COUNT = $derived(isStorm ? 56 : 30);
   const SPLASH_SPEED = 30;
 
   type Drop = { x1: number; y1: number; x2: number; y2: number; key: number };
@@ -143,7 +149,7 @@
   {#if showRain}
     {#each drops as d (d.key)}
       <line x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}
-            stroke="#b8c8d8" stroke-width="0.7" opacity="0.55" />
+            stroke="#b8c8d8" stroke-width={RAIN_STROKE} opacity={RAIN_OPACITY} />
     {/each}
     {#each splashes as s (s.key)}
       <ellipse cx={s.cx} cy={s.cy} rx="1.2" ry="0.4"
