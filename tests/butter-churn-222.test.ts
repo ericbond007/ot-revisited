@@ -118,7 +118,8 @@ describe('#222 applyButterChurn', () => {
   });
 
   it('butter accumulates across multiple days', () => {
-    let s = { ...withSetup(newGame(), 4), inventory: { ...withSetup(newGame(), 4).inventory, butter: 5 } };
+    const seeded = withSetup(newGame(), 4);
+    let s: GameState = { ...seeded, inventory: { ...seeded.inventory, butter: 5 } };
     s = applyButterChurn(s);
     expect(s.inventory.butter).toBe(7); // 5 + 2 from churn
   });

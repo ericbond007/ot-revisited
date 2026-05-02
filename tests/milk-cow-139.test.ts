@@ -272,10 +272,15 @@ describe('#139 milk counts as fresh nutrition group', () => {
     const { applyDietVariety } = await import('../src/lib/game/systems/diet');
     // The diet system reads _lastFoodGroups (set by applyDailyConsumption).
     // Two distinct groups → +1 morale.
+    // _lastFoodGroups is read via `as unknown as string[]` cast in diet.ts;
+    // the GameState['flags'] type doesn't model arrays, so cast here too.
     const s: GameState = {
       ...newGame(),
       morale: 50,
-      flags: { ...newGame().flags, _lastFoodGroups: ['starch', 'fresh'] }
+      flags: {
+        ...newGame().flags,
+        _lastFoodGroups: ['starch', 'fresh'] as unknown as Record<string, unknown>
+      }
     };
     const after = applyDietVariety(s);
     expect(after.morale).toBe(51);

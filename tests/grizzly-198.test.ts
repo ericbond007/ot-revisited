@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { hunt } from '../src/lib/game/actions/hunt';
+import { hunt, type HuntHaul } from '../src/lib/game/actions/hunt';
 import { CONDITIONS } from '../src/lib/game/content/conditions';
 import { createInitialState } from '../src/lib/game/engine';
-import type { GameState, HuntHaul } from '../src/lib/game/types';
+import type { GameState } from '../src/lib/game/types';
 
 function newGame(over: Partial<GameState> = {}): GameState {
   const s = createInitialState({

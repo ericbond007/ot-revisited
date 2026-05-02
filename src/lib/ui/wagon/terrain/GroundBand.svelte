@@ -25,9 +25,16 @@
 
   const useRaster = $derived(page.url.searchParams.get('groundraster') === '1');
 
-  const gradId = $derived(`${idPrefix}-${terrain}`);
-  const fadeId = $derived(`${idPrefix}-${terrain}-fade`);
-  const fills = $derived(GROUND_FILL[terrain] ?? GROUND_FILL.prairie);
+  // Match BackdropPainting's river → prairie fallback. River terrain is
+  // landmark-only (river crossings); LandmarkStage takes over there. If
+  // we land in WagonScene with terrain=river (transient state on arrival,
+  // dev preview, etc.), the painted backdrop falls back to prairie — the
+  // ground band must match or the foreground reads as a green stripe
+  // glued under a tan grass painting.
+  const groundTerrain = $derived(terrain === 'river' ? 'prairie' : terrain);
+  const gradId = $derived(`${idPrefix}-${groundTerrain}`);
+  const fadeId = $derived(`${idPrefix}-${groundTerrain}-fade`);
+  const fills = $derived(GROUND_FILL[groundTerrain] ?? GROUND_FILL.prairie);
 </script>
 
 <g>
