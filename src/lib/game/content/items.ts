@@ -195,6 +195,14 @@ export const ITEMS: Record<string, ItemMeta> = {
   // bag, big quality-of-life: leavens biscuits, settles upset stomachs,
   // counters alkali water sour. Period diaries mention it constantly.
   saleratus: { id: 'saleratus', name: 'Saleratus', category: 'tool', weightLbPerUnit: 0.5, description: 'Period baking soda. Leavens biscuits, settles stomachs, sweetens alkali water.' },
+  // Soap (#269) — bar of lye soap. With 1+ bar in inventory the
+  // wash_clothes camp action lifts cleanliness +50 instead of +30
+  // (matches the bath-house single-visit boost) and consumes 1 bar.
+  // Period reality: Frizzell 1852, Sarah Royce 1849 mention soap
+  // running out by Fort Laramie; lye-soap making was a regular camp
+  // chore — wood ash + tallow boiled down to a hard cake. The
+  // make_soap camp action models the craft path (see camp-actions.ts).
+  soap: { id: 'soap', name: 'Soap', category: 'tool', weightLbPerUnit: 0.5, description: 'Bar of lye soap. Wash clothes & bathe lifts cleanliness +50 instead of +30, consuming one bar.' },
   // Lard — rendered pork fat in a tin. Multi-use frontier staple:
   // cooking grease (every camp meal), axle dressing if you run out of
   // tar, skin salve for chapped hands and sunburn.
