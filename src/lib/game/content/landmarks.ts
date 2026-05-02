@@ -16,7 +16,8 @@ export type PostKind =
   | 'mountain'     // isolated mountain man — rust / weathered
   | 'frontier'     // mixed fur-trade / emigrant hub — default rust
   | 'end_of_trail' // luxurious last-chance — gold
-  | 'native';      // tribal seasonal camp — earth tones, teepee glyph (#202)
+  | 'native'       // tribal seasonal camp — earth tones, teepee glyph (#202)
+  | 'mission';     // missionary aid station — pale steel-blue, cross glyph (#206)
 
 export interface Landmark {
   id: string;
@@ -166,7 +167,9 @@ export const LANDMARKS: readonly Landmark[] = [
       'coat', 'blanket',
       'ox_shoes', 'rope', 'grain',
       'moccasins', 'buffalo_robe', 'beads',
-      'tobacco'
+      'tobacco',
+      // Robidoux was a fur trader — kept the small trinkets in stock.
+      'mirror', 'awl', 'thimble', 'pocket_knife'
     ] },
   { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post',
     // Fur-trade origin turned emigrant hub. The broadest selection on the
@@ -184,7 +187,8 @@ export const LANDMARKS: readonly Landmark[] = [
       'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'milk_cow', 'cheese_press', 'butter_crock', 'grain',
       'tobacco', 'whiskey', 'bible',
       'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
-      'moccasins', 'buffalo_robe', 'beads'
+      'moccasins', 'buffalo_robe', 'beads',
+      'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
   // Register Cliff sits ~60 mi past Laramie near present-day Guernsey.
   // The wagon ruts at Guernsey are a couple miles further along.
@@ -237,7 +241,9 @@ export const LANDMARKS: readonly Landmark[] = [
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
       'spare_plank', 'ox_shoes', 'rope', 'grain',
-      'moccasins', 'buffalo_robe'
+      'moccasins', 'buffalo_robe',
+      // Bridger's specialty per Marcy 1859 — fur-trade beads and trinkets.
+      'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
   // Shoshone summer camp on the upper Bear River (#202). Washakie's
   // Eastern Shoshone wintered around Wind River and rode south for the
@@ -276,7 +282,9 @@ export const LANDMARKS: readonly Landmark[] = [
       'epsom_salts', 'camphor', 'paregoric',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'grain', 'milk_cow', 'cheese_press', 'butter_crock',
-      'salt', 'tobacco', 'whiskey', 'harmonica'
+      'salt', 'tobacco', 'whiskey', 'harmonica',
+      // HBC supply lines kept abundant Plains trade goods on hand.
+      'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
     river: { depthFt: 5.0, currentMph: 3, ferryPrice: 6 } },
@@ -301,10 +309,32 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 50,  terrain: 'forest',    kind: 'landmark' },
   // Methodist mission at Waiilatpu, headwaters of the Walla Walla. Marcus
   // + Narcissa Whitman ran it as both medical aid and a layover for
-  // emigrants. The November 1847 massacre destroyed it; post-1847 parties
-  // saw a ruin (LandmarkStage handles via isLandmarkAbandoned).
-  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 60,  terrain: 'prairie',   kind: 'landmark',
-    abandonedAfterYear: 1847 },
+  // emigrants — Marcus was a physician, the farm produced wheat /
+  // peas / potatoes / corn, and the dairy ran cheese + butter. Period
+  // reality (#206): a real emigrant lifeline 1843-1847, then destroyed
+  // in the November 1847 massacre — abandonedAfterYear gates the post
+  // mode and triggers ruin styling for later parties. Sparse on dry
+  // goods and ammunition — the Whitmans were missionaries, not traders.
+  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 60,  terrain: 'prairie',   kind: 'trading_post',
+    postKind: 'mission',
+    abandonedAfterYear: 1847,
+    stockScale: 0.5,
+    services: ['gossip', 'inn', 'blacksmith'],
+    innNightlyRate: 1,
+    blurb: "Waiilatpu mission station on the Walla Walla. Marcus and Narcissa Whitman keep wheat, peas, potatoes, and beef from the farm; cheese and butter from the dairy. Dr. Whitman tends the sick when there's a doctor's call. Sparse on dry goods — they're missionaries, not traders.",
+    stock: [
+      // Farm produce — the whole point of stopping at Whitman's.
+      'flour', 'beans', 'dried_fruit', 'salt', 'lard',
+      'milk_cow', 'butter', 'cheese',
+      // Light medical — Marcus had a kit, not a pharmacy.
+      'bandages', 'quinine', 'laudanum',
+      // Smithy basics — Marcus did limited iron work.
+      'ox_shoes', 'rope', 'spare_plank',
+      // Modest comfort — Narcissa made coffee and tea for stops.
+      'coffee', 'tea',
+      // The Bible was the one thing they had in abundance.
+      'bible'
+    ] },
   // Fort Walla Walla sat ~25 mi west of the mission, on the Columbia
   // (the HBC post, not the later Army fort of the same name).
   { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 25,  terrain: 'prairie',   kind: 'trading_post',

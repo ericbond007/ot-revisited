@@ -36,10 +36,17 @@
   const useRaster = $derived(page.url.searchParams.get('groundraster') === '1');
   const useGroundtex = $derived(page.url.searchParams.get('groundtex') === '1');
 
-  const gradId = $derived(`${idPrefix}-${terrain}`);
-  const fadeId = $derived(`${idPrefix}-${terrain}-fade`);
-  const patId = $derived(`${idPrefix}-${terrain}-pat`);
-  const fills = $derived(GROUND_FILL[terrain] ?? GROUND_FILL.prairie);
+  // Match BackdropPainting's river → prairie fallback. River terrain is
+  // landmark-only (river crossings); LandmarkStage takes over there. If
+  // we land in WagonScene with terrain=river (transient state on arrival,
+  // dev preview, etc.), the painted backdrop falls back to prairie — the
+  // ground band must match or the foreground reads as a green stripe
+  // glued under a tan grass painting.
+  const groundTerrain = $derived(terrain === 'river' ? 'prairie' : terrain);
+  const gradId = $derived(`${idPrefix}-${groundTerrain}`);
+  const fadeId = $derived(`${idPrefix}-${groundTerrain}-fade`);
+  const patId = $derived(`${idPrefix}-${groundTerrain}-pat`);
+  const fills = $derived(GROUND_FILL[groundTerrain] ?? GROUND_FILL.prairie);
 
   // Pattern tile width in scene-coords. 1280 / 640 = 2 horizontal repeats
   // visible across the band — keeps any per-tile detail large enough to
@@ -145,7 +152,7 @@
          paints a perspective view of a trail; `xMidYMax slice` shows
          only the bottom foreground portion. -->
     <image
-      href="/wagon-bg/ground-{terrain}.webp"
+      href="/wagon-bg/ground-{groundTerrain}.webp"
       x="0"
       y={groundY}
       width={w}

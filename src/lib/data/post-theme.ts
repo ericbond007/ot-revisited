@@ -26,5 +26,8 @@ export const POST_THEME: Record<PostKind, PostTheme> = {
   mountain:     { accent: '#8a5a2a', glyph: ICON.post_kinds.mountain,     tag: 'Mountain outpost' },
   frontier:     { accent: '#b86a42', glyph: ICON.post_kinds.frontier,     tag: 'Frontier post' },
   end_of_trail: { accent: '#c9a05a', glyph: ICON.post_kinds.end_of_trail, tag: 'End of the trail' },
-  native:       { accent: '#7a5230', glyph: ICON.post_kinds.native,       tag: 'Native camp' }
+  native:       { accent: '#7a5230', glyph: ICON.post_kinds.native,       tag: 'Native camp' },
+  // Missionary aid station — pale steel-blue, restrained vs frontier
+  // rust. Reads as quiet/charitable rather than commercial. (#206)
+  mission:      { accent: '#6a8aa0', glyph: ICON.post_kinds.mission,      tag: 'Mission' }
 };

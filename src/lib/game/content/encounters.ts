@@ -9,6 +9,7 @@ import {
 } from '../systems/tribe-relations';
 import { addNews, effectHuntBonus, effectCholeraScare } from '../systems/news';
 import { hasLiveIndianTrader } from '../professions/predicates';
+import { setSpoilClock } from '../systems/spoilage';
 
 // Random trail encounters — wagon trains, soldiers, traders, natives.
 // These fire through the same rollEvent pipeline as weather / wagon
@@ -80,6 +81,37 @@ const going_back_party: GameEvent = {
             }
           },
           `Bought 20 lb flour and a spare ${part.replace(/_/g, ' ')} for $10.`
+        );
+      }
+    },
+    {
+      id: 'buy_trade_goods',
+      icon: '🪞',
+      label: 'Buy their trade-goods box ($3)',
+      silentLog: true,
+      apply: (s) => {
+        // Going-back parties often had no use for the trinket box they
+        // bought at Independence — Plains tribes were now BEHIND them.
+        // Period reality: heavy markdowns on these were a real road
+        // commerce thing.
+        if (s.cash < 3) {
+          return logLine(s, "They wanted $3 for the trade-goods box — you didn't have it.");
+        }
+        return logLine(
+          {
+            ...s,
+            cash: s.cash - 3,
+            inventory: {
+              ...s.inventory,
+              mirror: (s.inventory.mirror ?? 0) + 1,
+              vermilion: (s.inventory.vermilion ?? 0) + 1,
+              awl: (s.inventory.awl ?? 0) + 2,
+              thimble: (s.inventory.thimble ?? 0) + 3,
+              calico: (s.inventory.calico ?? 0) + 1,
+              pocket_knife: (s.inventory.pocket_knife ?? 0) + 1
+            }
+          },
+          'Bought their trade-goods box for $3 — mirror, vermilion jar, two awls, three thimbles, calico bolt, pocket knife. They had no use for it east of here.'
         );
       }
     },
@@ -304,6 +336,13 @@ const emigrant_grave: GameEvent = {
 // Period diaries call out "wagon graveyards" especially past Devil's
 // Gate and through the Bear River valley. The party can pick over a
 // wreck for usable wood and canvas — costs an hour of travel.
+// Period reality on wagon graveyards (Frizzell 1852, Lord 1849, Reed,
+// Sager): emigrants past Independence Rock and through the Bear Valley
+// ditched everything — iron stoves, dressers, mirrors, china tea sets,
+// half-bolts of cloth, books, jars of fruit preserves, harmonicas,
+// boxes of trade trinkets bought at Independence and never used. The
+// scavenge roll picks across that mix; a single wreck can yield 2-5
+// distinct items.
 const abandoned_wagon: GameEvent = {
   id: 'encounter_abandoned_wagon',
   category: 'encounter',
@@ -319,20 +358,93 @@ const abandoned_wagon: GameEvent = {
       isDefault: true,
       silentLog: true,
       apply: (s, rng) => {
+        const inventory: Record<string, number> = { ...s.inventory };
+        const finds: string[] = [];
+
+        // Always: 1-3 spare planks (the wagon itself).
         const planks = rng.int(1, 3);
-        const tookCanvas = rng.chance(0.5);
-        const inventory: Record<string, number> = {
-          ...s.inventory,
-          spare_plank: (s.inventory.spare_plank ?? 0) + planks
-        };
-        if (tookCanvas) {
+        inventory.spare_plank = (inventory.spare_plank ?? 0) + planks;
+        finds.push(`${planks} plank${planks === 1 ? '' : 's'}`);
+
+        // 50%: canvas off the bonnet.
+        if (rng.chance(0.5)) {
           inventory.canvas = (inventory.canvas ?? 0) + 1;
+          finds.push('canvas');
         }
-        const parts = [`${planks} spare plank${planks === 1 ? '' : 's'}`];
-        if (tookCanvas) parts.push('1 canvas');
+
+        // 30%: small trade trinkets (mirror / awl / thimble — light,
+        // often left because too "fancy" for the rest of the trip).
+        if (rng.chance(0.3)) {
+          const trinketRoll = rng.next();
+          let id: string, name: string;
+          if (trinketRoll < 0.25) { id = 'mirror'; name = 'a hand mirror'; }
+          else if (trinketRoll < 0.50) { id = 'awl'; name = 'an iron awl'; }
+          else if (trinketRoll < 0.75) { id = 'thimble'; name = 'a brass thimble'; }
+          else { id = 'pocket_knife'; name = 'a pocket knife'; }
+          inventory[id] = (inventory[id] ?? 0) + 1;
+          finds.push(name);
+        }
+
+        // 25%: salvageable food. Some piles spoiled; some still good.
+        if (rng.chance(0.25)) {
+          const foodRoll = rng.next();
+          if (foodRoll < 0.4) {
+            const lb = rng.int(3, 8);
+            inventory.flour = (inventory.flour ?? 0) + lb;
+            finds.push(`${lb} lb of flour`);
+          } else if (foodRoll < 0.7) {
+            const lb = rng.int(2, 5);
+            inventory.hardtack = (inventory.hardtack ?? 0) + lb;
+            finds.push(`${lb} lb of hardtack`);
+          } else if (foodRoll < 0.9) {
+            const lb = rng.int(1, 3);
+            inventory.dried_fruit = (inventory.dried_fruit ?? 0) + lb;
+            finds.push(`${lb} lb of dried fruit`);
+          } else {
+            inventory.coffee = (inventory.coffee ?? 0) + 1;
+            finds.push('a tin of coffee');
+          }
+        }
+
+        // 20%: comfort or musical item — books, instruments, whiskey
+        // were the most-described "abandoned" items in diaries.
+        if (rng.chance(0.2)) {
+          const comfortRoll = rng.next();
+          if (comfortRoll < 0.3) {
+            inventory.bible = (inventory.bible ?? 0) + 1;
+            finds.push('a Bible');
+          } else if (comfortRoll < 0.55) {
+            inventory.harmonica = (inventory.harmonica ?? 0) + 1;
+            finds.push('a harmonica');
+          } else if (comfortRoll < 0.75) {
+            inventory.whiskey = (inventory.whiskey ?? 0) + 1;
+            finds.push('a jug of whiskey');
+          } else if (comfortRoll < 0.92) {
+            inventory.tobacco = (inventory.tobacco ?? 0) + 1;
+            finds.push('a twist of tobacco');
+          } else {
+            inventory.fiddle = (inventory.fiddle ?? 0) + 1;
+            finds.push('a fiddle');
+          }
+        }
+
+        // 10%: bandages / quinine — abandoned medical kit. Period diaries
+        // mention these specifically when a family died of cholera and the
+        // train moved on without taking them.
+        if (rng.chance(0.1)) {
+          if (rng.chance(0.5)) {
+            const n = rng.int(1, 3);
+            inventory.bandages = (inventory.bandages ?? 0) + n;
+            finds.push(`${n} bandage${n === 1 ? '' : 's'}`);
+          } else {
+            inventory.quinine = (inventory.quinine ?? 0) + 1;
+            finds.push('a vial of quinine');
+          }
+        }
+
         return logLine(
           { ...s, inventory },
-          `Picked over the wreck — found ${parts.join(' and ')}.`
+          `Picked over the wreck — found ${finds.join(', ')}.`
         );
       }
     },
@@ -745,6 +857,138 @@ const native_hide_trade: GameEvent = {
   ]
 };
 
+// #239 — Salmon trade in the Snake / Columbia corridor. Period reality:
+// Salmon Falls (mile ~1450), Three Island, the Dalles fisheries — the
+// Shoshone-Bannock and the Plateau peoples (Nez Perce, Cayuse, Walla
+// Walla) ran extensive salmon trade with emigrants. Drying racks miles
+// long at the falls. Diaries describe whole 8-lb salmon for a knife
+// (Frizzell 1852) or a few rounds of beads (Royce 1849).
+//
+// Yields land in `game_meat` — same fresh-meat slot as a hunt kill,
+// same 3-day spoil clock. The log line names it salmon for flavor.
+const native_salmon_trade: GameEvent = {
+  id: 'encounter_native_salmon',
+  category: 'encounter',
+  title: 'Salmon at the river',
+  body: "A fishing party at a rapids — drying racks behind them, fresh-caught salmon laid on cedar. They wave you over. Whole fish for a few trade goods.",
+  weight: 3,
+  // Snake / Columbia salmon corridor — Three Island onward through the
+  // Dalles. Tribes in that range: Bannock, Nez Perce, Cayuse, Walla
+  // Walla. Friendly+ attitude required (>= 41) — hostile bands wouldn't
+  // trade.
+  gate: (s) => {
+    if (s.location.milesTraveled < 1200) return false;
+    if (s.location.milesTraveled > 2050) return false;
+    const here = tribesAtMile(s.location.milesTraveled);
+    if (!here.some((t) => getTribeAttitude(s, t.id) >= 41)) return false;
+    // Need at least one trade item in hand, otherwise the encounter
+    // dead-ends and just irritates the player.
+    return (s.inventory.beads ?? 0) > 0
+      || (s.inventory.tobacco ?? 0) > 0
+      || (s.inventory.fishing_line ?? 0) > 0;
+  },
+  choices: [
+    {
+      id: 'trade_fishhook',
+      icon: '🎣',
+      label: 'Trade a fishing line for ~8 lb salmon',
+      isDefault: true,
+      silentLog: true,
+      requires: { itemId: 'fishing_line', icon: '🎣', reason: 'Need a fishing line (hooks)' },
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 41)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They waved you on without trading.');
+        const yieldLb = hasLiveIndianTrader(s) ? 12 : 8;
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            fishing_line: Math.max(0, (s.inventory.fishing_line ?? 0) - 1),
+            game_meat: (s.inventory.game_meat ?? 0) + yieldLb
+          }
+        };
+        next = setSpoilClock(next, 'game_meat');
+        next = adjustTribeAttitude(next, tribe.id, 3);
+        return logLine(
+          next,
+          `Traded a fishing line to the ${tribe.name} — ${yieldLb} lb of fresh salmon. Eat soon. Relations +3.`
+        );
+      }
+    },
+    {
+      id: 'trade_tobacco',
+      icon: '🌿',
+      label: 'Trade tobacco for ~5 lb salmon',
+      silentLog: true,
+      requires: { itemId: 'tobacco', icon: '🌿', reason: 'Need tobacco' },
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 41)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They waved you on.');
+        const yieldLb = hasLiveIndianTrader(s) ? 8 : 5;
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            tobacco: Math.max(0, (s.inventory.tobacco ?? 0) - 1),
+            game_meat: (s.inventory.game_meat ?? 0) + yieldLb
+          }
+        };
+        next = setSpoilClock(next, 'game_meat');
+        next = adjustTribeAttitude(next, tribe.id, 2);
+        return logLine(
+          next,
+          `Tobacco for ${yieldLb} lb of fresh salmon. Relations +2.`
+        );
+      }
+    },
+    {
+      id: 'trade_beads',
+      icon: '📿',
+      label: 'Trade 2 strings of beads for ~4 lb salmon',
+      silentLog: true,
+      requires: { itemId: 'beads', icon: '📿', reason: 'Need beads' },
+      apply: (s, rng) => {
+        if ((s.inventory.beads ?? 0) < 2) {
+          return logLine(s, 'Only one string on hand — they shrugged and turned back to the racks.');
+        }
+        const tribe = pickTribe(s, rng, (a) => a >= 41)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'They waved you on.');
+        const yieldLb = hasLiveIndianTrader(s) ? 6 : 4;
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            beads: (s.inventory.beads ?? 0) - 2,
+            game_meat: (s.inventory.game_meat ?? 0) + yieldLb
+          }
+        };
+        next = setSpoilClock(next, 'game_meat');
+        next = adjustTribeAttitude(next, tribe.id, 2);
+        return logLine(
+          next,
+          `Two strings of beads for ${yieldLb} lb of fresh salmon. Relations +2.`
+        );
+      }
+    },
+    {
+      id: 'wave_off',
+      icon: '✋',
+      label: 'Wave them off — keep moving',
+      silentLog: true,
+      apply: (s, rng) => {
+        const tribe = pickTribe(s, rng, (a) => a >= 41)
+          ?? (tribesAtMile(s.location.milesTraveled)[0] ?? null);
+        if (!tribe) return logLine(s, 'Kept moving past the rapids.');
+        const next = adjustTribeAttitude(s, tribe.id, -1);
+        return logLine(next, `Passed the ${tribe.name} fishery without trading. Relations -1.`);
+      }
+    }
+  ]
+};
+
 /** All trail-encounter events. events.ts spreads these into its
  *  EVENTS registry on module load. */
 export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
@@ -758,5 +1002,6 @@ export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
   native_toll_demand,
   native_guide_offer,
   native_hunters_sharing,
-  native_hide_trade
+  native_hide_trade,
+  native_salmon_trade
 ];

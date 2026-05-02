@@ -40,11 +40,8 @@
   }
 
   const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
-  const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
   const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
   const useGroundTex = $derived(page.url.searchParams.get('groundtex') === '1');
-  // Default = painted backdrop (no flags). Either override turns it off.
-  const usePainting = $derived(!useSvgLayers && !useFourLayer);
 
   const previewState = $derived.by(() => {
     const base = createInitialState({
@@ -72,7 +69,7 @@
     };
   });
 
-  function toggleQueryFlag(flag: 'svg' | 'fourlayer' | 'groundraster' | 'groundtex') {
+  function toggleQueryFlag(flag: 'svg' | 'groundraster' | 'groundtex') {
     const url = new URL(window.location.href);
     const isOn = url.searchParams.get(flag) === '1';
     if (isOn) url.searchParams.delete(flag);
@@ -158,11 +155,6 @@
     </label>
 
     <label class="cb raster-toggle">
-      <input type="checkbox" checked={useFourLayer} onchange={() => toggleQueryFlag('fourlayer')} />
-      <span>4-layer painted backdrop (<code>?fourlayer=1</code>) — sky/far/mid/close stack (scaffolding)</span>
-    </label>
-
-    <label class="cb raster-toggle">
       <input type="checkbox" checked={useGroundRaster} onchange={() => toggleQueryFlag('groundraster')} />
       <span>Raster ground (<code>?groundraster=1</code>)</span>
     </label>
@@ -182,7 +174,7 @@
 
   <footer>
     <p class="hint">
-      Backdrop: <strong>{useFourLayer ? `4-layer v${variant}` : (useSvgLayers ? 'svg layers' : `painting v${variant}`)}</strong> |
+      Backdrop: <strong>{useSvgLayers ? 'svg layers' : `painting v${variant}`}</strong> |
       Ground: <strong>{useGroundRaster ? 'raster' : 'svg'}</strong> |
       Terrain: <strong>{terrain}</strong> |
       Weather: <strong>{weather}</strong> |

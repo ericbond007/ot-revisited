@@ -132,7 +132,17 @@ export const PRICES: Record<string, PriceEntry> = {
   // Native trade goods
   moccasins:    { buy: 3.00, sell: 1.50 },
   buffalo_robe: { buy: 8.00, sell: 4.00 },
-  beads:        { buy: 0.50, sell: 0.25 }
+  beads:        { buy: 0.50, sell: 0.25 },
+
+  // #216 trade goods — Plains-trader prices. Vermilion most expensive
+  // (mercury sulfide was a controlled chemical), calico mid-range
+  // (5-yard bolt), small metal goods cheap.
+  mirror:       { buy: 0.50, sell: 0.20 },
+  vermilion:    { buy: 1.00, sell: 0.40 },
+  awl:          { buy: 0.20, sell: 0.10 },
+  thimble:      { buy: 0.15, sell: 0.05 },
+  calico:       { buy: 2.00, sell: 0.80 },
+  pocket_knife: { buy: 0.50, sell: 0.20 }
 };
 
 export function getPrice(item: string): PriceEntry {

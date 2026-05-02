@@ -85,7 +85,9 @@ export function foodConsumedToday(state: GameState): number {
   const adults = aliveAdultCount(state);
   const children = aliveChildCount(state);
   const base = adults * perAdult + Math.floor(children * perAdult * CHILD_FOOD_MULT);
-  const weatherMult = WEATHER_FOOD_MULT[state.weather] ?? 1.0;
+  // state.weather is optional on pre-#153 saves; default to clear weather
+  // mult (1.0×) when absent.
+  const weatherMult = state.weather ? WEATHER_FOOD_MULT[state.weather] : 1.0;
   const adjusted = Math.round(base * PACE_FOOD_MULT[state.pace] * weatherMult);
   return hasLiveFarmer(state) ? Math.floor(adjusted * FARMER_FOOD_MULT) : adjusted;
 }

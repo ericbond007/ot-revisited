@@ -249,7 +249,27 @@ export const ITEMS: Record<string, ItemMeta> = {
 
   moccasins: { id: 'moccasins', name: 'Moccasins', category: 'native_trade', weightLbPerUnit: 1, description: 'Warmth +10 per person. Lightweight cold mitigation; pairs well with a coat.' },
   buffalo_robe: { id: 'buffalo_robe', name: 'Buffalo robe', category: 'native_trade', weightLbPerUnit: 8, description: 'Warmth +25 per person. Heavy but the warmest single item — indispensable in winter.' },
-  beads: { id: 'beads', name: 'Trade beads / calico', category: 'native_trade', weightLbPerUnit: 2, description: 'Currency for trading with Native tribes.' }
+  beads: { id: 'beads', name: 'Trade beads / calico', category: 'native_trade', weightLbPerUnit: 2, description: 'Currency for trading with Native tribes.' },
+
+  // #216 — Plains trader's pack. Marcy 1859 explicit list of trinkets
+  // emigrants carried specifically for native trade. Catlin's accounts
+  // and Frizzell / Royce diaries map the values:
+  //   - mirror:       small hand mirror, dance regalia + adornment
+  //   - vermilion:    mercury-sulfide red paint, most-prized item west
+  //                   of the Missouri; warpaint and ceremonial use
+  //   - awl:          iron sewing punch, replaced bone awls (high utility)
+  //   - thimble:      brass/iron, hide-sewing utility + worn as pendants
+  //   - calico:       printed cotton bolt (5 yards), dressmaking + regalia
+  //   - pocket_knife: folding Barlow knife, universal utility
+  // Yields better trade outcomes than tobacco/beads in the toll/trade
+  // encounters that accept them; vermilion sits at the top of the
+  // hierarchy.
+  mirror:       { id: 'mirror',       name: 'Hand mirror',      category: 'native_trade', weightLbPerUnit: 0.3,  description: 'Small silvered glass. Highly prized — used in dance regalia and personal adornment. Trade good.' },
+  vermilion:    { id: 'vermilion',    name: 'Vermilion',        category: 'native_trade', weightLbPerUnit: 0.2,  description: 'Mercury-sulfide red pigment for warpaint and ceremonial use. The most-prized trade item west of the Missouri.' },
+  awl:          { id: 'awl',          name: 'Iron awl',         category: 'native_trade', weightLbPerUnit: 0.1,  description: 'Iron sewing punch. Replaces bone awls — a Shoshone woman will trade well for one.' },
+  thimble:      { id: 'thimble',      name: 'Sewing thimble',   category: 'native_trade', weightLbPerUnit: 0.05, description: 'Brass thimble. Hide-sewing utility plus pendant value in regalia.' },
+  calico:       { id: 'calico',       name: 'Calico cloth',     category: 'native_trade', weightLbPerUnit: 1,    description: 'Printed cotton, ~5 yards per bolt. Plains women make dresses and ceremonial garb.' },
+  pocket_knife: { id: 'pocket_knife', name: 'Pocket knife',     category: 'native_trade', weightLbPerUnit: 0.1,  description: 'Folding Barlow knife. Universal utility — Frizzell traded one for an 8-lb salmon.' }
 };
 
 export function getItem(id: string): ItemMeta {

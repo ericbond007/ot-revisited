@@ -30,6 +30,13 @@ dev.db-*
 *.log
 drizzle/meta
 
+# Playwright MCP scratch — accessibility snapshots dropped here during
+# UI audits. Per-session noise, never source.
+.playwright-mcp/
+# Ad-hoc screenshot files dropped at the repo root by `mcp__playwright`
+# screenshot calls during audits.
+/wagon-audit-*.png
+
 # wagon-bg pipeline scratch
 # 2.5GB of LoRA training data — produced once, lives outside git
 tools/wagon-bg/lora-train/

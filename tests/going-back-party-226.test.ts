@@ -30,9 +30,11 @@ describe('#226 going-back party encounter', () => {
     expect(ENC.gate!(lateState)).toBe(true);
   });
 
-  it('has 4 choices: trade, mail_home, listen, pass', () => {
+  it('has 5 choices: trade, buy_trade_goods, mail_home, listen, pass', () => {
+    // buy_trade_goods (#216 follow-up) added so going-back parties can
+    // offload their trinket box at a discount.
     const ids = ENC.choices.map((c) => c.id).sort();
-    expect(ids).toEqual(['listen', 'mail_home', 'pass', 'trade'].sort());
+    expect(ids).toEqual(['buy_trade_goods', 'listen', 'mail_home', 'pass', 'trade'].sort());
   });
 
   it('mail_home choice: morale +1, no other state change', () => {
