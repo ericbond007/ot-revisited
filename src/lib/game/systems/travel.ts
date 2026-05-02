@@ -6,6 +6,7 @@ import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
 import { gatherFirewoodOnTravel } from './fire';
 import { applyAxleGrease } from './wagon';
+import { rollStrayMorning } from './strays';
 import { hasLiveScout } from '../professions/predicates';
 import { weatherTravelMult } from './weather';
 
@@ -118,7 +119,19 @@ export function applyTravel(state: GameState, rng: Rng): GameState {
     };
   }
 
-  const miles = milesPerDay(startState);
+  // Stray-oxen morning roll (#221) — runs BEFORE distance is computed
+  // so the multiplier lands on actual miles. May mutate state via a
+  // rare permanent ox loss.
+  const strayResult = rollStrayMorning(startState, rng);
+  startState = strayResult.state;
+  if (strayResult.logLine) {
+    startState = {
+      ...startState,
+      eventLog: [...startState.eventLog, { day: startState.day, text: strayResult.logLine }]
+    };
+  }
+
+  const miles = Math.round(milesPerDay(startState) * strayResult.milesMult);
   const milesTraveled = startState.location.milesTraveled + miles;
 
   let next: GameState = {
