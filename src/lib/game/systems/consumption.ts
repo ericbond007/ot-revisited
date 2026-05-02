@@ -1,4 +1,4 @@
-import type { GameState, Pace, Rations } from '../types';
+import type { GameState, Pace, Rations, Weather } from '../types';
 import { foodItemIds } from '../content/items';
 import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
 import { weatherWaterMult } from './weather';
@@ -48,6 +48,23 @@ export const PACE_FOOD_MULT: Record<Pace, number> = {
   grueling: 1.25
 };
 
+// Cold-weather food bump (#268). Period reality: emigrant diaries
+// crossing the Wasatch and Blue Mountain frosts record sharply higher
+// food draw — a body burns more calories holding core temperature in
+// the cold than it does plowing through summer prairie. +20% on snow
+// and frost days; other weathers unchanged. Composes with pace and
+// farmer mults.
+export const WEATHER_FOOD_MULT: Record<Weather, number> = {
+  clear:    1.00,
+  overcast: 1.00,
+  rain:     1.00,
+  storm:    1.00,
+  snow:     1.20,
+  heat:     1.00,
+  fog:      1.00,
+  frost:    1.20
+};
+
 export function aliveCount(state: GameState): number {
   return state.party.filter((m) => !m.dead).length;
 }
@@ -65,8 +82,9 @@ export function foodConsumedToday(state: GameState): number {
   const adults = aliveAdultCount(state);
   const children = aliveChildCount(state);
   const base = adults * perAdult + Math.floor(children * perAdult * CHILD_FOOD_MULT);
-  const paced = Math.round(base * PACE_FOOD_MULT[state.pace]);
-  return hasLiveFarmer(state) ? Math.floor(paced * FARMER_FOOD_MULT) : paced;
+  const weatherMult = WEATHER_FOOD_MULT[state.weather] ?? 1.0;
+  const adjusted = Math.round(base * PACE_FOOD_MULT[state.pace] * weatherMult);
+  return hasLiveFarmer(state) ? Math.floor(adjusted * FARMER_FOOD_MULT) : adjusted;
 }
 
 export function waterConsumedToday(state: GameState): number {
