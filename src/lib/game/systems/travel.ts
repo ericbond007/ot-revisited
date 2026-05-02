@@ -114,7 +114,14 @@ export function milesPerDay(state: GameState): number {
   // pipeline.
   const weatherMult = weatherTravelMult(state.weather);
 
-  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult);
+  // Milk cow drag (#139) — a tethered cow walks behind the wagon,
+  // grazing as it goes. -5% per cow, capped at -10%. Period reality:
+  // cow forces stops to nurse calves and graze; the wagon paces to
+  // her rather than the other way around.
+  const cows = state.inventory.milk_cow ?? 0;
+  const cowMult = Math.max(0.90, 1 - 0.05 * cows);
+
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult * cowMult);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.

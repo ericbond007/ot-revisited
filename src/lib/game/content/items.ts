@@ -35,6 +35,23 @@ export const ITEMS: Record<string, ItemMeta> = {
   // kept simple for now — no spoil clock, just a steady trickle from
   // the coop. foodDrawOrder 0.75 = after berries, before flour.
   egg:         { id: 'egg',         name: 'Egg',          category: 'food', weightLbPerUnit: 0.1, foodDrawOrder: 0.75, description: 'Fresh from the coop. Breakfast staple on the trail — variety beats hardtack.' },
+  // Fresh milk (#139) — daily yield from the wagon's milk cow. 1 unit
+  // = 1 gallon; weight kept at 1 lb/unit as a rations-equivalent
+  // abstraction (real milk is ~8 lb/gal, but the cow is metabolically
+  // converting grass directly — the wagon never carries the full weight
+  // because butter (#222) and consumption clear the pile daily). Spoils
+  // in 2 days via the spoilage system. foodDrawOrder 0.6 places milk
+  // between berries (0.5) and eggs (0.75) — period reality, families
+  // drank it at every meal it was available.
+  milk:        { id: 'milk',        name: 'Fresh milk',   category: 'food', weightLbPerUnit: 1, foodDrawOrder: 0.6, description: "Daily yield from the wagon's milk cow. Spoils in two days. Counts as a fresh nutrition group." },
+  // Farmer's cheese (#139) — pressed from milk via the cheese_press
+  // camp action. Period reality: 1 lb of cheese per gallon of milk
+  // (Beecher 1846, Marcy 1859), shelf-stable for ~2 weeks at trail
+  // temps when salted, longer in the cool wagon interior. We treat
+  // it as fully shelf-stable — abstraction, but reasonable at
+  // trail-journey timescale. foodDrawOrder 3 places it after fresh
+  // food and bacon — eaten as a daily protein, not the first draw.
+  cheese:      { id: 'cheese',      name: "Farmer's cheese", category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: "Pressed from milk in the cheese hoop. Salty, dense, keeps for weeks. A 'fresh' nutrition group for variety." },
   flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten after fresh meat.' },
   // Cornmeal — period staple alongside (or instead of) wheat flour. Cheaper,
   // ground locally, the foundation of johnnycakes and cornbread on the trail.
@@ -82,6 +99,11 @@ export const ITEMS: Record<string, ItemMeta> = {
   // Wagon-capped per model (light: 3 / prairie: 5 / heavy: 8). Lay
   // eggs daily. Can die to predator events or drown in rough fords.
   chicken: { id: 'chicken', name: 'Chicken', category: 'livestock', weightLbPerUnit: 3, description: 'Hen in a coop. Lays eggs daily while alive. Coop size limited by wagon model.' },
+  // Milk cow (#139) — walks tethered behind the wagon, drinks at stream
+  // crossings, grazes the same grass the oxen do. Weight 0 because the
+  // cow carries herself. Pace tax (-5% per cow, capped at -10%) lives
+  // in systems/travel.ts, not as wagon weight.
+  milk_cow: { id: 'milk_cow', name: 'Milk cow', category: 'livestock', weightLbPerUnit: 0, description: 'Walks tethered behind the wagon. Yields milk daily based on grazing quality. Slows pace ~5% per head.' },
 
   // Grain / oats for draft teams. Mules need it every day. Oxen
   // subsist on prairie grass when grazing is good (prairie/forest
@@ -152,6 +174,10 @@ export const ITEMS: Record<string, ItemMeta> = {
   cookware: { id: 'cookware', name: 'Cookware', category: 'tool', weightLbPerUnit: 15, description: 'Required to boil water (post-1854). Meals taste better, small morale bump.' },
   rope: { id: 'rope', name: 'Rope', category: 'tool', weightLbPerUnit: 8, description: 'Lower wagons down steep grades, secure loads, rescue fallen oxen.' },
   shovel: { id: 'shovel', name: 'Shovel', category: 'tool', weightLbPerUnit: 5, description: 'Enables well-digging, grave-digging, wagon extraction. Auto-digs firepit + latrine each camp.' },
+  // Cheese press kit (#139) — wooden hoop, cheesecloth, rennet jar,
+  // weight stones gathered at camp. Period dairying staple for
+  // emigrant families with milk cows. One kit, many cheeses.
+  cheese_press: { id: 'cheese_press', name: 'Cheese press', category: 'tool', weightLbPerUnit: 8, description: 'Hoop, cheesecloth, and rennet jar for pressing farmer\'s cheese. 2 gal milk → 2 lb cheese in a 2-hour camp action.' },
   salt: { id: 'salt', name: 'Salt', category: 'tool', weightLbPerUnit: 1, description: 'Preserves fresh game meat. Multiplies curing speed, reduces spoilage loss during the jerk process.' },
   // Saleratus — sodium bicarbonate (period name for baking soda). Tiny
   // bag, big quality-of-life: leavens biscuits, settles upset stomachs,

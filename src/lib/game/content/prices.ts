@@ -69,6 +69,18 @@ export const PRICES: Record<string, PriceEntry> = {
   blanket: { buy: 3.00, sell: 1.50 },
   tent:    { buy: 8.00, sell: 4.00 },
 
+  // Livestock — milk cow (#139). Period reality: a milk cow in 1840s
+  // Missouri ran $20-30; mid-trail posts charged a premium.
+  milk_cow: { buy: 25.00, sell: 12.00 },
+  // Fresh milk — sold by the gallon. Surplus could be traded at posts
+  // when oxen had grazing and the wagon was overstocked, though more
+  // often it was churned to butter (#222 follow-up) for shelf life.
+  milk:     { buy: 0.30, sell: 0.10 },
+  // Farmer's cheese — shelf-stable dairy. Posts will buy from the player.
+  cheese:   { buy: 0.50, sell: 0.20 },
+  // Cheese press kit — wooden hoop + cheesecloth + rennet jar.
+  cheese_press: { buy: 3.00, sell: 1.50 },
+
   // Tools
   iron_toolkit: { buy: 40.00, sell: 25.00 },
   cookware:     { buy: 8.00,  sell: 4.00 },

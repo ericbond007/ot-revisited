@@ -15,6 +15,7 @@ import { reapDead } from './systems/death';
 import { applySpoilage, applyHeatSpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
+import { applyDairy } from './systems/dairy';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
@@ -47,6 +48,10 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = progressConditions(s, rng);
   // Eggs lay at dawn so today's yield is available for today's meal.
   s = applyEggLay(s);
+  // Milk cow yield (#139) — runs alongside egg lay so today's milk is
+  // available for today's meal. Sets a weather-sensitive 1-4 day spoil
+  // clock; spoilage tick below clears any pile that's gone past.
+  s = applyDairy(s);
   // Spoilage runs BEFORE consumption so the party can't eat rotten meat
   // on its spoil-day. Any remaining fresh game_meat / eggs / berries
   // are zeroed out first; heat-day rancidity nibbles bacon + salt_pork.

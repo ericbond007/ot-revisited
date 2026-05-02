@@ -21,6 +21,13 @@ export const EGG_FRESH_DAYS = 14;
 /** Days fresh berries keep before molding. */
 export const BERRY_FRESH_DAYS = 3;
 
+/** Days fresh milk keeps in a cool wagon. Period dairying without
+ *  refrigeration: 2 days at moderate temps; the spoil clock refreshes
+ *  whenever the cow is milked again, which (#139) happens daily on
+ *  every grass-decent day, so a working cow keeps the pile turning
+ *  over even though any given gallon is short-lived. */
+export const MILK_FRESH_DAYS = 2;
+
 /** Per-item freshness rules. The flag name is the per-pile clock the
  *  spoilage tick watches. */
 interface SpoilRule {
@@ -49,6 +56,12 @@ const SPOIL_RULES: readonly SpoilRule[] = [
     flagKey: '_berrySpoilDay',
     freshDays: BERRY_FRESH_DAYS,
     spoilText: (qty) => `${qty} lb of berries molded through.`
+  },
+  {
+    itemId: 'milk',
+    flagKey: '_milkSpoilDay',
+    freshDays: MILK_FRESH_DAYS,
+    spoilText: (qty) => `${qty} gal of milk soured in the bucket.`
   }
 ];
 
@@ -59,13 +72,18 @@ export function computeSpoilDay(currentDay: number, freshDays = GAME_MEAT_FRESH_
 
 /** Set or refresh the spoil-day clock for the given item. Adders
  *  (hunt action, chickens lay, find_berries event) call this when
- *  adding to the pile so the clock is current. */
-export function setSpoilClock(state: GameState, itemId: string): GameState {
+ *  adding to the pile so the clock is current.
+ *
+ *  Pass `daysOverride` to lengthen / shorten the window for weather-
+ *  sensitive piles (#139 milk: heat 1d / normal 2d / frost 4d). Other
+ *  callers stick with the rule's default. */
+export function setSpoilClock(state: GameState, itemId: string, daysOverride?: number): GameState {
   const rule = SPOIL_RULES.find((r) => r.itemId === itemId);
   if (!rule) return state;
+  const days = daysOverride ?? rule.freshDays;
   return {
     ...state,
-    flags: { ...state.flags, [rule.flagKey]: state.day + rule.freshDays }
+    flags: { ...state.flags, [rule.flagKey]: state.day + days }
   };
 }
 

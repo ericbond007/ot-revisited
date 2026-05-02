@@ -53,6 +53,7 @@ export type CampActionId =
   | 'dig_out'
   | 'gather_firewood'
   | 'wash_clothes'
+  | 'press_cheese'
   | 'cannibalism_straws';
 
 function logLine(s: GameState, text: string): GameState {
@@ -620,6 +621,47 @@ const gatherFirewood: CampAction = {
   }
 };
 
+// Cheese press (#139) — 2 gal milk → 2 lb farmer's cheese, 2 hr. Period
+// reality: warm milk to ~85°F by the fire, add rennet, curd in 1-2 hr,
+// drain whey, salt, press in the wooden hoop with weight stones, age
+// 3-4 days. We model the active prep as a 2-hr camp action and abstract
+// the aging — cheese is in inventory and shelf-stable from the press.
+// Yield is 1 lb cheese per gallon, consistent across period sources
+// (Beecher 1846, Marcy 1859). Player runs the action again for more.
+const CHEESE_MILK_INPUT = 2;
+const CHEESE_OUTPUT_LB = 2;
+
+const pressCheese: CampAction = {
+  id: 'press_cheese',
+  label: 'Press cheese',
+  sub: '2 hr · 2 gal milk + cheese press → 2 lb cheese',
+  icon: '🧀',
+  hourCost: 2,
+  availability: (s) => {
+    if ((s.inventory.cheese_press ?? 0) < 1) {
+      return { available: false, reason: 'Need a cheese press (hoop, cloth, rennet jar).' };
+    }
+    if ((s.inventory.milk ?? 0) < CHEESE_MILK_INPUT) {
+      return { available: false, reason: `Need at least ${CHEESE_MILK_INPUT} gallons of fresh milk.` };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const newMilk = (s.inventory.milk ?? 0) - CHEESE_MILK_INPUT;
+    return logLine(
+      {
+        ...s,
+        inventory: {
+          ...s.inventory,
+          milk: newMilk,
+          cheese: (s.inventory.cheese ?? 0) + CHEESE_OUTPUT_LB
+        }
+      },
+      `Warmed ${CHEESE_MILK_INPUT} gallons of milk by the fire, added rennet, pressed the curd. ${CHEESE_OUTPUT_LB} lb of farmer's cheese.`
+    );
+  }
+};
+
 // Washday (#230) — laundry + a real bath at a river camp. Restores
 // cleanliness across the whole alive party. Period reality: women
 // boiled lye and beat clothes on rocks, kids splashed, men shaved.
@@ -882,6 +924,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   stitch_moccasins: stitchMoccasins,
   gather_firewood: gatherFirewood,
   wash_clothes: washClothes,
+  press_cheese: pressCheese,
   find_water: findWater,
   boil_water: boilWater,
   dig_well: digWell,

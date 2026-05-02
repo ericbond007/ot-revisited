@@ -19,7 +19,9 @@ const NUTRITION_GROUP: Record<string, NutritionGroup> = {
   game_meat:   'meat',
   berries:     'fresh',
   egg:         'fresh',
-  dried_fruit: 'fresh'
+  dried_fruit: 'fresh',
+  milk:        'fresh',
+  cheese:      'fresh'
 };
 
 const FOOD_PER_ADULT: Record<Rations, number> = {
