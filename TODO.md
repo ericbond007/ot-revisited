@@ -55,6 +55,7 @@ _(empty — items shipped or moved to other sections)_
 - **#192** — Verify TradeModal + FordModal hero icons (audit branch, needs #185)
 - **#198** — Grizzly mauling risk on big-game hunts in mountain terrain
 - **#206** — [H] Whitman Mission as a post — historical check (1843-47 only)
+- **#266** — [H] Food consumption audit — order, proportions, ration tiers; cross-check vs diaries (Marcy/Knight/Frizzell)
 
 ## New mechanics (extension)
 
