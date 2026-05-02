@@ -12,7 +12,7 @@ import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
 import { addNews, generatePostGossip, generateNewspaper, applyNewspaper } from '$lib/game/systems/news';
 import { maybeDeliverLetter } from '$lib/game/systems/letters';
-import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide, forgeOxShoes } from '$lib/game/systems/town-services';
+import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide, forgeOxShoes, useBathHouse } from '$lib/game/systems/town-services';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -490,6 +490,22 @@ export const actions: Actions = {
       throw error(409, 'no blacksmith here');
     }
     const result = forgeOxShoes(state, pairs);
+    state = result.state;
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  // #270 — Bath-house: $1/person, +50 cleanliness, +4 morale.
+  townBathHouse: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    if (!state.location.atLandmarkId) throw error(409, 'not at a landmark');
+    const here = getLandmark(state.location.atLandmarkId);
+    if (!(here.services ?? []).includes('bath_house')) {
+      throw error(409, 'no bath-house here');
+    }
+    const result = useBathHouse(state);
     state = result.state;
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };

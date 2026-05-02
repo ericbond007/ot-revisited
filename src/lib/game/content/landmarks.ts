@@ -41,7 +41,7 @@ export interface Landmark {
   // Town services available at this post (#152). Hubs (Laramie, Hall,
   // Dalles) carry the full menu; outposts and road ranches carry
   // subsets. Empty / omitted = post is trade-only.
-  services?: readonly ('blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide')[];
+  services?: readonly ('blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide' | 'bath_house')[];
   // Per-post inn rate override (USD/person/night). Defaults to the
   // global INN_DOLLARS_PER_PERSON_PER_NIGHT — only set on luxury posts.
   innNightlyRate?: number;
@@ -176,7 +176,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // trail — and famously the highest prices.
     postKind: 'frontier',
     stockScale: 1.5,
-    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'bath_house'],
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
       'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
@@ -356,7 +356,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
     stockScale: 1.3,
-    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'bath_house'],
     innNightlyRate: 2,
     blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",
     stock: [

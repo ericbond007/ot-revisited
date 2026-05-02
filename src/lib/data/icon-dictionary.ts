@@ -153,7 +153,8 @@ export const ICON = {
     gossip:     '📢',
     guide:      '🧭',
     store:      '🛍️',
-    newspaper:  '📰'
+    newspaper:  '📰',
+    bath_house: '🛁'
   },
   // Hunt-modal target list + post-hunt resolution flavor.
   fauna: {
