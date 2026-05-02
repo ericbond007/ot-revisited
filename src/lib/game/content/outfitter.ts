@@ -22,6 +22,8 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
   // Comfort
   'tobacco', 'whiskey', 'harmonica', 'fiddle', 'bible',
+  // Native trade goods (#216) — Plains-trader pack per Marcy 1859.
+  'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife',
   // Luxuries — useless on the trail, prestige score on arrival (#148).
   'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock'
 ];

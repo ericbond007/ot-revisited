@@ -166,7 +166,9 @@ export const LANDMARKS: readonly Landmark[] = [
       'coat', 'blanket',
       'ox_shoes', 'rope', 'grain',
       'moccasins', 'buffalo_robe', 'beads',
-      'tobacco'
+      'tobacco',
+      // Robidoux was a fur trader — kept the small trinkets in stock.
+      'mirror', 'awl', 'thimble', 'pocket_knife'
     ] },
   { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post',
     // Fur-trade origin turned emigrant hub. The broadest selection on the
@@ -184,7 +186,8 @@ export const LANDMARKS: readonly Landmark[] = [
       'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'milk_cow', 'cheese_press', 'butter_crock', 'grain',
       'tobacco', 'whiskey', 'bible',
       'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
-      'moccasins', 'buffalo_robe', 'beads'
+      'moccasins', 'buffalo_robe', 'beads',
+      'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
   // Register Cliff sits ~60 mi past Laramie near present-day Guernsey.
   // The wagon ruts at Guernsey are a couple miles further along.
@@ -237,7 +240,9 @@ export const LANDMARKS: readonly Landmark[] = [
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
       'spare_plank', 'ox_shoes', 'rope', 'grain',
-      'moccasins', 'buffalo_robe'
+      'moccasins', 'buffalo_robe',
+      // Bridger's specialty per Marcy 1859 — fur-trade beads and trinkets.
+      'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
   // Shoshone summer camp on the upper Bear River (#202). Washakie's
   // Eastern Shoshone wintered around Wind River and rode south for the
@@ -276,7 +281,9 @@ export const LANDMARKS: readonly Landmark[] = [
       'epsom_salts', 'camphor', 'paregoric',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'grain', 'milk_cow', 'cheese_press', 'butter_crock',
-      'salt', 'tobacco', 'whiskey', 'harmonica'
+      'salt', 'tobacco', 'whiskey', 'harmonica',
+      // HBC supply lines kept abundant Plains trade goods on hand.
+      'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
     river: { depthFt: 5.0, currentMph: 3, ferryPrice: 6 } },

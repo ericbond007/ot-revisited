@@ -85,6 +85,37 @@ const going_back_party: GameEvent = {
       }
     },
     {
+      id: 'buy_trade_goods',
+      icon: '🪞',
+      label: 'Buy their trade-goods box ($3)',
+      silentLog: true,
+      apply: (s) => {
+        // Going-back parties often had no use for the trinket box they
+        // bought at Independence — Plains tribes were now BEHIND them.
+        // Period reality: heavy markdowns on these were a real road
+        // commerce thing.
+        if (s.cash < 3) {
+          return logLine(s, "They wanted $3 for the trade-goods box — you didn't have it.");
+        }
+        return logLine(
+          {
+            ...s,
+            cash: s.cash - 3,
+            inventory: {
+              ...s.inventory,
+              mirror: (s.inventory.mirror ?? 0) + 1,
+              vermilion: (s.inventory.vermilion ?? 0) + 1,
+              awl: (s.inventory.awl ?? 0) + 2,
+              thimble: (s.inventory.thimble ?? 0) + 3,
+              calico: (s.inventory.calico ?? 0) + 1,
+              pocket_knife: (s.inventory.pocket_knife ?? 0) + 1
+            }
+          },
+          'Bought their trade-goods box for $3 — mirror, vermilion jar, two awls, three thimbles, calico bolt, pocket knife. They had no use for it east of here.'
+        );
+      }
+    },
+    {
       id: 'mail_home',
       icon: '✉️',
       label: 'Hand off a letter home',
@@ -305,6 +336,13 @@ const emigrant_grave: GameEvent = {
 // Period diaries call out "wagon graveyards" especially past Devil's
 // Gate and through the Bear River valley. The party can pick over a
 // wreck for usable wood and canvas — costs an hour of travel.
+// Period reality on wagon graveyards (Frizzell 1852, Lord 1849, Reed,
+// Sager): emigrants past Independence Rock and through the Bear Valley
+// ditched everything — iron stoves, dressers, mirrors, china tea sets,
+// half-bolts of cloth, books, jars of fruit preserves, harmonicas,
+// boxes of trade trinkets bought at Independence and never used. The
+// scavenge roll picks across that mix; a single wreck can yield 2-5
+// distinct items.
 const abandoned_wagon: GameEvent = {
   id: 'encounter_abandoned_wagon',
   category: 'encounter',
@@ -320,20 +358,93 @@ const abandoned_wagon: GameEvent = {
       isDefault: true,
       silentLog: true,
       apply: (s, rng) => {
+        const inventory: Record<string, number> = { ...s.inventory };
+        const finds: string[] = [];
+
+        // Always: 1-3 spare planks (the wagon itself).
         const planks = rng.int(1, 3);
-        const tookCanvas = rng.chance(0.5);
-        const inventory: Record<string, number> = {
-          ...s.inventory,
-          spare_plank: (s.inventory.spare_plank ?? 0) + planks
-        };
-        if (tookCanvas) {
+        inventory.spare_plank = (inventory.spare_plank ?? 0) + planks;
+        finds.push(`${planks} plank${planks === 1 ? '' : 's'}`);
+
+        // 50%: canvas off the bonnet.
+        if (rng.chance(0.5)) {
           inventory.canvas = (inventory.canvas ?? 0) + 1;
+          finds.push('canvas');
         }
-        const parts = [`${planks} spare plank${planks === 1 ? '' : 's'}`];
-        if (tookCanvas) parts.push('1 canvas');
+
+        // 30%: small trade trinkets (mirror / awl / thimble — light,
+        // often left because too "fancy" for the rest of the trip).
+        if (rng.chance(0.3)) {
+          const trinketRoll = rng.next();
+          let id: string, name: string;
+          if (trinketRoll < 0.25) { id = 'mirror'; name = 'a hand mirror'; }
+          else if (trinketRoll < 0.50) { id = 'awl'; name = 'an iron awl'; }
+          else if (trinketRoll < 0.75) { id = 'thimble'; name = 'a brass thimble'; }
+          else { id = 'pocket_knife'; name = 'a pocket knife'; }
+          inventory[id] = (inventory[id] ?? 0) + 1;
+          finds.push(name);
+        }
+
+        // 25%: salvageable food. Some piles spoiled; some still good.
+        if (rng.chance(0.25)) {
+          const foodRoll = rng.next();
+          if (foodRoll < 0.4) {
+            const lb = rng.int(3, 8);
+            inventory.flour = (inventory.flour ?? 0) + lb;
+            finds.push(`${lb} lb of flour`);
+          } else if (foodRoll < 0.7) {
+            const lb = rng.int(2, 5);
+            inventory.hardtack = (inventory.hardtack ?? 0) + lb;
+            finds.push(`${lb} lb of hardtack`);
+          } else if (foodRoll < 0.9) {
+            const lb = rng.int(1, 3);
+            inventory.dried_fruit = (inventory.dried_fruit ?? 0) + lb;
+            finds.push(`${lb} lb of dried fruit`);
+          } else {
+            inventory.coffee = (inventory.coffee ?? 0) + 1;
+            finds.push('a tin of coffee');
+          }
+        }
+
+        // 20%: comfort or musical item — books, instruments, whiskey
+        // were the most-described "abandoned" items in diaries.
+        if (rng.chance(0.2)) {
+          const comfortRoll = rng.next();
+          if (comfortRoll < 0.3) {
+            inventory.bible = (inventory.bible ?? 0) + 1;
+            finds.push('a Bible');
+          } else if (comfortRoll < 0.55) {
+            inventory.harmonica = (inventory.harmonica ?? 0) + 1;
+            finds.push('a harmonica');
+          } else if (comfortRoll < 0.75) {
+            inventory.whiskey = (inventory.whiskey ?? 0) + 1;
+            finds.push('a jug of whiskey');
+          } else if (comfortRoll < 0.92) {
+            inventory.tobacco = (inventory.tobacco ?? 0) + 1;
+            finds.push('a twist of tobacco');
+          } else {
+            inventory.fiddle = (inventory.fiddle ?? 0) + 1;
+            finds.push('a fiddle');
+          }
+        }
+
+        // 10%: bandages / quinine — abandoned medical kit. Period diaries
+        // mention these specifically when a family died of cholera and the
+        // train moved on without taking them.
+        if (rng.chance(0.1)) {
+          if (rng.chance(0.5)) {
+            const n = rng.int(1, 3);
+            inventory.bandages = (inventory.bandages ?? 0) + n;
+            finds.push(`${n} bandage${n === 1 ? '' : 's'}`);
+          } else {
+            inventory.quinine = (inventory.quinine ?? 0) + 1;
+            finds.push('a vial of quinine');
+          }
+        }
+
         return logLine(
           { ...s, inventory },
-          `Picked over the wreck — found ${parts.join(' and ')}.`
+          `Picked over the wreck — found ${finds.join(', ')}.`
         );
       }
     },

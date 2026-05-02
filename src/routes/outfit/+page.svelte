@@ -631,6 +631,34 @@
             <span class="group-chev">{isOpen ? '▾' : '▸'}</span>
           </button>
           {#if isOpen}
+            {#if g.cat === 'native_trade'}
+              <!-- #216 Trader's Pack — period-typical Plains-trader bundle
+                   per Marcy 1859. One click, six trinkets at standard
+                   prices. Buys: 1 mirror, 1 vermilion, 2 awls, 3 thimbles,
+                   1 calico, 2 pocket knives. -->
+              {@const bundleTotal = (PRICES.mirror.buy + PRICES.vermilion.buy + 2 * PRICES.awl.buy + 3 * PRICES.thimble.buy + PRICES.calico.buy + 2 * PRICES.pocket_knife.buy) * buyMult}
+              <div class="bundle-row">
+                <div class="bundle-label">
+                  <span class="bundle-glyph" aria-hidden="true">🪞</span>
+                  <div>
+                    <div class="bundle-name">Plains Trader's Pack</div>
+                    <div class="bundle-desc">1 mirror · 1 vermilion · 2 awls · 3 thimbles · 1 calico · 2 pocket knives — <strong>${bundleTotal.toFixed(2)}</strong></div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="bundle-add"
+                  onclick={() => {
+                    buyQty.mirror = (buyQty.mirror ?? 0) + 1;
+                    buyQty.vermilion = (buyQty.vermilion ?? 0) + 1;
+                    buyQty.awl = (buyQty.awl ?? 0) + 2;
+                    buyQty.thimble = (buyQty.thimble ?? 0) + 3;
+                    buyQty.calico = (buyQty.calico ?? 0) + 1;
+                    buyQty.pocket_knife = (buyQty.pocket_knife ?? 0) + 2;
+                  }}
+                >+ Add Pack</button>
+              </div>
+            {/if}
             <div class="item-grid">
               {#each g.ids as id}
                 {@const price = PRICES[id].buy * buyMult}
@@ -1238,6 +1266,51 @@
     gap: 0;
     padding: 0 0.4em 0.5em 0.4em;
   }
+  /* #216 — Plains Trader's Pack bundle row, top of native_trade group */
+  .bundle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1em;
+    padding: 0.6em 0.8em;
+    margin: 0 0.4em 0.4em 0.4em;
+    background: rgba(201, 106, 42, 0.10);
+    border: 1px dashed var(--c-rust);
+    border-radius: 4px;
+  }
+  .bundle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    min-width: 0;
+  }
+  .bundle-glyph {
+    font-size: 1.6em;
+    line-height: 1;
+  }
+  .bundle-name {
+    color: var(--c-rust);
+    font-weight: bold;
+    font-size: 0.95em;
+  }
+  .bundle-desc {
+    color: var(--c-tan);
+    font-size: 0.78em;
+    opacity: 0.85;
+  }
+  .bundle-add {
+    padding: 0.4em 0.9em;
+    background: var(--c-rust);
+    color: var(--c-cream);
+    border: 1px solid var(--c-rust-dark);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.85em;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .bundle-add:hover { filter: brightness(1.15); }
   .item-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

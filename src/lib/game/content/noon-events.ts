@@ -307,6 +307,69 @@ const noon_buffalo_wallow: GameEvent = {
   ]
 };
 
+// #216 follow-up — found a small leather pouch dropped from a wagon ahead.
+// Trail leftover: trade trinkets the previous train didn't bother with
+// when they ditched weight. Period diary echo: emigrant junk at every
+// noon stop past Independence Rock.
+const noon_trinket_pouch: GameEvent = {
+  id: 'noon_trinket_pouch',
+  category: 'finds',
+  title: 'A leather pouch by the trail',
+  body: "Something glints in the grass beside your noon spot. A small pouch, dropped or forgotten — a few thimbles, an awl, maybe a folded knife. Trade goods someone bought and never used.",
+  weight: 1,
+  choices: [
+    {
+      id: 'pocket_it',
+      icon: '🪡',
+      label: 'Pocket the pouch',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const inventory: Record<string, number> = { ...s.inventory };
+        const found: string[] = [];
+
+        // Always: 1-3 thimbles (smallest, most-dropped item).
+        const thimbles = rng.int(1, 3);
+        inventory.thimble = (inventory.thimble ?? 0) + thimbles;
+        found.push(`${thimbles} thimble${thimbles === 1 ? '' : 's'}`);
+
+        // 60%: 1 awl.
+        if (rng.chance(0.6)) {
+          inventory.awl = (inventory.awl ?? 0) + 1;
+          found.push('an awl');
+        }
+
+        // 30%: 1 small bonus — pocket knife, mirror, or vermilion.
+        if (rng.chance(0.3)) {
+          const bonusRoll = rng.next();
+          if (bonusRoll < 0.4) {
+            inventory.pocket_knife = (inventory.pocket_knife ?? 0) + 1;
+            found.push('a pocket knife');
+          } else if (bonusRoll < 0.75) {
+            inventory.mirror = (inventory.mirror ?? 0) + 1;
+            found.push('a hand mirror');
+          } else {
+            inventory.vermilion = (inventory.vermilion ?? 0) + 1;
+            found.push('a tin of vermilion');
+          }
+        }
+
+        return logLine({ ...s, inventory }, `Found a leather pouch — ${found.join(', ')}.`);
+      }
+    },
+    {
+      id: 'leave',
+      icon: '✋',
+      label: 'Leave it — owner might come back',
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 1) },
+        'Left the pouch where it lay. Felt right. Morale +1.'
+      )
+    }
+  ]
+};
+
 export const NOON_EVENTS: GameEvent[] = [
   noon_passing_train,
   noon_native_rider,
@@ -317,5 +380,6 @@ export const NOON_EVENTS: GameEvent[] = [
   noon_lost_emigrant,
   noon_antelope,
   noon_forgotten_pail,
-  noon_buffalo_wallow
+  noon_buffalo_wallow,
+  noon_trinket_pouch
 ];
