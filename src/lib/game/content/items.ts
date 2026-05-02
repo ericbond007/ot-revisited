@@ -48,7 +48,12 @@ export const ITEMS: Record<string, ItemMeta> = {
   // staple meat protein. Cured from game_meat + salt (camp action TBD).
   jerky:       { id: 'jerky',       name: 'Jerky',        category: 'food', weightLbPerUnit: 0.5, foodDrawOrder: 3.5, description: 'Dried strips of cured meat. Lean, salty, lasts indefinitely.' },
   hardtack:    { id: 'hardtack',    name: 'Hardtack',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 4, description: 'Indestructible biscuit. Fills bellies, drags morale.' },
-  dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Cures scurvy. Small morale boost when eaten.' },
+  // Dried fruit ate as a daily ration in the period — Marcy spec'd
+  // 15-25 lb per adult precisely because it was eaten alongside the
+  // bread and bacon, not last-resort. Draw order 1.5 puts it with the
+  // staples (after flour, before beans) — emigrants ate stewed fruit
+  // every meal. Audit pass #266 corrected this from a draw order of 5.
+  dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1.5, description: 'Apples, peaches, plums. Eaten daily with the staples — wards off scurvy.' },
   pemmican:    { id: 'pemmican',    name: 'Pemmican',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6, description: 'Native-prepared dried meat + fat. Never spoils.' },
   // Period sugar — sold as conical loaves (a.k.a. "loaf" or "lump" sugar)
   // wrapped in blue paper, broken off with sugar-nips. Treated as the
@@ -101,7 +106,12 @@ export const ITEMS: Record<string, ItemMeta> = {
   // hump" delicacy cuts, and the raw hide. Hides were rarely tanned on
   // the trail (3-week process); parties dried them flat and either
   // traded to natives / posts or used as rough wagon-canvas patches.
-  tallow:      { id: 'tallow',      name: 'Tallow',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Rendered animal fat. Cooking grease, candle stock, soap-making — eaten as a desperation calorie if it comes to that.' },
+  // Tallow is rendered fat — used as cooking grease, candle stock,
+  // and soap-making, NOT a daily ration. Period emigrants only ate it
+  // straight when food ran out (mountain-man tradition). Draw order
+  // 6.5 puts it after pemmican — last food drawn before starvation.
+  // Audit pass #266 corrected this from a draw order of 5.
+  tallow:      { id: 'tallow',      name: 'Tallow',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6.5, description: 'Rendered animal fat. Cooking grease, candle stock, soap. Eaten straight only as a desperation calorie.' },
   prize_cut:   { id: 'prize_cut',   name: 'Prize cut',    category: 'food', weightLbPerUnit: 1, foodDrawOrder: 0.3, description: 'Tongue and hump, the choicest cuts of a big-game kill. A trail-side delicacy — emigrant diaries write about it with relish.' },
   raw_hide:    { id: 'raw_hide',    name: 'Raw hide',     category: 'native_trade', weightLbPerUnit: 5, description: 'Untreated dried hide. Tanning takes weeks; on the trail you stockpile rawhide for trade with natives or posts (or rough wagon repair).' },
 
