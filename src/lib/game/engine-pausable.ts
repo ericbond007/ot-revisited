@@ -78,7 +78,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     && prevLandmarkAfter !== prevLandmarkBefore
     && s.flags._lastEventDay !== s.day
   ) {
-    const arrival = getLandmarkArrivalEvent(prevLandmarkAfter);
+    const arrival = getLandmarkArrivalEvent(prevLandmarkAfter, s);
     if (arrival) {
       if (arrival.bodyKey) {
         const resolvedBody = pickText(arrival.bodyKey, rng, arrival.body);

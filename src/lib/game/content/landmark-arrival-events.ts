@@ -90,6 +90,72 @@ const independenceRock: GameEvent = {
   ]
 };
 
+// 4th of July at the Rock (#227) — date-gated set-piece. Period
+// reality: emigrants aimed to reach Independence Rock by July 4 and
+// hold the date there; companies converging for sunrise gun-salutes,
+// fiddle dances after dark, antelope-feast suppers, toasts to the
+// Republic. Bruff (1849) and Porter (1860) describe it in detail.
+// Replaces the regular sign-the-rock event WHEN AND ONLY WHEN the
+// arrival lands on July 4.
+const independenceRockJuly4: GameEvent = {
+  id: 'arrival_independence_rock_july4',
+  category: 'historical',
+  title: 'Independence Rock — the Fourth of July',
+  body: 'Wagons from a half-dozen companies are circled around the Rock. A flag flies from the summit. Fiddles tune up. Someone is roasting an antelope. By tradition, this is the day a westbound party celebrates here — and prays the Sierras stay clear of snow until you reach them.',
+  weight: 1,
+  choices: [
+    {
+      id: 'salute_and_feast',
+      icon: '🎆',
+      label: 'Fire a 30-gun salute and join the feast',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => {
+        // Period detail: the salutes consumed real powder/lead/caps —
+        // diaries record companies pooling ammunition for the volleys.
+        const have = (id: string) => s.inventory[id] ?? 0;
+        const cost = 5;
+        if (have('gunpowder') < cost || have('lead_balls') < cost || have('percussion_caps') < cost) {
+          return logLine(
+            { ...s, morale: Math.min(100, s.morale + 8) },
+            'No powder to spare for the salute. Joined the feast and the dancing instead. Morale +8.'
+          );
+        }
+        const inventory = {
+          ...s.inventory,
+          gunpowder: have('gunpowder') - cost,
+          lead_balls: have('lead_balls') - cost,
+          percussion_caps: have('percussion_caps') - cost
+        };
+        return logLine(
+          { ...s, inventory, morale: Math.min(100, s.morale + 10) },
+          `30-gun sunrise salute, fiddles after dark, antelope feast — the trail's best day. Powder/balls/caps −${cost} each. Morale +10.`
+        );
+      }
+    },
+    {
+      id: 'sign_and_celebrate',
+      icon: '🎶',
+      label: 'Sign the Rock and dance the night',
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 8) },
+        'Carved the year on the Rock and danced till the fiddle gave out. Morale +8.'
+      )
+    },
+    {
+      id: 'press_on',
+      icon: '🚶',
+      label: 'Press on — every day matters',
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 3) },
+        'Tipped your hat to the Rock and the dancers and rolled west. Morale +3.'
+      )
+    }
+  ]
+};
+
 const devilsGate: GameEvent = {
   id: 'arrival_devils_gate',
   category: 'historical',
@@ -481,6 +547,22 @@ export const LANDMARK_ARRIVAL_EVENTS: Record<string, GameEvent> = {
   laurel_hill: laurelHill
 };
 
-export function getLandmarkArrivalEvent(landmarkId: string): GameEvent | undefined {
+export function getLandmarkArrivalEvent(
+  landmarkId: string,
+  state?: GameState
+): GameEvent | undefined {
+  // Date-gated set-pieces (#227) — when the arrival lands on a known
+  // historical day at the right landmark, return the special variant
+  // instead of the everyday event. Currently only July 4 at the Rock;
+  // other landmarks could follow the same pattern (Christmas Eve at
+  // Fort Hall, etc.).
+  if (
+    landmarkId === 'independence_rock'
+    && state
+    && state.date.month === 7
+    && state.date.day === 4
+  ) {
+    return independenceRockJuly4;
+  }
   return LANDMARK_ARRIVAL_EVENTS[landmarkId];
 }
