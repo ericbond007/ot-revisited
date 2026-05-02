@@ -1,5 +1,6 @@
 import type { GameState } from '../types';
 import type { GameEvent } from './events';
+import { runningMilesTo } from '../systems/travel';
 
 // Approach events fire BEFORE the party reaches a landmark — when a
 // distant feature first becomes visible on the horizon. Period reality
@@ -74,6 +75,118 @@ const threeIslandRouteChoice: GameEvent = {
   ]
 };
 
+// #235 — Barlow Road toll vs Columbia raft. End-of-trail decision past
+// The Dalles. Pre-1846: Barlow's road wasn't open yet, so rafting was
+// the only path; the toll choice is hidden. 1846+: real fork. Toll
+// math is Sam Barlow's actual schedule ($5/wagon + 10¢/head). Raft
+// roll: 30% smooth float, 55% rough water (lose ~25% of inventory),
+// 15% disaster (lose ~50% + injure a random adult). Raft re-anchors
+// milesTraveled to one mile shy of Oregon City; the engine bypasses
+// barlow_road + laurel_hill on the way through (see isBypassed in
+// systems/travel.ts).
+const barlowOrColumbia: GameEvent = {
+  id: 'approach_barlow_or_columbia',
+  category: 'historical',
+  title: 'The end of the wagon road',
+  body: "The Dalles lies behind you. Two ways down to the Willamette: south on Barlow's toll road around Mt. Hood — six dollars a wagon, a dime a head, and Laurel Hill yet to break — or float the Columbia, free and fast, through the Cascade rapids. The river has eaten wagons.",
+  weight: 1,
+  choices: [
+    {
+      id: 'barlow',
+      icon: '🛤️',
+      label: 'Take the Barlow Road (toll)',
+      isDefault: true,
+      silentLog: true,
+      hidden: (s) => s.date.year < 1846,
+      apply: (s) => {
+        const aliveHeads = s.party.filter((m) => !m.dead).length;
+        const toll = 5 + Math.ceil(aliveHeads * 0.1 * 10) / 10; // dime per head, kept to 2dp
+        const cash = Math.max(0, s.cash - toll);
+        return logLine(
+          { ...s, cash },
+          `Paid Sam Barlow's toll: $${toll.toFixed(2)} for the wagon and ${aliveHeads} heads. Laurel Hill ahead.`
+        );
+      }
+    },
+    {
+      id: 'raft',
+      icon: '🪵',
+      label: 'Raft the Columbia',
+      silentLog: true,
+      apply: (s, rng) => {
+        const orMiles = runningMilesTo('oregon_city');
+        const advance = {
+          ...s.location,
+          milesTraveled: orMiles - 1,
+          previousLandmarkId: 'the_dalles',
+          nextLandmarkId: 'oregon_city',
+          terrain: 'river' as const
+        };
+
+        const roll = rng.next();
+        if (roll < 0.30) {
+          // Smooth float — period reality, half of all rafters made it without incident.
+          return logLine(
+            {
+              ...s,
+              flags: { ...s.flags, _columbiaRaft: true },
+              location: advance,
+              morale: Math.min(100, s.morale + 3)
+            },
+            'The Columbia ran kind. Past the Cascades by water. Morale +3.'
+          );
+        }
+
+        if (roll < 0.85) {
+          // Rough water — lose ~25% of bulk inventory.
+          const inventory: Record<string, number> = {};
+          for (const [k, v] of Object.entries(s.inventory)) {
+            inventory[k] = Math.max(0, Math.floor(v * 0.75));
+          }
+          return logLine(
+            {
+              ...s,
+              flags: { ...s.flags, _columbiaRaft: true },
+              location: advance,
+              inventory,
+              morale: Math.max(0, s.morale - 4)
+            },
+            'The Cascades caught you. Crates went over the side — about a quarter of the wagon. Morale -4.'
+          );
+        }
+
+        // Disaster — half the wagon gone, a random adult battered.
+        const inventory: Record<string, number> = {};
+        for (const [k, v] of Object.entries(s.inventory)) {
+          inventory[k] = Math.max(0, Math.floor(v * 0.5));
+        }
+        const adultIdx = s.party
+          .map((m, i) => ({ m, i }))
+          .filter(({ m }) => !m.dead && m.kind === 'adult')
+          .map(({ i }) => i);
+        let party = s.party;
+        if (adultIdx.length > 0) {
+          const target = adultIdx[rng.int(0, adultIdx.length - 1)];
+          party = s.party.map((m, i) =>
+            i === target ? { ...m, health: Math.max(1, m.health - 25) } : m
+          );
+        }
+        return logLine(
+          {
+            ...s,
+            flags: { ...s.flags, _columbiaRaft: true },
+            location: advance,
+            inventory,
+            party,
+            morale: Math.max(0, s.morale - 10)
+          },
+          'The raft broke up at the Cascades. Half the wagon gone. Someone hurt bad. Morale -10.'
+        );
+      }
+    }
+  ]
+};
+
 const chimneyRockFirstSight: GameEvent = {
   id: 'approach_chimney_rock',
   category: 'historical',
@@ -114,7 +227,8 @@ interface ApproachEntry {
 
 export const LANDMARK_APPROACH_EVENTS: readonly ApproachEntry[] = [
   { landmarkId: 'chimney_rock', milesAway: 30, event: chimneyRockFirstSight },
-  { landmarkId: 'snake_three_island', milesAway: 10, event: threeIslandRouteChoice }
+  { landmarkId: 'snake_three_island', milesAway: 10, event: threeIslandRouteChoice },
+  { landmarkId: 'barlow_road', milesAway: 5, event: barlowOrColumbia }
 ];
 
 /** Per-landmark one-shot flag key. */

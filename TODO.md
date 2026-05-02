@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 29 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 28 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -81,7 +81,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Set-piece landmark events
 
-- **#235** — [H] Barlow Road toll vs Columbia raft — 1846+ explicit decision modal ($5/wagon + 10c/head vs raft-disaster)
 - **#236** — [H] Disease-camp landmark events — Ash Hollow / Chimney Rock cluster burials in cholera years
 
 ### Native interaction expansion (extends #121)
@@ -133,6 +132,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#235** Barlow Road toll vs Columbia raft — end-of-trail decision firing 5 mi past The Dalles via the approach-event registry. **Barlow** (default, 1846+ via `hidden` predicate): pay Sam Barlow's actual schedule — $5/wagon + $0.10/head, then continue overland through Laurel Hill to Oregon City. **Raft the Columbia**: free but tiered — 30% smooth float (+3 morale), 55% rough water (-25% bulk inventory, -4 morale), 15% disaster (-50% inventory, random adult takes 25 HP, -10 morale). Raft success re-anchors `milesTraveled` to one shy of `oregon_city` and sets `_columbiaRaft` flag; `isBypassed` in `systems/travel.ts` excludes barlow_road + laurel_hill from stop-worthy treatment so the engine walks past without parking. Pre-1846 the Barlow option is hidden via `hidden(s) => s.date.year < 1846` (Sam Barlow didn't open the road until late 1846). Period reality: half of all rafters made it without incident; the other half fed Cascades stories to every wagon train that followed. New `runningMilesTo` export from travel.ts. 20 new tests; 1001/1001 green.
 - **#234** Three Island Crossing route choice — strategic ford-or-detour decision firing 10 mi out via the approach-event registry from #233. Two choices: **Ford at Three Island** (default — silent commit, normal river UI fires on arrival) or **Skirt south through the Bruneau** (sets `_threeIslandDetour` flag, drops water 50%, morale -4, +18 fatigue on every living ox). New `isBypassed(state, landmarkId)` helper in `systems/travel.ts` reads the detour flag and excludes the river from `STOP_WORTHY_KINDS` so the engine walks past `snake_three_island` without parking — same hook will pick up #235 (Barlow vs Columbia) later. Period reality: the south-bank route through the Bruneau / Birds-of-Prey country avoided the wet crossing but ate 60 mi of waterless sage; the Three Island ford was the preferred path when the river was low. 13 new tests; 981/981 green.
 - **#233** Chimney Rock first-sight — new generalized **landmark-approach event** registry (parallel to landmark-arrival-events). Fires once per game when miles-to-target drops to a per-event threshold; one-shot via `flags._approachFired_<id>`. New `milesToLandmark(state, id)` helper exported from `systems/travel.ts` (sum of `milesFromPrevious` minus running miles, returns negative once past). New `chimneyRockFirstSight` event at 30 mi out — period reality: emigrants spotted the spire from 30-40 mi across the sage flats while still approaching Courthouse Rock; the days-long approach got more diary ink than the at-arrival moment. Two choices: press on (+2 morale) or pause to journal/sketch (+4). Wired into engine-pausable between travel and the regular event roll, skipped on stop-worthy arrivals so the post/river/end UI takes precedence. Pattern extends naturally to Scotts Bluff, the Tetons, Mt. Hood, etc. — append to `LANDMARK_APPROACH_EVENTS` and ship. 14 new tests; 968/968 green.
 - **#230** Cleanliness mechanic + Sweetwater washday — new per-member `cleanliness` 0-100 stat with daily decay (1.5/day base, ×1.33 grueling / ×1.5 heat / ×0 on rain+storm). New `systems/cleanliness.ts`: `decayCleanliness`, `applyDirtyMorale` (avg <30 → −1 morale, <10 → −2 morale + "filthy" log), `applyFilthDiseaseRisk` (per-adult 2% dysentery roll when below 10, halved by Doctor — same shape as `applyDirtyWaterRisk`), `washAll(state, boost)` shared by camp action and arrival event. Wired into the day-tick between heat-spoilage and consumption. New `wash_clothes` camp action (3hr, river-terrain only, +30 cleanliness all + 2 morale). New `arrival_sweetwater_washday` arrival event at `sweetwater_1` with three choices: full bath +50 / quick rinse +20 / press on. Save migration in `upgradeMember` defaults cleanliness to 100 retroactively. New game members start at 100. Soap deferred (craftable per Dave) and post bath-house deferred. 21 new tests; 954/954 green.

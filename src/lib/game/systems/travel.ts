@@ -53,7 +53,7 @@ const MULE_TERRAIN_BONUS: Partial<Record<Terrain, number>> = {
 // of the team ratio so a mixed team scales linearly.
 const MULE_SPEED_BONUS = 0.25;
 
-function runningMilesTo(id: string): number {
+export function runningMilesTo(id: string): number {
   let sum = 0;
   for (const l of LANDMARKS) {
     sum += l.milesFromPrevious;
@@ -128,6 +128,12 @@ const STOP_WORTHY_KINDS = new Set<string>(['trading_post', 'river', 'end']);
 // same way.
 function isBypassed(state: GameState, landmarkId: string): boolean {
   if (landmarkId === 'snake_three_island' && state.flags._threeIslandDetour) return true;
+  // #235 — Columbia raft skips barlow_road + laurel_hill entirely; the
+  // raft event re-anchors milesTraveled past them, so any cascade arrival
+  // through them shouldn't park.
+  if (state.flags._columbiaRaft && (landmarkId === 'barlow_road' || landmarkId === 'laurel_hill')) {
+    return true;
+  }
   return false;
 }
 
