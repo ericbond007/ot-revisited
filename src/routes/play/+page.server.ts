@@ -1,6 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error } from '@sveltejs/kit';
 import { rest } from '$lib/game/actions/rest';
+import { sundayLayBy } from '$lib/game/actions/sunday-lay-by';
+import { isSunday } from '$lib/game/utils/calendar';
 import { CAMP_ACTIONS_BY_ID, type CampActionId } from '$lib/game/actions/camp-actions';
 import { getLandmark } from '$lib/game/content/landmarks';
 import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
@@ -172,6 +174,21 @@ export const actions: Actions = {
 
     state = { ...state, flags, eventLog: appendedLog };
 
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  // #224 — Sunday lay-by. Only callable when state.date is a Sunday.
+  // Runs a single rest day with a Sabbath morale bonus on top of the
+  // standard rest mechanics. Live Preacher amplifies (+5 vs +3).
+  sundayLayBy: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    if (!isSunday(state.date)) {
+      throw error(409, 'Sunday lay-by is only available on Sundays.');
+    }
+    state = sundayLayBy(state);
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },

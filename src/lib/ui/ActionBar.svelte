@@ -9,6 +9,7 @@
     milesToNext,
     milesToNextOfKind
   } from './trail-map/trail-map-helpers';
+  import { isSunday } from '$lib/game/utils/calendar';
   // Action glyphs come from IconSprite (mounted in +layout.svelte). The
   // sprite's symbol ids are gi-travel / gi-rest / gi-hunt / gi-visit /
   // gi-ford. Travel paints itself in tan-bright; the others inherit
@@ -40,6 +41,8 @@
   );
   const atRiver = $derived(atLandmark?.kind === 'river');
   const travelBlocked = $derived(atRiver);
+  // #224 Sunday lay-by — Sabbath rest action visible only on Sundays.
+  const sundayToday = $derived(isSunday(gameState.date));
 
   // Persist travelDays across remounts. localStorage + sync init means the
   // stepper is never blank on re-render.
@@ -123,7 +126,7 @@
     class="travel-form"
   >
     <NumberStepper name="days" bind:value={travelDays} min={1} max={10} disabled={traveling || travelBlocked} ariaLabel="Travel days" />
-    <button type="submit" class="action travel" disabled={traveling || travelBlocked} title={travelBlocked ? 'Ford the river first' : ''}>
+    <button type="submit" class="action travel" disabled={traveling || travelBlocked} title={travelBlocked ? 'Ford the river first' : (sundayToday ? 'Traveling on the Sabbath — morale will suffer' : '')}>
       <svg class="gi gi-wide-travel" viewBox="0 0 64 40" aria-hidden="true"><use href="#gi-travel" /></svg>
       <span class="action-label">
         {#if traveling}
@@ -143,6 +146,15 @@
     <svg class="gi" viewBox="0 0 32 32" aria-hidden="true"><use href="#gi-rest" /></svg>
     <span class="action-label">Rest</span>
   </button>
+
+  {#if sundayToday}
+    <form method="POST" action="?/sundayLayBy&slot={qp}" use:enhance class="lay-by-form">
+      <button type="submit" class="action lay-by" disabled={traveling} title="Sabbath rest — religious morale, full ox recovery">
+        <span class="lay-by-glyph" aria-hidden="true">🕊️</span>
+        <span class="action-label">Lay by</span>
+      </button>
+    </form>
+  {/if}
 
   <button type="button" class="action" onclick={onhunt} disabled={traveling}>
     <svg class="gi gi-wide-hunt" viewBox="0 0 64 32" aria-hidden="true"><use href="#gi-hunt" /></svg>
@@ -278,6 +290,24 @@
   .action.travel {
     /* Slightly wider label to accommodate dynamic text */
     min-width: 8em;
+  }
+  /* #224 Sunday lay-by — Sabbath dove glyph in cream-ink. Visible only
+     on Sundays; sized to match the SVG-glyph buttons around it. */
+  .action.lay-by {
+    background: #2a2a32;
+    border-color: var(--c-cream);
+  }
+  .action.lay-by:hover:not(:disabled) {
+    background: #3a3540;
+    border-color: var(--c-cream);
+  }
+  .lay-by-glyph {
+    font-size: 1.4em;
+    line-height: 1;
+    display: block;
+  }
+  .lay-by-form {
+    display: contents;
   }
 
   /* Contextual highlight on the action panel border per location */

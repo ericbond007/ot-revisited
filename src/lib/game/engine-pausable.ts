@@ -16,6 +16,8 @@ import { applySpoilage, applyHeatSpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
 import { applyDairy, applyButterChurn } from './systems/dairy';
+import { isSunday } from './utils/calendar';
+import { hasLivePreacher } from './professions/predicates';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
@@ -45,6 +47,23 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
 
   let s = tickWeather(normalized, rng);
+
+  // Sabbath-breaking morale debit (#224). Religious diaries from
+  // Catherine Sager to the Reed family record the guilt of traveling
+  // Sundays; pragmatic captains argued miles over scripture. -2 morale
+  // per Sunday Travel (-3 with a live Preacher — they amplify both
+  // directions of the choice). The +morale bump for choosing the lay-
+  // by lives in actions/sunday-lay-by.ts; this debit fires only when
+  // the player presses Travel on a Sabbath.
+  if (isSunday(s.date)) {
+    const debit = hasLivePreacher(s) ? 3 : 2;
+    s = {
+      ...s,
+      morale: Math.max(0, s.morale - debit),
+      eventLog: [...s.eventLog, { day: s.day, text: `Traveled on the Sabbath. Morale −${debit}.` }]
+    };
+  }
+
   s = progressConditions(s, rng);
   // Eggs lay at dawn so today's yield is available for today's meal.
   s = applyEggLay(s);
