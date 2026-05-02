@@ -11,7 +11,8 @@
     INN_DOLLARS_PER_PERSON_PER_NIGHT,
     BROTHEL_DOLLARS_PER_MAN,
     GUIDE_DOLLARS_PER_DAY,
-    FORGE_OX_SHOES_DOLLARS_PER_PAIR
+    FORGE_OX_SHOES_DOLLARS_PER_PAIR,
+    BATH_HOUSE_DOLLARS_PER_PERSON
   } from '$lib/game/systems/town-services';
   import { POST_THEME } from '$lib/data/post-theme';
   import { ICON } from '$lib/data/icon-dictionary';
@@ -62,6 +63,7 @@
   const guideEstCost = $derived(GUIDE_DAYS_DEFAULT * GUIDE_DOLLARS_PER_DAY);
   const stakeEstCost = $derived(STAKE_DEFAULT);
   const forgeEstCost = $derived(Math.ceil(FORGE_PAIRS_DEFAULT * FORGE_OX_SHOES_DOLLARS_PER_PAIR));
+  const bathCost = $derived(aliveCount * BATH_HOUSE_DOLLARS_PER_PERSON);
 
   const wagonNeedsRepair = $derived(gameState.wagon.condition < 100);
 
@@ -184,6 +186,19 @@
           <span class="svc-sub">${innRate}/person/night · {aliveCount} {aliveCount === 1 ? 'person' : 'people'} · adjust nights on the next screen</span>
         </div>
       </button>
+    {/if}
+
+    {#if services.includes('bath_house')}
+      <!-- #270 — Flat-rate service like gossip/newspaper, direct form submit. -->
+      <form method="POST" action="?/townBathHouse&slot={qp}" use:enhance={() => () => {}} class="svc-form">
+        <button type="submit" class="svc-card" disabled={gameState.cash < bathCost || aliveCount === 0}>
+          <span class="svc-icon">{ICON.town_services.bath_house}</span>
+          <div class="svc-body">
+            <span class="svc-label">Soak at the bath-house</span>
+            <span class="svc-sub">${BATH_HOUSE_DOLLARS_PER_PERSON}/person · {aliveCount} {aliveCount === 1 ? 'person' : 'people'} · cleanliness +50, morale +4</span>
+          </div>
+        </button>
+      </form>
     {/if}
 
     {#if services.includes('guide')}

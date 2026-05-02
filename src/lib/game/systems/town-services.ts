@@ -2,6 +2,7 @@ import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { hasLiveBlacksmith } from '../professions/predicates';
 import { BLACKSMITH_TOWN_REPAIR_DISCOUNT } from '../professions/bonuses';
+import { washAll } from './cleanliness';
 
 // Town services available at the bigger trading posts: blacksmith
 // repairs, an inn for proper rest, and gambling. Each is opt-in per
@@ -12,7 +13,7 @@ import { BLACKSMITH_TOWN_REPAIR_DISCOUNT } from '../professions/bonuses';
 // All three are pure functions that return a new GameState. The play
 // route's server actions wrap them in form-handler shells.
 
-export type TownServiceKind = 'blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide';
+export type TownServiceKind = 'blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide' | 'bath_house';
 
 // --- Blacksmith ---
 
@@ -307,6 +308,46 @@ export function forgeOxShoes(state: GameState, pairs: number): ForgeOxShoesResul
     eventLog: [...state.eventLog, { day: state.day, text: flavor }]
   };
   return { state: next, pairs: n, cost };
+}
+
+// #270 — Bath-house at major trading posts. Period reality: by the
+// late 1840s Fort Laramie and a few river-port towns ran bath-houses
+// — tin tub, hot water carted from the kitchen, charge ~$1 for a soak.
+// The Dalles ran proper bath-houses by 1850 (steamboat-era). Big
+// cleanliness reset versus the 3-hour wash_clothes camp action that
+// only restores +30: a paid hot-water soak at a real bath-house gives
+// +50 across the alive party in a single visit. Period diaries (Royce,
+// Frizzell) describe these as the "first proper bath in three months."
+export const BATH_HOUSE_DOLLARS_PER_PERSON = 1;
+export const BATH_HOUSE_CLEANLINESS_BOOST = 50;
+export const BATH_HOUSE_MORALE_BUMP = 4;
+
+export interface BathHouseResult {
+  state: GameState;
+  cost: number;
+  bathed: number;
+}
+
+export function useBathHouse(state: GameState): BathHouseResult {
+  const alive = state.party.filter((m) => !m.dead);
+  if (alive.length === 0) {
+    return { state, cost: 0, bathed: 0 };
+  }
+  const cost = alive.length * BATH_HOUSE_DOLLARS_PER_PERSON;
+  if (state.cash < cost) {
+    throw new Error(`useBathHouse: not enough cash ($${state.cash} < $${cost})`);
+  }
+  let next = washAll(state, BATH_HOUSE_CLEANLINESS_BOOST);
+  next = {
+    ...next,
+    cash: next.cash - cost,
+    morale: Math.min(100, next.morale + BATH_HOUSE_MORALE_BUMP),
+    eventLog: [
+      ...next.eventLog,
+      { day: state.day, text: `Soaked in the bath-house — hot water, soap, a real towel. ${alive.length} bathed for $${cost}. Morale +${BATH_HOUSE_MORALE_BUMP}, cleanliness +${BATH_HOUSE_CLEANLINESS_BOOST}.` }
+    ]
+  };
+  return { state: next, cost, bathed: alive.length };
 }
 
 // --- Helpers ---
