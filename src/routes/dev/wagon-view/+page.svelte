@@ -39,6 +39,7 @@
   const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
   const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
   const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
+  const useGroundTex = $derived(page.url.searchParams.get('groundtex') === '1');
   // Default = painted backdrop (no flags). Either override turns it off.
   const usePainting = $derived(!useSvgLayers && !useFourLayer);
 
@@ -68,7 +69,7 @@
     };
   });
 
-  function toggleQueryFlag(flag: 'svg' | 'fourlayer' | 'groundraster') {
+  function toggleQueryFlag(flag: 'svg' | 'fourlayer' | 'groundraster' | 'groundtex') {
     const url = new URL(window.location.href);
     const isOn = url.searchParams.get(flag) === '1';
     if (isOn) url.searchParams.delete(flag);
@@ -161,6 +162,11 @@
     <label class="cb raster-toggle">
       <input type="checkbox" checked={useGroundRaster} onchange={() => toggleQueryFlag('groundraster')} />
       <span>Raster ground (<code>?groundraster=1</code>)</span>
+    </label>
+
+    <label class="cb raster-toggle">
+      <input type="checkbox" checked={useGroundTex} onchange={() => toggleQueryFlag('groundtex')} />
+      <span>Textured ground (<code>?groundtex=1</code>) — seamless biome texture, scrolling pattern</span>
     </label>
   </section>
 

@@ -257,11 +257,12 @@
       <!-- 7. ground band — always rendered. Sits on top of the painted
            backdrop's own ground in painting mode; the visible separation
            between painted backdrop and the SVG ground band is intentional
-           (the wagon plants on the ground band, not the painting). A
-           detailed-ground follow-up will replace the gradient with
-           textured / animated content. -->
+           (the wagon plants on the ground band, not the painting). The
+           `?groundtex=1` toggle (TODO #32 Phase A) replaces the gradient
+           with a seamless biome texture; scrollX drives the pattern
+           translate so the ground reads as moving with the wagon. -->
       <GroundBand terrain={gameState.location.terrain} groundY={GROUND_Y}
-                  h={SCENE_H - GROUND_Y} w={SCENE_W} idPrefix="ws" />
+                  h={SCENE_H - GROUND_Y} w={SCENE_W} {scrollX} idPrefix="ws" />
 
       {#if useSvgLayers}
         <!-- 8. near parallax — SVG mode only -->
