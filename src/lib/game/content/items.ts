@@ -35,6 +35,30 @@ export const ITEMS: Record<string, ItemMeta> = {
   // kept simple for now — no spoil clock, just a steady trickle from
   // the coop. foodDrawOrder 0.75 = after berries, before flour.
   egg:         { id: 'egg',         name: 'Egg',          category: 'food', weightLbPerUnit: 0.1, foodDrawOrder: 0.75, description: 'Fresh from the coop. Breakfast staple on the trail — variety beats hardtack.' },
+  // Fresh milk (#139) — daily yield from the wagon's milk cow. 1 unit
+  // = 1 gallon; weight kept at 1 lb/unit as a rations-equivalent
+  // abstraction (real milk is ~8 lb/gal, but the cow is metabolically
+  // converting grass directly — the wagon never carries the full weight
+  // because butter (#222) and consumption clear the pile daily). Spoils
+  // in 2 days via the spoilage system. foodDrawOrder 0.6 places milk
+  // between berries (0.5) and eggs (0.75) — period reality, families
+  // drank it at every meal it was available.
+  milk:        { id: 'milk',        name: 'Fresh milk',   category: 'food', weightLbPerUnit: 1, foodDrawOrder: 0.6, description: "Daily yield from the wagon's milk cow. Spoils in two days. Counts as a fresh nutrition group." },
+  // Farmer's cheese (#139) — pressed from milk via the cheese_press
+  // camp action. Period reality: 1 lb of cheese per gallon of milk
+  // (Beecher 1846, Marcy 1859), shelf-stable for ~2 weeks at trail
+  // temps when salted, longer in the cool wagon interior. We treat
+  // it as fully shelf-stable — abstraction, but reasonable at
+  // trail-journey timescale. foodDrawOrder 3 places it after fresh
+  // food and bacon — eaten as a daily protein, not the first draw.
+  cheese:      { id: 'cheese',      name: "Farmer's cheese", category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: "Pressed from milk in the cheese hoop. Salty, dense, keeps for weeks. A 'fresh' nutrition group for variety." },
+  // Wagon-pail butter (#222) — passive on travel days when the party
+  // owns a butter_crock + has ≥2 gal of fresh milk. The day's jostling
+  // does the churn for free; emigrant diaries (Royce, Sager, Williams)
+  // describe hanging the covered pail under the seat and finding
+  // butter by evening. 2 gal milk → 1 lb butter, salted for shelf
+  // life, eaten as a flavor staple on biscuits and johnnycakes.
+  butter:      { id: 'butter',      name: 'Butter',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 2.5, description: "Churned by the wagon's bouncing on travel days. Salty, shelf-stable, heaven on hot biscuits. A 'fresh' nutrition group." },
   flour:       { id: 'flour',       name: 'Flour',        category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1, description: 'Baseline staple. Eaten after fresh meat.' },
   // Cornmeal — period staple alongside (or instead of) wheat flour. Cheaper,
   // ground locally, the foundation of johnnycakes and cornbread on the trail.
@@ -48,7 +72,12 @@ export const ITEMS: Record<string, ItemMeta> = {
   // staple meat protein. Cured from game_meat + salt (camp action TBD).
   jerky:       { id: 'jerky',       name: 'Jerky',        category: 'food', weightLbPerUnit: 0.5, foodDrawOrder: 3.5, description: 'Dried strips of cured meat. Lean, salty, lasts indefinitely.' },
   hardtack:    { id: 'hardtack',    name: 'Hardtack',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 4, description: 'Indestructible biscuit. Fills bellies, drags morale.' },
-  dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Cures scurvy. Small morale boost when eaten.' },
+  // Dried fruit ate as a daily ration in the period — Marcy spec'd
+  // 15-25 lb per adult precisely because it was eaten alongside the
+  // bread and bacon, not last-resort. Draw order 1.5 puts it with the
+  // staples (after flour, before beans) — emigrants ate stewed fruit
+  // every meal. Audit pass #266 corrected this from a draw order of 5.
+  dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1.5, description: 'Apples, peaches, plums. Eaten daily with the staples — wards off scurvy.' },
   pemmican:    { id: 'pemmican',    name: 'Pemmican',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6, description: 'Native-prepared dried meat + fat. Never spoils.' },
   // Period sugar — sold as conical loaves (a.k.a. "loaf" or "lump" sugar)
   // wrapped in blue paper, broken off with sugar-nips. Treated as the
@@ -64,10 +93,24 @@ export const ITEMS: Record<string, ItemMeta> = {
 
   ox: { id: 'ox', name: 'Ox', category: 'livestock', weightLbPerUnit: 0, description: 'Draft animal. Pulls the wagon. More oxen = faster travel and higher carry cap.' },
   yoke: { id: 'yoke', name: 'Yoke', category: 'livestock', weightLbPerUnit: 15, description: 'Harnesses the oxen to the wagon. Replaces broken yokes.' },
+  // Ox bow (#215) — the steam-bent U-loop that fits up through the
+  // yoke and around an ox's neck. Two per yoke; cracks under shear
+  // load. Marcy 1859 explicitly prescribes 2 spares per wagon.
+  ox_bow: { id: 'ox_bow', name: 'Ox bow', category: 'livestock', weightLbPerUnit: 5, description: 'Steam-bent hickory neck loop. Cracks under load — Marcy spec\'d 2 spares per wagon.' },
+  // Picket pins + lariat (#221) — iron stakes driven into the ground,
+  // long rope tying the lead ox so the team grazes a known radius.
+  // Cuts the morning stray-search by 50%. Hobbles and a bell-ox were
+  // the period alternatives; pins were the most universal kit.
+  picket_pins: { id: 'picket_pins', name: 'Picket pins', category: 'livestock', weightLbPerUnit: 5, description: 'Iron stakes + 50 ft of rope. Tethers the team at night so they don\'t wander. Halves the morning stray-search.' },
   // Live chickens — carried in a coop strapped to the wagon bed.
   // Wagon-capped per model (light: 3 / prairie: 5 / heavy: 8). Lay
   // eggs daily. Can die to predator events or drown in rough fords.
   chicken: { id: 'chicken', name: 'Chicken', category: 'livestock', weightLbPerUnit: 3, description: 'Hen in a coop. Lays eggs daily while alive. Coop size limited by wagon model.' },
+  // Milk cow (#139) — walks tethered behind the wagon, drinks at stream
+  // crossings, grazes the same grass the oxen do. Weight 0 because the
+  // cow carries herself. Pace tax (-5% per cow, capped at -10%) lives
+  // in systems/travel.ts, not as wagon weight.
+  milk_cow: { id: 'milk_cow', name: 'Milk cow', category: 'livestock', weightLbPerUnit: 0, description: 'Walks tethered behind the wagon. Yields milk daily based on grazing quality. Slows pace ~5% per head.' },
 
   // Grain / oats for draft teams. Mules need it every day. Oxen
   // subsist on prairie grass when grazing is good (prairie/forest
@@ -84,7 +127,7 @@ export const ITEMS: Record<string, ItemMeta> = {
   // Tar bucket — pine-tar grease for axle hubs. Every emigrant diary
   // mentions one swinging under the wagon. Cuts frame-decay rate by
   // 25% while in the inventory.
-  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing in a bucket. Greases hubs and slows wagon wear by 25%.' },
+  tar_bucket:  { id: 'tar_bucket',  name: 'Tar bucket',     category: 'wagon_part', weightLbPerUnit: 5, description: 'Pine-tar axle dressing. Greases hubs to slow wagon wear by 25%. Consumed at ~one bucket per 500 miles of travel.' },
 
   // #182 hunt byproducts. Period emigrants pulled three things off a
   // big-game carcass besides meat: tallow (rendered fat — cooking
@@ -92,7 +135,12 @@ export const ITEMS: Record<string, ItemMeta> = {
   // hump" delicacy cuts, and the raw hide. Hides were rarely tanned on
   // the trail (3-week process); parties dried them flat and either
   // traded to natives / posts or used as rough wagon-canvas patches.
-  tallow:      { id: 'tallow',      name: 'Tallow',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 5, description: 'Rendered animal fat. Cooking grease, candle stock, soap-making — eaten as a desperation calorie if it comes to that.' },
+  // Tallow is rendered fat — used as cooking grease, candle stock,
+  // and soap-making, NOT a daily ration. Period emigrants only ate it
+  // straight when food ran out (mountain-man tradition). Draw order
+  // 6.5 puts it after pemmican — last food drawn before starvation.
+  // Audit pass #266 corrected this from a draw order of 5.
+  tallow:      { id: 'tallow',      name: 'Tallow',       category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6.5, description: 'Rendered animal fat. Cooking grease, candle stock, soap. Eaten straight only as a desperation calorie.' },
   prize_cut:   { id: 'prize_cut',   name: 'Prize cut',    category: 'food', weightLbPerUnit: 1, foodDrawOrder: 0.3, description: 'Tongue and hump, the choicest cuts of a big-game kill. A trail-side delicacy — emigrant diaries write about it with relish.' },
   raw_hide:    { id: 'raw_hide',    name: 'Raw hide',     category: 'native_trade', weightLbPerUnit: 5, description: 'Untreated dried hide. Tanning takes weeks; on the trail you stockpile rawhide for trade with natives or posts (or rough wagon repair).' },
 
@@ -124,11 +172,24 @@ export const ITEMS: Record<string, ItemMeta> = {
   coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Warmth +25 per person (one per body). Cuts ford-chill damage and cold-camp health loss.' },
   boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3, description: 'Warmth +15 per person. Helps most when wading into cold rivers.' },
   blanket: { id: 'blanket', name: 'Blanket', category: 'clothing', weightLbPerUnit: 5, description: 'Warmth +25 per person. Night chill mitigation when the fire goes out.' },
+  // Canvas A-frame tent — pitched in ~10 minutes, sleeps 4-6, period
+  // staple for parties that didn't sleep under wagons. Cuts wind and
+  // rain enough to take the sting out of cold camps.
+  tent: { id: 'tent', name: 'Tent', category: 'clothing', weightLbPerUnit: 35, description: 'Canvas A-frame. Cuts the cold-camp morale hit in half — wind, rain, and dust kept off the bedrolls.' },
 
   iron_toolkit: { id: 'iron_toolkit', name: 'Iron toolkit', category: 'tool', weightLbPerUnit: 20, description: 'Unlocks proper wagon repairs. Without it, repairs cost 2× the spare parts.' },
   cookware: { id: 'cookware', name: 'Cookware', category: 'tool', weightLbPerUnit: 15, description: 'Required to boil water (post-1854). Meals taste better, small morale bump.' },
   rope: { id: 'rope', name: 'Rope', category: 'tool', weightLbPerUnit: 8, description: 'Lower wagons down steep grades, secure loads, rescue fallen oxen.' },
   shovel: { id: 'shovel', name: 'Shovel', category: 'tool', weightLbPerUnit: 5, description: 'Enables well-digging, grave-digging, wagon extraction. Auto-digs firepit + latrine each camp.' },
+  // Cheese press kit (#139) — wooden hoop, cheesecloth, rennet jar,
+  // weight stones gathered at camp. Period dairying staple for
+  // emigrant families with milk cows. One kit, many cheeses.
+  cheese_press: { id: 'cheese_press', name: 'Cheese press', category: 'tool', weightLbPerUnit: 8, description: 'Hoop, cheesecloth, and rennet jar for pressing farmer\'s cheese. 2 gal milk → 2 lb cheese in a 2-hour camp action.' },
+  // Butter crock (#222) — covered tin pail with paddle dasher mounted
+  // in the lid. Hung under the wagon seat; the day's bouncing churns
+  // cream into butter automatically. Period-perfect emigrant kitchen
+  // gear, mentioned by name in dozens of trail diaries.
+  butter_crock: { id: 'butter_crock', name: 'Butter crock', category: 'tool', weightLbPerUnit: 6, description: 'Covered tin pail with a paddle dasher in the lid. Hung in the wagon, churns 2 gal milk into 1 lb butter on every travel day.' },
   salt: { id: 'salt', name: 'Salt', category: 'tool', weightLbPerUnit: 1, description: 'Preserves fresh game meat. Multiplies curing speed, reduces spoilage loss during the jerk process.' },
   // Saleratus — sodium bicarbonate (period name for baking soda). Tiny
   // bag, big quality-of-life: leavens biscuits, settles upset stomachs,
@@ -153,6 +214,16 @@ export const ITEMS: Record<string, ItemMeta> = {
   // antiscorbutic and food preservative. Modest scurvy edge for parties
   // running out of dried fruit on long stretches.
   vinegar: { id: 'vinegar', name: 'Vinegar', category: 'medicine', weightLbPerUnit: 8, description: 'Stoneware jug. Wards off scurvy and preserves food when dried fruit runs thin.' },
+  // Period medicine kit fill-out (#213). Each was a real wagon-chest
+  // staple per Marcy / Gunn's Domestic Medicine. Mechanical role: gentler
+  // alternatives to the harsh calomel + quinine tier. They list as
+  // treatmentItems so events / future treat-action surfaces them.
+  epsom_salts: { id: 'epsom_salts', name: 'Epsom salts', category: 'medicine', weightLbPerUnit: 0.5, description: 'Magnesium-sulfate crystals. Mild purgative for "bilious complaints" and a wound soak. Gentler than calomel.' },
+  camphor: { id: 'camphor', name: 'Camphor', category: 'medicine', weightLbPerUnit: 0.2, description: 'Aromatic gum. Rubbed on the chest for colds; widely (mistakenly) carried as a cholera prophylactic.' },
+  paregoric: { id: 'paregoric', name: 'Paregoric', category: 'medicine', weightLbPerUnit: 0.2, description: 'Camphorated opium tincture, weaker than laudanum. The era\'s standard for children\'s diarrhea and teething.' },
+  hartshorn: { id: 'hartshorn', name: 'Hartshorn', category: 'medicine', weightLbPerUnit: 0.2, description: 'Smelling salts (ammonium carbonate). Revives faints; folk-applied to snakebite for nervous shock.' },
+  dovers_powder: { id: 'dovers_powder', name: "Dover's powder", category: 'medicine', weightLbPerUnit: 0.2, description: 'Opium + ipecac. Induces sweating; given for fever — the period go-to for cholera, typhoid, measles.' },
+  castor_oil: { id: 'castor_oil', name: 'Castor oil', category: 'medicine', weightLbPerUnit: 0.5, description: 'Vegetable purgative. The mild children\'s laxative; gentler than calomel for dysentery.' },
 
   tobacco: { id: 'tobacco', name: 'Tobacco', category: 'comfort', weightLbPerUnit: 1, description: 'Morale consumable. Also Native American trade currency.' },
   whiskey: { id: 'whiskey', name: 'Whiskey', category: 'comfort', weightLbPerUnit: 4, description: 'Morale bump. Small cold-exposure heal. Rare dependency risk.' },

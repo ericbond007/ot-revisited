@@ -5,11 +5,13 @@ import type { ConditionId } from '../src/lib/game/types';
 const EXPECTED_IDS: ConditionId[] = [
   'cholera', 'dysentery', 'typhoid', 'measles',
   'exhaustion', 'broken_leg', 'snakebite', 'frostbite', 'scurvy',
-  'starvation', 'pox'
+  'starvation', 'pox',
+  // #198 — grizzly mauling, severe wound from a big-game mountain hunt.
+  'bear_mauling'
 ];
 
 describe('condition catalog', () => {
-  it('has all 11 conditions from the spec', () => {
+  it('has all 12 conditions from the spec', () => {
     const ids = Object.keys(CONDITIONS).sort();
     expect(ids).toEqual([...EXPECTED_IDS].sort());
   });

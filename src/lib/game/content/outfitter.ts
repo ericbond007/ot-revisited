@@ -6,7 +6,7 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   // Food
   'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'dried_fruit', 'sugar', 'coffee', 'tea',
   // Livestock
-  'yoke', 'chicken',
+  'yoke', 'ox_bow', 'picket_pins', 'chicken', 'milk_cow',
   // Feed
   'grain',
   // Wagon parts
@@ -14,11 +14,12 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   // Weapons
   'rifle', 'bullets', 'rifle_cleaning_kit',
   // Clothing
-  'coat', 'boots', 'blanket',
+  'coat', 'boots', 'blanket', 'tent',
   // Tools
-  'iron_toolkit', 'cookware', 'rope', 'shovel', 'salt', 'saleratus', 'lard', 'compass', 'water_skin', 'ox_shoes', 'spyglass',
+  'iron_toolkit', 'cookware', 'rope', 'shovel', 'salt', 'saleratus', 'lard', 'compass', 'water_skin', 'ox_shoes', 'spyglass', 'cheese_press', 'butter_crock',
   // Medicine
   'quinine', 'laudanum', 'calomel', 'bandages', 'herbal_poultice', 'patent_medicine', 'vinegar',
+  'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
   // Comfort
   'tobacco', 'whiskey', 'harmonica', 'fiddle', 'bible',
   // Luxuries — useless on the trail, prestige score on arrival (#148).

@@ -5,6 +5,7 @@
   import { warmthFor } from '$lib/game/systems/warmth';
   import { canBoilWater } from '$lib/game/systems/water-purity';
   import { ICON, icon } from '$lib/data/icon-dictionary';
+  import StatIcon from './stat-icons/StatIcon.svelte';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
   const CATEGORY_ORDER: ItemCategory[] = [
@@ -144,10 +145,10 @@
     <span class="cash">{icon('stats', 'cash')} ${state.cash}</span>
     {#if knowsBoiling && dirtyGal > 0}
       <span class="water" title="Clean / dirty / capacity. Boil dirty before drinking.">
-        {icon('stats', 'water')} {state.resources.water}<span class="water-dirty">+{dirtyGal}</span>/{state.resources.waterCap} gal
+        <StatIcon kind="keg" size={14} className="keg-svg" /> {state.resources.water}<span class="water-dirty">+{dirtyGal}</span>/{state.resources.waterCap} gal
       </span>
     {:else}
-      <span class="water">{icon('stats', 'water')} {totalGal}/{state.resources.waterCap} gal</span>
+      <span class="water"><StatIcon kind="keg" size={14} className="keg-svg" /> {totalGal}/{state.resources.waterCap} gal</span>
     {/if}
   </div>
 
@@ -179,7 +180,7 @@
   </div>
 
   <div class="weight-row" title="Water in the keg{knowsBoiling && dirtyGal > 0 ? ' — clean (left) + dirty (right). Boil at camp before drinking.' : ''}">
-    <span class="weight-label">{icon('stats', 'water')} Water</span>
+    <span class="weight-label"><StatIcon kind="keg" size={13} className="keg-svg" /> Water</span>
     <div class="weight-bar">
       {#if knowsBoiling && dirtyGal > 0}
         <div class="weight-fill" style="width: {cleanPct}%; background: {waterColor};"></div>

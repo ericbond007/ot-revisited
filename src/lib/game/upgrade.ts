@@ -21,12 +21,15 @@ function inferSex(name: string): Sex {
 }
 
 function upgradeMember(m: PartyMember): PartyMember {
-  // Already migrated: both fields present.
-  if (m.sex && m.kind) return m;
+  // Pre-#230 saves don't have cleanliness; default to 100 (don't punish
+  // existing parties retroactively for a mechanic they couldn't see).
+  const cleanliness = typeof m.cleanliness === 'number' ? m.cleanliness : 100;
+  if (m.sex && m.kind && typeof m.cleanliness === 'number') return m;
   return {
     ...m,
     sex: m.sex ?? inferSex(m.name),
-    kind: m.kind ?? 'adult'
+    kind: m.kind ?? 'adult',
+    cleanliness
   };
 }
 
@@ -60,7 +63,15 @@ export function upgradeState(state: GameState): GameState {
   // rather than mirroring `condition` — most lost canvas comes from
   // weather and the player just played a long stretch with no canvas
   // damage system, so they shouldn't be punished retroactively.
-  const wagon = { ...state.wagon, model: modelId, canvas: state.wagon.canvas ?? 100 };
+  // Pre-#264 saves don't have hasBranBarrel. Default per wagon model:
+  // schooner + heavy ship with one, light doesn't. Matches engine.ts.
+  const branBarrelDefault = getWagon(modelId).shipsWithBranBarrel === true;
+  const wagon = {
+    ...state.wagon,
+    model: modelId,
+    canvas: state.wagon.canvas ?? 100,
+    hasBranBarrel: state.wagon.hasBranBarrel ?? branBarrelDefault
+  };
 
   // Pre-#153 saves have no weather field. Default to 'clear' so tickWeather's
   // stickiness math has something to lerp from on day 1.

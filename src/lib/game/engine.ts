@@ -77,6 +77,7 @@ function makeMember(
     isLeader,
     age: 30,
     health: 100,
+    cleanliness: 100,
     conditions: [],
     dead: false
   };
@@ -124,7 +125,8 @@ export function createInitialState(opts: NewGameOptions): GameState {
       model: wagonModelId,
       condition: 100,
       canvas: 100,
-      carryCapacity: wagonModel.carryCapacity
+      carryCapacity: wagonModel.carryCapacity,
+      hasBranBarrel: wagonModel.shipsWithBranBarrel === true
     },
     oxen,
     inventory: kit.inventory,

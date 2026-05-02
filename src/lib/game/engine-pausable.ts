@@ -8,17 +8,22 @@ import { progressConditions } from './systems/conditions';
 import { tickOxen } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
 import { adjustMorale } from './systems/morale';
-import { applyTravel } from './systems/travel';
+import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
 import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
-import { applySpoilage } from './systems/spoilage';
+import { applySpoilage, applyHeatSpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
+import { applyDairy, applyButterChurn } from './systems/dairy';
+import { isSunday } from './utils/calendar';
+import { hasLivePreacher } from './professions/predicates';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyHolidays } from './systems/holidays';
+import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import type { GameEvent } from './content/events';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
+import { pickApproachEvent, approachFiredFlag } from './content/landmark-approach-events';
 import { pickText } from './content/text-pools';
 
 function advanceDate(d: { year: number; month: number; day: number }) {
@@ -42,12 +47,46 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
 
   let s = tickWeather(normalized, rng);
+
+  // Sabbath-breaking morale debit (#224). Religious diaries from
+  // Catherine Sager to the Reed family record the guilt of traveling
+  // Sundays; pragmatic captains argued miles over scripture. -2 morale
+  // per Sunday Travel (-3 with a live Preacher — they amplify both
+  // directions of the choice). The +morale bump for choosing the lay-
+  // by lives in actions/sunday-lay-by.ts; this debit fires only when
+  // the player presses Travel on a Sabbath.
+  if (isSunday(s.date)) {
+    const debit = hasLivePreacher(s) ? 3 : 2;
+    s = {
+      ...s,
+      morale: Math.max(0, s.morale - debit),
+      eventLog: [...s.eventLog, { day: s.day, text: `Traveled on the Sabbath. Morale −${debit}.` }]
+    };
+  }
+
   s = progressConditions(s, rng);
   // Eggs lay at dawn so today's yield is available for today's meal.
   s = applyEggLay(s);
+  // Milk cow yield (#139) — runs alongside egg lay so today's milk is
+  // available for today's meal. Sets a weather-sensitive 1-4 day spoil
+  // clock; spoilage tick below clears any pile that's gone past.
+  s = applyDairy(s);
+  // Wagon-pail butter churn (#222) — runs BEFORE consumption so the
+  // morning's surplus lands in butter, not breakfast. Period reality:
+  // women set the crock at dawn before anyone drank coffee. Inside
+  // tickDayPausable = travel day (camp/visit go through different
+  // routes), so the wagon will be jostling either way.
+  s = applyButterChurn(s);
   // Spoilage runs BEFORE consumption so the party can't eat rotten meat
-  // on its spoil-day. Any remaining fresh game_meat is zeroed out first.
+  // on its spoil-day. Any remaining fresh game_meat / eggs / berries
+  // are zeroed out first; heat-day rancidity nibbles bacon + salt_pork.
   s = applySpoilage(s);
+  s = applyHeatSpoilage(s);
+  // Cleanliness (#230) — decay first, then threshold morale + filth
+  // disease before consumption so today's dirt nicks today's mood.
+  s = decayCleanliness(s);
+  s = applyDirtyMorale(s);
+  s = applyFilthDiseaseRisk(s, rng);
   s = applyDailyConsumption(s);
   s = applyDietVariety(s);
   s = applyHotDrinks(s);
@@ -76,13 +115,32 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     && prevLandmarkAfter !== prevLandmarkBefore
     && s.flags._lastEventDay !== s.day
   ) {
-    const arrival = getLandmarkArrivalEvent(prevLandmarkAfter);
+    const arrival = getLandmarkArrivalEvent(prevLandmarkAfter, s);
     if (arrival) {
       if (arrival.bodyKey) {
         const resolvedBody = pickText(arrival.bodyKey, rng, arrival.body);
         s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
       }
       return { state: s, pendingEvent: arrival };
+    }
+  }
+
+  // Approach events (#233) — first-sight vignettes that fire BEFORE
+  // reaching a landmark, when its silhouette first becomes visible from
+  // miles out. One-shot per landmark via _approachFired_<id>. Skipped on
+  // arrival days so the at-landmark stage takes precedence.
+  if (!arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
+    const approach = pickApproachEvent(s, (id) => milesToLandmark(s, id));
+    if (approach) {
+      s = {
+        ...s,
+        flags: { ...s.flags, [approachFiredFlag(approach.landmarkId)]: true }
+      };
+      if (approach.event.bodyKey) {
+        const resolvedBody = pickText(approach.event.bodyKey, rng, approach.event.body);
+        s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
+      }
+      return { state: s, pendingEvent: approach.event };
     }
   }
 

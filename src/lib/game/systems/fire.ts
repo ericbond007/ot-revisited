@@ -74,9 +74,17 @@ function applyColdPenalty(state: GameState): GameState {
         m.dead ? m : { ...m, health: Math.max(0, m.health - hit) }
       )
     : state.party;
+  // #218 — canvas A-frame tent halves the morale hit when present.
+  // Wind and rain off the bedrolls; the camp wakes less ragged. Health
+  // hit unchanged — clothing is what mitigates the cold itself; the tent
+  // is the morale layer.
+  const hasTent = (state.inventory.tent ?? 0) > 0;
+  const moraleHit = hasTent
+    ? Math.max(1, Math.round(COLD_NIGHT_MORALE_HIT / 2))
+    : COLD_NIGHT_MORALE_HIT;
   return {
     ...state,
-    morale: Math.max(0, state.morale - COLD_NIGHT_MORALE_HIT),
+    morale: Math.max(0, state.morale - moraleHit),
     party
   };
 }
@@ -115,6 +123,30 @@ export function attemptFire(state: GameState, _rng: Rng): GameState {
  * Note: takes `_rng` for call-site symmetry with other systems, but
  * ignores it in favor of a deterministic day-seeded draw.
  */
+/**
+ * Fuel flavor by terrain (#219). Wood was scarce-to-absent on the
+ * plains and the high desert; emigrants burned what they had:
+ *   prairie → buffalo chips ("dried bison dung," gathered in canvas
+ *             aprons by women + kids — a near-universal surprise to
+ *             eastern travelers).
+ *   desert  → sage brush (greasewood, sage roots; smoky and bitter
+ *             but it lit).
+ *   forest / mountains / river → firewood as normal.
+ *
+ * The mechanic stays unchanged — it's all `state.resources.firewood`
+ * — but the label and log line read terrain-correct.
+ */
+export function fuelFlavorFor(terrain: string): { material: string; source: string } {
+  switch (terrain) {
+    case 'prairie': return { material: 'buffalo chips', source: 'plains' };
+    case 'desert':  return { material: 'sage brush', source: 'sagebrush flats' };
+    case 'forest':  return { material: 'firewood', source: 'forest' };
+    case 'mountains': return { material: 'firewood', source: 'mountains' };
+    case 'river':   return { material: 'firewood', source: 'river bank' };
+    default:        return { material: 'firewood', source: terrain };
+  }
+}
+
 export function gatherFirewoodOnTravel(state: GameState, _rng: Rng): GameState {
   const baseMean = FIREWOOD_GATHER_MEAN[state.location.terrain];
   if (baseMean <= 0) return state;
@@ -151,9 +183,10 @@ export function gatherFirewoodOnTravel(state: GameState, _rng: Rng): GameState {
   // against the clear-day mean (baseMean), not the wet-discounted one,
   // so the threshold tracks "how much you'd normally get here".
   if (gained < baseMean * WET_GATHER_LOG_THRESHOLD && factor < 1.0) {
+    const fuel = fuelFlavorFor(state.location.terrain);
     const woodNote = gained <= 0
-      ? 'Wet weather kept any firewood out of reach today.'
-      : `Wet weather kept the firewood pile thin today — only ${gained} lb gathered.`;
+      ? `Wet weather kept any ${fuel.material} out of reach today.`
+      : `Wet weather kept the ${fuel.material} pile thin today — only ${gained} lb gathered.`;
     next = {
       ...next,
       eventLog: [...next.eventLog, { day: state.day, text: woodNote }]

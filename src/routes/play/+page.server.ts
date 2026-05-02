@@ -1,6 +1,8 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error } from '@sveltejs/kit';
 import { rest } from '$lib/game/actions/rest';
+import { sundayLayBy } from '$lib/game/actions/sunday-lay-by';
+import { isSunday } from '$lib/game/utils/calendar';
 import { CAMP_ACTIONS_BY_ID, type CampActionId } from '$lib/game/actions/camp-actions';
 import { getLandmark } from '$lib/game/content/landmarks';
 import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
@@ -176,6 +178,21 @@ export const actions: Actions = {
     return { state };
   },
 
+  // #224 — Sunday lay-by. Only callable when state.date is a Sunday.
+  // Runs a single rest day with a Sabbath morale bonus on top of the
+  // standard rest mechanics. Live Preacher amplifies (+5 vs +3).
+  sundayLayBy: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    if (!isSunday(state.date)) {
+      throw error(409, 'Sunday lay-by is only available on Sundays.');
+    }
+    state = sundayLayBy(state);
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
   rest: async ({ url, request, locals }) => {
     // Multi-day camp (#187): each ?/rest call advances exactly ONE day.
     // The first call sets `_campPlannedDays` from the form's
@@ -315,17 +332,19 @@ export const actions: Actions = {
     const qty = Math.max(1, parseInt(fd.get('qty')?.toString() ?? '0', 10));
     if (!itemId) throw error(400, 'itemId required');
     const state = await loadState(locals, slot);
-    // Lightening is gated to landmarks — diaries record this happening
-    // at the rocks (Independence, Devil's Gate) and at the forts; on
-    // the open trail you'd usually push through, not pull out of formation.
-    if (!state.location.atLandmarkId) throw error(409, 'must be at a landmark to lighten the wagon');
+    // Lightening is allowed any time (#200). Diaries do mostly record
+    // this at the rocks and forts, but desperate parties dumped on the
+    // open trail too — and forcing the player to a landmark just to
+    // pitch a busted wheel is fiddly UX.
     const have = state.inventory[itemId] ?? 0;
     if (have <= 0) throw error(409, `no ${itemId} in inventory`);
     const drop = Math.min(qty, have);
     const inventory = { ...state.inventory };
     if (have - drop <= 0) delete inventory[itemId];
     else inventory[itemId] = have - drop;
-    const here = getLandmark(state.location.atLandmarkId);
+    const where = state.location.atLandmarkId
+      ? `at ${getLandmark(state.location.atLandmarkId).name}`
+      : 'on the trail';
     const next = {
       ...state,
       inventory,
@@ -333,7 +352,7 @@ export const actions: Actions = {
         ...state.eventLog,
         {
           day: state.day,
-          text: `Lightened the wagon at ${here.name}: dropped ${drop} ${itemId.replace(/_/g, ' ')}.`
+          text: `Lightened the wagon ${where}: dropped ${drop} ${itemId.replace(/_/g, ' ')}.`
         }
       ]
     };

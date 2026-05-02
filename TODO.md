@@ -1,22 +1,18 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 31 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 19 open.
+
+**Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
 ## New mechanics
 
-| #    |                                                             |
-| ---- | ----------------------------------------------------------- |
-| #175 | California leg — Gold Rush headline unlocks alternate route |
-| #176 | Wagon trains — join 20-50 caravan for safety bonus          |
-| #180 | Year-sensitive dialogue — 1849+ California talk flavor      |
+- **#175** — [H] California leg — Gold Rush headline unlocks alternate route
+- **#176** — [H] Wagon trains — join 20-50 caravan for safety bonus
 
 ## More animals
 
-| #    |                                                           |
-| ---- | --------------------------------------------------------- |
-| #139 | Milk cow — daily dairy, pace reduction, grazing-dependent |
-| #140 | Pack mule — extra carry capacity outside the wagon        |
-| #141 | Goats — poor-man's milk cow                               |
+- **#140** — Pack mule — extra carry capacity outside the wagon
+- **#141** — Goats — poor-man's milk cow
 
 ## System reworks
 
@@ -24,50 +20,104 @@ _(empty — items shipped or moved to other sections)_
 
 ## UI / UX polish
 
-| #    |                                                                  |
-| ---- | ---------------------------------------------------------------- |
-| #157 | Terrain + weather visual revisit — parallax, clouds, rain/snow   |
-| #159 | WagonScene strip framing pass — viewBox crop + cloud anchoring   |
-| #167 | Trail-map cluster labels overlap at modal tier 1                 |
-| #169 | WagonScene paused state still reads as motion                    |
-| #147 | Success/arrival view rework — richer than current score panel    |
-| #112 | Wagon modal visual redesign                                      |
-| #86  | Expand hover tooltips across all data points                     |
-| #102 | Pre-made vs custom starter kit choice                            |
-| #134 | Water keg/barrel glyph next to water amount                      |
-| #145 | Camp view — eliminate laptop scroll                              |
-| #170 | Use new ox-team design beyond the travel strip                   |
-| #171 | Laurel Hill landmark art — only gap from #89 batch               |
-| #173 | TownStage hero art — hoist LandmarkArt into Visit view (Phase B) |
-| #189 | Landmark / trading-post screen rework — better town actions      |
-| #191 | Save format: add migration runner; deserializer hard-crashes now |
-| #192 | WagonScene per-frame style flush — 13 SetNeedStyleFlush per rAF in profile, likely from `style=""` writes for transforms; switch hot animated layers to SVG attrs (`x`, `y`, transform on `<g>`) |
-| #193 | WagonScene rAF sync reflow — 1 forced-reflow per frame, suggests a layout read (getBoundingClientRect / offsetWidth) inside the rAF chain; hoist to ResizeObserver or cache |
-| #194 | Animated SVG layers should be `pointer-events: none` — synth pointermove dispatched ~1.3×/frame because hovered element keeps changing under the cursor |
+### In Progress
+
+- **#157** — Terrain + weather visual revisit — parallax, clouds, rain/snow
+- **#159** — WagonScene strip framing pass — viewBox crop + cloud anchoring
+- **#169** — WagonScene paused state still reads as motion
+- **#147** — Success/arrival view rework — richer than current score panel
+
+### TODO
+
+- **#112** — Wagon modal visual redesign
+- **#167** — Trail-map cluster labels overlap at modal tier 1
+- **#86** — Expand hover tooltips across all data points
+- **#102** — Pre-made vs custom starter kit choice
+- **#145** — Camp view — eliminate laptop scroll
+- **#170** — Use new ox-team design beyond the travel strip
+- **#171** — Laurel Hill landmark art — only gap from #89 batch
+- **#189** — Landmark / trading-post screen rework — better town actions
+- **#191** — Save format: add migration runner; deserializer hard-crashes now
+- **#271** — WagonScene per-frame style flush — 13 SetNeedStyleFlush per rAF in profile, likely from `style=""` writes for transforms; switch hot animated layers to SVG attrs (`x`, `y`, transform on `<g>`)
+- **#272** — WagonScene rAF sync reflow — 1 forced-reflow per frame, suggests a layout read (getBoundingClientRect / offsetWidth) inside the rAF chain; hoist to ResizeObserver or cache
+- **#273** — Animated SVG layers should be `pointer-events: none` — synth pointermove dispatched ~1.3×/frame because hovered element keeps changing under the cursor
 
 ## For Claude Design or another SVG animation generator
 
-| #156 | Wagon SVG visual revisit — proportions / damage / addons |
-| #87 | Rich event visuals |
-| #162 | Components revisit — StatBar + PartyPanel avatar designer pass |
-| #211 | Bespoke teepee landmark art for `cheyenne_camp` + `shoshone_camp` — current placeholder is a single shared teepee silhouette; final art should show a small village (3-4 lodges, fire ring, drying rack, horses) keyed per tribe (Cheyenne plains-style hide painting, Shoshone Wind-River style) |
+- **#156** — Wagon SVG visual revisit — proportions / damage / addons
+- **#87** — Rich event visuals
+- **#162** — Components revisit — StatBar + PartyPanel avatar designer pass
+- **#211** — [H] Bespoke teepee landmark art per tribe (Cheyenne / Shoshone) — replaces placeholder
 
 ## Balance / audit
 
-| #    |                                                                     |
-| ---- | ------------------------------------------------------------------- |
-| #183 | AI art / animation pipeline — eval libs + image-gen APIs            |
-| #184 | Full game review — Sonnet pass on mechanics + balance               |
-| #192 | Verify TradeModal + FordModal hero icons (audit branch, needs #185) |
-| #198 | Grizzly mauling risk on big-game hunts in mountain terrain          |
-| #200 | Discard-from-wagon while traveling — extend #179 beyond landmarks   |
-| #206 | Whitman Mission as a post — historical check (1843-47 only)         |
+- **#183** — AI art / animation pipeline — eval libs + image-gen APIs
+- **#184** — Full game review — Sonnet pass on mechanics + balance
+- **#192** — Verify TradeModal + FordModal hero icons (audit branch, needs #185)
+- **#206** — [H] Whitman Mission as a post — historical check (1843-47 only)
+- **#269** — [H] Soap as a craftable item — boosts wash_clothes efficacy (#230 follow-up)
+- **#270** — [H] Bath-house at major trading posts — $1 town service, big cleanliness reset (#230 follow-up)
 
 ## New mechanics (extension)
 
-| #    |                                                                            |
-| ---- | -------------------------------------------------------------------------- |
-| #210 | Trail journal / atlas — leather-bound journal view aggregating tribes met, headlines read, letters, party members (living + memorial), trip stats. Accessible from the /play header. Period parchment aesthetic, IM Fell English serif. |
+- **#210** — [H] Trail journal / atlas — parchment screen aggregating tribes, headlines, letters, party, stats
+
+## Historical pass — 2026-04-30
+
+Research pass on items / mechanics / landmarks / diary sources vs. period reality. Source docs: `docs/historical-pass/`.
+
+### Items / inventory expansion
+
+- **#216** — [H] Trade goods bundle — mirrors, vermilion, awls, thimbles, calico, pocket knives
+- **#217** — [H] Guidebook item (Marcy / Palmer / Ware) — owning unlocks fork previews + ETA
+
+### Daily routine mechanics
+
+- **#225** — [H] Nooning mid-day beat — small fatigue tick + event slot
+
+### Set-piece landmark events
+
+
+### Native interaction expansion (extends #121)
+
+- **#237** — [H] Grass / passage toll encounter — Plains tribes; refusal damages relations
+- **#238** — [H] Native-run ferry option — Shoshone / Cayuse ferries at Green / Snake / Columbia
+- **#239** — [H] Salmon trade stops — Snake / Columbia corridor; trinkets for fresh salmon
+- **#240** — [H] Hire-a-guide for cutoffs — Sublette or Barlow vs Columbia decision
+- **#241** — [H] Gift-first parlay — small tobacco / sugar gift opens better trade rates on first contact
+
+### New landmarks
+
+- **#242** — [H] Lone Elm Campground (mile 40, KS) — first-night company-organizing camp
+- **#243** — [H] Vieux's Crossing + 1849 cholera cemetery (mile 145, KS)
+- **#244** — [H] Rock Creek Station (mile 230, NE) — 1857+ road ranch; Hickok shootout site
+- **#245** — [H] Windlass Hill (mile 510, NE) — rope-lower descent into Ash Hollow
+- **#246** — [H] Rachel Pattison Grave (mile 516, NE) — iconic 1849 cholera death
+- **#247** — [H] Mormon Ferry / Fort Caspar (mile 810, WY) — toll ferry 1847+, bridge 1853
+- **#248** — [H] Martin's Cove (mile 855, WY) — 1856 handcart disaster memorial
+- **#249** — [H] Big Hill (mile 1140, ID) — Bear Valley descent; teams doubled, wagons rough-locked
+- **#250** — [H] Massacre Rocks (mile 1290, ID) — pre-1862 just "Gate of Death"
+- **#251** — [H] Salmon Falls (mile 1450, ID) — Shoshone fishery
+- **#252** — [H] Burnt River Canyon (mile 1680, OR) — tortured zigzag through brushy gorge
+- **#253** — [H] Flagstaff Hill (mile 1720, OR) — first Blue Mountains view
+- **#254** — [H] Laurel Hill (mile 1965, OR) — worst descent of trail; 60% grade, wheels locked, trees dragged
+
+### Diary library
+
+- **#255** — [H] Diary library — random pool from 5 PD diarists, attached to events + journal (extends #210)
+
+### Set-piece social events
+
+- **#256** — [H] Camp dance action — fiddle / harmonica required; morale + sleep cost
+- **#257** — [H] Trail wedding — rare encounter; party morale spike, optional dowry trade
+- **#258** — [H] Lay-preacher Sunday service — Preacher profession + lay-by day; morale boost
+- **#259** — [H] Burial ritual choice — scripture+marker / disguised-grave / quick-and-go (replaces #151)
+
+### Navigation / decision system
+
+- **#261** — [H] Wait for water to subside at fords — days cost, drown-risk drop
+- **#262** — [H] Scout-ahead camp action — 1-day cost; reveals next 3 trail tiles' hazards
+- **#263** — [H] Train merge / split events — join larger train (extends #176) or leave
 
 ## Known design-incoming
 
@@ -76,6 +126,37 @@ _(empty — items shipped or moved to other sections)_
 - **wagon-bg passing-landmark rasters** — generate painterly raster sprites for the wagon-view passing landmarks currently in `src/lib/ui/wagon/landmarks/` (ChimneyRock, ScottsBluff, IndependenceRock, CourthouseRock, plus generic Fort, FerryPost, MountainPass, ValleyArch, TreeClump). Drop-in replacement for the SVG silhouettes inside `LandmarkLayer.svelte`, behind the same `?raster=1` flag. Stretch goal: integrate landmarks the player passes-but-doesn't-stop-at — visible-in-the-distance only, not gameplay stops — so the trail feels populated. Follows the ground-hybrid rework above.
 
 ## Recently shipped
+
+- **#224** Sunday lay-by — period Sabbath rhythm with real trade-off. New `utils/calendar.ts` (`dayOfWeek`, `isSunday`, `dayName` — JS Date + Gregorian). New `actions/sunday-lay-by.ts` delegates to `rest(state, 1)` and adds a Sabbath morale bonus (+3, +5 with live Preacher). New `?/sundayLayBy` server action gated to actual Sundays (409 otherwise). ActionBar shows a 🕊️ "Lay by" button only on Sundays, alongside Travel. **Sabbath debit on Travel**: `tickDayPausable` applies -2 morale (-3 with Preacher) at the start of any Sunday tick, with a "Traveled on the Sabbath" log line. Travel button title warns the player. Period reality: Sager / Royce / Frizzell describe the standard Sunday rhythm — prayer, scripture, hymns by hand-clap, mending, baking ahead, evening singing. Donner Party notably skipped the Sabbath. Trade-off: lay by every Sunday = ~17-20 lost days but morale stays topped up; push through = real morale debt over the journey. Pairs with #258 (lay-preacher service) on the future TODO. 16 new tests; 1146/1146 green.
+- **#222** Wagon-pail butter — the headline period dairy mechanic, automatic on travel days. New `butter` food item ($0.40/lb buy, 1 lb/unit, 'fresh' nutrition group, foodDrawOrder 2.5) and `butter_crock` tool ($2.50, 6 lb — covered tin pail with paddle dasher in the lid). New `applyButterChurn(state)` runs in the engine pipeline BEFORE `applyDailyConsumption` — period reality: women set the crock at dawn before anyone drank coffee, so the morning's surplus lands in butter rather than breakfast. Inside `tickDayPausable` is by definition a travel day (camp/visit go through different routes), so the wagon's bouncing is the churn — no player input needed. Yield: 1 lb butter per 2 gal milk consumed (period ratio). Butter is shelf-stable (no spoil clock — salted for keeping). Stocked at: Independence outfitter, Ft Laramie, Ft Hall, The Dalles. 22 new tests; 1130/1130 green. Pairs with #139 — cow → milk → automatic butter on the road, no player friction.
+- **#139** Milk cow + cheese press — three new items (`milk_cow` $25 / 0 lb, `milk` 0.30 ¢/gal / 1 lb-equiv, `cheese` 0.50 ¢/lb, `cheese_press` $3 / 8 lb) plus a new `systems/dairy.ts` module and `press_cheese` camp action. **Daily yield**: per-cow base 2 gal × `grazingQuality(state)` × heat mult 0.7×; below grazing 0.25 the cow goes dry (winter mountains, deep desert). **Pace tax**: -5% miles/day per cow, capped at -10% (2+ cows are still 2 cows' worth of drag). **Spoilage**: weather-sensitive — heat 1d / normal 2d / frost+snow 4d, via new `daysOverride` param on `setSpoilClock`. Period reality: emigrants almost never lost milk because they used it constantly (drink fresh, wagon-pail butter, clabber-for-biscuits, cheese press); the spoilage is a quiet safety net for abandoned/heat-stressed pile, not a clock the player fights. **Cheese press** (`press_cheese` camp action): 2 hr · 2 gal milk + cheese_press → 2 lb cheese (1 lb/gal yield, period-accurate per Beecher 1846 / Marcy 1859). Cheese is shelf-stable and a 'fresh' nutrition group. Milk also a 'fresh' group, foodDrawOrder 0.6 (between berries and eggs). Stocked at: Independence outfitter, Ft Laramie, Ft Hall, The Dalles. Wagon-pail butter (#222) deferred — that's the headline travel-day mechanic. 32 new tests; 1108/1108 green.
+- **#268** Cold-weather food bump — new `WEATHER_FOOD_MULT` constant in `consumption.ts` (snow / frost both 1.20×, all other weathers 1.0×) wired into `foodConsumedToday` between the pace mult and the farmer mult. Period reality: emigrant diaries crossing the Wasatch and Blue Mountain frosts record sharply higher food draw — a body burns more calories holding core temperature in the cold. Composes cleanly with #267 pace mults — grueling pace + snow stacks to ~1.50× clear-moderate baseline. 16 new tests; 1076/1076 green.
+- **#218** Tent (canvas A-frame) — new `tent` item ($8 / 35 lb / clothing) that halves the cold-camp morale hit (2 → 1) when present in inventory. Period reality: ~30% of emigrants carried canvas A-frame tents (Marcy 1859 priced them $5-10); the rest slept under wagons or in the open. Cuts wind, rain, and dust off the bedrolls — morale layer, not warmth layer. Health hit on cold mountain nights still mitigated by clothing; tent doesn't stack on that. Doesn't apply on lit-fire nights. Stocked at: Independence outfitter, Ft Kearny (army quartermaster), Ft Laramie, Ft Hall, The Dalles. NOT at sparse posts (Bridger, road ranches). 13 new tests; 1060/1060 green.
+- **#198** Grizzly mauling on big-game mountain hunts — 5% per-hunt risk on `target='big' && terrain='mountains'`, halved by Hunter profession (reads bear sign, hunts in pairs). On hit: -25 to -45 HP on a random alive adult + new `bear_mauling` condition (-3 HP/day, -1 morale/day, treated by bandages + laudanum, mirrors broken-leg shape). Independent of the routine 8% big-game injury roll, so a hunter can be both sprained AND mauled on the same trip — the maul is the headline. PostHuntModal swaps "🩹 was injured" for "🐻 was mauled by a grizzly" when `haul.mauled` is set. Period reality: Lewis & Clark catalogued grizzlies as the trail's most-feared animal; Snake / Sierra / Yellowstone diaries record maulings of solo hunters who startled sows or bears guarding kills. New `bear_mauling` ConditionId; `mauled?: boolean` added to HuntHaul (save-format compatible). 13 new tests; 1047/1047 green. (Updated conditions-catalog test from 11 → 12 conditions.)
+- **#260** Rifle salute on burial — new 4th choice on the existing burial event. Spends 3× gunpowder + 3× lead_balls + 3× percussion_caps (single 3-rifle volley, period custom for veteran or train-officer burials), grants +4 morale, clears `_burialPending`. Gated via `hidden: (s) => !canFireSalute(s)` so the choice doesn't render at all when ammo is short — the player only sees the option when they can actually take it. Caps are the natural bottleneck (1846+ split makes them the period-accurate scarce component). Defensive fallback to stone-mound semantics if hidden somehow lapses. 16 new tests; 1034/1034 green. (Updated #205 burial test to expect 4 choices.)
+- **#223** Washday camp action — closed as no-op; spec was already met by `wash_clothes` shipped in #230 (river-only camp action, +30 cleanliness across the alive party + 2 morale, 3 hr cost). The codebase has no separate degrading "clothing freshness" stat — the cleanliness 0-100 stat IS the modeled outcome of period emigrants washing their bodies and clothes at the same camp.
+- **#236** Cholera-year graves overlay — Ash Hollow + Chimney Rock arrival events get period-accurate cholera-cluster variants in 1849-1852 (peak Platte-corridor mortality, ~5,000 emigrant deaths). New `withGravesOverlay(base, body, debit, log)` helper composes a cholera variant from any base arrival event: same choices + gates (rope-down still requires rope, etc.), but each apply runs the base then layers a flat morale debit + "passed graves" log line, and the body text is rewritten to acknowledge the burials. `ash_hollow` cholera variant: -3 morale ("forty new graves between here and the bluff"). `chimney_rock` cholera variant: -2 morale ("scatter of fresh wooden crosses"). `getLandmarkArrivalEvent` returns the cholera variant when `state.date.year ∈ [1849, 1852]`. Pre-1849 + post-1852 unchanged. 16 new tests; 1017/1017 green. (Updated #227 test to seed 1848 so its chimney_rock isolation check isn't shadowed by the cholera variant.)
+- **#235** Barlow Road toll vs Columbia raft — end-of-trail decision firing 5 mi past The Dalles via the approach-event registry. **Barlow** (default, 1846+ via `hidden` predicate): pay Sam Barlow's actual schedule — $5/wagon + $0.10/head, then continue overland through Laurel Hill to Oregon City. **Raft the Columbia**: free but tiered — 30% smooth float (+3 morale), 55% rough water (-25% bulk inventory, -4 morale), 15% disaster (-50% inventory, random adult takes 25 HP, -10 morale). Raft success re-anchors `milesTraveled` to one shy of `oregon_city` and sets `_columbiaRaft` flag; `isBypassed` in `systems/travel.ts` excludes barlow_road + laurel_hill from stop-worthy treatment so the engine walks past without parking. Pre-1846 the Barlow option is hidden via `hidden(s) => s.date.year < 1846` (Sam Barlow didn't open the road until late 1846). Period reality: half of all rafters made it without incident; the other half fed Cascades stories to every wagon train that followed. New `runningMilesTo` export from travel.ts. 20 new tests; 1001/1001 green.
+- **#234** Three Island Crossing route choice — strategic ford-or-detour decision firing 10 mi out via the approach-event registry from #233. Two choices: **Ford at Three Island** (default — silent commit, normal river UI fires on arrival) or **Skirt south through the Bruneau** (sets `_threeIslandDetour` flag, drops water 50%, morale -4, +18 fatigue on every living ox). New `isBypassed(state, landmarkId)` helper in `systems/travel.ts` reads the detour flag and excludes the river from `STOP_WORTHY_KINDS` so the engine walks past `snake_three_island` without parking — same hook will pick up #235 (Barlow vs Columbia) later. Period reality: the south-bank route through the Bruneau / Birds-of-Prey country avoided the wet crossing but ate 60 mi of waterless sage; the Three Island ford was the preferred path when the river was low. 13 new tests; 981/981 green.
+- **#233** Chimney Rock first-sight — new generalized **landmark-approach event** registry (parallel to landmark-arrival-events). Fires once per game when miles-to-target drops to a per-event threshold; one-shot via `flags._approachFired_<id>`. New `milesToLandmark(state, id)` helper exported from `systems/travel.ts` (sum of `milesFromPrevious` minus running miles, returns negative once past). New `chimneyRockFirstSight` event at 30 mi out — period reality: emigrants spotted the spire from 30-40 mi across the sage flats while still approaching Courthouse Rock; the days-long approach got more diary ink than the at-arrival moment. Two choices: press on (+2 morale) or pause to journal/sketch (+4). Wired into engine-pausable between travel and the regular event roll, skipped on stop-worthy arrivals so the post/river/end UI takes precedence. Pattern extends naturally to Scotts Bluff, the Tetons, Mt. Hood, etc. — append to `LANDMARK_APPROACH_EVENTS` and ship. 14 new tests; 968/968 green.
+- **#230** Cleanliness mechanic + Sweetwater washday — new per-member `cleanliness` 0-100 stat with daily decay (1.5/day base, ×1.33 grueling / ×1.5 heat / ×0 on rain+storm). New `systems/cleanliness.ts`: `decayCleanliness`, `applyDirtyMorale` (avg <30 → −1 morale, <10 → −2 morale + "filthy" log), `applyFilthDiseaseRisk` (per-adult 2% dysentery roll when below 10, halved by Doctor — same shape as `applyDirtyWaterRisk`), `washAll(state, boost)` shared by camp action and arrival event. Wired into the day-tick between heat-spoilage and consumption. New `wash_clothes` camp action (3hr, river-terrain only, +30 cleanliness all + 2 morale). New `arrival_sweetwater_washday` arrival event at `sweetwater_1` with three choices: full bath +50 / quick rinse +20 / press on. Save migration in `upgradeMember` defaults cleanliness to 100 retroactively. New game members start at 100. Soap deferred (craftable per Dave) and post bath-house deferred. 21 new tests; 954/954 green.
+- **#231 + #232** Ash Hollow descent + South Pass crest — already implemented before the historical-pass TODOs were logged. `ashHollow` already has rope-lower (rope-gated) vs lock-wheels (35% mishap, 8-18 wagon damage); `southPass` already does the symbolic Continental Divide crossing with +8 morale. No-op closeouts.
+- **#229** Soda Springs taste-test — already implemented before the historical-pass TODO was logged. The existing `sodaSprings` arrival event already has 3 choices (drink with upset-stomach risk, bottle 5 gal + morale, skip) that exceed the "+2 morale carbonated novelty" spec. No-op closeout.
+- **#228** Register Cliff inscription persists — the existing `carve` choice on the Register Cliff arrival event now writes `flags._registerCliffInscription` in the period format `LEADER · MMM YYYY` (e.g. `EZRA THOMPSON · Jun 1849`, matching real cliff signatures like `J.M. KEEN 1850`). EndScreen reads the flag and renders a chiseled-letter inscription block on both the arrived and wiped outcomes — the carving outlasts the party. Sandstone-band styling (parchment wash, IM Fell English serif, period dot separator). 7 new tests covering serialization round-trip and 12-month formatting; 933/933 green.
+- **#227** 4th of July at Independence Rock — date-gated set-piece arrival event. New `independenceRockJuly4` GameEvent replaces the regular sign-the-rock variant when arrival lands on month=7, day=4. Three choices: (1) **Fire 30-gun salute + feast** — costs 5 each of gunpowder/lead_balls/percussion_caps for +10 morale, falls back to feast-only (+8) if powder is short; (2) **Sign and dance** — +8 morale, no cost; (3) **Press on** — +3 morale, walk away. Upgraded `getLandmarkArrivalEvent(landmarkId, state?)` to accept optional state for date-gated branches; engine-pausable.ts now passes state. Pattern extends naturally to other day-at-landmark set-pieces (Christmas at Fort Hall, etc.). 9 new tests; 926/926 green.
+- **#180** California-flavor gossip 1849+ — new `CALIFORNIA_GOSSIP_POOL` (10 period-authored lines from forty-niner letters and emigrant diaries: Hangtown yields, Hudspeth Cutoff, the Sierra streams, towns emptying back east, San Francisco's tent-city dollar meals). `generatePostGossip` now checks `flags._californiaUnlocked` (set by the 1848 Gold Rush headline) and on a 25% roll surfaces a Californian line as `topic: opportunity`; otherwise falls through to the existing 5-way topic mix. Pre-1849 saves see no California chatter; post-1849 ~25% of post-arrivals carry forty-niner buzz, the other 75% remain regular topics. 4 new tests; 917/917 green.
+- **#267** Pace × food multiplier — new `PACE_FOOD_MULT` constant in `consumption.ts` (slow 0.85× / moderate 1.00× / fast 1.10× / grueling 1.25×) wired into `foodConsumedToday` between the rations-by-headcount calc and the Farmer mult. Period reality: a grueling 14-hour day burned ~25% more calories than a slow nooning amble; diaries record working parties eating 3+ lb/day on hard pushes vs ~1.5 lb on layover days. Multipliers stay within ±15-25% so flat-rations strategies still work — pace is a knob, not a dominator. 6 new tests; 913/913 green.
+- **#266** Food consumption audit — read every consumer of `foodItemIds` against Marcy 1859 + emigrant diaries (Frizzell, Knight). Findings: (1) `dried_fruit` was at draw order 5 (eaten last) — period reality is daily ration with every meal, Marcy spec'd 15-25 lb/adult precisely because emigrants stewed it for breakfast and supper. Moved to 1.5 (between flour and beans). (2) `tallow` was at 5 — it's rendered fat for cooking grease + candle stock, eaten straight only as a desperation calorie. Moved to 6.5 (after pemmican). Confirmed correct: 2 lb/adult/day baseline, 60% child mult, 90% farmer mult, water heat-doubling, hot-drinks pipeline, doctor disease bonus, every other draw-order position. Logged #267 (pace × food) and #268 (cold-weather food bump) as deferred audit-gap follow-ups. 3 new tests; 907/907 green.
+- **#264 + #265** Spoilage pass — paired bran-barrel wagon trait + heat damage + generalized pile clocks. Researched first: bran barrels didn't actually break (durable oak), so it's a wagon trait (`wagon.hasBranBarrel`), not an inventory item. Schooner + heavy ship with one by default; light wagon can buy the upgrade at outfit ($4) via a new checkbox in the wagon-hint panel. Generalized `systems/spoilage.ts` from the lone game_meat clock to a per-rule table — added eggs (14d) and berries (3d) per period diary. New `applyHeatSpoilage` in the day-tick: on `heat` weather, bacon loses 3 lb/day and salt_pork 1.5 lb/day, halved with a bran barrel. Save migration in `upgradeState` defaults `hasBranBarrel` per wagon model. Outfit-screen checkbox + cash-diff plumbing. Eggs/berries setSpoilClock callers wire later (when chickens/find_berries lay/add). 15 new tests; 904/904 green.
+- **#220 + #221** Stray-oxen morning delay + Teamster bonus + picket pins — biggest unmodeled time-sink per the diary research, paired in one branch. New `systems/strays.ts` rolls a per-travel-day chance (base 25%) at the start of `applyTravel`; on a hit the day's miles take a 0.6×–0.85× hit and a log line fires. Rare 5%-of-incidents permanent ox loss when there's more than one healthy ox. New `picket_pins` item (livestock, 5 lb, $1.50) at outfitter + 5 forge posts. New `TEAMSTER_STRAY_MULT = 0.6` constant in `oxen.ts` joins the existing fatigue/recovery mults. Mitigation stack multiplies: pins 0.5× × dog 0.7× × Teamster 0.6× → ~5% chance/day with all three. 8 new tests; 889/889 green. Hobbles + bell-ox noted in item description for future variants.
+- **#226** Going-back party — the existing `encounter_eastbound` already covered most of this in spirit (a family that gave up + cholera-news listen + cheap surplus trade); rounded it out per the historical pass. Renamed to `encounter_going_back_party` for clarity, added `gate: milesBetween(500, 99999)` so turnarounds only fire west of Fort Kearny (period reality — emigrants didn't quit at the start). New 4th choice "Hand off a letter home" (✉️): morale +1 across alive adults, no item gate, ceiling-clamped at 100; no-ops with a "no one fit to write" log line if every adult is dead. 8 new tests, 881/881 green.
+- **#219** Terrain-flavored fuel — `gather_firewood` camp action and the passive travel-day gather both now use a new `fuelFlavorFor(terrain)` helper. Plains → "buffalo chips" (women + kids gathering chips in canvas aprons was a near-universal surprise to eastern emigrants); desert → "sage brush"; forest/mountains/river → unchanged firewood. Resource bucket stays `firewood` — purely flavor on the log + action sub-label. Camp action label generalized from "Gather firewood" to "Gather fuel". 8 new tests; 872/872 green.
+- **#215** Spare ox bow — new `ox_bow` item (livestock, 5 lb, $2.00) sits next to the existing `yoke` (Marcy 1859 spec'd 2 spares/wagon; the bow takes the shear load and is what cracks, not the yoke beam itself). Outfitter + 5 forge posts (Hollenberg, Kearny, Laramie, Hall, Dalles) stock it. New `ox_bow_cracks` travel event (weight 3, wagon category): consumes a spare bow if held; rope-lash fallback drops wagon condition by 5 with a "team will limp" log line. Carpenter's part-save chance applies. 7 new tests; 864/864 green.
+- **#134** Water keg glyph — new bespoke `keg.svelte` stat-icon (wood-staved barrel with iron hoops, side view, watercolor SI vocabulary). Wired through `StatIconKind` + `StatIcon.svelte` REGISTRY + `icon-dictionary.stats.keg` (`🛢️` text fallback). InventoryPanel's three water-amount lines now render `<StatIcon kind="keg">` instead of the droplet emoji — the wagon's water container is a keg, not a droplet. /dev/stat-icons specimen route updated.
+- **#173** TownStage hero art — hoisted `<LandmarkArt id={landmark.id} {abandoned} />` into TownStage between the hero header and the service grid, gated on `hasLandmarkArt(landmark.id)` so unmapped posts fall through cleanly. Same `isLandmarkAbandoned` derived as LandmarkStage so a shuttered Fort Hall (1856+) tints correctly. New `.art-canvas` style with 16:5 aspect, slightly tighter than LandmarkStage's 16:7 since the post hero already eats vertical room.
+- **#200** Discard-from-wagon while traveling — dropped the `atLandmarkId` gate on the `discardItem` server action and the matching `{#if atLandmark}` in `InventoryModal`. Log line now flexes between "at <landmark>" and "on the trail" depending on context. Forcing the player to a fort or rock just to pitch a busted wheel was fiddly UX; emigrants did dump on the open trail when desperate.
+- **#214** Axle grease consumable — `tar_bucket` no longer "own one = forever bonus"; new `applyAxleGrease(state, miles)` in `wagon.ts` burns one bucket every 500 mi of travel via a `flags._greaseSinceLastDose` counter. `tickWagon` math unchanged: tar_bucket > 0 → -25% wagon decay; runs out → back to baseline. Counter saturates at threshold while empty so a freshly-bought bucket auto-applies on the next mile. Wired into `applyTravel` alongside `gatherFirewoodOnTravel`. Event-log line on the dry-out transition. ~4-5 buckets across a 2195-mi journey. Item description updated. 10 new tests; 856/856 green.
+- **#213** Period medicine kit fill-out — added 6 historically-real wagon-chest staples to `items.ts` (epsom_salts, camphor, paregoric, hartshorn, dovers_powder, castor_oil). Each plugs into the existing `treatmentItems` arrays as gentler alternatives: epsom/paregoric/castor_oil for dysentery (avoid calomel mercury risk), Dover's powder + camphor for cholera/typhoid/measles fever-sweat treatment, hartshorn for snakebite folk-remedy. Prices in `prices.ts` follow Marcy 1850s Missouri-River rates. Fort Laramie stocks the full line; The Dalles + Fort Hall partial. Available at Independence outfitter. 9 new tests; 846/846 green.
 
 - **#212** Travel-stage hero — `/play` layout rework. WagonScene moves to the top of the left column (where TrailMapSnippet used to be), action bar right under it. New `.travel-bottom` row places TrailMapSnippet + EventLog 50/50 below the action bar. Camp / Town / Landmark / Completed stages keep their existing layout (full-width log below the action bar). Gated on a new `isTravelStage` derived. Map snippet's hard-coded 380px height overridden via `:global(.snippet-host)` so it can flex within the new row. WagonScene at its natural strip aspect — bespoke art for the bigger canvas remains a follow-up under #156/#157/#159.
 - **#208 + #209** Two missing-history newspaper headlines flagged in #207. **#208 Ward Massacre** (Aug 1854 Snake River; fires Sep-1854 through 1856): Bannock -10, Shoshone -5. **#209 Yakima War** (Nov 1855 onward through 1858): Walla Walla -12, Umatilla -8, Cayuse -5. Both compose with the existing 1847 Whitman / 1851 Treaty / 1854 Grattan / 1855 Harney pipeline — pure data-file additions, no system changes. 6 new tests.

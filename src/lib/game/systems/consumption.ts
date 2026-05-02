@@ -1,4 +1,4 @@
-import type { GameState, Rations } from '../types';
+import type { GameState, Pace, Rations, Weather } from '../types';
 import { foodItemIds } from '../content/items';
 import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
 import { weatherWaterMult } from './weather';
@@ -19,7 +19,10 @@ const NUTRITION_GROUP: Record<string, NutritionGroup> = {
   game_meat:   'meat',
   berries:     'fresh',
   egg:         'fresh',
-  dried_fruit: 'fresh'
+  dried_fruit: 'fresh',
+  milk:        'fresh',
+  cheese:      'fresh',
+  butter:      'fresh'
 };
 
 const FOOD_PER_ADULT: Record<Rations, number> = {
@@ -34,6 +37,36 @@ const CHILD_FOOD_MULT = 0.6;
 const CHILD_WATER_MULT = 0.7;
 const WATER_PER_ADULT_GAL = 1;
 const FARMER_FOOD_MULT = 0.9;
+
+// Pace × food multiplier (#267). Period reality: a grueling 14-hour
+// day pulling ahead of weather burned more calories than a slow
+// nooning-friendly amble. Diaries record working parties eating 3+
+// lb/day on hard pushes vs. ~1.5 lb on layover days. Multipliers
+// stay small so flat-rations strategies still work — pace shifts
+// food need by ±15-25%, not double.
+export const PACE_FOOD_MULT: Record<Pace, number> = {
+  slow:     0.85,
+  moderate: 1.00,
+  fast:     1.10,
+  grueling: 1.25
+};
+
+// Cold-weather food bump (#268). Period reality: emigrant diaries
+// crossing the Wasatch and Blue Mountain frosts record sharply higher
+// food draw — a body burns more calories holding core temperature in
+// the cold than it does plowing through summer prairie. +20% on snow
+// and frost days; other weathers unchanged. Composes with pace and
+// farmer mults.
+export const WEATHER_FOOD_MULT: Record<Weather, number> = {
+  clear:    1.00,
+  overcast: 1.00,
+  rain:     1.00,
+  storm:    1.00,
+  snow:     1.20,
+  heat:     1.00,
+  fog:      1.00,
+  frost:    1.20
+};
 
 export function aliveCount(state: GameState): number {
   return state.party.filter((m) => !m.dead).length;
@@ -52,7 +85,9 @@ export function foodConsumedToday(state: GameState): number {
   const adults = aliveAdultCount(state);
   const children = aliveChildCount(state);
   const base = adults * perAdult + Math.floor(children * perAdult * CHILD_FOOD_MULT);
-  return hasLiveFarmer(state) ? Math.floor(base * FARMER_FOOD_MULT) : base;
+  const weatherMult = WEATHER_FOOD_MULT[state.weather] ?? 1.0;
+  const adjusted = Math.round(base * PACE_FOOD_MULT[state.pace] * weatherMult);
+  return hasLiveFarmer(state) ? Math.floor(adjusted * FARMER_FOOD_MULT) : adjusted;
 }
 
 export function waterConsumedToday(state: GameState): number {

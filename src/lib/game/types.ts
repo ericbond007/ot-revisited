@@ -46,7 +46,8 @@ export type ConditionId =
   | 'frostbite'
   | 'scurvy'
   | 'starvation'
-  | 'pox';
+  | 'pox'
+  | 'bear_mauling';
 
 export interface Condition {
   id: ConditionId;
@@ -67,6 +68,11 @@ export interface PartyMember {
   isLeader: boolean;
   age: number;
   health: number; // 0..100
+  /** Personal cleanliness 0..100 (#230). Drains daily with sweat,
+   *  pace, and heat; restored by the wash_clothes camp action at
+   *  river camps. Below 30 nicks morale; below 10 raises filth-disease
+   *  risk. Defaults to 100 on new + migrated saves. */
+  cleanliness?: number;
   conditions: Condition[];
   dead: boolean;
   deathCause?: string;
@@ -102,6 +108,11 @@ export interface Wagon {
   // rain into stored supplies (powder, flour, salt) and reduces the
   // rain-water catchment that emigrants relied on in storms.
   canvas: number; // 0..100
+  // Bran-fill barrel for the bacon (#264). Period-real wagon kit that
+  // doesn't break — it's a trait, not a consumable. Halves heat-day
+  // attrition on bacon + salt_pork. Prairie schooner + heavy ship with
+  // one by default; light wagon can buy the upgrade at outfit.
+  hasBranBarrel?: boolean;
 }
 
 export interface GameDate {

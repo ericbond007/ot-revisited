@@ -390,7 +390,48 @@ const axle_breaks: GameEvent = {
   ]
 };
 
-EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, axle_breaks, ox_wanders);
+// Ox bow cracks (#215) — load-bearing U-loop on the yoke gives way.
+// Period reality: the most-broken hitch part on the trail (Marcy 1859
+// prescribed 2 spares per wagon — more than for any other part). The
+// weight 4 here matches that — bows crack more often than wheels (3)
+// or tongues (2). Yokes by contrast are rarely broken; no event for
+// them, in line with the historical record.
+const ox_bow_cracks: GameEvent = {
+  id: 'ox_bow',
+  category: 'wagon',
+  title: 'An ox bow splits',
+  body: 'The hickory cracks with a sound like a gunshot. The lead ox lurches sideways before the team halts.',
+  bodyKey: 'ox_bow.body',
+  weight: 4,
+  choices: [
+    {
+      id: 'replace',
+      icon: '⚒️',
+      label: 'Fit a spare ox bow',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        const have = s.inventory.ox_bow ?? 0;
+        if (have > 0) {
+          const { state: after, saved } = consumeWagonPart(s, rng, 'ox_bow');
+          const log = saved
+            ? 'The carpenter steamed and re-bent the cracked bow — the spare was kept.'
+            : 'Fitted the spare bow. Spare ox bow −1.';
+          return logLine(after, log);
+        }
+        // No spare: lash with rope. The team limps with one ox under-
+        // hitched until the next post. Wagon condition shrug-off; this
+        // is more about pace than frame damage.
+        return logLine(
+          { ...s, wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 5) } },
+          'No spare bow. Lashed the cracked one with rope — wagon condition −5, the team will limp.'
+        );
+      }
+    }
+  ]
+};
+
+EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, axle_breaks, ox_wanders, ox_bow_cracks);
 
 // --- Health ---
 const cholera_scare: GameEvent = {
@@ -892,6 +933,21 @@ EVENTS.push(donner_rumor, gold_rush_news, cholera_peak_1852, mormon_handcart, po
 const BURIAL_CANNIBALISM_MEAT_LBS = 50;
 const BURIAL_CANNIBALISM_MORALE = 18;
 
+// #260 — single 3-rifle volley over the grave. Period reality: when
+// emigrants buried a man (especially a veteran or train officer), the
+// custom was three rifles fired together as a salute. The 1846+ ammo
+// system splits each shot into gunpowder + lead_balls + percussion_caps,
+// so the cost is 3 of each — small but not free. Caps were the period
+// bottleneck (fulminate-of-mercury chemistry couldn't be done on the
+// trail), so this gate naturally ties to whether the party can spare
+// honors.
+const SALUTE_SHOTS = 3;
+function canFireSalute(state: GameState): boolean {
+  return (state.inventory.gunpowder ?? 0) >= SALUTE_SHOTS
+    && (state.inventory.lead_balls ?? 0) >= SALUTE_SHOTS
+    && (state.inventory.percussion_caps ?? 0) >= SALUTE_SHOTS;
+}
+
 function hasNoFoodAtBurial(state: GameState): boolean {
   const ids = ['game_meat', 'berries', 'flour', 'beans', 'bacon', 'jerky', 'hardtack', 'dried_fruit', 'pemmican'];
   const totalLb = ids.reduce((sum, id) => sum + (state.inventory[id] ?? 0), 0);
@@ -955,6 +1011,41 @@ const burial: GameEvent = {
         return logLine(
           { ...s, flags, morale: Math.max(0, s.morale - penalty) },
           `Built a stone mound over the body. A hard farewell. Morale −${penalty}.`
+        );
+      }
+    },
+    {
+      id: 'rifle_salute',
+      icon: '💥',
+      label: 'Fire a 3-rifle salute over the grave',
+      silentLog: true,
+      hidden: (s) => !canFireSalute(s),
+      apply: (s) => {
+        // Defensive: if hidden somehow lapses, fall through to stone-mound.
+        if (!canFireSalute(s)) {
+          const flags = { ...s.flags };
+          delete (flags as Record<string, unknown>)._burialPending;
+          const penalty = deathMoralePenalty(s, 4);
+          return logLine(
+            { ...s, flags, morale: Math.max(0, s.morale - penalty) },
+            `Built a stone mound over the body. A hard farewell. Morale −${penalty}.`
+          );
+        }
+        const flags = { ...s.flags };
+        delete (flags as Record<string, unknown>)._burialPending;
+        return logLine(
+          {
+            ...s,
+            flags,
+            inventory: {
+              ...s.inventory,
+              gunpowder: (s.inventory.gunpowder ?? 0) - SALUTE_SHOTS,
+              lead_balls: (s.inventory.lead_balls ?? 0) - SALUTE_SHOTS,
+              percussion_caps: (s.inventory.percussion_caps ?? 0) - SALUTE_SHOTS
+            },
+            morale: Math.min(100, s.morale + 4)
+          },
+          'Three rifles spoke as one over the grave. Morale +4.'
         );
       }
     },

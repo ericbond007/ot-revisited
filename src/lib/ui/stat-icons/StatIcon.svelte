@@ -20,6 +20,7 @@
   import Date    from './date.svelte';
   import Day     from './day.svelte';
   import Health  from './health.svelte';
+  import Keg     from './keg.svelte';
   import Leg     from './leg.svelte';
   import Morale  from './morale.svelte';
   import Pace    from './pace.svelte';
@@ -32,6 +33,7 @@
     date:    Date,
     day:     Day,
     health:  Health,
+    keg:     Keg,
     leg:     Leg,
     morale:  Morale,
     pace:    Pace,
@@ -84,6 +86,7 @@
     'date',
     'day',
     'health',
+    'keg',
     'leg',
     'morale',
     'pace',

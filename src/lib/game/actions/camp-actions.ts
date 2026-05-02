@@ -2,6 +2,8 @@ import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { hasLivePreacher, hasLiveWhore } from '../professions/predicates';
 import { canBoilWater } from '../systems/water-purity';
+import { fuelFlavorFor } from '../systems/fire';
+import { washAll } from '../systems/cleanliness';
 import { deathMoralePenalty } from '../professions/bonuses';
 
 // Camp actions are one-shot activities the party can do during a rest
@@ -50,6 +52,8 @@ export type CampActionId =
   | 'dig_well'
   | 'dig_out'
   | 'gather_firewood'
+  | 'wash_clothes'
+  | 'press_cheese'
   | 'cannibalism_straws';
 
 function logLine(s: GameState, text: string): GameState {
@@ -585,11 +589,13 @@ const digOut: CampAction = {
 
 // Firewood gathering — always available. Yield scales with terrain
 // (same mean table as passive travel-day gather, but bigger because
-// you're focused on it instead of walking). 3-hour slot.
+// you're focused on it instead of walking). 3-hour slot. Label and
+// log flex by terrain (#219) — "buffalo chips" on the plains,
+// "sage brush" on desert; the resource bucket stays `firewood`.
 const gatherFirewood: CampAction = {
   id: 'gather_firewood',
-  label: 'Gather firewood',
-  sub: '3 hr · terrain-dependent yield',
+  label: 'Gather fuel',
+  sub: '3 hr · chips on plains, sage in desert, wood elsewhere',
   icon: '🪵',
   hourCost: 3,
   availability: () => ({ available: true }),
@@ -601,6 +607,7 @@ const gatherFirewood: CampAction = {
     };
     const mean = baseByTerrain[s.location.terrain] ?? 10;
     const gained = rng.int(Math.round(mean * 0.7), Math.round(mean * 1.3));
+    const fuel = fuelFlavorFor(s.location.terrain);
     return logLine(
       {
         ...s,
@@ -609,7 +616,74 @@ const gatherFirewood: CampAction = {
           firewood: (s.resources.firewood ?? 0) + gained
         }
       },
-      `Gathered ${gained} lb of firewood from the ${s.location.terrain}.`
+      `Gathered ${gained} lb of ${fuel.material} from the ${fuel.source}.`
+    );
+  }
+};
+
+// Cheese press (#139) — 2 gal milk → 2 lb farmer's cheese, 2 hr. Period
+// reality: warm milk to ~85°F by the fire, add rennet, curd in 1-2 hr,
+// drain whey, salt, press in the wooden hoop with weight stones, age
+// 3-4 days. We model the active prep as a 2-hr camp action and abstract
+// the aging — cheese is in inventory and shelf-stable from the press.
+// Yield is 1 lb cheese per gallon, consistent across period sources
+// (Beecher 1846, Marcy 1859). Player runs the action again for more.
+const CHEESE_MILK_INPUT = 2;
+const CHEESE_OUTPUT_LB = 2;
+
+const pressCheese: CampAction = {
+  id: 'press_cheese',
+  label: 'Press cheese',
+  sub: '2 hr · 2 gal milk + cheese press → 2 lb cheese',
+  icon: '🧀',
+  hourCost: 2,
+  availability: (s) => {
+    if ((s.inventory.cheese_press ?? 0) < 1) {
+      return { available: false, reason: 'Need a cheese press (hoop, cloth, rennet jar).' };
+    }
+    if ((s.inventory.milk ?? 0) < CHEESE_MILK_INPUT) {
+      return { available: false, reason: `Need at least ${CHEESE_MILK_INPUT} gallons of fresh milk.` };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const newMilk = (s.inventory.milk ?? 0) - CHEESE_MILK_INPUT;
+    return logLine(
+      {
+        ...s,
+        inventory: {
+          ...s.inventory,
+          milk: newMilk,
+          cheese: (s.inventory.cheese ?? 0) + CHEESE_OUTPUT_LB
+        }
+      },
+      `Warmed ${CHEESE_MILK_INPUT} gallons of milk by the fire, added rennet, pressed the curd. ${CHEESE_OUTPUT_LB} lb of farmer's cheese.`
+    );
+  }
+};
+
+// Washday (#230) — laundry + a real bath at a river camp. Restores
+// cleanliness across the whole alive party. Period reality: women
+// boiled lye and beat clothes on rocks, kids splashed, men shaved.
+// Took most of a day; we charge 3 hours for the wash itself and
+// trust the camp-day budget for the rest.
+const washClothes: CampAction = {
+  id: 'wash_clothes',
+  label: 'Wash clothes & bathe',
+  sub: '3 hr · river camp only · +30 cleanliness all',
+  icon: '🧺',
+  hourCost: 3,
+  availability: (s) => {
+    if (s.location.terrain !== 'river') {
+      return { available: false, reason: 'Need a river or stream — no good water for washing.' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const next = washAll(s, 30);
+    return logLine(
+      { ...next, morale: Math.min(100, next.morale + 2) },
+      'Boiled water, beat the clothes on the rocks, and bathed in the river. Cleanliness restored. Morale +2.'
     );
   }
 };
@@ -825,6 +899,7 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   stitchMoccasins,
   // Practical
   gatherFirewood,
+  washClothes,
   findWater,
   boilWater,
   // Shovel work (gated on having a shovel)
@@ -848,6 +923,8 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   replace_planks: replacePlanks,
   stitch_moccasins: stitchMoccasins,
   gather_firewood: gatherFirewood,
+  wash_clothes: washClothes,
+  press_cheese: pressCheese,
   find_water: findWater,
   boil_water: boilWater,
   dig_well: digWell,

@@ -39,12 +39,22 @@ function pickTribe(
 
 // --- Emigrant / traveler encounters ---
 
-const eastbound_turnaround: GameEvent = {
-  id: 'encounter_eastbound',
+// Going-back party (#226) — emigrants who quit and turned for home,
+// usually after sickness or a wagon break they couldn't fix. A real
+// trail institution past Fort Kearny: diary-attested every few weeks
+// west of mile 500. Three roles in the world: discount supply (they
+// want lighter wagons for the eastbound trip), east-bound mail courier
+// (the cheapest way to send word home), and trail-ahead news source.
+const going_back_party: GameEvent = {
+  id: 'encounter_going_back_party',
   category: 'encounter',
-  title: 'An eastbound party',
-  body: "Wagons rolling the wrong way. A family that gave up — sickness, broken wheels, a grave dug this morning. They'll trade what they no longer need.",
+  title: 'A going-back party',
+  body: "Wagons rolling the wrong way. A family that gave up — sickness, broken wheels, a grave dug this morning. They'll trade what they no longer need, and they're heading where the mail goes.",
   weight: 2,
+  // Period reality: turnarounds happened after a major reversal, not at
+  // the start. Mile 500 lands ~Fort Kearny, where parties first really
+  // confront the scale of what's ahead.
+  gate: milesBetween(500, 99999),
   choices: [
     {
       id: 'trade',
@@ -70,6 +80,26 @@ const eastbound_turnaround: GameEvent = {
             }
           },
           `Bought 20 lb flour and a spare ${part.replace(/_/g, ' ')} for $10.`
+        );
+      }
+    },
+    {
+      id: 'mail_home',
+      icon: '✉️',
+      label: 'Hand off a letter home',
+      silentLog: true,
+      apply: (s) => {
+        // Quiet comfort across the alive adults — word will reach
+        // family. No item gate; paper + quill were universal and
+        // forts had stick-board letter posts feeding eastbound parties.
+        const adults = s.party.filter((m) => !m.dead && m.kind === 'adult').length;
+        if (adults === 0) {
+          return logLine(s, 'No one fit to write — the moment passed.');
+        }
+        const bump = Math.min(100 - s.morale, 1);
+        return logLine(
+          { ...s, morale: s.morale + bump },
+          'Pressed a letter into their hands — word will reach home before the snow flies. Morale +1.'
         );
       }
     },
@@ -718,7 +748,7 @@ const native_hide_trade: GameEvent = {
 /** All trail-encounter events. events.ts spreads these into its
  *  EVENTS registry on module load. */
 export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
-  eastbound_turnaround,
+  going_back_party,
   lone_trapper,
   soldier_patrol,
   mail_rider,

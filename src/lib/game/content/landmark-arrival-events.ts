@@ -1,5 +1,6 @@
 import type { GameState } from '../types';
 import type { GameEvent } from './events';
+import { washAll } from '../systems/cleanliness';
 
 // Arrival vignettes for iconic scenic landmarks. When the party reaches
 // one of these on a travel day, the engine pauses and fires the event
@@ -21,6 +22,45 @@ import type { GameEvent } from './events';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
+}
+
+// #236 — peak years of the Platte-corridor cholera epidemic. Diaries
+// from these summers describe "graves every quarter mile" through the
+// Ash Hollow / Chimney Rock cluster — Vibrio cholerae moved with the
+// wagon trains, water sources fouled, deaths were sudden (morning to
+// dusk). 1853+ saw the disease retreat as routes spread out and water
+// hygiene improved among the trains.
+function isCholeraYear(year: number): boolean {
+  return year >= 1849 && year <= 1852;
+}
+
+// Wrap a landmark arrival event so each choice still does its base
+// effect, then layers a cholera-year graves penalty on top — a flat
+// morale debit + a "passed fresh graves" log line. The body text gets
+// rewritten to acknowledge the burials. Reuses the base event's choice
+// gates (requires/hidden) so the descent decision at Ash Hollow still
+// gates on rope, etc.
+function withGravesOverlay(
+  base: GameEvent,
+  newBody: string,
+  moraleDebit: number,
+  graveLog: string
+): GameEvent {
+  return {
+    ...base,
+    id: `${base.id}_cholera`,
+    body: newBody,
+    choices: base.choices.map((c) => ({
+      ...c,
+      apply: (s, rng) => {
+        const after = c.apply(s, rng);
+        return logLine(
+          { ...after, morale: Math.max(0, after.morale - moraleDebit) },
+          graveLog
+        );
+      }
+    }))
+  };
 }
 
 const chimneyRock: GameEvent = {
@@ -85,6 +125,121 @@ const independenceRock: GameEvent = {
       apply: (s) => logLine(
         s,
         'Passed Independence Rock without leaving a mark.'
+      )
+    }
+  ]
+};
+
+// First Sweetwater crossing washday (#230) — period reality: emigrants
+// reaching the Sweetwater, especially after the long alkali pull from
+// the North Platte, fixated on the day's first proper bath. Cold,
+// clean, mountain-fed water; clothes scrubbed on rocks; men shaving
+// in pocket mirrors. Fires once at sweetwater_1 — the first crossing.
+const sweetwaterWashday: GameEvent = {
+  id: 'arrival_sweetwater_washday',
+  category: 'historical',
+  title: 'The Sweetwater — at last, real water',
+  body: 'After the alkali pull from the North Platte, the Sweetwater runs cold and clean. The kids are already in. The women are unpacking the wash kettle. Today is washday.',
+  weight: 1,
+  choices: [
+    {
+      id: 'wash',
+      icon: '🧺',
+      label: 'Camp here a half-day and bathe',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => {
+        const next = washAll(s, 50);
+        return logLine(
+          { ...next, morale: Math.min(100, next.morale + 5) },
+          "Boiled water on a willow fire, beat the clothes clean, bathed in the Sweetwater. The party feels human again. Cleanliness +50, morale +5."
+        );
+      }
+    },
+    {
+      id: 'quick',
+      icon: '💦',
+      label: 'A quick rinse and press on',
+      silentLog: true,
+      apply: (s) => {
+        const next = washAll(s, 20);
+        return logLine(
+          { ...next, morale: Math.min(100, next.morale + 2) },
+          'Splashed off the dust at the Sweetwater. Cleanliness +20, morale +2.'
+        );
+      }
+    },
+    {
+      id: 'press',
+      icon: '🚶',
+      label: "Don't break — we're behind already",
+      silentLog: true,
+      apply: (s) => logLine(s, 'Forded the Sweetwater without stopping to wash.')
+    }
+  ]
+};
+
+// 4th of July at the Rock (#227) — date-gated set-piece. Period
+// reality: emigrants aimed to reach Independence Rock by July 4 and
+// hold the date there; companies converging for sunrise gun-salutes,
+// fiddle dances after dark, antelope-feast suppers, toasts to the
+// Republic. Bruff (1849) and Porter (1860) describe it in detail.
+// Replaces the regular sign-the-rock event WHEN AND ONLY WHEN the
+// arrival lands on July 4.
+const independenceRockJuly4: GameEvent = {
+  id: 'arrival_independence_rock_july4',
+  category: 'historical',
+  title: 'Independence Rock — the Fourth of July',
+  body: 'Wagons from a half-dozen companies are circled around the Rock. A flag flies from the summit. Fiddles tune up. Someone is roasting an antelope. By tradition, this is the day a westbound party celebrates here — and prays the Sierras stay clear of snow until you reach them.',
+  weight: 1,
+  choices: [
+    {
+      id: 'salute_and_feast',
+      icon: '🎆',
+      label: 'Fire a 30-gun salute and join the feast',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => {
+        // Period detail: the salutes consumed real powder/lead/caps —
+        // diaries record companies pooling ammunition for the volleys.
+        const have = (id: string) => s.inventory[id] ?? 0;
+        const cost = 5;
+        if (have('gunpowder') < cost || have('lead_balls') < cost || have('percussion_caps') < cost) {
+          return logLine(
+            { ...s, morale: Math.min(100, s.morale + 8) },
+            'No powder to spare for the salute. Joined the feast and the dancing instead. Morale +8.'
+          );
+        }
+        const inventory = {
+          ...s.inventory,
+          gunpowder: have('gunpowder') - cost,
+          lead_balls: have('lead_balls') - cost,
+          percussion_caps: have('percussion_caps') - cost
+        };
+        return logLine(
+          { ...s, inventory, morale: Math.min(100, s.morale + 10) },
+          `30-gun sunrise salute, fiddles after dark, antelope feast — the trail's best day. Powder/balls/caps −${cost} each. Morale +10.`
+        );
+      }
+    },
+    {
+      id: 'sign_and_celebrate',
+      icon: '🎶',
+      label: 'Sign the Rock and dance the night',
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 8) },
+        'Carved the year on the Rock and danced till the fiddle gave out. Morale +8.'
+      )
+    },
+    {
+      id: 'press_on',
+      icon: '🚶',
+      label: 'Press on — every day matters',
+      silentLog: true,
+      apply: (s) => logLine(
+        { ...s, morale: Math.min(100, s.morale + 3) },
+        'Tipped your hat to the Rock and the dancers and rolled west. Morale +3.'
       )
     }
   ]
@@ -366,10 +521,22 @@ const registerCliff: GameEvent = {
       id: 'carve',
       label: 'Chisel your names deep',
       silentLog: true,
-      apply: (s) => logLine(
-        { ...s, morale: Math.min(100, s.morale + 5) },
-        'Chiseled your names into Register Cliff — meant to last. Morale +5.'
-      )
+      apply: (s) => {
+        // Period inscriptions ran "SURNAME · MONTH YEAR" — the carved
+        // mark outlasts the party (#228). Persists into the EndScreen
+        // scoring panel as a "Marked the trail at Register Cliff" note.
+        const leader = s.party[0]?.name ?? 'Anonymous';
+        const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][s.date.month - 1];
+        const inscription = `${leader.toUpperCase()} · ${monthName} ${s.date.year}`;
+        return logLine(
+          {
+            ...s,
+            morale: Math.min(100, s.morale + 5),
+            flags: { ...s.flags, _registerCliffInscription: inscription }
+          },
+          'Chiseled your names into Register Cliff — meant to last. Morale +5.'
+        );
+      }
     },
     {
       id: 'pass',
@@ -467,6 +634,28 @@ const laurelHill: GameEvent = {
   ]
 };
 
+// #236 — Ash Hollow cholera-year variant. Period reality: Rachel
+// Pattison (#246) is buried here, beside dozens of others — Sarah Royce
+// counted "graves at every spring." Same descent decision (rope-down /
+// lock-wheels) but the camp has a graveyard, not just cottonwoods.
+const ashHollowCholera = withGravesOverlay(
+  ashHollow,
+  "Windlass Hill drops into Ash Hollow — and into a graveyard. Cottonwoods, spring water, fresh mounds with cedar shingles for headstones. Someone counted forty new graves between here and the bluff. Cholera season.",
+  3,
+  'Camped beside the Ash Hollow graves. Morale -3.'
+);
+
+// #236 — Chimney Rock cholera-year variant. Same awe vignette, but the
+// flat below the spire holds a cluster of fresh emigrant graves —
+// diaries put it at "every quarter mile." Smaller debit than Ash Hollow
+// because you're passing through, not camping at the burial ground.
+const chimneyRockCholera = withGravesOverlay(
+  chimneyRock,
+  "The clay spire stands five hundred feet over the plain — and over a scatter of fresh wooden crosses. Half the wagon trains ahead have left someone here. Cholera, mostly.",
+  2,
+  'Passed the Chimney Rock graves. Morale -2.'
+);
+
 export const LANDMARK_ARRIVAL_EVENTS: Record<string, GameEvent> = {
   alcove_spring: alcoveSpring,
   ash_hollow: ashHollow,
@@ -478,9 +667,34 @@ export const LANDMARK_ARRIVAL_EVENTS: Record<string, GameEvent> = {
   south_pass: southPass,
   pacific_springs: pacificSprings,
   soda_springs: sodaSprings,
+  sweetwater_1: sweetwaterWashday,
   laurel_hill: laurelHill
 };
 
-export function getLandmarkArrivalEvent(landmarkId: string): GameEvent | undefined {
+export function getLandmarkArrivalEvent(
+  landmarkId: string,
+  state?: GameState
+): GameEvent | undefined {
+  // Date-gated set-pieces (#227) — when the arrival lands on a known
+  // historical day at the right landmark, return the special variant
+  // instead of the everyday event. Currently only July 4 at the Rock;
+  // other landmarks could follow the same pattern (Christmas Eve at
+  // Fort Hall, etc.).
+  if (
+    landmarkId === 'independence_rock'
+    && state
+    && state.date.month === 7
+    && state.date.day === 4
+  ) {
+    return independenceRockJuly4;
+  }
+  // #236 — cholera-year variants for the Ash Hollow / Chimney Rock
+  // cluster. 1849-1852 saw peak Platte-corridor mortality; the graves
+  // overlay rewrites the body and adds a small morale debit on top of
+  // the existing arrival event's choices.
+  if (state && isCholeraYear(state.date.year)) {
+    if (landmarkId === 'ash_hollow') return ashHollowCholera;
+    if (landmarkId === 'chimney_rock') return chimneyRockCholera;
+  }
   return LANDMARK_ARRIVAL_EVENTS[landmarkId];
 }

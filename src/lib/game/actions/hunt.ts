@@ -43,6 +43,10 @@ export interface HuntHaul {
   rawHides: number;   // count of raw hides taken (medium 60% ×1, big 80% ×1–2)
   bullets: number;    // bullets spent
   injured: string | null; // name of injured member, if any
+  /** True when the hunt's injury came from a grizzly mauling (#198) — used
+   * by the post-hunt modal to replace "was injured" with the dramatic
+   * variant. Optional for save-format compatibility with pre-#198 saves. */
+  mauled?: boolean;
   spoilDay: number | null; // day meat pile spoils; null when no meat
 }
 
@@ -58,6 +62,17 @@ const BASE_YIELD_BY_TARGET: Record<HuntTarget, { min: number; max: number; injur
   big: { min: 60, max: 200, injuryRisk: 0.08 },
   gather: { min: 4, max: 14, injuryRisk: 0 }
 };
+
+// #198 — grizzly mauling on big-game hunts in mountain terrain. Lewis
+// & Clark catalogued grizzlies as the trail's most-feared animal;
+// emigrant diaries from the Snake / Sierra / Yellowstone basin record
+// maulings of solo hunters who startled sows or guarding kills. A
+// single rifle ball rarely stopped one; the encounter went bad fast.
+// Hunter profession halves the risk — they read the bear sign, hunt
+// in pairs, and pick approach lines that don't crowd thickets.
+const GRIZZLY_MAUL_CHANCE = 0.05;
+const GRIZZLY_HP_MIN = 25;
+const GRIZZLY_HP_MAX = 45;
 
 function advanceOneDay(d: { year: number; month: number; day: number }) {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -225,6 +240,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   s = { ...s, inventory: nextInventory, flags: nextFlags };
 
   let injuredName: string | null = null;
+  let mauled = false;
   if (profile.injuryRisk > 0 && rng.chance(profile.injuryRisk)) {
     // Only adults hunt, so only adults take hunting injuries.
     const alive = s.party.filter((m) => !m.dead && m.kind === 'adult');
@@ -240,6 +256,44 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
         ),
         eventLog: [...s.eventLog, { day: s.day, text: `${victim.name} was injured during the hunt.` }]
       };
+    }
+  }
+
+  // #198 — grizzly mauling roll on big-game hunts in mountain terrain.
+  // Independent of the routine injury roll above; a hunter can be both
+  // sprained AND mauled on the same trip, but the maul is the headline.
+  // Hunter halves the rate; the dog (#137) gives no help — bears don't
+  // care.
+  const inGrizzlyCountry = opts.target === 'big' && s.location.terrain === 'mountains';
+  if (inGrizzlyCountry) {
+    const baseChance = hasLiveHunter(s) ? GRIZZLY_MAUL_CHANCE * 0.5 : GRIZZLY_MAUL_CHANCE;
+    if (rng.chance(baseChance)) {
+      const alive = s.party.filter((m) => !m.dead && m.kind === 'adult');
+      if (alive.length > 0) {
+        const victim = alive[rng.int(0, alive.length - 1)];
+        const damage = rng.int(GRIZZLY_HP_MIN, GRIZZLY_HP_MAX);
+        injuredName = victim.name;
+        mauled = true;
+        s = {
+          ...s,
+          party: s.party.map((m) =>
+            m.id === victim.id
+              ? {
+                  ...m,
+                  health: Math.max(0, m.health - damage),
+                  conditions: [
+                    ...m.conditions.filter((c) => c.id !== 'bear_mauling'),
+                    { id: 'bear_mauling', daysSinceOnset: 0 }
+                  ]
+                }
+              : m
+          ),
+          eventLog: [
+            ...s.eventLog,
+            { day: s.day, text: `A grizzly came out of the brush — ${victim.name} mauled. -${damage} HP.` }
+          ]
+        };
+      }
     }
   }
 
@@ -267,6 +321,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     rawHides: rawHideGain,
     bullets: spentBullets,
     injured: injuredName,
+    mauled,
     spoilDay: meatGain > 0 ? computeSpoilDay(s.day) : null
   };
   // Cast required because HuntHaul is a named interface (stricter than

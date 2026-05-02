@@ -127,7 +127,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'beans', 'bacon', 'hardtack',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
-      'ox_shoes', 'yoke', 'rope', 'spare_plank',
+      'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'rope', 'spare_plank',
       'tobacco', 'whiskey'
     ] },
   { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 120, terrain: 'prairie',   kind: 'trading_post',
@@ -142,8 +142,8 @@ export const LANDMARKS: readonly Landmark[] = [
     stock: [
       'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
-      'coat', 'blanket',
-      'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'rope', 'chicken', 'grain',
+      'coat', 'blanket', 'tent',
+      'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'rope', 'chicken', 'grain',
       'lard'
     ] },
   { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 145, terrain: 'prairie',   kind: 'landmark' },
@@ -178,9 +178,10 @@ export const LANDMARKS: readonly Landmark[] = [
     stock: [
       'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine', 'vinegar',
-      'coat', 'boots', 'blanket',
-      'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke',
-      'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'grain',
+      'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
+      'coat', 'boots', 'blanket', 'tent',
+      'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins',
+      'shovel', 'salt', 'saleratus', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'milk_cow', 'cheese_press', 'butter_crock', 'grain',
       'tobacco', 'whiskey', 'bible',
       'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
       'moccasins', 'buffalo_robe', 'beads'
@@ -272,8 +273,9 @@ export const LANDMARKS: readonly Landmark[] = [
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum',
-      'coat', 'boots', 'blanket',
-      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'grain',
+      'epsom_salts', 'camphor', 'paregoric',
+      'coat', 'boots', 'blanket', 'tent',
+      'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'grain', 'milk_cow', 'cheese_press', 'butter_crock',
       'salt', 'tobacco', 'whiskey', 'harmonica'
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
@@ -330,9 +332,10 @@ export const LANDMARKS: readonly Landmark[] = [
     stock: [
       'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
-      'coat', 'boots', 'blanket',
-      'wheel', 'axle', 'tongue', 'canvas', 'yoke',
-      'cookware', 'rope', 'salt',
+      'epsom_salts', 'camphor', 'paregoric', 'dovers_powder', 'castor_oil',
+      'coat', 'boots', 'blanket', 'tent',
+      'wheel', 'axle', 'tongue', 'canvas', 'yoke', 'ox_bow', 'picket_pins',
+      'cookware', 'rope', 'salt', 'milk_cow', 'cheese_press', 'butter_crock',
       'tobacco', 'whiskey', 'bible', 'harmonica', 'fiddle'
     ] },
   // Barlow Road junction — the toll road south around Mt. Hood, the

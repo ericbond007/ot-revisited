@@ -16,6 +16,10 @@ const HIGH_FATIGUE_THRESHOLD = 80;
 const OVERWORK_HEALTH_DRAIN = 2;
 export const TEAMSTER_FATIGUE_MULT = 0.85;
 export const TEAMSTER_RECOVERY_MULT = 1.20;
+// Teamster knows the team's habits — bedded down right, picketed
+// the wanderers, kept the bell-ox on. Cuts the per-day stray-incident
+// chance by 40% (#220, #221).
+export const TEAMSTER_STRAY_MULT = 0.6;
 
 // Mules can't subsist on prairie grass alone. 1 lb grain per live
 // mule per day. Without grain, fatigue climbs 2× on unfed mules.

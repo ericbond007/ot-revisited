@@ -5,6 +5,8 @@ import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../content/landmarks'
 import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
 import { gatherFirewoodOnTravel } from './fire';
+import { applyAxleGrease } from './wagon';
+import { rollStrayMorning } from './strays';
 import { hasLiveScout } from '../professions/predicates';
 import { weatherTravelMult } from './weather';
 
@@ -51,13 +53,27 @@ const MULE_TERRAIN_BONUS: Partial<Record<Terrain, number>> = {
 // of the team ratio so a mixed team scales linearly.
 const MULE_SPEED_BONUS = 0.25;
 
-function runningMilesTo(id: string): number {
+export function runningMilesTo(id: string): number {
   let sum = 0;
   for (const l of LANDMARKS) {
     sum += l.milesFromPrevious;
     if (l.id === id) return sum;
   }
   return sum;
+}
+
+// Trail miles from the party's current position to a future landmark.
+// Returns a negative number if the landmark has already been passed,
+// and -1 if the id is unknown.
+export function milesToLandmark(state: GameState, landmarkId: string): number {
+  let running = 0;
+  for (const l of LANDMARKS) {
+    running += l.milesFromPrevious;
+    if (l.id === landmarkId) {
+      return running - state.location.milesTraveled;
+    }
+  }
+  return -1;
 }
 
 export function milesPerDay(state: GameState): number {
@@ -98,12 +114,35 @@ export function milesPerDay(state: GameState): number {
   // pipeline.
   const weatherMult = weatherTravelMult(state.weather);
 
-  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult);
+  // Milk cow drag (#139) — a tethered cow walks behind the wagon,
+  // grazing as it goes. -5% per cow, capped at -10%. Period reality:
+  // cow forces stops to nurse calves and graze; the wagon paces to
+  // her rather than the other way around.
+  const cows = state.inventory.milk_cow ?? 0;
+  const cowMult = Math.max(0.90, 1 - 0.05 * cows);
+
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult * cowMult);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.
 // Scenic landmarks just flavor-log and keep rolling.
 const STOP_WORTHY_KINDS = new Set<string>(['trading_post', 'river', 'end']);
+
+// Detour flags that bypass an otherwise-stop-worthy landmark — the
+// player committed to a strategic route in an earlier choice and the
+// landmark is being walked past, not visited. Centralized here so #235
+// (Barlow Road vs Columbia raft) and any future bypass plug in the
+// same way.
+function isBypassed(state: GameState, landmarkId: string): boolean {
+  if (landmarkId === 'snake_three_island' && state.flags._threeIslandDetour) return true;
+  // #235 — Columbia raft skips barlow_road + laurel_hill entirely; the
+  // raft event re-anchors milesTraveled past them, so any cascade arrival
+  // through them shouldn't park.
+  if (state.flags._columbiaRaft && (landmarkId === 'barlow_road' || landmarkId === 'laurel_hill')) {
+    return true;
+  }
+  return false;
+}
 
 export function applyTravel(state: GameState, rng: Rng): GameState {
   if (state.completed) return state;
@@ -117,7 +156,19 @@ export function applyTravel(state: GameState, rng: Rng): GameState {
     };
   }
 
-  const miles = milesPerDay(startState);
+  // Stray-oxen morning roll (#221) — runs BEFORE distance is computed
+  // so the multiplier lands on actual miles. May mutate state via a
+  // rare permanent ox loss.
+  const strayResult = rollStrayMorning(startState, rng);
+  startState = strayResult.state;
+  if (strayResult.logLine) {
+    startState = {
+      ...startState,
+      eventLog: [...startState.eventLog, { day: startState.day, text: strayResult.logLine }]
+    };
+  }
+
+  const miles = Math.round(milesPerDay(startState) * strayResult.milesMult);
   const milesTraveled = startState.location.milesTraveled + miles;
 
   let next: GameState = {
@@ -129,6 +180,7 @@ export function applyTravel(state: GameState, rng: Rng): GameState {
   // plains, scarce fuel in the desert.
   if (miles > 0) {
     next = gatherFirewoodOnTravel(next, rng);
+    next = applyAxleGrease(next, miles);
   }
 
   const nextLandmark = getLandmark(startState.location.nextLandmarkId);
@@ -139,7 +191,7 @@ export function applyTravel(state: GameState, rng: Rng): GameState {
     // Adopt the next leg's terrain — but river landmarks are decision waypoints,
     // not travel legs. Keep the current terrain instead when the next landmark is a river.
     const newTerrain = after?.kind === 'river' ? next.location.terrain : (after?.terrain ?? next.location.terrain);
-    const stopHere = STOP_WORTHY_KINDS.has(nextLandmark.kind);
+    const stopHere = STOP_WORTHY_KINDS.has(nextLandmark.kind) && !isBypassed(startState, nextLandmark.id);
 
     next = {
       ...next,

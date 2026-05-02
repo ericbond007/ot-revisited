@@ -28,6 +28,8 @@ export const PRICES: Record<string, PriceEntry> = {
 
   // Livestock
   yoke:        { buy: 6.00, sell: 3.00 },
+  ox_bow:      { buy: 2.00, sell: 0.80 },
+  picket_pins: { buy: 1.50, sell: 0.60 },
   // A live laying hen — cheap at Independence, trickier to stock
   // mid-trail. Sell side low because posts rarely want more poultry.
   chicken:     { buy: 0.50, sell: 0.20 },
@@ -65,6 +67,24 @@ export const PRICES: Record<string, PriceEntry> = {
   coat:    { buy: 5.00, sell: 2.50 },
   boots:   { buy: 4.00, sell: 2.00 },
   blanket: { buy: 3.00, sell: 1.50 },
+  tent:    { buy: 8.00, sell: 4.00 },
+
+  // Livestock — milk cow (#139). Period reality: a milk cow in 1840s
+  // Missouri ran $20-30; mid-trail posts charged a premium.
+  milk_cow: { buy: 25.00, sell: 12.00 },
+  // Fresh milk — sold by the gallon. Surplus could be traded at posts
+  // when oxen had grazing and the wagon was overstocked, though more
+  // often it was churned to butter (#222 follow-up) for shelf life.
+  milk:     { buy: 0.30, sell: 0.10 },
+  // Farmer's cheese — shelf-stable dairy. Posts will buy from the player.
+  cheese:   { buy: 0.50, sell: 0.20 },
+  // Cheese press kit — wooden hoop + cheesecloth + rennet jar.
+  cheese_press: { buy: 3.00, sell: 1.50 },
+  // Wagon butter — pricier than fresh milk, less than cheese. Period-
+  // accurate trade goods slot.
+  butter:   { buy: 0.40, sell: 0.15 },
+  // Butter crock kit — tin pail with a paddle dasher in the lid.
+  butter_crock: { buy: 2.50, sell: 1.20 },
 
   // Tools
   iron_toolkit: { buy: 40.00, sell: 25.00 },
@@ -87,6 +107,15 @@ export const PRICES: Record<string, PriceEntry> = {
   herbal_poultice: { buy: 1.00, sell: 0.50 },
   patent_medicine: { buy: 3.00, sell: 1.50 },
   vinegar:         { buy: 1.00, sell: 0.40 },
+  // Period medicine kit fill-out (#213). Pricing tracks Marcy / 1850s
+  // Missouri-River outfitter rates: gentle purgatives cheap, opiate
+  // derivatives mid-tier, fever-sweat compounds (Dover's) priciest.
+  epsom_salts:     { buy: 0.50, sell: 0.20 },
+  camphor:         { buy: 1.50, sell: 0.70 },
+  paregoric:       { buy: 1.20, sell: 0.55 },
+  hartshorn:       { buy: 0.80, sell: 0.35 },
+  dovers_powder:   { buy: 1.80, sell: 0.85 },
+  castor_oil:      { buy: 0.40, sell: 0.18 },
 
   // Comfort
   tobacco:   { buy: 1.00, sell: 0.50 },
