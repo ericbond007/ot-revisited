@@ -55,6 +55,8 @@ _(empty — items shipped or moved to other sections)_
 - **#198** — Grizzly mauling risk on big-game hunts in mountain terrain
 - **#206** — [H] Whitman Mission as a post — historical check (1843-47 only)
 - **#268** — [H] Cold-weather food bump — frost / snow days +20% calorie need (audit gap from #266)
+- **#269** — [H] Soap as a craftable item — boosts wash_clothes efficacy (#230 follow-up)
+- **#270** — [H] Bath-house at major trading posts — $1 town service, big cleanliness reset (#230 follow-up)
 
 ## New mechanics (extension)
 
