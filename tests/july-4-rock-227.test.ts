@@ -9,7 +9,9 @@ function newGameOnDate(month: number, day: number): GameState {
     seed: 'july-4-test',
     leader: { name: 'Ezra', profession: 'farmer' },
     companions: [{ name: 'Mary', profession: 'doctor' }],
-    startDate: { year: 1849, month, day }
+    // 1848 — pre-cholera-cluster (#236) so chimney_rock isolation
+    // assertion below isn't shadowed by the cholera-year variant.
+    startDate: { year: 1848, month, day }
   });
 }
 

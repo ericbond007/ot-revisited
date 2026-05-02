@@ -24,6 +24,45 @@ function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
 }
 
+// #236 — peak years of the Platte-corridor cholera epidemic. Diaries
+// from these summers describe "graves every quarter mile" through the
+// Ash Hollow / Chimney Rock cluster — Vibrio cholerae moved with the
+// wagon trains, water sources fouled, deaths were sudden (morning to
+// dusk). 1853+ saw the disease retreat as routes spread out and water
+// hygiene improved among the trains.
+function isCholeraYear(year: number): boolean {
+  return year >= 1849 && year <= 1852;
+}
+
+// Wrap a landmark arrival event so each choice still does its base
+// effect, then layers a cholera-year graves penalty on top — a flat
+// morale debit + a "passed fresh graves" log line. The body text gets
+// rewritten to acknowledge the burials. Reuses the base event's choice
+// gates (requires/hidden) so the descent decision at Ash Hollow still
+// gates on rope, etc.
+function withGravesOverlay(
+  base: GameEvent,
+  newBody: string,
+  moraleDebit: number,
+  graveLog: string
+): GameEvent {
+  return {
+    ...base,
+    id: `${base.id}_cholera`,
+    body: newBody,
+    choices: base.choices.map((c) => ({
+      ...c,
+      apply: (s, rng) => {
+        const after = c.apply(s, rng);
+        return logLine(
+          { ...after, morale: Math.max(0, after.morale - moraleDebit) },
+          graveLog
+        );
+      }
+    }))
+  };
+}
+
 const chimneyRock: GameEvent = {
   id: 'arrival_chimney_rock',
   category: 'historical',
@@ -595,6 +634,28 @@ const laurelHill: GameEvent = {
   ]
 };
 
+// #236 — Ash Hollow cholera-year variant. Period reality: Rachel
+// Pattison (#246) is buried here, beside dozens of others — Sarah Royce
+// counted "graves at every spring." Same descent decision (rope-down /
+// lock-wheels) but the camp has a graveyard, not just cottonwoods.
+const ashHollowCholera = withGravesOverlay(
+  ashHollow,
+  "Windlass Hill drops into Ash Hollow — and into a graveyard. Cottonwoods, spring water, fresh mounds with cedar shingles for headstones. Someone counted forty new graves between here and the bluff. Cholera season.",
+  3,
+  'Camped beside the Ash Hollow graves. Morale -3.'
+);
+
+// #236 — Chimney Rock cholera-year variant. Same awe vignette, but the
+// flat below the spire holds a cluster of fresh emigrant graves —
+// diaries put it at "every quarter mile." Smaller debit than Ash Hollow
+// because you're passing through, not camping at the burial ground.
+const chimneyRockCholera = withGravesOverlay(
+  chimneyRock,
+  "The clay spire stands five hundred feet over the plain — and over a scatter of fresh wooden crosses. Half the wagon trains ahead have left someone here. Cholera, mostly.",
+  2,
+  'Passed the Chimney Rock graves. Morale -2.'
+);
+
 export const LANDMARK_ARRIVAL_EVENTS: Record<string, GameEvent> = {
   alcove_spring: alcoveSpring,
   ash_hollow: ashHollow,
@@ -626,6 +687,14 @@ export function getLandmarkArrivalEvent(
     && state.date.day === 4
   ) {
     return independenceRockJuly4;
+  }
+  // #236 — cholera-year variants for the Ash Hollow / Chimney Rock
+  // cluster. 1849-1852 saw peak Platte-corridor mortality; the graves
+  // overlay rewrites the body and adds a small morale debit on top of
+  // the existing arrival event's choices.
+  if (state && isCholeraYear(state.date.year)) {
+    if (landmarkId === 'ash_hollow') return ashHollowCholera;
+    if (landmarkId === 'chimney_rock') return chimneyRockCholera;
   }
   return LANDMARK_ARRIVAL_EVENTS[landmarkId];
 }
