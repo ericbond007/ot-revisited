@@ -62,6 +62,20 @@ function runningMilesTo(id: string): number {
   return sum;
 }
 
+// Trail miles from the party's current position to a future landmark.
+// Returns a negative number if the landmark has already been passed,
+// and -1 if the id is unknown.
+export function milesToLandmark(state: GameState, landmarkId: string): number {
+  let running = 0;
+  for (const l of LANDMARKS) {
+    running += l.milesFromPrevious;
+    if (l.id === landmarkId) {
+      return running - state.location.milesTraveled;
+    }
+  }
+  return -1;
+}
+
 export function milesPerDay(state: GameState): number {
   const wagon = getWagon(state.wagon.model);
   const aliveTeam = state.oxen.filter((o) => o.health > 0);

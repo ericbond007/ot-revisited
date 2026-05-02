@@ -8,7 +8,7 @@ import { progressConditions } from './systems/conditions';
 import { tickOxen } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
 import { adjustMorale } from './systems/morale';
-import { applyTravel } from './systems/travel';
+import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
 import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
@@ -20,6 +20,7 @@ import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import type { GameEvent } from './content/events';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
+import { pickApproachEvent, approachFiredFlag } from './content/landmark-approach-events';
 import { pickText } from './content/text-pools';
 
 function advanceDate(d: { year: number; month: number; day: number }) {
@@ -91,6 +92,25 @@ export function tickDayPausable(state: GameState): PausableTickResult {
         s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
       }
       return { state: s, pendingEvent: arrival };
+    }
+  }
+
+  // Approach events (#233) — first-sight vignettes that fire BEFORE
+  // reaching a landmark, when its silhouette first becomes visible from
+  // miles out. One-shot per landmark via _approachFired_<id>. Skipped on
+  // arrival days so the at-landmark stage takes precedence.
+  if (!arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
+    const approach = pickApproachEvent(s, (id) => milesToLandmark(s, id));
+    if (approach) {
+      s = {
+        ...s,
+        flags: { ...s.flags, [approachFiredFlag(approach.landmarkId)]: true }
+      };
+      if (approach.event.bodyKey) {
+        const resolvedBody = pickText(approach.event.bodyKey, rng, approach.event.body);
+        s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
+      }
+      return { state: s, pendingEvent: approach.event };
     }
   }
 
