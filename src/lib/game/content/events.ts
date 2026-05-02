@@ -933,6 +933,21 @@ EVENTS.push(donner_rumor, gold_rush_news, cholera_peak_1852, mormon_handcart, po
 const BURIAL_CANNIBALISM_MEAT_LBS = 50;
 const BURIAL_CANNIBALISM_MORALE = 18;
 
+// #260 — single 3-rifle volley over the grave. Period reality: when
+// emigrants buried a man (especially a veteran or train officer), the
+// custom was three rifles fired together as a salute. The 1846+ ammo
+// system splits each shot into gunpowder + lead_balls + percussion_caps,
+// so the cost is 3 of each — small but not free. Caps were the period
+// bottleneck (fulminate-of-mercury chemistry couldn't be done on the
+// trail), so this gate naturally ties to whether the party can spare
+// honors.
+const SALUTE_SHOTS = 3;
+function canFireSalute(state: GameState): boolean {
+  return (state.inventory.gunpowder ?? 0) >= SALUTE_SHOTS
+    && (state.inventory.lead_balls ?? 0) >= SALUTE_SHOTS
+    && (state.inventory.percussion_caps ?? 0) >= SALUTE_SHOTS;
+}
+
 function hasNoFoodAtBurial(state: GameState): boolean {
   const ids = ['game_meat', 'berries', 'flour', 'beans', 'bacon', 'jerky', 'hardtack', 'dried_fruit', 'pemmican'];
   const totalLb = ids.reduce((sum, id) => sum + (state.inventory[id] ?? 0), 0);
@@ -996,6 +1011,41 @@ const burial: GameEvent = {
         return logLine(
           { ...s, flags, morale: Math.max(0, s.morale - penalty) },
           `Built a stone mound over the body. A hard farewell. Morale −${penalty}.`
+        );
+      }
+    },
+    {
+      id: 'rifle_salute',
+      icon: '💥',
+      label: 'Fire a 3-rifle salute over the grave',
+      silentLog: true,
+      hidden: (s) => !canFireSalute(s),
+      apply: (s) => {
+        // Defensive: if hidden somehow lapses, fall through to stone-mound.
+        if (!canFireSalute(s)) {
+          const flags = { ...s.flags };
+          delete (flags as Record<string, unknown>)._burialPending;
+          const penalty = deathMoralePenalty(s, 4);
+          return logLine(
+            { ...s, flags, morale: Math.max(0, s.morale - penalty) },
+            `Built a stone mound over the body. A hard farewell. Morale −${penalty}.`
+          );
+        }
+        const flags = { ...s.flags };
+        delete (flags as Record<string, unknown>)._burialPending;
+        return logLine(
+          {
+            ...s,
+            flags,
+            inventory: {
+              ...s.inventory,
+              gunpowder: (s.inventory.gunpowder ?? 0) - SALUTE_SHOTS,
+              lead_balls: (s.inventory.lead_balls ?? 0) - SALUTE_SHOTS,
+              percussion_caps: (s.inventory.percussion_caps ?? 0) - SALUTE_SHOTS
+            },
+            morale: Math.min(100, s.morale + 4)
+          },
+          'Three rifles spoke as one over the grave. Morale +4.'
         );
       }
     },

@@ -35,10 +35,14 @@ const burialEvent = EVENTS.find((e) => e.id === 'personal_burial')!;
 
 describe('personal_burial event (#205)', () => {
   describe('three choices on the popup', () => {
-    it('exposes dig_grave / stone_mound / eat_the_body', () => {
+    it('exposes dig_grave / stone_mound / rifle_salute / eat_the_body', () => {
+      // rifle_salute (#260) added as a 4th choice; salute and eat_the_body
+      // are both hidden by default (ammo-gated and starvation-gated
+      // respectively), so the casual player still sees just dig + mound.
       expect(burialEvent.choices.map((c) => c.id)).toEqual([
         'dig_grave',
         'stone_mound',
+        'rifle_salute',
         'eat_the_body'
       ]);
     });

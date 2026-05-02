@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 26 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 25 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -115,7 +115,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 - **#257** — [H] Trail wedding — rare encounter; party morale spike, optional dowry trade
 - **#258** — [H] Lay-preacher Sunday service — Preacher profession + lay-by day; morale boost
 - **#259** — [H] Burial ritual choice — scripture+marker / disguised-grave / quick-and-go (replaces #151)
-- **#260** — [H] Rifle salute on burial — gunpowder option; tiny powder cost, small morale
 
 ### Navigation / decision system
 
@@ -130,6 +129,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#260** Rifle salute on burial — new 4th choice on the existing burial event. Spends 3× gunpowder + 3× lead_balls + 3× percussion_caps (single 3-rifle volley, period custom for veteran or train-officer burials), grants +4 morale, clears `_burialPending`. Gated via `hidden: (s) => !canFireSalute(s)` so the choice doesn't render at all when ammo is short — the player only sees the option when they can actually take it. Caps are the natural bottleneck (1846+ split makes them the period-accurate scarce component). Defensive fallback to stone-mound semantics if hidden somehow lapses. 16 new tests; 1034/1034 green. (Updated #205 burial test to expect 4 choices.)
 - **#223** Washday camp action — closed as no-op; spec was already met by `wash_clothes` shipped in #230 (river-only camp action, +30 cleanliness across the alive party + 2 morale, 3 hr cost). The codebase has no separate degrading "clothing freshness" stat — the cleanliness 0-100 stat IS the modeled outcome of period emigrants washing their bodies and clothes at the same camp.
 - **#236** Cholera-year graves overlay — Ash Hollow + Chimney Rock arrival events get period-accurate cholera-cluster variants in 1849-1852 (peak Platte-corridor mortality, ~5,000 emigrant deaths). New `withGravesOverlay(base, body, debit, log)` helper composes a cholera variant from any base arrival event: same choices + gates (rope-down still requires rope, etc.), but each apply runs the base then layers a flat morale debit + "passed graves" log line, and the body text is rewritten to acknowledge the burials. `ash_hollow` cholera variant: -3 morale ("forty new graves between here and the bluff"). `chimney_rock` cholera variant: -2 morale ("scatter of fresh wooden crosses"). `getLandmarkArrivalEvent` returns the cholera variant when `state.date.year ∈ [1849, 1852]`. Pre-1849 + post-1852 unchanged. 16 new tests; 1017/1017 green. (Updated #227 test to seed 1848 so its chimney_rock isolation check isn't shadowed by the cholera variant.)
 - **#235** Barlow Road toll vs Columbia raft — end-of-trail decision firing 5 mi past The Dalles via the approach-event registry. **Barlow** (default, 1846+ via `hidden` predicate): pay Sam Barlow's actual schedule — $5/wagon + $0.10/head, then continue overland through Laurel Hill to Oregon City. **Raft the Columbia**: free but tiered — 30% smooth float (+3 morale), 55% rough water (-25% bulk inventory, -4 morale), 15% disaster (-50% inventory, random adult takes 25 HP, -10 morale). Raft success re-anchors `milesTraveled` to one shy of `oregon_city` and sets `_columbiaRaft` flag; `isBypassed` in `systems/travel.ts` excludes barlow_road + laurel_hill from stop-worthy treatment so the engine walks past without parking. Pre-1846 the Barlow option is hidden via `hidden(s) => s.date.year < 1846` (Sam Barlow didn't open the road until late 1846). Period reality: half of all rafters made it without incident; the other half fed Cascades stories to every wagon train that followed. New `runningMilesTo` export from travel.ts. 20 new tests; 1001/1001 green.
