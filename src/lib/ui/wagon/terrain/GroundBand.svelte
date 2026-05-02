@@ -7,7 +7,7 @@
   //
   // The ground flag is independent of the backdrop mode — it can be
   // toggled from /dev/wagon-view to compare SVG vs raster ground under
-  // any backdrop renderer (default painting / ?svg=1 / ?fourlayer=1).
+  // either backdrop renderer (default painting / ?svg=1 fallback).
   import { page } from '$app/state';
   import type { Terrain } from '$lib/game/types';
   import { GROUND_FILL } from './terrain-tokens';

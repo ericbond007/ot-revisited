@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 18 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 19 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -57,6 +57,7 @@ _(empty — items shipped or moved to other sections)_
 - **#206** — [H] Whitman Mission as a post — historical check (1843-47 only)
 - **#269** — [H] Soap as a craftable item — boosts wash_clothes efficacy (#230 follow-up)
 - **#270** — [H] Bath-house at major trading posts — $1 town service, big cleanliness reset (#230 follow-up)
+- **#274** — Prairie backdrop v0 visible tile-wrap seam — sky+horizon don't align across the seamless-x wrap point on `backdrop-prairie.webp`. Other variants (1-4) and other biomes look fine. Regen v0 with stricter seamless-x prompting, OR retire v0 and renumber 1-4 → 0-3.
 
 ## New mechanics (extension)
 

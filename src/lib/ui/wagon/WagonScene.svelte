@@ -30,7 +30,6 @@
   import NearLayer from './terrain/NearLayer.svelte';
   import GroundBand from './terrain/GroundBand.svelte';
   import BackdropPainting from './terrain/BackdropPainting.svelte';
-  import PaintedBackdrop from './terrain/painted/PaintedBackdrop.svelte';
   import { SCENE_W, SCENE_H, HORIZON_Y, GROUND_Y, type TimeOfDay } from './terrain';
 
   // Weather + sky
@@ -70,17 +69,10 @@
   // CloudLayer are suppressed.
   //
   // Override via URL query:
-  //   ?svg=1        — legacy SVG Far/Mid/Near trio with sky elements rendered
-  //                   on top. Used as a fallback if a painted backdrop tile
-  //                   is missing or for stylistic comparison.
-  //   ?fourlayer=1  — experimental sky/far/mid/close compositing rig
-  //                   (kept as scaffolding; not actively used).
+  //   ?svg=1          — legacy SVG Far/Mid/Near trio with sky elements
+  //                     rendered on top. Stylistic fallback.
   //   ?groundraster=1 — raster ground strip instead of the SVG gradient.
-  const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
   const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
-  // Default rendering path — single painted backdrop. Either override
-  // turns this off.
-  const usePainting = $derived(!useFourLayer && !useSvgLayers);
 
   // ---------- animation tick ----------
   // When `paused`, the rAF loop is fully cancelled (#164) — no
@@ -220,15 +212,10 @@
         <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
       {/if}
 
-      <!-- 4. backdrop — three modes:
-             default:       BackdropPainting (single horizon-vista painting)
-             ?svg=1:        SVG Far + Mid + Near layers (legacy)
-             ?fourlayer=1:  PaintedBackdrop (sky/far/mid/close stack — scaffolding) -->
-      {#if useFourLayer}
-        <PaintedBackdrop terrain={gameState.location.terrain}
-                         weather={gameState.weather}
-                         {scrollX} variant={backdropVariant} />
-      {:else if useSvgLayers}
+      <!-- 4. backdrop — two modes:
+             default: BackdropPainting (single horizon-vista painting)
+             ?svg=1:  SVG Far + Mid + Near layers (legacy fallback) -->
+      {#if useSvgLayers}
         <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
       {:else}
         <BackdropPainting terrain={gameState.location.terrain}
