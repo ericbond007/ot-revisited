@@ -14,7 +14,7 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   // Weapons
   'rifle', 'bullets', 'rifle_cleaning_kit',
   // Clothing
-  'coat', 'boots', 'blanket',
+  'coat', 'boots', 'blanket', 'tent',
   // Tools
   'iron_toolkit', 'cookware', 'rope', 'shovel', 'salt', 'saleratus', 'lard', 'compass', 'water_skin', 'ox_shoes', 'spyglass',
   // Medicine

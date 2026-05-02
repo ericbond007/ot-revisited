@@ -143,6 +143,10 @@ export const ITEMS: Record<string, ItemMeta> = {
   coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Warmth +25 per person (one per body). Cuts ford-chill damage and cold-camp health loss.' },
   boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3, description: 'Warmth +15 per person. Helps most when wading into cold rivers.' },
   blanket: { id: 'blanket', name: 'Blanket', category: 'clothing', weightLbPerUnit: 5, description: 'Warmth +25 per person. Night chill mitigation when the fire goes out.' },
+  // Canvas A-frame tent — pitched in ~10 minutes, sleeps 4-6, period
+  // staple for parties that didn't sleep under wagons. Cuts wind and
+  // rain enough to take the sting out of cold camps.
+  tent: { id: 'tent', name: 'Tent', category: 'clothing', weightLbPerUnit: 35, description: 'Canvas A-frame. Cuts the cold-camp morale hit in half — wind, rain, and dust kept off the bedrolls.' },
 
   iron_toolkit: { id: 'iron_toolkit', name: 'Iron toolkit', category: 'tool', weightLbPerUnit: 20, description: 'Unlocks proper wagon repairs. Without it, repairs cost 2× the spare parts.' },
   cookware: { id: 'cookware', name: 'Cookware', category: 'tool', weightLbPerUnit: 15, description: 'Required to boil water (post-1854). Meals taste better, small morale bump.' },

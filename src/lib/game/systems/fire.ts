@@ -74,9 +74,17 @@ function applyColdPenalty(state: GameState): GameState {
         m.dead ? m : { ...m, health: Math.max(0, m.health - hit) }
       )
     : state.party;
+  // #218 — canvas A-frame tent halves the morale hit when present.
+  // Wind and rain off the bedrolls; the camp wakes less ragged. Health
+  // hit unchanged — clothing is what mitigates the cold itself; the tent
+  // is the morale layer.
+  const hasTent = (state.inventory.tent ?? 0) > 0;
+  const moraleHit = hasTent
+    ? Math.max(1, Math.round(COLD_NIGHT_MORALE_HIT / 2))
+    : COLD_NIGHT_MORALE_HIT;
   return {
     ...state,
-    morale: Math.max(0, state.morale - COLD_NIGHT_MORALE_HIT),
+    morale: Math.max(0, state.morale - moraleHit),
     party
   };
 }

@@ -67,6 +67,7 @@ export const PRICES: Record<string, PriceEntry> = {
   coat:    { buy: 5.00, sell: 2.50 },
   boots:   { buy: 4.00, sell: 2.00 },
   blanket: { buy: 3.00, sell: 1.50 },
+  tent:    { buy: 8.00, sell: 4.00 },
 
   // Tools
   iron_toolkit: { buy: 40.00, sell: 25.00 },

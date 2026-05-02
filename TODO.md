@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 24 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 23 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -69,7 +69,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 - **#216** — [H] Trade goods bundle — mirrors, vermilion, awls, thimbles, calico, pocket knives
 - **#217** — [H] Guidebook item (Marcy / Palmer / Ware) — owning unlocks fork previews + ETA
-- **#218** — [H] Tent (canvas A-frame) — reduces cold-camp morale drain
 
 ### Daily routine mechanics
 
@@ -128,6 +127,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#218** Tent (canvas A-frame) — new `tent` item ($8 / 35 lb / clothing) that halves the cold-camp morale hit (2 → 1) when present in inventory. Period reality: ~30% of emigrants carried canvas A-frame tents (Marcy 1859 priced them $5-10); the rest slept under wagons or in the open. Cuts wind, rain, and dust off the bedrolls — morale layer, not warmth layer. Health hit on cold mountain nights still mitigated by clothing; tent doesn't stack on that. Doesn't apply on lit-fire nights. Stocked at: Independence outfitter, Ft Kearny (army quartermaster), Ft Laramie, Ft Hall, The Dalles. NOT at sparse posts (Bridger, road ranches). 13 new tests; 1060/1060 green.
 - **#198** Grizzly mauling on big-game mountain hunts — 5% per-hunt risk on `target='big' && terrain='mountains'`, halved by Hunter profession (reads bear sign, hunts in pairs). On hit: -25 to -45 HP on a random alive adult + new `bear_mauling` condition (-3 HP/day, -1 morale/day, treated by bandages + laudanum, mirrors broken-leg shape). Independent of the routine 8% big-game injury roll, so a hunter can be both sprained AND mauled on the same trip — the maul is the headline. PostHuntModal swaps "🩹 was injured" for "🐻 was mauled by a grizzly" when `haul.mauled` is set. Period reality: Lewis & Clark catalogued grizzlies as the trail's most-feared animal; Snake / Sierra / Yellowstone diaries record maulings of solo hunters who startled sows or bears guarding kills. New `bear_mauling` ConditionId; `mauled?: boolean` added to HuntHaul (save-format compatible). 13 new tests; 1047/1047 green. (Updated conditions-catalog test from 11 → 12 conditions.)
 - **#260** Rifle salute on burial — new 4th choice on the existing burial event. Spends 3× gunpowder + 3× lead_balls + 3× percussion_caps (single 3-rifle volley, period custom for veteran or train-officer burials), grants +4 morale, clears `_burialPending`. Gated via `hidden: (s) => !canFireSalute(s)` so the choice doesn't render at all when ammo is short — the player only sees the option when they can actually take it. Caps are the natural bottleneck (1846+ split makes them the period-accurate scarce component). Defensive fallback to stone-mound semantics if hidden somehow lapses. 16 new tests; 1034/1034 green. (Updated #205 burial test to expect 4 choices.)
 - **#223** Washday camp action — closed as no-op; spec was already met by `wash_clothes` shipped in #230 (river-only camp action, +30 cleanliness across the alive party + 2 morale, 3 hr cost). The codebase has no separate degrading "clothing freshness" stat — the cleanliness 0-100 stat IS the modeled outcome of period emigrants washing their bodies and clothes at the same camp.
