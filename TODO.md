@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 27 open.
+As of 2026-04-30 (post-merge of #212 travel-stage hero layout). 26 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -75,7 +75,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 ### Daily routine mechanics
 
 - **#222** — [H] Wagon-churned butter — passive when milk cow + crock (#139)
-- **#223** — [H] Washday camp action — restores clothing on river camps
 - **#224** — [H] Sunday lay-by — religious morale vs. lost travel day
 - **#225** — [H] Nooning mid-day beat — small fatigue tick + event slot
 
@@ -131,6 +130,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#223** Washday camp action — closed as no-op; spec was already met by `wash_clothes` shipped in #230 (river-only camp action, +30 cleanliness across the alive party + 2 morale, 3 hr cost). The codebase has no separate degrading "clothing freshness" stat — the cleanliness 0-100 stat IS the modeled outcome of period emigrants washing their bodies and clothes at the same camp.
 - **#236** Cholera-year graves overlay — Ash Hollow + Chimney Rock arrival events get period-accurate cholera-cluster variants in 1849-1852 (peak Platte-corridor mortality, ~5,000 emigrant deaths). New `withGravesOverlay(base, body, debit, log)` helper composes a cholera variant from any base arrival event: same choices + gates (rope-down still requires rope, etc.), but each apply runs the base then layers a flat morale debit + "passed graves" log line, and the body text is rewritten to acknowledge the burials. `ash_hollow` cholera variant: -3 morale ("forty new graves between here and the bluff"). `chimney_rock` cholera variant: -2 morale ("scatter of fresh wooden crosses"). `getLandmarkArrivalEvent` returns the cholera variant when `state.date.year ∈ [1849, 1852]`. Pre-1849 + post-1852 unchanged. 16 new tests; 1017/1017 green. (Updated #227 test to seed 1848 so its chimney_rock isolation check isn't shadowed by the cholera variant.)
 - **#235** Barlow Road toll vs Columbia raft — end-of-trail decision firing 5 mi past The Dalles via the approach-event registry. **Barlow** (default, 1846+ via `hidden` predicate): pay Sam Barlow's actual schedule — $5/wagon + $0.10/head, then continue overland through Laurel Hill to Oregon City. **Raft the Columbia**: free but tiered — 30% smooth float (+3 morale), 55% rough water (-25% bulk inventory, -4 morale), 15% disaster (-50% inventory, random adult takes 25 HP, -10 morale). Raft success re-anchors `milesTraveled` to one shy of `oregon_city` and sets `_columbiaRaft` flag; `isBypassed` in `systems/travel.ts` excludes barlow_road + laurel_hill from stop-worthy treatment so the engine walks past without parking. Pre-1846 the Barlow option is hidden via `hidden(s) => s.date.year < 1846` (Sam Barlow didn't open the road until late 1846). Period reality: half of all rafters made it without incident; the other half fed Cascades stories to every wagon train that followed. New `runningMilesTo` export from travel.ts. 20 new tests; 1001/1001 green.
 - **#234** Three Island Crossing route choice — strategic ford-or-detour decision firing 10 mi out via the approach-event registry from #233. Two choices: **Ford at Three Island** (default — silent commit, normal river UI fires on arrival) or **Skirt south through the Bruneau** (sets `_threeIslandDetour` flag, drops water 50%, morale -4, +18 fatigue on every living ox). New `isBypassed(state, landmarkId)` helper in `systems/travel.ts` reads the detour flag and excludes the river from `STOP_WORTHY_KINDS` so the engine walks past `snake_three_island` without parking — same hook will pick up #235 (Barlow vs Columbia) later. Period reality: the south-bank route through the Bruneau / Birds-of-Prey country avoided the wet crossing but ate 60 mi of waterless sage; the Three Island ford was the preferred path when the river was low. 13 new tests; 981/981 green.
