@@ -5,9 +5,9 @@
   // generated at SDXL-friendly ratios; `xMidYMax slice` crops to the
   // image's bottom-foreground portion so we never see a vanishing point.
   //
-  // The ground flag is independent of the backdrop flag (`?raster=1`)
-  // — they can be toggled independently from /dev/wagon-view to compare
-  // SVG vs raster grounds with either backdrop.
+  // The ground flag is independent of the backdrop mode — it can be
+  // toggled from /dev/wagon-view to compare SVG vs raster ground under
+  // any backdrop renderer (default painting / ?svg=1 / ?fourlayer=1).
   import { page } from '$app/state';
   import type { Terrain } from '$lib/game/types';
   import { GROUND_FILL } from './terrain-tokens';

@@ -1,9 +1,9 @@
 """Wagon-bg pipeline orchestrator.
 
-Iterates the prompt config, generates each tile through ComfyUI, runs
-the alpha post-process, writes the final WebP to ../../static/wagon-bg/.
-A manifest at .manifest.json tracks which tiles have been built so a
-re-run only regenerates what changed.
+Iterates the prompt config, generates each tile through ComfyUI, writes
+the opaque WebP to ../../static/wagon-bg/. A manifest at .manifest.json
+tracks which tiles have been built so a re-run only regenerates what
+changed.
 """
 
 import argparse
@@ -12,15 +12,29 @@ import json
 import time
 from pathlib import Path
 
-from alpha import copy_opaque_to_webp, to_webp_with_alpha
+from alpha import copy_opaque_to_webp
 from comfy_client import CHECKPOINT, generate_to, ping
 from prompts import NEGATIVE_PROMPT, PROMPTS, TilePrompt
-from seam import blend_horizontal_seam
 
 THIS_DIR = Path(__file__).parent
 RAW_DIR = THIS_DIR / "raw"
 STATIC_DIR = THIS_DIR.parent.parent / "static" / "wagon-bg"
 MANIFEST = THIS_DIR / ".manifest.json"
+
+# Per-layer default LoRAs — applied silently for production runs.
+# These are considered part of the canonical generation pipeline for that
+# layer (no filename suffix, no opt-in flag needed). The trigger word for
+# the default LoRA is BAKED INTO the prompt content in prompts.py, so we
+# don't prepend anything here.
+#
+# Override via `--lora <key>` (see LORA_REGISTRY below) for experiments —
+# overrides REPLACE the default for the current run, and produce filename
+# suffixes (`--<key>@<weight>.webp`) so experimental output doesn't clobber
+# the canonical tiles.
+DEFAULT_LORAS_BY_LAYER: dict[str, list[tuple[str, float]]] = {
+    "backdrop": [("ht_landscape_v2_2000.safetensors", 1.0)],
+    "ground":   [],
+}
 
 # Known LoRAs we can stack via `--lora <key>` (or `--lora a,b` for stacks).
 # Each entry: (filename in ~/ComfyUI/models/loras/, default weight, trigger words to prepend).
@@ -132,14 +146,25 @@ def main() -> None:
             f"Known: {sorted(LORA_REGISTRY)}"
         ),
     )
+    parser.add_argument(
+        "--cooldown",
+        type=int,
+        default=15,
+        help=(
+            "Seconds to sleep between successive tile generations to let the "
+            "GPU cool. Default 15s after a 3070 Laptop hit 101°C generating "
+            "back-to-back at full tilt. Pass 0 to disable."
+        ),
+    )
     args = parser.parse_args()
 
     if not ping():
         raise SystemExit("ComfyUI not reachable at http://127.0.0.1:8188 — start it first")
 
-    lora_stack, lora_triggers, lora_suffix = _resolve_loras(args.lora)
-    if lora_stack:
-        print(f"LoRA stack: {lora_stack}  (triggers prepended: {lora_triggers!r})\n")
+    override_stack, override_triggers, override_suffix = _resolve_loras(args.lora)
+    override_active = args.lora is not None
+    if override_active:
+        print(f"LoRA OVERRIDE: {override_stack}  (triggers prepended: {override_triggers!r})\n")
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -149,9 +174,23 @@ def main() -> None:
     print(f"Generating {len(selection)} tile(s) of {len(PROMPTS)} total\n")
 
     for i, p in enumerate(selection, 1):
+        # Per-tile LoRA resolution: explicit --lora override REPLACES the
+        # layer default; otherwise fall back to the layer default (silent,
+        # no filename suffix, no trigger prepend since trigger is baked
+        # into the prompt content).
+        if override_active:
+            lora_stack = override_stack
+            lora_triggers = override_triggers
+            lora_suffix = override_suffix
+        else:
+            lora_stack = DEFAULT_LORAS_BY_LAYER.get(p.layer, [])
+            lora_triggers = ""
+            lora_suffix = ""
+
         sig = _signature(p, lora_stack)
-        # When LoRAs are stacked, write to a sibling filename so the base
-        # output (no LoRA) remains intact for A/B comparison.
+        # Override LoRA writes to a sibling filename so canonical output
+        # remains intact for A/B comparison. Default LoRA flow uses the
+        # canonical filename.
         out_filename = (
             p.filename.replace(".webp", f"{lora_suffix}.webp")
             if lora_suffix
@@ -165,11 +204,10 @@ def main() -> None:
         print(f"[{i}/{len(selection)}] {out_filename}  ({p.width}x{p.height}, seed={p.seed})", flush=True)
         t0 = time.monotonic()
         raw_path = RAW_DIR / f"{p.layer}-{p.terrain}{lora_suffix}.png"
-        # Parallax-scrolling layers generate seamlessly on the X axis so
-        # adjacent tile copies have invisible seams. Ground tiles stay
-        # non-seamless (no horizontal scroll). The 4-layer rebuild
-        # (sky/far/mid/close) all parallax-scroll, so they get seamless too.
-        is_parallax_layer = p.layer in ("backdrop", "sky", "far", "mid", "close")
+        # Backdrop tiles parallax-scroll horizontally → seamless x-axis
+        # tiling so adjacent copies have invisible seams. Ground tiles
+        # are static (no horizontal scroll) → non-seamless.
+        is_parallax_layer = p.layer == "backdrop"
         generate_to(
             raw_path,
             f"{lora_triggers}{p.full_prompt}",
@@ -181,16 +219,10 @@ def main() -> None:
             loras=lora_stack or None,
         )
 
-        # Alpha dispatch by layer:
-        #   - backdrop / sky / ground: opaque (full scene or full sky;
-        #     alpha would just throw away pixels we want)
-        #   - far / mid / close: alpha-keyed (rembg/u2net extracts the
-        #     painted subject from sky-blue or magenta-key background;
-        #     the resulting WebP composites cleanly over the layer behind)
-        if p.layer in ("backdrop", "sky", "ground"):
-            copy_opaque_to_webp(raw_path, out_path)
-        else:
-            to_webp_with_alpha(raw_path, out_path)
+        # Single-backdrop architecture: every tile is opaque. The alpha
+        # / matting / band-crop machinery from the 4-layer rebuild was
+        # removed; layer-isolation is no longer attempted post-gen.
+        copy_opaque_to_webp(raw_path, out_path)
         manifest_key = out_filename
 
         # NOTE: seam.py post-process was tested but disabled here — every
@@ -209,6 +241,14 @@ def main() -> None:
         manifest[manifest_key] = sig
         _save_manifest(manifest)
         print(f"   -> {out_path.relative_to(THIS_DIR.parent.parent)}  ({elapsed:.1f}s)\n")
+
+        # Thermal cooldown — back-to-back SDXL generations push the
+        # 3070 Laptop's GPU above 100°C. Pause briefly so the cooler
+        # can catch up before the next tile starts. Skipped after the
+        # final tile.
+        if args.cooldown > 0 and i < len(selection):
+            print(f"   ...cooldown {args.cooldown}s\n", flush=True)
+            time.sleep(args.cooldown)
 
     print("done.")
 

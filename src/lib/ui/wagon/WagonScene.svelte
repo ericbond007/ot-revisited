@@ -63,17 +63,24 @@
 
   let { state: gameState, timeOfDay = 'day', paused = false, backdropVariant }: Props = $props();
 
-  // ---------- raster mode flags ----------
-  // Independent toggles via URL query so each backdrop strategy can be
-  // compared:
-  //   ?fourlayer=1    — use PaintedBackdrop (sky/far/mid/close stack);
-  //                     takes precedence over ?raster=1 if both are set
-  //   ?raster=1       — use BackdropPainting (single 4:1 panorama per
-  //                     biome) instead of the SVG Far/Mid/Near trio
-  //   ?groundraster=1 — use the raster ground strip in GroundBand
-  //                     instead of its two-stop SVG gradient
+  // ---------- backdrop mode flags ----------
+  // Default: BackdropPainting — single 3072×768 horizon-vista painting per
+  // biome+variant (5 variants), opaque, parallax-scrolled. The painting
+  // contains its own sky/horizon/foreground, so SkyGradient + SkyAccent +
+  // CloudLayer are suppressed.
+  //
+  // Override via URL query:
+  //   ?svg=1        — legacy SVG Far/Mid/Near trio with sky elements rendered
+  //                   on top. Used as a fallback if a painted backdrop tile
+  //                   is missing or for stylistic comparison.
+  //   ?fourlayer=1  — experimental sky/far/mid/close compositing rig
+  //                   (kept as scaffolding; not actively used).
+  //   ?groundraster=1 — raster ground strip instead of the SVG gradient.
   const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
-  const useBackdropRaster = $derived(page.url.searchParams.get('raster') === '1');
+  const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
+  // Default rendering path — single painted backdrop. Either override
+  // turns this off.
+  const usePainting = $derived(!useFourLayer && !useSvgLayers);
 
   // ---------- animation tick ----------
   // When `paused`, the rAF loop is fully cancelled (#164) — no
@@ -199,55 +206,65 @@
         <SkyGradient id="ws-sky" terrain={gameState.location.terrain} {timeOfDay} />
       </defs>
 
-      {#if !useFourLayer}
-        <!-- 1. sky gradient (rect filled with SkyGradient) — suppressed
-             in fourlayer mode where PaintedBackdrop draws its own sky. -->
+      {#if useSvgLayers}
+        <!-- 1. sky gradient — SVG mode only. The painted backdrop and the
+             4-layer rig both contain their own sky; this rect would be
+             hidden under them. -->
         <rect x="0" y="0" width={SCENE_W} height={SCENE_H} fill="url(#ws-sky)" />
 
-        <!-- 2. sun / moon — left side (clear of wagon) at y=410, which
-             sits in the upper third of the strip's sky band (visible
-             range y=380..456). Suppressed in fourlayer mode (sun is
-             painted into the sky tile). -->
+        <!-- 2. sun / moon — left side (clear of wagon) at y=410.
+             SVG mode only; painting modes have the sun painted in. -->
         <SkyAccent kind={weatherKind} x={SCENE_W * 0.18} y={410} t={tEff} />
 
-        <!-- 3. clouds — bandY=400 plants the cloud band a bit lower
-             in the sky. Suppressed in fourlayer mode (clouds are in the
-             painted sky tile). -->
+        <!-- 3. clouds — SVG mode only; painting modes have clouds painted in. -->
         <CloudLayer kind={weatherKind} {scrollX} w={SCENE_W} skyH={HORIZON_Y} bandY={400} />
       {/if}
 
-      <!-- 4. backdrop / parallax — three modes:
-             fourlayer mode: PaintedBackdrop (sky/far/mid/close stack)
-             raster mode:    BackdropPainting (single 4:1 panorama)
-             default:        SVG Far + Mid + Near layers -->
+      <!-- 4. backdrop — three modes:
+             default:       BackdropPainting (single horizon-vista painting)
+             ?svg=1:        SVG Far + Mid + Near layers (legacy)
+             ?fourlayer=1:  PaintedBackdrop (sky/far/mid/close stack — scaffolding) -->
       {#if useFourLayer}
         <PaintedBackdrop terrain={gameState.location.terrain}
                          weather={gameState.weather}
                          {scrollX} variant={backdropVariant} />
-      {:else if useBackdropRaster}
+      {:else if useSvgLayers}
+        <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
+      {:else}
         <BackdropPainting terrain={gameState.location.terrain}
                           {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y}
                           variant={backdropVariant} />
-      {:else}
-        <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
       {/if}
 
-      <!-- 5. landmarks (layered on top of the backdrop, behind mid in SVG mode) -->
-      {#if !useFourLayer}
+      <!-- 5. landmarks — game-progress markers. Currently SVG-mode only.
+           TODO (approach-backdrop concept): wire landmarks back into the
+           painting path as visible features. The vision is bespoke
+           painted backdrops loaded when the wagon is near a named
+           landmark, so the landmark appears in the horizon / mid-distance
+           of the painted scene itself rather than as an SVG overlay.
+           Suppressed in painting + 4-layer modes for now (the SVG glyphs
+           clash against painted backdrops; a couple were "popping in"
+           during scroll). -->
+      {#if useSvgLayers}
         <LandmarkLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
       {/if}
 
-      {#if !useBackdropRaster && !useFourLayer}
-        <!-- 6. mid parallax (SVG mode only) -->
+      {#if useSvgLayers}
+        <!-- 6. mid parallax — SVG mode only -->
         <MidLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
       {/if}
 
-      <!-- 7. ground band -->
+      <!-- 7. ground band — always rendered. Sits on top of the painted
+           backdrop's own ground in painting mode; the visible separation
+           between painted backdrop and the SVG ground band is intentional
+           (the wagon plants on the ground band, not the painting). A
+           detailed-ground follow-up will replace the gradient with
+           textured / animated content. -->
       <GroundBand terrain={gameState.location.terrain} groundY={GROUND_Y}
                   h={SCENE_H - GROUND_Y} w={SCENE_W} idPrefix="ws" />
 
-      {#if !useBackdropRaster && !useFourLayer}
-        <!-- 8. near parallax (SVG mode only) -->
+      {#if useSvgLayers}
+        <!-- 8. near parallax — SVG mode only -->
         <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
       {/if}
 

@@ -161,6 +161,7 @@ def generate_to(
     workflow = _build_workflow(
         prompt, negative, width, height, seed, prefix, seamless=seamless, loras=loras,
     )
+    submit_t = time.time()
     pid = _post(workflow)
     history = _wait(pid)
 
@@ -168,9 +169,32 @@ def generate_to(
     images = []
     for _, out in history.get("outputs", {}).items():
         images.extend(out.get("images", []))
-    if not images:
-        raise RuntimeError(f"prompt {pid} produced no images")
-    src = COMFY_OUTPUT_DIR / images[0]["filename"]
+
+    if images:
+        src = COMFY_OUTPUT_DIR / images[0]["filename"]
+    else:
+        # Cached-SaveImage fallback: when ComfyUI's per-node hash cache hits
+        # on every node (e.g., the same workflow was queued and ran in a
+        # prior killed session), `outputs` is empty even though the file
+        # already exists on disk. Find it by scanning the output dir for
+        # files matching the prefix that are at least as new as our submit.
+        candidates = sorted(
+            (p for p in COMFY_OUTPUT_DIR.glob(f"{prefix}_*.png") if p.stat().st_mtime + 5 >= submit_t),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if not candidates:
+            # Last resort: take the newest file matching prefix regardless
+            # of mtime (the workflow may have been cached from a prior run
+            # whose output is still on disk and content-equivalent).
+            candidates = sorted(
+                COMFY_OUTPUT_DIR.glob(f"{prefix}_*.png"),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
+        if not candidates:
+            raise RuntimeError(f"prompt {pid} produced no images and no fallback file matched prefix {prefix!r}")
+        src = candidates[0]
     out_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, out_path)
 

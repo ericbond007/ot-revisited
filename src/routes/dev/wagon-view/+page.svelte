@@ -1,8 +1,8 @@
 <script lang="ts">
   // Standalone preview for the wagon travel view. Pick terrain / weather /
   // time-of-day / wagon model / ox count / pause and see WagonScene render
-  // immediately with no save-game machinery in the way. Especially handy
-  // for iterating on the raster-tile aesthetic via `?raster=1`.
+  // immediately with no save-game machinery in the way. Default is the
+  // single-painting backdrop; `?svg=1` falls back to legacy SVG layers.
   import { page } from '$app/state';
   import { createInitialState } from '$lib/game/engine';
   import WagonScene from '$lib/ui/wagon/WagonScene.svelte';
@@ -36,9 +36,11 @@
     restartKey += 1;
   }
 
-  const useRaster = $derived(page.url.searchParams.get('raster') === '1');
+  const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
   const useFourLayer = $derived(page.url.searchParams.get('fourlayer') === '1');
   const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
+  // Default = painted backdrop (no flags). Either override turns it off.
+  const usePainting = $derived(!useSvgLayers && !useFourLayer);
 
   const previewState = $derived.by(() => {
     const base = createInitialState({
@@ -66,7 +68,7 @@
     };
   });
 
-  function toggleQueryFlag(flag: 'raster' | 'fourlayer' | 'groundraster') {
+  function toggleQueryFlag(flag: 'svg' | 'fourlayer' | 'groundraster') {
     const url = new URL(window.location.href);
     const isOn = url.searchParams.get(flag) === '1';
     if (isOn) url.searchParams.delete(flag);
@@ -80,7 +82,7 @@
 <div class="page">
   <header>
     <h1>Wagon View — dev preview</h1>
-    <p class="hint">Standalone WagonScene with controls. Add <code>?raster=1</code> to see the raster background tiles; toggle below.</p>
+    <p class="hint">Standalone WagonScene with controls. Default is the single-painting backdrop; toggle <code>?svg=1</code> for the legacy SVG layers fallback.</p>
   </header>
 
   <section class="controls">
@@ -113,7 +115,7 @@
 
     <label>
       <span>Backdrop variant</span>
-      <select bind:value={variant} disabled={!useRaster}>
+      <select bind:value={variant} disabled={useSvgLayers}>
         {#each VARIANTS as n}
           <option value={n}>{n}</option>
         {/each}
@@ -147,13 +149,13 @@
     <button type="button" class="restart" onclick={restart}>↺ Restart</button>
 
     <label class="cb raster-toggle">
-      <input type="checkbox" checked={useFourLayer} onchange={() => toggleQueryFlag('fourlayer')} />
-      <span>4-layer painted backdrop (<code>?fourlayer=1</code>) — sky/far/mid/close stack</span>
+      <input type="checkbox" checked={useSvgLayers} onchange={() => toggleQueryFlag('svg')} />
+      <span>Legacy SVG layers (<code>?svg=1</code>) — Far/Mid/Near trio fallback</span>
     </label>
 
     <label class="cb raster-toggle">
-      <input type="checkbox" checked={useRaster} onchange={() => toggleQueryFlag('raster')} />
-      <span>Raster backdrop painting (<code>?raster=1</code>) — single panorama</span>
+      <input type="checkbox" checked={useFourLayer} onchange={() => toggleQueryFlag('fourlayer')} />
+      <span>4-layer painted backdrop (<code>?fourlayer=1</code>) — sky/far/mid/close stack (scaffolding)</span>
     </label>
 
     <label class="cb raster-toggle">
@@ -170,7 +172,7 @@
 
   <footer>
     <p class="hint">
-      Backdrop: <strong>{useFourLayer ? `4-layer v${variant}` : (useRaster ? `raster v${variant}` : 'svg')}</strong> |
+      Backdrop: <strong>{useFourLayer ? `4-layer v${variant}` : (useSvgLayers ? 'svg layers' : `painting v${variant}`)}</strong> |
       Ground: <strong>{useGroundRaster ? 'raster' : 'svg'}</strong> |
       Terrain: <strong>{terrain}</strong> |
       Weather: <strong>{weather}</strong> |

@@ -83,27 +83,18 @@
 </script>
 
 <defs>
-  <!-- Band-discipline masks: each layer fills the full hero band canvas
-       but only its own vertical band shows. SVG masks use luminance —
-       white=visible, black=hidden, grey=alpha. y is in scene units
-       matching the WagonScene viewBox (y=200..600). -->
-  <linearGradient id="pb-mid-grad" x1="0" y1="200" x2="0" y2="600"
-                  gradientUnits="userSpaceOnUse">
-    <stop offset="0%"   stop-color="black" />
-    <stop offset="35%"  stop-color="black" />
-    <stop offset="50%"  stop-color="white" />
-    <stop offset="80%"  stop-color="white" />
-    <stop offset="95%"  stop-color="black" />
-  </linearGradient>
-  <mask id="pb-mid-mask">
-    <rect x="-3200" y="200" width="9600" height="400" fill="url(#pb-mid-grad)" />
-  </mask>
-
+  <!-- Close-band mask: BiRefNet keeps the entire painted scene as
+       foreground (including the source painting's sky region), so the
+       close layer would otherwise occlude sky-clear behind it. Hard-clip
+       the top 2/3 of the close layer to transparent so only the bottom
+       band — where the actual foreground specimens live — is visible.
+       Mid stays unmasked: its painted alpha is well-shaped already and
+       a top mask would cut tree tops. -->
   <linearGradient id="pb-close-grad" x1="0" y1="200" x2="0" y2="600"
                   gradientUnits="userSpaceOnUse">
     <stop offset="0%"  stop-color="black" />
-    <stop offset="55%" stop-color="black" />
-    <stop offset="75%" stop-color="white" />
+    <stop offset="60%" stop-color="black" />
+    <stop offset="78%" stop-color="white" />
     <stop offset="100%" stop-color="white" />
   </linearGradient>
   <mask id="pb-close-mask">
@@ -124,17 +115,16 @@
            width={PAINT_W} height={PAINT_H} preserveAspectRatio="none" />
   {/each}
 
-  <!-- 3. mid (alpha, middle-distance silhouettes) — masked to show
-       only in the middle band, fading out top and bottom. -->
-  <g mask="url(#pb-mid-mask)">
-    {#each offsets as offset (`mid-${offset}`)}
-      <image href={midUrl} x={midX + offset} y={VIEWBOX_TOP_Y}
-             width={PAINT_W} height={PAINT_H} preserveAspectRatio="none" />
-    {/each}
-  </g>
+  <!-- 3. mid (alpha, middle-distance silhouettes) — no mask; BiRefNet alpha
+       in the source webp already shapes the visible region cleanly. -->
+  {#each offsets as offset (`mid-${offset}`)}
+    <image href={midUrl} x={midX + offset} y={VIEWBOX_TOP_Y}
+           width={PAINT_W} height={PAINT_H} preserveAspectRatio="none" />
+  {/each}
 
-  <!-- 4. close (alpha, foreground specimens, camera-locked) — masked to
-       show only in the bottom band, fading the top to transparent. -->
+  <!-- 4. close (alpha, foreground specimens, camera-locked) — top 60%
+       hard-clipped to transparent, fade to opaque from 60-78%, opaque
+       below 78%. Bottom band only. -->
   <g mask="url(#pb-close-mask)">
     {#each offsets as offset (`close-${offset}`)}
       <image href={closeUrl} x={closeX + offset} y={VIEWBOX_TOP_Y}
