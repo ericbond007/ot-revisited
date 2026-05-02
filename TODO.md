@@ -74,8 +74,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Daily routine mechanics
 
-- **#220** — [H] Teamster upgrade — stray-oxen mitigation bonus
-- **#221** — [H] Stray oxen morning delay — 2-4hr; Teamster/dog/picket gates
 - **#222** — [H] Wagon-churned butter — passive when milk cow + crock (#139)
 - **#223** — [H] Washday camp action — restores clothing on river camps
 - **#224** — [H] Sunday lay-by — religious morale vs. lost travel day
@@ -143,6 +141,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#220 + #221** Stray-oxen morning delay + Teamster bonus + picket pins — biggest unmodeled time-sink per the diary research, paired in one branch. New `systems/strays.ts` rolls a per-travel-day chance (base 25%) at the start of `applyTravel`; on a hit the day's miles take a 0.6×–0.85× hit and a log line fires. Rare 5%-of-incidents permanent ox loss when there's more than one healthy ox. New `picket_pins` item (livestock, 5 lb, $1.50) at outfitter + 5 forge posts. New `TEAMSTER_STRAY_MULT = 0.6` constant in `oxen.ts` joins the existing fatigue/recovery mults. Mitigation stack multiplies: pins 0.5× × dog 0.7× × Teamster 0.6× → ~5% chance/day with all three. 8 new tests; 889/889 green. Hobbles + bell-ox noted in item description for future variants.
 - **#226** Going-back party — the existing `encounter_eastbound` already covered most of this in spirit (a family that gave up + cholera-news listen + cheap surplus trade); rounded it out per the historical pass. Renamed to `encounter_going_back_party` for clarity, added `gate: milesBetween(500, 99999)` so turnarounds only fire west of Fort Kearny (period reality — emigrants didn't quit at the start). New 4th choice "Hand off a letter home" (✉️): morale +1 across alive adults, no item gate, ceiling-clamped at 100; no-ops with a "no one fit to write" log line if every adult is dead. 8 new tests, 881/881 green.
 - **#219** Terrain-flavored fuel — `gather_firewood` camp action and the passive travel-day gather both now use a new `fuelFlavorFor(terrain)` helper. Plains → "buffalo chips" (women + kids gathering chips in canvas aprons was a near-universal surprise to eastern emigrants); desert → "sage brush"; forest/mountains/river → unchanged firewood. Resource bucket stays `firewood` — purely flavor on the log + action sub-label. Camp action label generalized from "Gather firewood" to "Gather fuel". 8 new tests; 872/872 green.
 - **#215** Spare ox bow — new `ox_bow` item (livestock, 5 lb, $2.00) sits next to the existing `yoke` (Marcy 1859 spec'd 2 spares/wagon; the bow takes the shear load and is what cracks, not the yoke beam itself). Outfitter + 5 forge posts (Hollenberg, Kearny, Laramie, Hall, Dalles) stock it. New `ox_bow_cracks` travel event (weight 3, wagon category): consumes a spare bow if held; rope-lash fallback drops wagon condition by 5 with a "team will limp" log line. Carpenter's part-save chance applies. 7 new tests; 864/864 green.
