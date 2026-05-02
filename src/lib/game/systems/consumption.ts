@@ -1,4 +1,4 @@
-import type { GameState, Rations } from '../types';
+import type { GameState, Pace, Rations } from '../types';
 import { foodItemIds } from '../content/items';
 import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
 import { weatherWaterMult } from './weather';
@@ -35,6 +35,19 @@ const CHILD_WATER_MULT = 0.7;
 const WATER_PER_ADULT_GAL = 1;
 const FARMER_FOOD_MULT = 0.9;
 
+// Pace × food multiplier (#267). Period reality: a grueling 14-hour
+// day pulling ahead of weather burned more calories than a slow
+// nooning-friendly amble. Diaries record working parties eating 3+
+// lb/day on hard pushes vs. ~1.5 lb on layover days. Multipliers
+// stay small so flat-rations strategies still work — pace shifts
+// food need by ±15-25%, not double.
+export const PACE_FOOD_MULT: Record<Pace, number> = {
+  slow:     0.85,
+  moderate: 1.00,
+  fast:     1.10,
+  grueling: 1.25
+};
+
 export function aliveCount(state: GameState): number {
   return state.party.filter((m) => !m.dead).length;
 }
@@ -52,7 +65,8 @@ export function foodConsumedToday(state: GameState): number {
   const adults = aliveAdultCount(state);
   const children = aliveChildCount(state);
   const base = adults * perAdult + Math.floor(children * perAdult * CHILD_FOOD_MULT);
-  return hasLiveFarmer(state) ? Math.floor(base * FARMER_FOOD_MULT) : base;
+  const paced = Math.round(base * PACE_FOOD_MULT[state.pace]);
+  return hasLiveFarmer(state) ? Math.floor(paced * FARMER_FOOD_MULT) : paced;
 }
 
 export function waterConsumedToday(state: GameState): number {
