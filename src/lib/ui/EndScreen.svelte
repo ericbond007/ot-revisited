@@ -15,6 +15,13 @@
   const dead = $derived(state.party.filter((m) => m.dead));
   const alive = $derived(state.party.filter((m) => !m.dead));
   const leaderName = $derived(state.party[0]?.name ?? 'the leader');
+  // Register Cliff inscription (#228) — set when the party chose to
+  // chisel their names into the sandstone. Outlasts the party.
+  const cliffInscription = $derived(
+    typeof state.flags._registerCliffInscription === 'string'
+      ? state.flags._registerCliffInscription
+      : null
+  );
 </script>
 
 {#if state.outcome === 'wiped'}
@@ -49,6 +56,13 @@
         </div>
       {/each}
     </div>
+
+    {#if cliffInscription}
+      <div class="cliff-inscription">
+        <div class="cliff-head">CHISELED INTO REGISTER CLIFF</div>
+        <div class="cliff-body">{cliffInscription}</div>
+      </div>
+    {/if}
 
     <div class="cta-row">
       <a href="/new" class="cta primary">{ICON.journey_menu.new} New Journey</a>
@@ -104,6 +118,13 @@
         {/if}
       </ul>
     </div>
+
+    {#if cliffInscription}
+      <div class="cliff-inscription">
+        <div class="cliff-head">CHISELED INTO REGISTER CLIFF</div>
+        <div class="cliff-body">{cliffInscription}</div>
+      </div>
+    {/if}
 
     <div class="cta-row">
       <a href="/new" class="cta primary">{ICON.journey_menu.new} New Journey</a>
@@ -349,5 +370,30 @@
     padding-left: 0.6em;
     color: var(--c-wood);
     font-size: 0.92em;
+  }
+
+  /* Register Cliff inscription (#228) — chiseled letters on a sandy
+     parchment band. Reads like the actual sandstone face: small caps,
+     period dot separator, a thin rule above + below. */
+  .cliff-inscription {
+    margin: 1.2em 0 0.6em;
+    padding: 0.9em 1em;
+    background: rgba(232, 217, 184, 0.15);
+    border-top: 1px solid var(--c-wood);
+    border-bottom: 1px solid var(--c-wood);
+    text-align: center;
+  }
+  .cliff-head {
+    font-size: 0.72em;
+    letter-spacing: 0.18em;
+    color: var(--c-wood);
+    font-weight: 700;
+    margin-bottom: 0.5em;
+  }
+  .cliff-body {
+    font-family: 'IM Fell English', 'Special Elite', Georgia, serif;
+    font-size: 1.2em;
+    letter-spacing: 0.06em;
+    color: var(--c-tan-bright);
   }
 </style>

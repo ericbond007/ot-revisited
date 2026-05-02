@@ -432,10 +432,22 @@ const registerCliff: GameEvent = {
       id: 'carve',
       label: 'Chisel your names deep',
       silentLog: true,
-      apply: (s) => logLine(
-        { ...s, morale: Math.min(100, s.morale + 5) },
-        'Chiseled your names into Register Cliff — meant to last. Morale +5.'
-      )
+      apply: (s) => {
+        // Period inscriptions ran "SURNAME · MONTH YEAR" — the carved
+        // mark outlasts the party (#228). Persists into the EndScreen
+        // scoring panel as a "Marked the trail at Register Cliff" note.
+        const leader = s.party[0]?.name ?? 'Anonymous';
+        const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][s.date.month - 1];
+        const inscription = `${leader.toUpperCase()} · ${monthName} ${s.date.year}`;
+        return logLine(
+          {
+            ...s,
+            morale: Math.min(100, s.morale + 5),
+            flags: { ...s.flags, _registerCliffInscription: inscription }
+          },
+          'Chiseled your names into Register Cliff — meant to last. Morale +5.'
+        );
+      }
     },
     {
       id: 'pass',
