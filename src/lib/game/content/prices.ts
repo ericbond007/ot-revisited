@@ -29,6 +29,7 @@ export const PRICES: Record<string, PriceEntry> = {
   // Livestock
   yoke:        { buy: 6.00, sell: 3.00 },
   ox_bow:      { buy: 2.00, sell: 0.80 },
+  picket_pins: { buy: 1.50, sell: 0.60 },
   // A live laying hen — cheap at Independence, trickier to stock
   // mid-trail. Sell side low because posts rarely want more poultry.
   chicken:     { buy: 0.50, sell: 0.20 },

@@ -68,6 +68,11 @@ export const ITEMS: Record<string, ItemMeta> = {
   // yoke and around an ox's neck. Two per yoke; cracks under shear
   // load. Marcy 1859 explicitly prescribes 2 spares per wagon.
   ox_bow: { id: 'ox_bow', name: 'Ox bow', category: 'livestock', weightLbPerUnit: 5, description: 'Steam-bent hickory neck loop. Cracks under load — Marcy spec\'d 2 spares per wagon.' },
+  // Picket pins + lariat (#221) — iron stakes driven into the ground,
+  // long rope tying the lead ox so the team grazes a known radius.
+  // Cuts the morning stray-search by 50%. Hobbles and a bell-ox were
+  // the period alternatives; pins were the most universal kit.
+  picket_pins: { id: 'picket_pins', name: 'Picket pins', category: 'livestock', weightLbPerUnit: 5, description: 'Iron stakes + 50 ft of rope. Tethers the team at night so they don\'t wander. Halves the morning stray-search.' },
   // Live chickens — carried in a coop strapped to the wagon bed.
   // Wagon-capped per model (light: 3 / prairie: 5 / heavy: 8). Lay
   // eggs daily. Can die to predator events or drown in rough fords.
