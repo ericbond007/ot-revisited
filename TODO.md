@@ -79,7 +79,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Set-piece landmark events
 
-- **#228** — [H] Carving names at Register Cliff — 1-day stop; carved name persists into scoring screen
 - **#229** — [H] Soda Springs taste-test — carbonated novelty event, +2 morale
 - **#230** — [H] Washday on the Sweetwater — laundry camp at first Sweetwater crossing
 - **#231** — [H] Ash Hollow descent (Windlass Hill) — rope-lower scene; damage-on-fail check
@@ -138,6 +137,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#228** Register Cliff inscription persists — the existing `carve` choice on the Register Cliff arrival event now writes `flags._registerCliffInscription` in the period format `LEADER · MMM YYYY` (e.g. `EZRA THOMPSON · Jun 1849`, matching real cliff signatures like `J.M. KEEN 1850`). EndScreen reads the flag and renders a chiseled-letter inscription block on both the arrived and wiped outcomes — the carving outlasts the party. Sandstone-band styling (parchment wash, IM Fell English serif, period dot separator). 7 new tests covering serialization round-trip and 12-month formatting; 933/933 green.
 - **#227** 4th of July at Independence Rock — date-gated set-piece arrival event. New `independenceRockJuly4` GameEvent replaces the regular sign-the-rock variant when arrival lands on month=7, day=4. Three choices: (1) **Fire 30-gun salute + feast** — costs 5 each of gunpowder/lead_balls/percussion_caps for +10 morale, falls back to feast-only (+8) if powder is short; (2) **Sign and dance** — +8 morale, no cost; (3) **Press on** — +3 morale, walk away. Upgraded `getLandmarkArrivalEvent(landmarkId, state?)` to accept optional state for date-gated branches; engine-pausable.ts now passes state. Pattern extends naturally to other day-at-landmark set-pieces (Christmas at Fort Hall, etc.). 9 new tests; 926/926 green.
 - **#180** California-flavor gossip 1849+ — new `CALIFORNIA_GOSSIP_POOL` (10 period-authored lines from forty-niner letters and emigrant diaries: Hangtown yields, Hudspeth Cutoff, the Sierra streams, towns emptying back east, San Francisco's tent-city dollar meals). `generatePostGossip` now checks `flags._californiaUnlocked` (set by the 1848 Gold Rush headline) and on a 25% roll surfaces a Californian line as `topic: opportunity`; otherwise falls through to the existing 5-way topic mix. Pre-1849 saves see no California chatter; post-1849 ~25% of post-arrivals carry forty-niner buzz, the other 75% remain regular topics. 4 new tests; 917/917 green.
 - **#267** Pace × food multiplier — new `PACE_FOOD_MULT` constant in `consumption.ts` (slow 0.85× / moderate 1.00× / fast 1.10× / grueling 1.25×) wired into `foodConsumedToday` between the rations-by-headcount calc and the Farmer mult. Period reality: a grueling 14-hour day burned ~25% more calories than a slow nooning amble; diaries record working parties eating 3+ lb/day on hard pushes vs ~1.5 lb on layover days. Multipliers stay within ±15-25% so flat-rations strategies still work — pace is a knob, not a dominator. 6 new tests; 913/913 green.
