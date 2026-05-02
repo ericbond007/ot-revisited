@@ -3,6 +3,7 @@ import type { Rng } from '../rng';
 import { hasLivePreacher, hasLiveWhore } from '../professions/predicates';
 import { canBoilWater } from '../systems/water-purity';
 import { fuelFlavorFor } from '../systems/fire';
+import { washAll } from '../systems/cleanliness';
 import { deathMoralePenalty } from '../professions/bonuses';
 
 // Camp actions are one-shot activities the party can do during a rest
@@ -51,6 +52,7 @@ export type CampActionId =
   | 'dig_well'
   | 'dig_out'
   | 'gather_firewood'
+  | 'wash_clothes'
   | 'cannibalism_straws';
 
 function logLine(s: GameState, text: string): GameState {
@@ -618,6 +620,32 @@ const gatherFirewood: CampAction = {
   }
 };
 
+// Washday (#230) — laundry + a real bath at a river camp. Restores
+// cleanliness across the whole alive party. Period reality: women
+// boiled lye and beat clothes on rocks, kids splashed, men shaved.
+// Took most of a day; we charge 3 hours for the wash itself and
+// trust the camp-day budget for the rest.
+const washClothes: CampAction = {
+  id: 'wash_clothes',
+  label: 'Wash clothes & bathe',
+  sub: '3 hr · river camp only · +30 cleanliness all',
+  icon: '🧺',
+  hourCost: 3,
+  availability: (s) => {
+    if (s.location.terrain !== 'river') {
+      return { available: false, reason: 'Need a river or stream — no good water for washing.' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const next = washAll(s, 30);
+    return logLine(
+      { ...next, morale: Math.min(100, next.morale + 2) },
+      'Boiled water, beat the clothes on the rocks, and bathed in the river. Cleanliness restored. Morale +2.'
+    );
+  }
+};
+
 // --- Water (#106) ---
 //
 // `find_water` is the no-shovel cousin of dig_well: forage along
@@ -829,6 +857,7 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   stitchMoccasins,
   // Practical
   gatherFirewood,
+  washClothes,
   findWater,
   boilWater,
   // Shovel work (gated on having a shovel)
@@ -852,6 +881,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   replace_planks: replacePlanks,
   stitch_moccasins: stitchMoccasins,
   gather_firewood: gatherFirewood,
+  wash_clothes: washClothes,
   find_water: findWater,
   boil_water: boilWater,
   dig_well: digWell,

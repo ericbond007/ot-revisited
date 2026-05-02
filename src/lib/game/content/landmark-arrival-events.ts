@@ -1,5 +1,6 @@
 import type { GameState } from '../types';
 import type { GameEvent } from './events';
+import { washAll } from '../systems/cleanliness';
 
 // Arrival vignettes for iconic scenic landmarks. When the party reaches
 // one of these on a travel day, the engine pauses and fires the event
@@ -86,6 +87,55 @@ const independenceRock: GameEvent = {
         s,
         'Passed Independence Rock without leaving a mark.'
       )
+    }
+  ]
+};
+
+// First Sweetwater crossing washday (#230) — period reality: emigrants
+// reaching the Sweetwater, especially after the long alkali pull from
+// the North Platte, fixated on the day's first proper bath. Cold,
+// clean, mountain-fed water; clothes scrubbed on rocks; men shaving
+// in pocket mirrors. Fires once at sweetwater_1 — the first crossing.
+const sweetwaterWashday: GameEvent = {
+  id: 'arrival_sweetwater_washday',
+  category: 'historical',
+  title: 'The Sweetwater — at last, real water',
+  body: 'After the alkali pull from the North Platte, the Sweetwater runs cold and clean. The kids are already in. The women are unpacking the wash kettle. Today is washday.',
+  weight: 1,
+  choices: [
+    {
+      id: 'wash',
+      icon: '🧺',
+      label: 'Camp here a half-day and bathe',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => {
+        const next = washAll(s, 50);
+        return logLine(
+          { ...next, morale: Math.min(100, next.morale + 5) },
+          "Boiled water on a willow fire, beat the clothes clean, bathed in the Sweetwater. The party feels human again. Cleanliness +50, morale +5."
+        );
+      }
+    },
+    {
+      id: 'quick',
+      icon: '💦',
+      label: 'A quick rinse and press on',
+      silentLog: true,
+      apply: (s) => {
+        const next = washAll(s, 20);
+        return logLine(
+          { ...next, morale: Math.min(100, next.morale + 2) },
+          'Splashed off the dust at the Sweetwater. Cleanliness +20, morale +2.'
+        );
+      }
+    },
+    {
+      id: 'press',
+      icon: '🚶',
+      label: "Don't break — we're behind already",
+      silentLog: true,
+      apply: (s) => logLine(s, 'Forded the Sweetwater without stopping to wash.')
     }
   ]
 };
@@ -556,6 +606,7 @@ export const LANDMARK_ARRIVAL_EVENTS: Record<string, GameEvent> = {
   south_pass: southPass,
   pacific_springs: pacificSprings,
   soda_springs: sodaSprings,
+  sweetwater_1: sweetwaterWashday,
   laurel_hill: laurelHill
 };
 

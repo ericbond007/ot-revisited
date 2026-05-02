@@ -67,6 +67,11 @@ export interface PartyMember {
   isLeader: boolean;
   age: number;
   health: number; // 0..100
+  /** Personal cleanliness 0..100 (#230). Drains daily with sweat,
+   *  pace, and heat; restored by the wash_clothes camp action at
+   *  river camps. Below 30 nicks morale; below 10 raises filth-disease
+   *  risk. Defaults to 100 on new + migrated saves. */
+  cleanliness?: number;
   conditions: Condition[];
   dead: boolean;
   deathCause?: string;
