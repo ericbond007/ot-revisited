@@ -24,9 +24,12 @@
   let oxCount = $state(4);
   let isMule = $state(false);
   let paused = $state(false);
-  let variant = $state(0);
+  // -1 → "auto" (no explicit override → BackdropPainting picks based on
+  // weather → fallback random). 0..4 → forced variant.
+  let variant = $state<number>(-1);
 
-  const VARIANTS = [0, 1, 2, 3, 4];
+  const VARIANTS = [-1, 0, 1, 2, 3, 4];
+  const variantLabel = (n: number) => (n === -1 ? 'auto (weather-driven)' : String(n));
 
   // Bumping `restartKey` remounts WagonScene with a fresh t=0 — the
   // rAF tick in the scene tracks scroll position internally, so this
@@ -118,7 +121,7 @@
       <span>Backdrop variant</span>
       <select bind:value={variant} disabled={useSvgLayers}>
         {#each VARIANTS as n}
-          <option value={n}>{n}</option>
+          <option value={n}>{variantLabel(n)}</option>
         {/each}
       </select>
     </label>
@@ -172,7 +175,8 @@
 
   <section class="stage">
     {#key restartKey}
-      <WagonScene state={previewState} {timeOfDay} {paused} backdropVariant={variant} />
+      <WagonScene state={previewState} {timeOfDay} {paused}
+                  backdropVariant={variant === -1 ? undefined : variant} />
     {/key}
   </section>
 

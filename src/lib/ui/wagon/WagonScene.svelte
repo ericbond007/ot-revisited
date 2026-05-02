@@ -14,7 +14,9 @@
   //  10. Wagon (with addons)
   //  11. Weather overlays (rain/snow/lightning)
   //  12. Storm vignette
-  //  13. Time-of-day wash (semi-transparent over everything)
+  //
+  // (Time-of-day wash removed: travel-scene pacing is days, not hours.
+  //  Weather is the multi-day mood lever — see BackdropPainting.)
   //
   // One requestAnimationFrame tick drives `t`. All motion derives
   // from `t` — no CSS animations, no setIntervals.
@@ -182,12 +184,12 @@
 
   const WagonComponent = $derived(wagonRender.Component);
 
-  // ---------- time-of-day wash ----------
-  const wash = $derived.by(() => {
-    if (timeOfDay === 'night') return { fill: '#0a0a20', opacity: 0.45 };
-    if (timeOfDay === 'dusk')  return { fill: '#d86a30', opacity: 0.10 };
-    return null;
-  });
+  // Note: time-of-day washes (the flat alpha rect for night / dusk) were
+  // removed because the travel scene's pacing is days, not hours — cycling
+  // sky tints across travel ticks felt jittery. Weather is the multi-day
+  // mood lever; see BackdropPainting's WEATHER_VARIANT_MAP. The
+  // `timeOfDay` prop is still threaded through for SVG-mode SkyGradient /
+  // SkyAccent (dev-viewer fallback only).
 </script>
 
 <div class="status panel">
@@ -232,6 +234,7 @@
         <FarLayer terrain={gameState.location.terrain} {scrollX} horizonY={HORIZON_Y} />
       {:else}
         <BackdropPainting terrain={gameState.location.terrain}
+                          weather={gameState.weather}
                           {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y}
                           variant={backdropVariant} />
       {/if}
@@ -295,13 +298,7 @@
                       showRain={weatherKind === 'rainy'}
                       showSnow={weatherKind === 'snowy'}
                       {showLightning} />
-      <StormVignette kind={weatherKind} w={SCENE_W} h={SCENE_H} />
-
-      <!-- 13. time-of-day wash -->
-      {#if wash}
-        <rect x="0" y="0" width={SCENE_W} height={SCENE_H}
-              fill={wash.fill} opacity={wash.opacity} />
-      {/if}
+      <StormVignette kind={weatherKind} isStorm={showLightning} w={SCENE_W} h={SCENE_H} />
     </svg>
   </div>
 </div>
