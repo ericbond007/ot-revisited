@@ -79,7 +79,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Set-piece landmark events
 
-- **#229** — [H] Soda Springs taste-test — carbonated novelty event, +2 morale
 - **#230** — [H] Washday on the Sweetwater — laundry camp at first Sweetwater crossing
 - **#231** — [H] Ash Hollow descent (Windlass Hill) — rope-lower scene; damage-on-fail check
 - **#232** — [H] South Pass crest beat — symbolic "you've reached the top" morale moment
@@ -137,6 +136,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#229** Soda Springs taste-test — already implemented before the historical-pass TODO was logged. The existing `sodaSprings` arrival event already has 3 choices (drink with upset-stomach risk, bottle 5 gal + morale, skip) that exceed the "+2 morale carbonated novelty" spec. No-op closeout.
 - **#228** Register Cliff inscription persists — the existing `carve` choice on the Register Cliff arrival event now writes `flags._registerCliffInscription` in the period format `LEADER · MMM YYYY` (e.g. `EZRA THOMPSON · Jun 1849`, matching real cliff signatures like `J.M. KEEN 1850`). EndScreen reads the flag and renders a chiseled-letter inscription block on both the arrived and wiped outcomes — the carving outlasts the party. Sandstone-band styling (parchment wash, IM Fell English serif, period dot separator). 7 new tests covering serialization round-trip and 12-month formatting; 933/933 green.
 - **#227** 4th of July at Independence Rock — date-gated set-piece arrival event. New `independenceRockJuly4` GameEvent replaces the regular sign-the-rock variant when arrival lands on month=7, day=4. Three choices: (1) **Fire 30-gun salute + feast** — costs 5 each of gunpowder/lead_balls/percussion_caps for +10 morale, falls back to feast-only (+8) if powder is short; (2) **Sign and dance** — +8 morale, no cost; (3) **Press on** — +3 morale, walk away. Upgraded `getLandmarkArrivalEvent(landmarkId, state?)` to accept optional state for date-gated branches; engine-pausable.ts now passes state. Pattern extends naturally to other day-at-landmark set-pieces (Christmas at Fort Hall, etc.). 9 new tests; 926/926 green.
 - **#180** California-flavor gossip 1849+ — new `CALIFORNIA_GOSSIP_POOL` (10 period-authored lines from forty-niner letters and emigrant diaries: Hangtown yields, Hudspeth Cutoff, the Sierra streams, towns emptying back east, San Francisco's tent-city dollar meals). `generatePostGossip` now checks `flags._californiaUnlocked` (set by the 1848 Gold Rush headline) and on a 25% roll surfaces a Californian line as `topic: opportunity`; otherwise falls through to the existing 5-way topic mix. Pre-1849 saves see no California chatter; post-1849 ~25% of post-arrivals carry forty-niner buzz, the other 75% remain regular topics. 4 new tests; 917/917 green.
