@@ -6,7 +6,7 @@
   import ItemTooltip from '$lib/ui/ItemTooltip.svelte';
   import WagonPicker from '$lib/ui/WagonPicker.svelte';
   import { getProfession } from '$lib/game/content/professions';
-  import { getWagon, type WagonModel, type WagonModelId } from '$lib/game/content/wagons';
+  import { getWagon, BRAN_BARREL_UPGRADE_PRICE, type WagonModel, type WagonModelId } from '$lib/game/content/wagons';
   import { ICON } from '$lib/data/icon-dictionary';
 
   let { data, form }: {
@@ -49,6 +49,9 @@
   // svelte-ignore state_referenced_locally
   let selectedWagon = $state<WagonModelId>(gs.wagon.model);
   let extraOxen = $state(0);
+  // Bran-barrel upgrade (#264) — only meaningful when light wagon
+  // is selected (schooner + heavy ship with one). $4 at outfit.
+  let branBarrelUpgrade = $state(false);
 
   // Team kind: 'ox' or 'mule'. Historically mules cost more but moved
   // faster and climbed better. Mules also need grain — we recommend a
@@ -78,7 +81,14 @@
   const teamSurcharge = $derived(
     teamKind === 'mule' ? (gs.oxen.length + extraOxen) * MULE_PRICE_SURCHARGE : 0
   );
-  const totalCost = $derived(suppliesCost + oxenCost + teamSurcharge - wagonCashDiff);
+  // Bran-barrel only charges when (a) the player checked the box
+  // AND (b) the new wagon model doesn't already include one.
+  const branBarrelCost = $derived(
+    branBarrelUpgrade && selectedWagonModel.shipsWithBranBarrel !== true
+      ? BRAN_BARREL_UPGRADE_PRICE
+      : 0
+  );
+  const totalCost = $derived(suppliesCost + oxenCost + teamSurcharge - wagonCashDiff + branBarrelCost);
   const canAfford = $derived(Math.ceil(totalCost) <= gs.cash);
 
   // Weight of supplies being bought (independent of starter inventory weight,
@@ -347,7 +357,23 @@
         <div><dt>Optimal team</dt><dd>{selectedWagonModel.optimalTeam} oxen</dd></div>
         <div><dt>Min team</dt><dd>{selectedWagonModel.minTeam} oxen</dd></div>
         <div><dt>Speed</dt><dd>×{selectedWagonModel.baseSpeedMult.toFixed(2)}</dd></div>
+        <div>
+          <dt>Bran barrel</dt>
+          <dd>
+            {#if selectedWagonModel.shipsWithBranBarrel}
+              <em>included</em>
+            {:else}
+              <label class="bran-row">
+                <input type="checkbox" name="branBarrelUpgrade" bind:checked={branBarrelUpgrade} />
+                <span>add for ${BRAN_BARREL_UPGRADE_PRICE}</span>
+              </label>
+            {/if}
+          </dd>
+        </div>
       </dl>
+      <p class="bran-hint">
+        Wood barrel filled with bran. Insulates the bacon — halves heat-day rancidity past the Platte.
+      </p>
     </section>
   </aside>
 

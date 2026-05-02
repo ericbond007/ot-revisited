@@ -35,7 +35,15 @@ export interface WagonModel {
   // Heavy wagons get extra spares to reflect higher break rates;
   // light wagons get nothing extra. (#107)
   starterSpares?: Record<string, number>;
+  // Bran-fill bacon barrel ships with the wagon by default? (#264)
+  // Light wagons skip it (no room in the bed); the player can buy
+  // the upgrade at outfit. Schooner + heavy include it.
+  shipsWithBranBarrel?: boolean;
 }
+
+/** Outfit-screen upgrade price for adding a bran barrel to a light
+ *  wagon at Independence. ($4 — a barrel + the bran fill, period rate.) */
+export const BRAN_BARREL_UPGRADE_PRICE = 4;
 
 export const WAGONS: Record<WagonModelId, WagonModel> = {
   light: {
@@ -66,7 +74,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     minTeam: 2,
     baseWaterCapGal: 20,
     chickenCap: 5,
-    requiredYokes: 2
+    requiredYokes: 2,
+    shipsWithBranBarrel: true
   },
   heavy: {
     id: 'heavy',
@@ -85,7 +94,8 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     // Heavy wagons break parts more often. Extra spares reflect that
     // an outfit big enough to load a household into would also pack
     // contingency parts for the haul.
-    starterSpares: { wheel: 1, spare_plank: 2 }
+    starterSpares: { wheel: 1, spare_plank: 2 },
+    shipsWithBranBarrel: true
   }
 };
 

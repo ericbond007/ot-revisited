@@ -12,7 +12,7 @@ import { applyTravel } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
 import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
-import { applySpoilage } from './systems/spoilage';
+import { applySpoilage, applyHeatSpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
@@ -46,8 +46,10 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // Eggs lay at dawn so today's yield is available for today's meal.
   s = applyEggLay(s);
   // Spoilage runs BEFORE consumption so the party can't eat rotten meat
-  // on its spoil-day. Any remaining fresh game_meat is zeroed out first.
+  // on its spoil-day. Any remaining fresh game_meat / eggs / berries
+  // are zeroed out first; heat-day rancidity nibbles bacon + salt_pork.
   s = applySpoilage(s);
+  s = applyHeatSpoilage(s);
   s = applyDailyConsumption(s);
   s = applyDietVariety(s);
   s = applyHotDrinks(s);

@@ -102,6 +102,11 @@ export interface Wagon {
   // rain into stored supplies (powder, flour, salt) and reduces the
   // rain-water catchment that emigrants relied on in storms.
   canvas: number; // 0..100
+  // Bran-fill barrel for the bacon (#264). Period-real wagon kit that
+  // doesn't break — it's a trait, not a consumable. Halves heat-day
+  // attrition on bacon + salt_pork. Prairie schooner + heavy ship with
+  // one by default; light wagon can buy the upgrade at outfit.
+  hasBranBarrel?: boolean;
 }
 
 export interface GameDate {

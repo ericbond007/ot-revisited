@@ -60,7 +60,15 @@ export function upgradeState(state: GameState): GameState {
   // rather than mirroring `condition` — most lost canvas comes from
   // weather and the player just played a long stretch with no canvas
   // damage system, so they shouldn't be punished retroactively.
-  const wagon = { ...state.wagon, model: modelId, canvas: state.wagon.canvas ?? 100 };
+  // Pre-#264 saves don't have hasBranBarrel. Default per wagon model:
+  // schooner + heavy ship with one, light doesn't. Matches engine.ts.
+  const branBarrelDefault = getWagon(modelId).shipsWithBranBarrel === true;
+  const wagon = {
+    ...state.wagon,
+    model: modelId,
+    canvas: state.wagon.canvas ?? 100,
+    hasBranBarrel: state.wagon.hasBranBarrel ?? branBarrelDefault
+  };
 
   // Pre-#153 saves have no weather field. Default to 'clear' so tickWeather's
   // stickiness math has something to lerp from on day 1.
