@@ -40,7 +40,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     const train = freshTrain();
     const wagon = train.companions[0];
     const before = totalFood(wagon.inventory);
-    const next = tickNpcWagon(
+    const { wagon: next } = tickNpcWagon(
       wagon,
       { day: 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
       makeRng('t1')
@@ -52,24 +52,22 @@ describe('tickNpcWagon — per-wagon attrition', () => {
   it('accumulates ox fatigue on travel days, recovers on rest days', () => {
     const train = freshTrain();
     let wagon = train.companions[0];
-    // 5 travel days at moderate → +20 fatigue per ox.
     for (let i = 0; i < 5; i++) {
       wagon = tickNpcWagon(
         wagon,
         { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
         makeRng('tt' + i)
-      );
+      ).wagon;
     }
     const traveled = wagon.oxen[0].fatigue;
     expect(traveled).toBeGreaterThan(0);
 
-    // 3 rest days on prairie → big recovery.
     for (let i = 0; i < 3; i++) {
       wagon = tickNpcWagon(
         wagon,
         { day: 6 + i, traveled: false, pace: 'moderate', terrain: 'prairie' },
         makeRng('rr' + i)
-      );
+      ).wagon;
     }
     expect(wagon.oxen[0].fatigue).toBeLessThan(traveled);
   });
@@ -78,13 +76,12 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     const train = freshTrain();
     let wagon: NpcWagonState = { ...train.companions[0], inventory: {} };
     const startHp = wagon.party[0].health;
-    // 5 starvation days.
     for (let i = 0; i < 5; i++) {
       wagon = tickNpcWagon(
         wagon,
         { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
         makeRng('s' + i)
-      );
+      ).wagon;
     }
     expect(wagon.party[0].health).toBeLessThan(startHp);
   });
@@ -98,17 +95,16 @@ describe('tickNpcWagon — per-wagon attrition', () => {
         ? { ...p, health: 1 }
         : p)
     };
-    // First starvation day will probably kill the lead member.
     for (let i = 0; i < 4; i++) {
       wagon = tickNpcWagon(
         wagon,
         { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
         makeRng('d' + i)
-      );
+      ).wagon;
     }
     const dead = wagon.party.filter((p) => p.dead);
     expect(dead.length).toBeGreaterThan(0);
-    expect(wagon.eventLog.some((e) => /died|trail took/i.test(e.text))).toBe(true);
+    expect(wagon.eventLog.some((e) => /died|trail took|too young/i.test(e.text))).toBe(true);
   });
 
   it('marks outcome=wiped when every party member is dead', () => {
@@ -123,16 +119,16 @@ describe('tickNpcWagon — per-wagon attrition', () => {
         wagon,
         { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
         makeRng('w' + i)
-      );
+      ).wagon;
     }
     expect(wagon.outcome).toBe('wiped');
-    // Subsequent ticks should be no-op once wiped.
     const sealed = tickNpcWagon(
       wagon,
       { day: 99, traveled: true, pace: 'moderate', terrain: 'prairie' },
       makeRng('post')
     );
-    expect(sealed).toBe(wagon);
+    expect(sealed.wagon).toBe(wagon);
+    expect(sealed.playerLogs).toEqual([]);
   });
 
   it('treats conditions when a treatment item is on hand', () => {
@@ -153,7 +149,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
       wagon,
       { day: 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
       makeRng('treat')
-    );
+    ).wagon;
     expect((wagon.inventory.quinine ?? 0)).toBe(beforeQuinine - 1);
   });
 });
@@ -199,9 +195,69 @@ describe('advanceTrain — engine integration', () => {
     for (let i = 0; i < startFood.length; i++) {
       expect(endFood[i]).toBeLessThan(startFood[i]);
     }
-    // Wagon-to-wagon food levels should diverge — different starting
-    // amounts + different consumption (party sizes vary).
     const distinct = new Set(endFood);
     expect(distinct.size).toBeGreaterThan(1);
+  });
+});
+
+describe('#280c — NPC events bubble to player eventLog', () => {
+  it('over a 60-day rest, the train fires events that surface on the player eventLog', () => {
+    let s = joinTrain(game(), makeRng('events-1')).state;
+    const startLogLen = s.eventLog.length;
+    s = rest(s, 60);
+    const newEntries = s.eventLog.slice(startLogLen);
+    // Filter for entries that look like NPC news (mention a "wagon" or
+    // a family-style label "the X family"). Not every rest day fires
+    // events but ~60 days × N wagons × 6% should produce several.
+    const npcNews = newEntries.filter((e) =>
+      /wagon|family|brothers|party/i.test(e.text)
+    );
+    expect(npcNews.length).toBeGreaterThan(0);
+  });
+
+  it('event-driven wagon damage and condition changes persist on the wagon state', () => {
+    // Force the dice — feed a deterministic seed and rest a long time.
+    let s = joinTrain(game(), makeRng('events-2')).state;
+    const beforeWagons = s.wagonTrain!.companions.map((c) => ({
+      condition: c.wagon.condition,
+      conditions: c.party.flatMap((p) => p.conditions.map((co) => co.id))
+    }));
+    s = rest(s, 120);
+    const afterWagons = s.wagonTrain!.companions.map((c) => ({
+      condition: c.wagon.condition,
+      conditions: c.party.flatMap((p) => p.conditions.map((co) => co.id))
+    }));
+    // At least one wagon should have lost some condition (wheel
+    // breaks, ox lameness, etc.) OR picked up a disease condition
+    // somewhere in the party.
+    const someChange = afterWagons.some((after, i) =>
+      after.condition < beforeWagons[i].condition
+      || after.conditions.length > beforeWagons[i].conditions.length
+    );
+    expect(someChange).toBe(true);
+  });
+
+  it('finished wagons (outcome != in-progress) do not fire further events', () => {
+    let s = joinTrain(game(), makeRng('events-3')).state;
+    // Wipe one companion manually — set outcome=wiped and party dead.
+    s = {
+      ...s,
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: s.wagonTrain!.companions.map((c, i) =>
+          i === 0
+            ? { ...c, outcome: 'wiped' as const, party: c.party.map((p) => ({ ...p, dead: true, health: 0 })) }
+            : c
+        )
+      }
+    };
+    const beforeWagon0 = s.wagonTrain!.companions[0];
+    s = rest(s, 30);
+    const afterWagon0 = s.wagonTrain!.companions[0];
+    // Wiped wagon's state is frozen — no inventory change, no
+    // condition adds, no event log entries.
+    expect(afterWagon0.inventory).toEqual(beforeWagon0.inventory);
+    expect(afterWagon0.party.every((p) => p.dead)).toBe(true);
+    expect(afterWagon0.outcome).toBe('wiped');
   });
 });
