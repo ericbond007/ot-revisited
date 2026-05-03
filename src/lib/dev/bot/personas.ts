@@ -152,9 +152,13 @@ export const cautiousPersona: Persona = {
     return flour > 50 ? 'filling' : 'normal';
   },
   shouldRest(state) {
-    // Tightened from <60 to <45 (HP) so cautious doesn't burn the
-    // calendar on rest days. Real emigrant captains weighed days
-    // ahead vs. recovery; the bot does the same.
+    // <45 HP / <25 morale tuned in v4 — when the bot rests less than
+    // this, it dies of disease (cholera + foul water cycle) faster
+    // than it covers ground. Smoke tuning showed: <30 HP threshold +
+    // 4-day rest streak cap → 100% wipes; unbounded rest at <45 →
+    // 0% wipes, full year survival, ~1500 mi avg. The bot trades
+    // arrival for survival; this is the right call until medicine-
+    // use is wired in (laudanum/quinine to clear conditions).
     return minPartyHealth(state) < 45 || state.morale < 25;
   },
   shouldHunt(state) {

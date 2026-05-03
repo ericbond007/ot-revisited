@@ -44,6 +44,10 @@ interface RunningStats {
   deathsByCause: Record<string, number>;
   deadIds: Set<string>;
   errors: string[];
+  /** Per-action-type day counter. Each iteration of the main loop
+   *  attributes its day delta (state.day - dayBefore) to whichever
+   *  action ran. */
+  actionDays: BotRunReport['actionDays'];
 }
 
 function newStats(): RunningStats {
@@ -55,7 +59,8 @@ function newStats(): RunningStats {
     longestBoringStretch: 0,
     deathsByCause: {},
     deadIds: new Set<string>(),
-    errors: []
+    errors: [],
+    actionDays: { travel: 0, rest: 0, findWater: 0, hunt: 0, ford: 0, tradingPost: 0, eventChoice: 0, other: 0 }
   };
 }
 
@@ -355,15 +360,19 @@ export function runBot(opts: BotRunOpts): BotRunReport {
   while (!state.completed && dayCount < maxDays) {
     dayCount += 1;
     const dayBefore = state.day;
+    let actionType: keyof RunningStats['actionDays'] = 'other';
     try {
       let firedEventToday = false;
 
       if (state.location.atLandmarkId) {
         // Landmark handling — may advance multiple days (inn stay) or
         // exactly one (ford), or zero (just clear scenic flag).
+        const here = getLandmark(state.location.atLandmarkId);
+        actionType = here.kind === 'river' ? 'ford' : here.kind === 'trading_post' ? 'tradingPost' : 'other';
         state = handleLandmark(state, persona, stats, botRng);
         firedEventToday = true;
       } else if (persona.shouldFindWater(state, botRng)) {
+        actionType = 'findWater';
         // Rest one day. Camp-action sequence preferences:
         //   1) gather_firewood + find_water + boil_water (if firewood is
         //      low or zero, gather first so boil_water can fire);
@@ -405,21 +414,23 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         stats.decisionsMade += 1;
         firedEventToday = true;
       } else if (persona.shouldHunt(state, botRng)) {
+        actionType = 'hunt';
         state = doBotHunt(state, stats);
         firedEventToday = true;
         stats.decisionsMade += 1;
       } else if (persona.shouldRest(state, botRng)) {
+        actionType = 'rest';
         try {
           state = rest(state, 1);
           stats.decisionsMade += 1;
           firedEventToday = true;
         } catch (err) {
           stats.errors.push(`rest: ${(err as Error).message}`);
-          // Bail on the run when an error fires.
           break;
         }
       } else {
         // Travel day.
+        actionType = 'travel';
         state = {
           ...state,
           pace: persona.pickPace(state, botRng),
@@ -430,6 +441,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
 
         if (tick.pendingEvent) {
           firedEventToday = true;
+          actionType = 'eventChoice';
           const ev = tick.pendingEvent;
           stats.eventsFiredById[ev.id] = (stats.eventsFiredById[ev.id] ?? 0) + 1;
           const choiceId = persona.pickEventChoice(state, ev, botRng);
@@ -437,6 +449,12 @@ export function runBot(opts: BotRunOpts): BotRunReport {
           state = applyPendingChoice(state, ev, choiceId);
         }
       }
+
+      // Attribute the day delta to the action that ran. Some actions
+      // (zero-day landmark walk-pasts) are 0; rest/find_water/inn-stay
+      // can be ≥1.
+      const delta = Math.max(1, state.day - dayBefore);
+      stats.actionDays[actionType] += delta;
 
       recordDeaths(state, stats);
       prevLowHealthIds = recordHealthDrama(state, prevLowHealthIds, stats);
@@ -500,6 +518,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
     errors: stats.errors,
     arrivalScore,
     funScore: funScore.total,
-    funBreakdown: funScore.breakdown
+    funBreakdown: funScore.breakdown,
+    actionDays: stats.actionDays
   };
 }
