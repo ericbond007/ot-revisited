@@ -22,6 +22,8 @@
   import LetterModal from '$lib/ui/LetterModal.svelte';
   import WagonModal from '$lib/ui/WagonModal.svelte';
   import WagonPanel from '$lib/ui/WagonPanel.svelte';
+  import WagonTrainPanel from '$lib/ui/WagonTrainPanel.svelte';
+  import WagonTrainModal from '$lib/ui/WagonTrainModal.svelte';
   import PartyModal from '$lib/ui/PartyModal.svelte';
   import PartyMemberModal from '$lib/ui/PartyMemberModal.svelte';
   import InventoryModal from '$lib/ui/InventoryModal.svelte';
@@ -81,6 +83,7 @@
   let showTrade = $state(false);
   let showWagon = $state(false);
   let showParty = $state(false);
+  let showTrain = $state(false);
   let selectedMemberId = $state<string | null>(null);
   let showInventory = $state(false);
   let showTrailMapModal = $state(false);
@@ -277,6 +280,7 @@
     <div class="side-rail">
       <PartyPanel state={gs} onopen={() => (showParty = true)} />
       <WagonPanel state={gs} onopen={() => (showWagon = true)} />
+      <WagonTrainPanel state={gs} onopen={() => (showTrain = true)} />
       <InventoryPanel state={gs} onopen={() => (showInventory = true)} />
     </div>
   </div>
@@ -293,6 +297,10 @@
 
 {#if showWagon}
   <WagonModal state={gs} onclose={() => (showWagon = false)} />
+{/if}
+
+{#if showTrain}
+  <WagonTrainModal state={gs} onclose={() => (showTrain = false)} />
 {/if}
 
 {#if showParty}
