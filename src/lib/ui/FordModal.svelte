@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
   import { getLandmark } from '$lib/game/content/landmarks';
+  import { getTribeAttitude } from '$lib/game/systems/tribe-relations';
+  import { NATIVE_FERRY_MIN_ATTITUDE } from '$lib/game/actions/ford';
   import CardRadio from './CardRadio.svelte';
   import NumberStepper from './NumberStepper.svelte';
   import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
@@ -9,7 +11,7 @@
   let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
-  type Method = 'ford' | 'caulk' | 'ferry' | 'wait';
+  type Method = 'ford' | 'caulk' | 'ferry' | 'wait' | 'native_ferry';
 
   let method = $state<Method>('ford');
   let waitDays = $state(1);
@@ -20,32 +22,54 @@
   const river = $derived(here?.river ?? { depthFt: 3, currentMph: 3, ferryPrice: 5 });
   const riverName = $derived(here?.name ?? 'River');
 
-  const methodOptions = $derived([
-    {
-      value: 'ford' as const,
-      label: 'Ford',
-      sublabel: 'Walk the oxen through — fast and free but risks lost supplies',
-      icon: ICON.ford_methods.ford
-    },
-    {
-      value: 'caulk' as const,
-      label: 'Caulk & Float',
-      sublabel: '2 days — seal the wagon and float it across',
-      icon: ICON.ford_methods.caulk
-    },
-    {
-      value: 'ferry' as const,
-      label: 'Hire Ferry',
-      sublabel: `$${river.ferryPrice} — the safe (if expensive) way`,
-      icon: ICON.ford_methods.ferry
-    },
-    {
-      value: 'wait' as const,
-      label: 'Wait it Out',
-      sublabel: 'Camp nearby, hope the river drops',
-      icon: ICON.ford_methods.wait
+  // #238 Native ferry — show the 5th option when the landmark is wired
+  // for it AND the tribe is friendly enough AND the party can pay.
+  const nativeFerryAvailable = $derived(() => {
+    const nf = river.nativeFerry;
+    if (!nf) return false;
+    if (getTribeAttitude(gameState, nf.tribeId) < NATIVE_FERRY_MIN_ATTITUDE) return false;
+    const have = gameState.inventory[nf.priceItem] ?? 0;
+    return have >= nf.priceQty;
+  });
+
+  const methodOptions = $derived(() => {
+    type Option = { value: Method; label: string; sublabel: string; icon: string };
+    const base: Option[] = [
+      {
+        value: 'ford',
+        label: 'Ford',
+        sublabel: 'Walk the oxen through — fast and free but risks lost supplies',
+        icon: ICON.ford_methods.ford
+      },
+      {
+        value: 'caulk',
+        label: 'Caulk & Float',
+        sublabel: '2 days — seal the wagon and float it across',
+        icon: ICON.ford_methods.caulk
+      },
+      {
+        value: 'ferry',
+        label: 'Hire Ferry',
+        sublabel: `$${river.ferryPrice} — the safe (if expensive) way`,
+        icon: ICON.ford_methods.ferry
+      },
+      {
+        value: 'wait',
+        label: 'Wait it Out',
+        sublabel: 'Camp nearby, hope the river drops',
+        icon: ICON.ford_methods.wait
+      }
+    ];
+    if (nativeFerryAvailable() && river.nativeFerry) {
+      base.splice(3, 0, {
+        value: 'native_ferry',
+        label: 'Native ferry',
+        sublabel: river.nativeFerry.blurb,
+        icon: ICON.ford_methods.native
+      });
     }
-  ]);
+    return base;
+  });
 </script>
 
 <div class="modal-backdrop">
@@ -61,7 +85,7 @@
     </p>
 
     <form method="POST" action="?/ford&slot={qp}">
-      <CardRadio label="Method" name="method" bind:value={method} options={methodOptions} />
+      <CardRadio label="Method" name="method" bind:value={method} options={methodOptions()} />
 
       {#if method === 'wait'}
         <div class="wait-days">

@@ -4,6 +4,19 @@ export interface RiverStats {
   depthFt: number;
   currentMph: number;
   ferryPrice: number;
+  // #238 Optional native-run ferry. If present and the named tribe is
+  // friendly enough (attitude ≥ NATIVE_FERRY_MIN_ATTITUDE), the ford
+  // modal offers a 5th method: bull-boat / raft across for `priceQty`
+  // of `priceItem`. Period reality: Frizzell 1852 / Sage 1846 record
+  // Shoshone bull-boats on the Green River — three buffalo hides sewn
+  // over a willow frame, paid for in beads or a knife.
+  nativeFerry?: {
+    tribeId: string;
+    priceItem: string;
+    priceQty: number;
+    /** Plain-English flavor for the ford-method sublabel. */
+    blurb: string;
+  };
 }
 
 // Narrow classification of trading-post flavor. Drives visual theming
@@ -229,7 +242,12 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
   { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 10,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 45, terrain: 'river',    kind: 'river',
-    river: { depthFt: 4.5, currentMph: 4, ferryPrice: 8 } },
+    river: {
+      depthFt: 4.5, currentMph: 4, ferryPrice: 8,
+      // Shoshone bull-boat — Sage 1846, Frizzell 1852. Beads were the
+      // common currency on the Green; six strings was the going rate.
+      nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 6, blurb: 'Shoshone bull-boat — three hides on a willow frame, six strings of beads' }
+    } },
   { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 70,  terrain: 'prairie',   kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
@@ -287,7 +305,14 @@ export const LANDMARKS: readonly Landmark[] = [
       'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 150, terrain: 'river',   kind: 'river',
-    river: { depthFt: 5.0, currentMph: 3, ferryPrice: 6 } },
+    river: {
+      depthFt: 5.0, currentMph: 3, ferryPrice: 6,
+      // Bannock / Shoshone bands at the crossing helped emigrants float
+      // wagons. Period reality: Frizzell 1852 paid "a knife and a few
+      // strings of beads" for the lift; we settle on 4 beads + 1 lb
+      // tobacco — pricier than the Green because the Snake is wider.
+      nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 4, blurb: 'Bannock-Shoshone raft — 4 strings of beads' }
+    } },
   { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 120, terrain: 'desert',    kind: 'trading_post',
     // Small HBC station. Modest stock, not a major resupply.
     postKind: 'hbc',

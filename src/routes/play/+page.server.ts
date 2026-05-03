@@ -386,6 +386,9 @@ export const actions: Actions = {
     const hereId = state.location.atLandmarkId;
     const here = hereId ? getLandmark(hereId) : null;
     const river = here?.river ?? { depthFt: 3, currentMph: 3, ferryPrice: 5 };
+    // RiverState includes the optional nativeFerry config (#238); it
+    // flows through as-is since RiverStats is the same shape on both
+    // sides of the boundary.
     state = ford(state, { method, river, waitDays });
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };

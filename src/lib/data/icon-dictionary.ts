@@ -167,11 +167,12 @@ export const ICON = {
   // used by FordSummaryModal; `wait` is the hourglass for the
   // "camp until the water drops" branch.
   ford_methods: {
-    ford:  '🥾',
-    caulk: '🛶',
-    ferry: '⛵',
-    wait:  '⏳',
-    river: '🏞️'
+    ford:   '🥾',
+    caulk:  '🛶',
+    ferry:  '⛵',
+    wait:   '⏳',
+    river:  '🏞️',
+    native: '🪶'
   },
   // Journey-menu items + dev scenario submit row.
   journey_menu: {

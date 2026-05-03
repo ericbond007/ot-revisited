@@ -9,20 +9,36 @@ import { reapDead } from '../systems/death';
 import { applyDehydration } from '../systems/dehydration';
 import { applyEggLay } from '../systems/eggs';
 import { exposureMult } from '../systems/warmth';
+import { adjustTribeAttitude, getTribeAttitude } from '../systems/tribe-relations';
 
 export interface RiverState {
   depthFt: number;
   currentMph: number;
   ferryPrice: number;
+  // #238 Native ferry parameters (mirrors RiverStats.nativeFerry — see
+  // landmarks.ts). Plumbed through the server action so the ford() can
+  // verify gating + apply the trade.
+  nativeFerry?: {
+    tribeId: string;
+    priceItem: string;
+    priceQty: number;
+    blurb: string;
+  };
 }
 
-export type FordMethod = 'ford' | 'caulk' | 'ferry' | 'wait';
+export type FordMethod = 'ford' | 'caulk' | 'ferry' | 'wait' | 'native_ferry';
 
 export interface FordOptions {
   method: FordMethod;
   river: RiverState;
   waitDays?: number;
 }
+
+/** #238 minimum tribe attitude to be offered the native-ferry option. */
+export const NATIVE_FERRY_MIN_ATTITUDE = 50;
+/** #238 attitude bump from successful native-ferry trade — quiet boost
+ *  for paying the customary price without haggling. */
+export const NATIVE_FERRY_ATTITUDE_BUMP = 2;
 
 // Structured reveal written to flags._fordResult. Consumed by
 // FordSummaryModal; cleared by `?/ackFord`. JSON-serializable.
@@ -171,6 +187,34 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       events.push(line);
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };
       s = clearAtLandmark(passiveDay(s, 'ferry'));
+      crossed = true;
+      break;
+    }
+
+    case 'native_ferry': {
+      // #238 Native-run ferry — bull-boat / raft. Re-checks all gates
+      // server-side: river config has the entry, tribe is friendly
+      // enough, and party has the trade currency.
+      const nf = opts.river.nativeFerry;
+      if (!nf) {
+        throw new Error('ford: this river has no native-ferry option');
+      }
+      if (getTribeAttitude(s, nf.tribeId) < NATIVE_FERRY_MIN_ATTITUDE) {
+        throw new Error(`ford: ${nf.tribeId} are not friendly enough for the native ferry`);
+      }
+      const have = s.inventory[nf.priceItem] ?? 0;
+      if (have < nf.priceQty) {
+        throw new Error(`ford: not enough ${nf.priceItem} (need ${nf.priceQty}, have ${have})`);
+      }
+      s = {
+        ...s,
+        inventory: { ...s.inventory, [nf.priceItem]: have - nf.priceQty }
+      };
+      s = adjustTribeAttitude(s, nf.tribeId, NATIVE_FERRY_ATTITUDE_BUMP);
+      const line = `Traded ${nf.priceQty} ${nf.priceItem} for the native ferry — across in a single day.`;
+      events.push(line);
+      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };
+      s = clearAtLandmark(passiveDay(s, 'native-ferry'));
       crossed = true;
       break;
     }
