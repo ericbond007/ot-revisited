@@ -267,7 +267,19 @@
           </span>
           <ul class="train-roster">
             {#each gameState.wagonTrain.companions.slice(0, 6) as c}
-              <li>{c.name} — {c.leaderProfession.replace(/_/g, ' ')}, {c.oxen.filter((o) => o.health > 0).length} oxen, {c.party.filter((p) => !p.dead).length} {c.party.filter((p) => !p.dead).length === 1 ? 'person' : 'people'}{c.hasChildren ? ' (with children)' : ''}</li>
+              <li>
+                <span class="train-roster-line">
+                  {c.name} — {c.leaderProfession.replace(/_/g, ' ')}, {c.oxen.filter((o) => o.health > 0).length} oxen, {c.party.filter((p) => !p.dead).length} {c.party.filter((p) => !p.dead).length === 1 ? 'person' : 'people'}{c.hasChildren ? ' (with children)' : ''}
+                </span>
+                {#if c.outcome === 'in-progress' && (gameState.inventory.flour ?? 0) >= 20}
+                  <form method="POST" action="?/townGiveToCompanion&slot={qp}" use:enhance={() => () => {}} class="train-give-form">
+                    <input type="hidden" name="wagonId" value={c.id} />
+                    <input type="hidden" name="item" value="flour" />
+                    <input type="hidden" name="qty" value="20" />
+                    <button type="submit" class="train-give-btn" title="Give 20 lb flour as a gift">Give 20 lb flour</button>
+                  </form>
+                {/if}
+              </li>
             {/each}
             {#if gameState.wagonTrain.companions.length > 6}
               <li>… and {gameState.wagonTrain.companions.length - 6} more</li>
@@ -448,7 +460,29 @@
     color: var(--c-tan);
     line-height: 1.4;
   }
-  .train-roster li { margin: 0.1em 0; }
+  .train-roster li {
+    margin: 0.1em 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    flex-wrap: wrap;
+  }
+  .train-roster-line { flex: 1 1 auto; }
+  .train-give-form { margin: 0; padding: 0; }
+  .train-give-btn {
+    background: var(--c-bg-raised);
+    color: var(--c-tan);
+    border: 1px solid var(--c-wood);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.85em;
+    padding: 0.2em 0.6em;
+    cursor: pointer;
+  }
+  .train-give-btn:hover {
+    background: var(--c-panel);
+    border-color: var(--c-rust);
+  }
   .svc-icon {
     font-size: 1.7em;
     line-height: 1;
