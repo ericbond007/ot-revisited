@@ -257,20 +257,20 @@
         <div class="svc-body">
           <span class="svc-label">{gameState.wagonTrain.name}</span>
           <span class="svc-sub">
-            {gameState.wagonTrain.members.length} wagons · joined day {gameState.wagonTrain.joinedDay}
-            {#if gameState.wagonTrain.members.some((m) => m.profession === 'blacksmith')}
+            {gameState.wagonTrain.companions.length} wagons · joined day {gameState.wagonTrain.joinedDay}
+            {#if gameState.wagonTrain.companions.some((c) => c.leaderProfession === 'blacksmith')}
               · blacksmith on hand
             {/if}
-            {#if gameState.wagonTrain.members.some((m) => m.profession === 'doctor')}
+            {#if gameState.wagonTrain.companions.some((c) => c.leaderProfession === 'doctor')}
               · doctor on hand
             {/if}
           </span>
           <ul class="train-roster">
-            {#each gameState.wagonTrain.members.slice(0, 6) as m}
-              <li>{m.name} — {m.profession.replace(/_/g, ' ')}, {m.oxCount} oxen{m.hasChildren ? ', children' : ''}</li>
+            {#each gameState.wagonTrain.companions.slice(0, 6) as c}
+              <li>{c.name} — {c.leaderProfession.replace(/_/g, ' ')}, {c.oxen.filter((o) => o.health > 0).length} oxen, {c.party.filter((p) => !p.dead).length} {c.party.filter((p) => !p.dead).length === 1 ? 'person' : 'people'}{c.hasChildren ? ' (with children)' : ''}</li>
             {/each}
-            {#if gameState.wagonTrain.members.length > 6}
-              <li>… and {gameState.wagonTrain.members.length - 6} more</li>
+            {#if gameState.wagonTrain.companions.length > 6}
+              <li>… and {gameState.wagonTrain.companions.length - 6} more</li>
             {/if}
           </ul>
         </div>

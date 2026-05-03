@@ -203,6 +203,20 @@ export interface GameState {
   wagonTrain?: WagonTrain | null;
 }
 
+// #280a — Shared shape between the player's `GameState` and an NPC
+// wagon's `NpcWagonState`. Both satisfy this interface so engine
+// systems (consumption, oxen, conditions, morale) can be written
+// parametrically and shared. Multiplayer (#284) upgrades an NPC slot
+// to a remote-player session — the same field shape.
+export interface WagonStateLike {
+  party: PartyMember[];
+  inventory: Record<ItemId, number>;
+  oxen: Ox[];
+  morale: number; // 0..100
+  cash: number;
+  wagon: Wagon;
+}
+
 // #176 — Wagon-train state. Generated at join time, persists until the
 // player splits from the train (or the run ends). See
 // `src/lib/game/content/trains.ts` for roster generation.
@@ -217,26 +231,46 @@ export interface WagonTrain {
   /** Where the player joined — useful for the leave-train flavor and
    *  for #281 California/Oregon split detection. */
   joinedAtLandmarkId: string | null;
-  /** 5-15 wagon-companion NPCs. Each is a "wagon," not a person — one
-   *  member ≈ one family wagon, with ox count + profession + flag for
-   *  whether they're traveling with children. */
-  members: TrainMember[];
+  /** #285 — leadership pointer. `'player'` = the player's wagon is
+   *  the captain; otherwise the npc-wagon-id of the captain. Initial
+   *  leader picked at create-a-wagon-party (#280e) or auto-elected at
+   *  trail-side join (defaults to player). Voting (#285) can flip
+   *  this mid-run. */
+  leaderId: 'player' | string;
+  /** 5-12 NPC companion wagons. Each is a fully-stateful entity with
+   *  its own party / inventory / oxen / morale / cash / wagon — the
+   *  same shape the player carries. The bot AI (#275) drives each
+   *  one's decisions. */
+  companions: NpcWagonState[];
 }
 
-export interface TrainMember {
-  /** Stable id within the train — member-N. */
+// #280a — NPC wagon state. Same field-shape as the player's relevant
+// subset (via `WagonStateLike`) plus identity + flavor + per-wagon
+// engine state (eventLog, outcome, seed for divergent RNG).
+export interface NpcWagonState extends WagonStateLike {
+  /** Stable id within the train — wagon-<n>. */
   id: string;
   /** Family or surname display label — "the Sager family." */
   name: string;
-  /** Head-of-wagon profession. Drives the train's pooled-services list. */
-  profession: ProfessionId;
-  /** Working ox count for this member's wagon — drives #283 ox-pool. */
-  oxCount: number;
-  /** Visible-children flag for flavor (and future child-mortality arcs
-   *  in #280). */
+  /** Head-of-wagon profession. Drives the train's pooled-services
+   *  list, charisma weight (#285), and starter-kit flavor. */
+  leaderProfession: ProfessionId;
+  /** Visible-children flag for flavor (and #280c child-mortality
+   *  arcs). Derived from `party` but kept as a flag for cheap reads. */
   hasChildren: boolean;
-  /** Cash on hand — flavor for #283 trade dynamics. */
-  cash: number;
+  /** Per-wagon seed — distinct from the train's seed so each wagon's
+   *  fates diverge. Set at generation. */
+  seed: string;
+  /** Per-wagon eventLog — events that happened TO this wagon. The
+   *  player's `state.eventLog` carries one-line summaries when
+   *  notable events fire here (#280c). */
+  eventLog: LogEntry[];
+  /** Per-wagon outcome — an NPC wagon can be wiped, abandoned, or
+   *  arrived independent of the player. Train-level state is the
+   *  union of all wagons' outcomes. */
+  outcome: Outcome;
+  /** Optional companion dog — parity with the player. */
+  dog?: Dog;
 }
 
 export type GameStateFlag =

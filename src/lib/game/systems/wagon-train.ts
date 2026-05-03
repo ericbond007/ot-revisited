@@ -72,7 +72,7 @@ export function joinTrain(state: GameState, rng: Rng): JoinTrainResult {
       ...state.eventLog,
       {
         day: state.day,
-        text: `Joined ${train.name} — ${train.members.length} wagons heading west together.`
+        text: `Joined ${train.name} — ${train.companions.length} wagons heading west together.`
       }
     ]
   };
