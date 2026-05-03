@@ -13,8 +13,10 @@ describe('landmark stub (Plan 2a)', () => {
   });
 
   it('nextLandmarkAfter finds the next one in order', () => {
+    // First out from Independence is Lone Elm Campground (#242), then
+    // Kansas River. Update the assertion as the trail grows.
     const next = nextLandmarkAfter('independence_mo');
-    expect(next?.id).toBe('kansas_river');
+    expect(next?.id).toBe('lone_elm_campground');
   });
 
   it('nextLandmarkAfter returns null at the end', () => {
