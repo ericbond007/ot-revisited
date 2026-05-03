@@ -217,5 +217,21 @@
     'snake_three_island',
     'whitman_mission',
     'willow_springs',
+    // #242-#253 historical-landmark batch — registered here so the
+    // canonical → registry coverage test stays green. Bespoke SVG
+    // icons for each are a Phase-2 design follow-up; until then they
+    // render the dispatcher placeholder (parchment dot with a "?").
+    'lone_elm_campground',
+    'vieux_crossing',
+    'rock_creek_station',
+    'windlass_hill',
+    'rachel_pattison_grave',
+    'ft_caspar',
+    'martins_cove',
+    'big_hill',
+    'massacre_rocks',
+    'salmon_falls',
+    'burnt_river_canyon',
+    'flagstaff_hill',
   ]);
 </script>
