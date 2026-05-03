@@ -63,6 +63,9 @@ describe('30-day deterministic simulation', () => {
     let s = freshGameWithOxen();
     s = {
       ...s,
+      // Strip the doctor's starter quinine — this test is about
+      // untreated cholera attrition, not the treatment-item mechanic.
+      inventory: { ...s.inventory, quinine: 0, dovers_powder: 0, camphor: 0 },
       party: s.party.map((m) => ({
         ...m,
         conditions: [{ id: 'cholera' as const, daysSinceOnset: 0 }]

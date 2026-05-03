@@ -84,6 +84,9 @@ describe('progressConditions', () => {
   it('Doctor profession dampens condition damage by 30%', () => {
     const noDoctor = newGame();
     noDoctor.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
+    // Empty inventory of cholera treatments — this test is about
+    // doctor-relief, not the treatment-item mechanic.
+    noDoctor.inventory = {};
     const noDocAfter = progressConditions(noDoctor, makeRng('t:nd'));
 
     const withDoctor = createInitialState({
@@ -93,6 +96,7 @@ describe('progressConditions', () => {
       startDate: { year: 1848, month: 4, day: 15 }
     });
     withDoctor.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
+    withDoctor.inventory = {};
     const docAfter = progressConditions(withDoctor, makeRng('t:d'));
 
     // Cholera = -10/day. Without doctor: 100→90. With doctor: 100→93 (-7 rounded).
