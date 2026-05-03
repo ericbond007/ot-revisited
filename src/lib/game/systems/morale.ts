@@ -43,6 +43,13 @@ export function adjustMorale(state: GameState, _rng: Rng): GameState {
   // profession / rations / wellness bumps above.
   if (state.dog) delta += 1;
 
+  // #176 — wagon-train companionship. Period diaries (Bryant 1846,
+  // Carpenter 1857) describe caravan rhythm — shared cooking,
+  // Saturday-night fiddle around the central fire — as the single
+  // biggest morale lift outside of arrival itself. Steady +1/day
+  // while in a train.
+  if (state.wagonTrain) delta += 1;
+
   const floor = moraleFloorFor(state);
   const morale = Math.max(floor, Math.min(100, state.morale + delta));
   return { ...state, morale };

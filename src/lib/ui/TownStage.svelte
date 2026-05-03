@@ -234,7 +234,59 @@
       </button>
     {/if}
 
-    {#if landmark.kind !== 'trading_post' && services.length === 0}
+    <!-- #176 Wagon-train sign-up. Visible at every trading post when
+         the party is solo. Joining bumps morale, halves smithy if a
+         train smith is on hand, and clamps pace to moderate. -->
+    {#if landmark.kind === 'trading_post' && !gameState.wagonTrain}
+      <form method="POST" action="?/townJoinTrain&slot={qp}" use:enhance={() => () => {}} class="svc-form">
+        <button type="submit" class="svc-card">
+          <span class="svc-icon">🛞</span>
+          <div class="svc-body">
+            <span class="svc-label">Join a wagon train</span>
+            <span class="svc-sub">5–12 companion wagons · +1 morale/day · half-price smithy if any member is a blacksmith · pace clamped to moderate</span>
+          </div>
+        </button>
+      </form>
+    {/if}
+
+    <!-- #176 In-train info + leave option. Shown at every landmark
+         when the party is currently traveling with a train. -->
+    {#if gameState.wagonTrain}
+      <div class="svc-card train-info">
+        <span class="svc-icon">🛞</span>
+        <div class="svc-body">
+          <span class="svc-label">{gameState.wagonTrain.name}</span>
+          <span class="svc-sub">
+            {gameState.wagonTrain.members.length} wagons · joined day {gameState.wagonTrain.joinedDay}
+            {#if gameState.wagonTrain.members.some((m) => m.profession === 'blacksmith')}
+              · blacksmith on hand
+            {/if}
+            {#if gameState.wagonTrain.members.some((m) => m.profession === 'doctor')}
+              · doctor on hand
+            {/if}
+          </span>
+          <ul class="train-roster">
+            {#each gameState.wagonTrain.members.slice(0, 6) as m}
+              <li>{m.name} — {m.profession.replace(/_/g, ' ')}, {m.oxCount} oxen{m.hasChildren ? ', children' : ''}</li>
+            {/each}
+            {#if gameState.wagonTrain.members.length > 6}
+              <li>… and {gameState.wagonTrain.members.length - 6} more</li>
+            {/if}
+          </ul>
+        </div>
+      </div>
+      <form method="POST" action="?/townLeaveTrain&slot={qp}" use:enhance={() => () => {}} class="svc-form">
+        <button type="submit" class="svc-card svc-card-danger">
+          <span class="svc-icon">↗</span>
+          <div class="svc-body">
+            <span class="svc-label">Split off from the train</span>
+            <span class="svc-sub">Continue alone — pace unclamps, services end, morale bonus drops.</span>
+          </div>
+        </button>
+      </form>
+    {/if}
+
+    {#if landmark.kind !== 'trading_post' && services.length === 0 && !gameState.wagonTrain}
       <p class="empty">There's nothing to do here right now.</p>
     {/if}
     {/if}
@@ -375,6 +427,28 @@
     border-color: var(--post-accent, var(--c-rust));
     background: var(--c-panel);
   }
+  /* #176 — leave-train confirmation: muted red border so it doesn't
+     visually outweigh the join-train action above. */
+  .svc-card-danger {
+    border-color: var(--c-rust);
+    opacity: 0.85;
+  }
+  .train-info {
+    cursor: default;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .train-info:hover { background: var(--c-bg-raised); border-color: var(--c-wood); }
+  .train-roster {
+    list-style: none;
+    padding: 0.3em 0 0;
+    margin: 0.3em 0 0;
+    font-weight: 400;
+    font-size: 0.85em;
+    color: var(--c-tan);
+    line-height: 1.4;
+  }
+  .train-roster li { margin: 0.1em 0; }
   .svc-icon {
     font-size: 1.7em;
     line-height: 1;

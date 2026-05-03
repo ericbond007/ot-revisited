@@ -146,7 +146,10 @@ export function createInitialState(opts: NewGameOptions): GameState {
     eventLog: [],
     flags: { hasBoilingKnowledge: false, hadFireLastNight: false },
     completed: false,
-    outcome: 'in-progress'
+    outcome: 'in-progress',
+    // #176 — solo by default. Players join a wagon train via the
+    // landmark service at Independence / Kearny / Laramie.
+    wagonTrain: null
   };
 }
 
