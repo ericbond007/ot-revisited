@@ -193,11 +193,65 @@ Surgical changes only — every other entry stayed at its current value because 
 
 Casting lead from a pig stays the better economics: pig $1.50 / 5 lb / 0.03 lb-per-ball ≈ 167 balls per pig at $0.009/ball cast. Buying ready-cast at $0.02 stays a 2.2× convenience markup over home-casting.
 
-## What this audit deliberately did NOT change
+## Follow-up pass — tier multipliers + starter funds + game-feel cuts
 
-- **Trail-tier markups.** The current `buy` is treated as a single mid-trail price; per-post variation is handled by `stockScale`. A future task could split this into Independence vs. mid-trail vs. mountain-post tiers (it would let Bridger gouge ~2× without us having to write per-post overrides). Logged as a follow-up consideration; out of scope for this audit.
-- **Game-feel anchors.** `grandfather_clock` ($50) and `china_tea_set` ($25) intentionally read as expensive — they're the headline luxuries for the score-on-arrival mechanic (#148). `coffee` ($1.50/lb) and `whiskey` ($2.50/gal) are at the upper end of period plausibility but the gameplay friction is the point.
-- **Native-trade ratios.** With the exception of `beads`, native-trade items (#216) all read true against Catlin / Sage / Frizzell references. The 6-string beads price for the Shoshone bull-boat (#238) was set against this audit's adjusted bead price.
+A second pass added per-post `priceMultiplier` tiering and pulled two more items down to period-correct.
+
+### Trade-post tier multipliers (implemented)
+
+The original audit treated current PRICES as a single mid-trail tier. The follow-up adds a `priceMultiplier?: number` field on `Landmark`. Default `1.0` = mid-trail (Laramie / Hall / Walla Walla / Kearny / Hollenberg / Caspar / Boise stay flat). Set on four posts:
+
+| Post | Multiplier | Reason |
+|---|---|---|
+| `ft_bridger` | **1.5×** | Sage 1846, Frizzell 1852, Bryant 1848 all log Bridger's exorbitant prices for what little he had |
+| `robidoux_post` | **1.3×** | Mountain trader at Robidoux Pass — small operation, sparse stock, premium |
+| `the_dalles` | **1.3×** | End-of-trail luxury market; existing blurb already said "prices are ruinous" |
+| `whitman_mission` | **0.9×** | Mission-charity pricing — Whitmans recovered cost, no profit motive |
+
+Multiplier applies symmetrically to both buy and sell (a 1.5× post charges 50% more on emigrant buys AND pays 50% more on emigrant sells; the markup ratio stays constant, the absolute price scale shifts). Stacks multiplicatively with the `professionDiscount` bonus.
+
+### Period-correct game-feel cuts
+
+The original audit kept `coffee` and `grandfather_clock` at the upper edge "for game feel." Follow-up walked these back per design feedback:
+
+| Item | Old | New | Reason |
+|---|---|---|---|
+| coffee | $1.50/lb | **$0.30/lb** | Independence outfitter rate per Marcy 1859 + Ware 1849. Period emigrants didn't know germ theory — coffee's hidden waterborne-disease bonus stays a quiet benefit, not a "decision currency." |
+| grandfather_clock | $50 / $25 | **$25 / $12** | Period plain edition was $25–50; pulled to bottom of band. The weight tax (100 lb hauling for 2000 mi) is the gameplay friction, not the price tag. |
+
+### Starter funds audit
+
+Period reality on emigrant cash, by economic stratum:
+
+| Stratum | Period cash | Source |
+|---|---|---|
+| Wealthy banker / merchant | $1500–3000 | Hill 1849 ledgers; Sutter's Fort museum reconstruction |
+| Doctor | $800–1500 | Period medical practice records |
+| Skilled tradesman (carpenter, blacksmith, gunsmith) | $400–700 | Working savings; tools-of-trade in lieu of cash |
+| Farmer (post-mortgage / post-sale of farm) | $300–500 | Letters home; Donner Party manifest |
+| Common laborer | $100–200 | Pooled with travel companions — joined trains for wages |
+| Dance hall / "frail sister" | $50–200 | Saved earnings — usually moved with a partner |
+| Preacher | $100–300 | Often supported by congregation |
+| Indian Trader | $300–600 | Working capital for trade goods |
+
+Per-profession sources: Lansford Hastings 1845 ("$300 for outfit will suffice for a single man"); Joseph Ware 1849 (family-of-4 outfit $500–700); Marcy 1859 ("$250–300 per man, including team and wagon"); Frizzell 1852 (family of 7 outfitted ~$800).
+
+**Game model.** `BASE_KIT.cash` is $400 (median family outfit per period letters). Professions add cash via `starterGear: [{ item: 'cash', qty: ... }]`. Today only Banker (+$600) and Whore (+$100) carry cash; everyone else gets gear (period-correct — most professions converted savings into tools of trade before leaving).
+
+| Profession | Old starter cash | New | Period plausibility |
+|---|---|---|---|
+| Banker | +$600 ($1000 total) | **+$1000 ($1400 total)** | Period range $1500–3000; new total sits at the lower-middle of period. Bumped by $400 to land in band. |
+| Whore | +$100 ($500 total) | **Keep** | Period $50–200 saved — fine. |
+| All others | gear only | **Keep** | Gear-as-savings matches period reality (a Hunter's wealth IS the rifle + powder he packs). |
+
+`BASE_KIT.cash` of $400 stays — a believable median emigrant outfit budget.
+
+### What stayed unchanged in this follow-up
+
+- **`china_tea_set` ($25), `feather_mattress` ($15), `anvil` ($5).** These are the surviving game-feel anchors — luxury items meant to read as expensive prestige choices on the outfit page. Anvil at $5 is intentionally cheap-to-buy / heavy-to-haul as the Marcy 1859 trap (parties jettisoned them by the dozen). All three are deliberate departures from a strict period read; new TODO #277 frames the broader luxury-scoring system that earns its keep.
+- **Profession economic bonuses (`professionDiscount`).** Banker −10% buy / +10% sell and Merchant −15% / +20% are gameplay-feel numbers, not period-derived. A real banker on the Oregon Trail had no special at-the-counter bargaining advantage; a real merchant had supply-chain knowledge that a 5–10% trade margin captures abstractly. Untouched in this audit.
+- **Whore $5–15 per stop earnings.** Period-flavored; no public price list exists. Untouched.
+- **Indian Trader +50% pemmican / +2 relations.** Baked into encounter content (#239); this audit doesn't touch encounter-tier numbers.
 
 ## Sources cited
 
