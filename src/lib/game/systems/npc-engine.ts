@@ -200,6 +200,64 @@ function reapDead(wagon: NpcWagonState, day: number): NpcWagonState {
   };
 }
 
+// #288 — NPC auto-cannibalism. Period reality: Donner Party survivors
+// did this without consultation when food=0 and a fresh body was
+// available. NPCs don't get a player choice — the bot decides — so
+// when both conditions hold we silently mark a recent corpse consumed
+// and add ~50 lb game_meat to the wagon. The grim flavor surfaces as
+// a player-visible log line so the player feels the tonal shift.
+const NPC_CANNIBAL_MEAT_LBS = 50;
+const NPC_CANNIBAL_FRESHNESS_DAYS = 5;
+
+function maybeCannibalize(
+  wagon: NpcWagonState,
+  day: number
+): { wagon: NpcWagonState; playerLog?: string } {
+  // Only when wagon is starving (no food at all).
+  const food = FOOD_DRAW_ORDER.reduce(
+    (sum, id) => sum + (wagon.inventory[id] ?? 0),
+    0
+  );
+  if (food > 0) return { wagon };
+  // Find a fresh adult corpse — children excluded (period diaries
+  // don't record this; the line had to land somewhere even at the
+  // Donner end).
+  const corpses = wagon.party.filter(
+    (m) =>
+      m.dead
+      && m.kind === 'adult'
+      && !m.consumed
+      && typeof m.deathDay === 'number'
+      && day - m.deathDay <= NPC_CANNIBAL_FRESHNESS_DAYS
+  );
+  if (corpses.length === 0) return { wagon };
+  const corpse = [...corpses].sort(
+    (a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0)
+  )[0];
+  const next: NpcWagonState = {
+    ...wagon,
+    party: wagon.party.map((m) =>
+      m.id === corpse.id ? { ...m, consumed: true } : m
+    ),
+    inventory: {
+      ...wagon.inventory,
+      game_meat: (wagon.inventory.game_meat ?? 0) + NPC_CANNIBAL_MEAT_LBS
+    },
+    morale: Math.max(0, wagon.morale - 15),
+    eventLog: [
+      ...wagon.eventLog,
+      {
+        day,
+        text: `Took ${corpse.name}'s body for meat. Nobody spoke. Morale −15.`
+      }
+    ]
+  };
+  return {
+    wagon: next,
+    playerLog: `${wagon.name} is reduced to eating their own dead — ${corpse.name}'s body fed them.`
+  };
+}
+
 function updateOutcome(wagon: NpcWagonState): NpcWagonState {
   // Per-wagon wipe condition: every party member dead.
   const allDead = wagon.party.every((m) => m.dead);
@@ -267,7 +325,15 @@ export function tickNpcWagon(
   // kick to a child after `member_injury` fired earlier this tick).
   next = reapDead(next, ctx.day);
 
-  // 7. Outcome.
+  // 7. NPC auto-cannibalism (#288). When food=0 AND there's a fresh
+  // adult corpse, the survivors take the body. Donner Party precedent.
+  // Silent for the wagon (no player choice — they're NPCs); a grim
+  // log line surfaces to the player.
+  const cannibalResult = maybeCannibalize(next, ctx.day);
+  next = cannibalResult.wagon;
+  if (cannibalResult.playerLog) playerLogs.push(cannibalResult.playerLog);
+
+  // 8. Outcome.
   next = updateOutcome(next);
 
   return { wagon: next, playerLogs };

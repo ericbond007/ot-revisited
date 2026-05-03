@@ -195,10 +195,12 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
 
     s = reapDead(s, rng);
 
-    // #280b — NPC wagons tick on rest days too (food still drains,
-    // conditions still progress, but no ox fatigue accrual). Keeps
-    // their attrition curve in sync with the player's calendar.
-    s = advanceTrain(s, false);
+    // #280b/#288 — NPC wagons tick on rest days too (food still
+    // drains, conditions still progress, but no ox fatigue accrual).
+    // Starvation crises that arise during multi-day rest aren't
+    // surfaced as modals here (rest is a non-pausable action); the
+    // log line is enough — they re-queue for the next travel tick.
+    s = advanceTrain(s, false).state;
 
     s = { ...s, day: s.day + 1, date: advanceOneDay(s.date) };
   }
