@@ -187,6 +187,100 @@ const barlowOrColumbia: GameEvent = {
   ]
 };
 
+// #240 — Sublette Cutoff. Period reality: at Parting of the Ways the
+// trail forked. The original southern route detoured through Fort
+// Bridger; Sublette's Cutoff (1844+) shaved roughly 85 miles by going
+// straight west — but it was a 50-mile waterless pull and parties got
+// in trouble. Shoshone bands east of the Bear knew the dry-season
+// springs and would guide a wagon train across for cash and tobacco.
+// Frizzell 1852, Egbert 1849 record paying "ten dollars and a paper
+// of tobacco" for the service. This vignette fires ~5 miles out of
+// Parting of the Ways. Default: continue south through Bridger
+// (silent commit, normal route). Cutoff alone: penalty applied + flag
+// set. Cutoff with guide: cost paid, no penalty, +2 Shoshone attitude.
+const SUBLETTE_GUIDE_CASH = 10;
+const SUBLETTE_GUIDE_TOBACCO = 2;
+const SUBLETTE_GUIDE_MIN_ATTITUDE = 50;
+const SUBLETTE_GUIDE_ATTITUDE_BUMP = 2;
+
+const subletteCutoffChoice: GameEvent = {
+  id: 'approach_sublette_cutoff',
+  category: 'historical',
+  title: 'Parting of the Ways',
+  body: "Two ruts diverge in the sage. Bear south through Fort Bridger — water enough, a real post — or strike straight west on Sublette's Cutoff: fifty miles of waterless desert, then the Bear country. The cutoff saves a week. The Shoshone east of here know the dry-season springs and will guide a train across. Pick the road.",
+  weight: 1,
+  choices: [
+    {
+      id: 'via_bridger',
+      icon: '🏰',
+      label: 'Continue south to Fort Bridger',
+      isDefault: true,
+      silentLog: true,
+      apply: (s) => logLine(
+        s,
+        'Stayed with the southern road. Bridger ahead.'
+      )
+    },
+    {
+      id: 'sublette_with_guide',
+      icon: '🪶',
+      label: `Hire a Shoshone guide ($${SUBLETTE_GUIDE_CASH} + ${SUBLETTE_GUIDE_TOBACCO} lb tobacco)`,
+      silentLog: true,
+      hidden: (s) => {
+        // Hidden when the party can't afford OR Shoshone aren't friendly enough.
+        if (s.cash < SUBLETTE_GUIDE_CASH) return true;
+        if ((s.inventory.tobacco ?? 0) < SUBLETTE_GUIDE_TOBACCO) return true;
+        const att = (s.flags._tribeAttitudes as Record<string, number> | undefined)?.shoshone ?? 65;
+        if (att < SUBLETTE_GUIDE_MIN_ATTITUDE) return true;
+        return false;
+      },
+      apply: (s) => {
+        const map = (s.flags._tribeAttitudes as Record<string, number> | undefined) ?? {};
+        const cur = typeof map.shoshone === 'number' ? map.shoshone : 65;
+        const nextAtt = Math.max(0, Math.min(100, cur + SUBLETTE_GUIDE_ATTITUDE_BUMP));
+        return logLine(
+          {
+            ...s,
+            cash: s.cash - SUBLETTE_GUIDE_CASH,
+            inventory: { ...s.inventory, tobacco: (s.inventory.tobacco ?? 0) - SUBLETTE_GUIDE_TOBACCO },
+            flags: {
+              ...s.flags,
+              _subletteCutoff: true,
+              _tribeAttitudes: { ...map, shoshone: nextAtt }
+            }
+          },
+          `Hired a Shoshone guide for $${SUBLETTE_GUIDE_CASH} and ${SUBLETTE_GUIDE_TOBACCO} lb of tobacco. He knows every spring on the cutoff. Bridger is behind us.`
+        );
+      }
+    },
+    {
+      id: 'sublette_alone',
+      icon: '🏜️',
+      label: 'Strike west on the cutoff alone',
+      silentLog: true,
+      apply: (s) => {
+        // Period reality of the 50-mile waterless pull — same penalty
+        // shape as the Three Island south detour.
+        const water = Math.max(0, Math.floor(s.resources.water * 0.5));
+        const oxen = s.oxen.map((o) =>
+          o.health > 0 ? { ...o, fatigue: Math.min(100, (o.fatigue ?? 0) + 18) } : o
+        );
+        const morale = Math.max(0, s.morale - 3);
+        return logLine(
+          {
+            ...s,
+            flags: { ...s.flags, _subletteCutoff: true },
+            resources: { ...s.resources, water },
+            oxen,
+            morale
+          },
+          'Pushed onto the cutoff with no one to guide. Fifty miles of sage and dust. Water -50%, oxen worn, morale -3.'
+        );
+      }
+    }
+  ]
+};
+
 const chimneyRockFirstSight: GameEvent = {
   id: 'approach_chimney_rock',
   category: 'historical',
@@ -228,7 +322,10 @@ interface ApproachEntry {
 export const LANDMARK_APPROACH_EVENTS: readonly ApproachEntry[] = [
   { landmarkId: 'chimney_rock', milesAway: 30, event: chimneyRockFirstSight },
   { landmarkId: 'snake_three_island', milesAway: 10, event: threeIslandRouteChoice },
-  { landmarkId: 'barlow_road', milesAway: 5, event: barlowOrColumbia }
+  { landmarkId: 'barlow_road', milesAway: 5, event: barlowOrColumbia },
+  // #240 — fork at Parting of the Ways. Approach event fires a few miles
+  // out so the player commits before reaching the actual junction.
+  { landmarkId: 'parting_of_ways', milesAway: 5, event: subletteCutoffChoice }
 ];
 
 /** Per-landmark one-shot flag key. */
