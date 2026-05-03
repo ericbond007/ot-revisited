@@ -18,18 +18,20 @@ interface CliOpts {
   persona: PersonaId;
   seed: string | null;
   quiet: boolean;
+  verbose: boolean;
 }
 
 function parseArgs(argv: string[]): CliOpts {
-  const opts: CliOpts = { runs: 1, persona: 'balanced', seed: null, quiet: false };
+  const opts: CliOpts = { runs: 1, persona: 'balanced', seed: null, quiet: false, verbose: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--runs') opts.runs = parseInt(argv[++i], 10);
     else if (a === '--persona') opts.persona = argv[++i] as PersonaId;
     else if (a === '--seed') opts.seed = argv[++i];
     else if (a === '--quiet') opts.quiet = true;
+    else if (a === '--verbose' || a === '-v') opts.verbose = true;
     else if (a === '--help' || a === '-h') {
-      console.log('Usage: npm run bot -- [--runs N] [--persona cautious|balanced|aggressive] [--seed STR] [--quiet]');
+      console.log('Usage: npm run bot -- [--runs N] [--persona cautious|balanced|aggressive] [--seed STR] [--quiet] [--verbose]');
       process.exit(0);
     }
   }
@@ -85,6 +87,17 @@ function main() {
     const report = runBot({ seed, persona: opts.persona });
     reports.push(report);
     if (!opts.quiet) console.log(formatReport(report));
+    if (opts.verbose) {
+      console.log('    decisions:', report.decisionsMade, 'unique-events:', report.uniqueEventCount, 'drama:', report.dramaBeatCount);
+      console.log('    deaths-by-cause:', JSON.stringify(report.deathsByCause));
+      console.log('    fun-breakdown:', JSON.stringify(report.funBreakdown));
+      const top = Object.entries(report.eventsFiredById)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([k, v]) => `${k}:${v}`)
+        .join(', ');
+      if (top) console.log('    top events:', top);
+    }
   }
   const elapsedMs = Date.now() - startMs;
 
