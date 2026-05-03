@@ -14,6 +14,11 @@ import type { GameEvent } from '../../game/content/events';
 import type { Landmark } from '../../game/content/landmarks';
 import type { Rng } from '../../game/rng';
 import { makeRng } from '../../game/rng';
+import {
+  hasLiveDoctor,
+  hasLiveHunter,
+  hasLiveTeamster
+} from '../../game/professions/predicates';
 import type { PersonaId } from './types';
 
 export type FordMethod = 'ford' | 'caulk' | 'ferry' | 'wait' | 'native_ferry';
@@ -130,11 +135,17 @@ function avgOxFatigue(state: GameState): number {
  *  to 100 across all oxen by day ~60, killing the team and stranding
  *  the party at mi=400 for the rest of the year. Threshold 70 leaves
  *  headroom; the wagon's minTeam (1-4 depending on model) gates actual
- *  movement at the engine level — `milesPerDay` returns 0 below it. */
+ *  movement at the engine level — `milesPerDay` returns 0 below it.
+ *
+ *  v9 profession-aware: a live Teamster knows the team's habits and
+ *  rests them sooner — drops the fatigue threshold to 55, catching
+ *  the slide before damage compounds. Period reality: experienced
+ *  teamsters watched the off-ox for the first signs of strain. */
 function oxenWornOut(state: GameState): boolean {
   const alive = state.oxen.filter((o) => o.health > 0).length;
   if (alive === 0) return true;
-  return avgOxFatigue(state) > 70;
+  const fatigueLimit = hasLiveTeamster(state) ? 55 : 70;
+  return avgOxFatigue(state) > fatigueLimit;
 }
 
 /** Has a working rifle + ammo? Required for hunt(). */
@@ -219,7 +230,9 @@ export const cautiousPersona: Persona = {
       || oxenWornOut(state);
   },
   shouldHunt(state) {
-    return canHunt(state) && foodOnHand(state) < 150;
+    // Hunter alive → hunt earlier (more total trips, +20% yield each).
+    const threshold = hasLiveHunter(state) ? 200 : 150;
+    return canHunt(state) && foodOnHand(state) < threshold;
   },
   pickFordMethod(state, here) {
     // Cautious prefers safety: native_ferry > ferry > caulk > ford.
@@ -266,7 +279,11 @@ export const balancedPersona: Persona = {
     return 'normal';
   },
   shouldRest(state) {
-    return minPartyHealth(state) < 40
+    // Profession-aware: a Doctor dampens condition damage 30% (engine
+    // #154), so the bot can run a thinner HP margin without spiraling.
+    // Hunter doesn't change rest — they help food, not health.
+    const hpFloor = hasLiveDoctor(state) ? 30 : 40;
+    return minPartyHealth(state) < hpFloor
       || state.morale < 20
       || oxenWornOut(state);
   },
@@ -274,7 +291,11 @@ export const balancedPersona: Persona = {
     // Lifted from <50 in v8 — bot was waiting until it was already
     // starving to hunt. Below 100 lb total, a 3-person party has
     // less than 7 days of food left. Hunt proactively.
-    return canHunt(state) && foodOnHand(state) < 100;
+    // v9 profession-aware: a live Hunter gets +20% meat per haul
+    // (engine #154), so it's worth hunting earlier — bigger threshold
+    // means more total trips and more total meat over the run.
+    const threshold = hasLiveHunter(state) ? 150 : 100;
+    return canHunt(state) && foodOnHand(state) < threshold;
   },
   pickFordMethod(state, here) {
     // Balanced ferries when cash is comfortable, fords otherwise.

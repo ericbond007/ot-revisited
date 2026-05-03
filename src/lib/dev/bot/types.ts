@@ -16,8 +16,13 @@ export interface BotRunOpts {
   persona: PersonaId;
   /** Leader profession (drives scoring + behavior). */
   leaderProfession?: ProfessionId;
-  /** Companion professions (skip for solo runs). */
+  /** Companion professions (skip for solo runs). Overrides `partySize`. */
   companionProfessions?: ProfessionId[];
+  /** Total party size including leader (2-6). When `companionProfessions` is
+   *  not given, the runner picks companions in this priority order:
+   *  doctor → hunter → teamster → blacksmith → scout. Defaults to 3 (a
+   *  realistic mid-range emigrant party — leader, partner, and one helper). */
+  partySize?: number;
   /** Start date — defaults to a 1849 Apr 15 sweet-spot start. */
   startDate?: { year: number; month: number; day: number };
   /** Hard ceiling on days simulated — guards infinite-loop bugs. */

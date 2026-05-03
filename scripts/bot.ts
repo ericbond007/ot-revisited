@@ -30,6 +30,8 @@ interface CliOpts {
   json: string | null;
   professionSweep: boolean;
   yearSweep: boolean;
+  partySweep: boolean;
+  partySize: number | null;
 }
 
 function parseArgs(argv: string[]): CliOpts {
@@ -41,7 +43,9 @@ function parseArgs(argv: string[]): CliOpts {
     verbose: false,
     json: null,
     professionSweep: false,
-    yearSweep: false
+    yearSweep: false,
+    partySweep: false,
+    partySize: null
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -53,17 +57,26 @@ function parseArgs(argv: string[]): CliOpts {
     else if (a === '--json') opts.json = argv[++i];
     else if (a === '--profession-sweep') opts.professionSweep = true;
     else if (a === '--year-sweep') opts.yearSweep = true;
+    else if (a === '--party-sweep') opts.partySweep = true;
+    else if (a === '--party-size' || a === '--party') opts.partySize = parseInt(argv[++i], 10);
     else if (a === '--help' || a === '-h') {
       console.log('Usage: npm run bot -- [--runs N] [--persona cautious|balanced|aggressive|chaos] [--seed STR]');
       console.log('                       [--quiet] [--verbose] [--json PATH]');
+      console.log('                       [--party-size N] [--party-sweep]');
       console.log('                       [--profession-sweep] [--year-sweep]');
       console.log('       chaos = seeded-random "dumbass tourist" mode for fuzz coverage');
+      console.log('       --party-size N = total party size 2..6 (default 3 = leader + 2 companions)');
+      console.log('       --party-sweep  = one run per party size 2/3/4/5/6');
       console.log('       --profession-sweep = one run per leader profession (catches');
       console.log('         profession-specific bugs)');
       console.log('       --year-sweep = sweeps 1841 / 1849 / 1856 / 1869 (catches year-');
       console.log('         gate bugs like Fort Hall abandonment, Cayuse War, Barlow Road)');
       process.exit(0);
     }
+  }
+  if (opts.partySize !== null && (opts.partySize < 1 || opts.partySize > 6)) {
+    console.error(`--party-size must be 1..6 (got ${opts.partySize}).`);
+    process.exit(1);
   }
   if (!['cautious', 'balanced', 'aggressive', 'chaos'].includes(opts.persona)) {
     console.error(`Unknown persona "${opts.persona}". Use cautious | balanced | aggressive | chaos.`);
@@ -80,7 +93,7 @@ function formatReport(r: BotRunReport): string {
   const arrival = String(r.arrivalScore).padStart(5);
   const fun = String(r.funScore).padStart(3);
   const prof = r.leaderProfession.padEnd(13);
-  return `  [${r.persona.padEnd(10)}] ${prof} seed=${r.seed.padEnd(20)} ${outcome} day=${days} mi=${miles} party=${survivors} score=${arrival} fun=${fun}`;
+  return `  [${r.persona.padEnd(10)}] ${prof} p${r.startingPartySize} seed=${r.seed.padEnd(20)} ${outcome} day=${days} mi=${miles} party=${survivors} score=${arrival} fun=${fun}`;
 }
 
 function aggregate(reports: BotRunReport[]): {
@@ -134,7 +147,10 @@ function runProfessionSweep(opts: CliOpts): BotRunReport[] {
   const profIds = Object.keys(PROFESSIONS) as ProfessionId[];
   for (const leader of profIds) {
     const seed = `${seedBase}-${leader}`;
-    const report = runBot({ seed, persona: opts.persona, leaderProfession: leader });
+    const report = runBot({
+      seed, persona: opts.persona, leaderProfession: leader,
+      partySize: opts.partySize ?? undefined
+    });
     reports.push(report);
     if (!opts.quiet) printReport(report, opts);
   }
@@ -150,8 +166,21 @@ function runYearSweep(opts: CliOpts): BotRunReport[] {
     const report = runBot({
       seed,
       persona: opts.persona,
-      startDate: { year, month: 4, day: 15 }
+      startDate: { year, month: 4, day: 15 },
+      partySize: opts.partySize ?? undefined
     });
+    reports.push(report);
+    if (!opts.quiet) printReport(report, opts);
+  }
+  return reports;
+}
+
+function runPartySweep(opts: CliOpts): BotRunReport[] {
+  const reports: BotRunReport[] = [];
+  const seedBase = opts.seed ?? `party-${Date.now()}`;
+  for (const partySize of [2, 3, 4, 5, 6]) {
+    const seed = `${seedBase}-p${partySize}`;
+    const report = runBot({ seed, persona: opts.persona, partySize });
     reports.push(report);
     if (!opts.quiet) printReport(report, opts);
   }
@@ -163,7 +192,10 @@ function runStandard(opts: CliOpts): BotRunReport[] {
   const seedBase = opts.seed ?? `bot-${Date.now()}`;
   for (let i = 0; i < opts.runs; i++) {
     const seed = opts.runs === 1 ? seedBase : `${seedBase}-${i}`;
-    const report = runBot({ seed, persona: opts.persona });
+    const report = runBot({
+      seed, persona: opts.persona,
+      partySize: opts.partySize ?? undefined
+    });
     reports.push(report);
     if (!opts.quiet) printReport(report, opts);
   }
@@ -183,8 +215,12 @@ function main() {
   } else if (opts.yearSweep) {
     mode = 'year-sweep (1841 / 1849 / 1856 / 1869)';
     reports = runYearSweep(opts);
+  } else if (opts.partySweep) {
+    mode = 'party-sweep (size 2 / 3 / 4 / 5 / 6)';
+    reports = runPartySweep(opts);
   } else {
-    mode = `${opts.runs} run${opts.runs === 1 ? '' : 's'}`;
+    const sizeNote = opts.partySize ? ` party=${opts.partySize}` : '';
+    mode = `${opts.runs} run${opts.runs === 1 ? '' : 's'}${sizeNote}`;
     reports = runStandard(opts);
   }
 
