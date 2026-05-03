@@ -21,6 +21,7 @@ import { hasLivePreacher } from './professions/predicates';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
+import { advanceTrain } from './systems/wagon-train';
 import type { GameEvent } from './content/events';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickApproachEvent, approachFiredFlag } from './content/landmark-approach-events';
@@ -167,6 +168,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = applyDehydration(s);
   s = reapDead(s, rng);
 
+  // #280b — advance NPC wagons one day alongside the player. Travel
+  // day, so `traveled=true`. Each companion runs its own attrition
+  // (food drain, condition tick, ox fatigue, possible death).
+  s = advanceTrain(s, true);
+
   return {
     state: {
       ...s,
@@ -190,6 +196,10 @@ export function applyPendingChoice(
   // Finish the day
   s = attemptFire(s, rng);
   s = reapDead(s, rng);
+
+  // #280b — advance NPC wagons. Event-day still counts as travel for
+  // them (the train was on the move when the event interrupted).
+  s = advanceTrain(s, true);
 
   return {
     ...s,

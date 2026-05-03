@@ -8,6 +8,7 @@ import { applyStarvation } from '../systems/starvation';
 import { tickWeather } from '../systems/weather';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale, healingMultiplier } from '../systems/morale';
+import { advanceTrain } from '../systems/wagon-train';
 import { recoverOxenFatigue } from '../systems/oxen';
 import { attemptFire } from '../systems/fire';
 import { reapDead } from '../systems/death';
@@ -193,6 +194,11 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     s = applyDehydration(s);
 
     s = reapDead(s, rng);
+
+    // #280b — NPC wagons tick on rest days too (food still drains,
+    // conditions still progress, but no ox fatigue accrual). Keeps
+    // their attrition curve in sync with the player's calendar.
+    s = advanceTrain(s, false);
 
     s = { ...s, day: s.day + 1, date: advanceOneDay(s.date) };
   }
