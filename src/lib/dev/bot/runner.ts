@@ -118,6 +118,45 @@ function pickHuntTarget(state: GameState): { target: HuntTarget; ammo: AmmoBand 
   return { target: 'small', ammo: 'light' };
 }
 
+/** Rest one day with a find_water + boil_water camp-action chain.
+ *  Falls back gracefully if the rest action throws (e.g. firewood out,
+ *  no boil capability): `gather_firewood + find_water + boil_water` →
+ *  `find_water + boil_water` → `find_water` alone → plain rest.
+ *  Used both by the explicit findWater branch (keg <persona threshold)
+ *  and by the v8 rest-chains-water-when-low piggyback path so the bot
+ *  doesn't burn separate calendar days on rest and water-find. */
+function restWithWaterChain(state: GameState, stats: RunningStats): GameState {
+  const tryCamps: Array<readonly ('find_water' | 'boil_water' | 'gather_firewood')[]> = [];
+  const fw = state.resources.firewood ?? 0;
+  if (canBoilWaterInState(state)) {
+    if (fw < 5) {
+      tryCamps.push(['gather_firewood', 'find_water', 'boil_water']);
+    }
+    if (fw >= 1) {
+      tryCamps.push(['find_water', 'boil_water']);
+    }
+  }
+  tryCamps.push(['find_water']);
+  for (const camp of tryCamps) {
+    try {
+      const next = rest(state, 1, { campActions: [...camp] });
+      stats.decisionsMade += 1;
+      return next;
+    } catch {
+      // try next fallback
+    }
+  }
+  // All chains failed — passive rest, no camp actions.
+  try {
+    const next = rest(state, 1);
+    stats.decisionsMade += 1;
+    return next;
+  } catch (err) {
+    stats.errors.push(`rest-fallback: ${(err as Error).message}`);
+    return state;
+  }
+}
+
 /** Build a buy list the bot wants when trading at a post. Filters to
  *  items the post actually stocks. Three layers, in priority order:
  *  (1) **survival gear** — coats / blankets / tents for cold-camp
@@ -167,15 +206,35 @@ function buildBotShoppingList(
     buys.push({ item: 'rope', qty: 1 });
   }
 
-  // Food staples.
-  if (stock.has('flour') && (inv.flour ?? 0) < 100) {
-    buys.push({ item: 'flour', qty: 50 });
+  // Food staples — top off generously. v8 trace showed runs were
+  // surviving the team-fatigue trap, then starving on the
+  // Laramie→Bridger stretch (200+ mi between posts) because flour
+  // was at ~80 lb leaving Laramie. A 3-person party burns ~5 lb/day
+  // staples; 200 lb flour + 60 lb meat + 40 lb beans = ~50 days of
+  // food, comfortable for any inter-post leg. Quantities scale with
+  // party size to keep the math working with the children expansion.
+  const partyMul = Math.max(1, aliveCount);
+  // Flour cap pushed to 300 in v8 — Fort Bridger→Hall is ~220 mi at
+  // ~10 mi/day in mountains/plateau = 22 days = ~330 lb staples for
+  // a 3-person party. Bot was leaving Bridger at 200 lb and starving
+  // before Boise.
+  if (stock.has('flour') && (inv.flour ?? 0) < 300) {
+    buys.push({ item: 'flour', qty: 200 - (inv.flour ?? 0) });
   }
-  if (stock.has('bacon') && (inv.bacon ?? 0) < 30) {
-    buys.push({ item: 'bacon', qty: 20 });
+  if (stock.has('bacon') && (inv.bacon ?? 0) < 80) {
+    buys.push({ item: 'bacon', qty: 60 - (inv.bacon ?? 0) });
   }
-  if (stock.has('beans') && (inv.beans ?? 0) < 20) {
-    buys.push({ item: 'beans', qty: 10 });
+  if (stock.has('beans') && (inv.beans ?? 0) < 50) {
+    buys.push({ item: 'beans', qty: 40 - (inv.beans ?? 0) });
+  }
+  if (stock.has('jerky') && (inv.jerky ?? 0) < 30) {
+    buys.push({ item: 'jerky', qty: 20 - (inv.jerky ?? 0) });
+  }
+  // Grain for oxen/mules — without it, oxen draw fatigue penalty on
+  // poor-grazing terrain. 20 lb covers ~5 days of poor grazing for a
+  // 4-team. Stockpiling small qty rather than a full barrel.
+  if (stock.has('grain') && (inv.grain ?? 0) < 30 * partyMul) {
+    buys.push({ item: 'grain', qty: 30 });
   }
 
   // Medicine — without these, cholera / typhoid / dysentery deal full
@@ -197,8 +256,18 @@ function buildBotShoppingList(
   if (stock.has('dovers_powder') && (inv.dovers_powder ?? 0) < 3) {
     buys.push({ item: 'dovers_powder', qty: 3 - (inv.dovers_powder ?? 0) });
   }
+  // Dysentery treatments — stocked separately because dysentery is the
+  // most persistent "background" condition (-3/day, no auto-clear). v8
+  // trace: bot stalled at mi 1343 because dysentery ticked for 90 days
+  // unmedicated, morale collapsed, party gave up.
   if (stock.has('calomel') && (inv.calomel ?? 0) < 3) {
     buys.push({ item: 'calomel', qty: 3 - (inv.calomel ?? 0) });
+  }
+  if (stock.has('paregoric') && (inv.paregoric ?? 0) < 3) {
+    buys.push({ item: 'paregoric', qty: 3 - (inv.paregoric ?? 0) });
+  }
+  if (stock.has('epsom_salts') && (inv.epsom_salts ?? 0) < 3) {
+    buys.push({ item: 'epsom_salts', qty: 3 - (inv.epsom_salts ?? 0) });
   }
   // Dried fruit is the scurvy auto-cure — stockpile a small supply.
   if (stock.has('dried_fruit') && (inv.dried_fruit ?? 0) < 5) {
@@ -261,9 +330,12 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
       if (persona.shouldTradeAtPost(s, here, rng)) {
         const buys = buildBotShoppingList(s, here);
         // Conservative cash check — assume average $1.50/unit; trade()
-        // will refuse if the actual total exceeds cash.
+        // will refuse if the actual total exceeds cash. v8 lowered
+        // the gate from 0.5 to 0.25 because the buy list grew (food
+        // caps doubled, dysentery meds added) and a 0.5 gate was
+        // making the bot skip trades on partial cash and starve later.
         const cashCap = buys.reduce((sum, b) => sum + b.qty * 1.5, 0);
-        if (buys.length > 0 && s.cash >= cashCap * 0.5) {
+        if (buys.length > 0 && s.cash >= cashCap * 0.25) {
           try {
             s = trade(s, { buys });
             stats.decisionsMade += 1;
@@ -272,6 +344,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
             // (food only) as a fallback.
             const fallback = buys.filter((b) =>
               b.item === 'flour' || b.item === 'bacon' || b.item === 'beans'
+              || b.item === 'jerky'
             );
             if (fallback.length > 0) {
               try {
@@ -383,6 +456,27 @@ export function runBot(opts: BotRunOpts): BotRunReport {
   // persona method.
   const botRng = makeBotRng(opts.seed);
 
+  // BOT_TRACE=1 prints a per-N-day snapshot of party HP, conditions,
+  // morale, oxen, water, and key meds. Used to diagnose stall causes.
+  // Throwaway diagnostic — not part of the BotRunReport contract.
+  const traceEvery = parseInt(process.env.BOT_TRACE ?? '0', 10);
+  let lastTraceDay = 0;
+  function trace(action: string) {
+    if (!traceEvery) return;
+    if (state.day - lastTraceDay < traceEvery && state.day !== 1) return;
+    lastTraceDay = state.day;
+    const alive = state.party.filter((m) => !m.dead);
+    const minHp = alive.length ? Math.min(...alive.map((m) => m.health)) : 0;
+    const avgHp = alive.length ? Math.round(alive.reduce((a, m) => a + m.health, 0) / alive.length) : 0;
+    const conds = alive.flatMap((m) => m.conditions.map((c) => c.id));
+    const oxAlive = state.oxen.filter((o) => o.health > 0).length;
+    const oxAvgFat = oxAlive ? Math.round(state.oxen.filter((o) => o.health > 0).reduce((a, o) => a + o.fatigue, 0) / oxAlive) : 0;
+    const meds = `qui=${state.inventory.quinine ?? 0} cal=${state.inventory.calomel ?? 0} lau=${state.inventory.laudanum ?? 0}`;
+    const food = `flr=${state.inventory.flour ?? 0} bcn=${state.inventory.bacon ?? 0} bns=${state.inventory.beans ?? 0}`;
+    console.log(`  TRACE [${action.padEnd(11)}] d${String(state.day).padStart(3)} mi${String(state.location.milesTraveled).padStart(4)} hp(min/avg)=${minHp}/${avgHp} mor=${state.morale} c=${conds.length}[${conds.join(',')}] ox=${oxAlive}@${oxAvgFat}fat w${state.resources.water}/${state.resources.waterCap} fw=${state.resources.firewood} ${food} ${meds} $${state.cash}`);
+  }
+  trace('START');
+
   let dayCount = 0;
   while (!state.completed && dayCount < maxDays) {
     dayCount += 1;
@@ -400,45 +494,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         firedEventToday = true;
       } else if (persona.shouldFindWater(state, botRng)) {
         actionType = 'findWater';
-        // Rest one day. Camp-action sequence preferences:
-        //   1) gather_firewood + find_water + boil_water (if firewood is
-        //      low or zero, gather first so boil_water can fire);
-        //   2) find_water + boil_water (firewood already > 0);
-        //   3) find_water alone (no boil knowledge or no firewood —
-        //      drink dirty, accept disease risk);
-        //   4) plain rest (no camp actions — final fallback).
-        const tryCamps: Array<readonly ('find_water' | 'boil_water' | 'gather_firewood')[]> = [];
-        const fw = state.resources.firewood ?? 0;
-        if (canBoilWaterInState(state)) {
-          if (fw < 5) {
-            tryCamps.push(['gather_firewood', 'find_water', 'boil_water']);
-          }
-          if (fw >= 1) {
-            tryCamps.push(['find_water', 'boil_water']);
-          }
-        }
-        tryCamps.push(['find_water']);
-        let restored = false;
-        for (const camp of tryCamps) {
-          try {
-            state = rest(state, 1, { campActions: [...camp] });
-            restored = true;
-            break;
-          } catch {
-            // try next fallback
-          }
-        }
-        if (!restored) {
-          // Final fallback — passive rest, no camp actions. At least
-          // doesn't burn the day on a thrown error.
-          try {
-            state = rest(state, 1);
-          } catch (err) {
-            stats.errors.push(`rest-fallback: ${(err as Error).message}`);
-            break;
-          }
-        }
-        stats.decisionsMade += 1;
+        state = restWithWaterChain(state, stats);
         firedEventToday = true;
       } else if (persona.shouldHunt(state, botRng)) {
         actionType = 'hunt';
@@ -447,13 +503,24 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         stats.decisionsMade += 1;
       } else if (persona.shouldRest(state, botRng)) {
         actionType = 'rest';
-        try {
-          state = rest(state, 1);
-          stats.decisionsMade += 1;
-          firedEventToday = true;
-        } catch (err) {
-          stats.errors.push(`rest: ${(err as Error).message}`);
-          break;
+        // v8: chain find_water + boil_water into the rest day when the
+        // keg is heading low. The party is already burning the day on
+        // rest — pulling double duty topping the keg avoids a separate
+        // findWater day later. `restWithWaterChain` falls back to a
+        // plain rest if no chain succeeds.
+        const cap = state.resources.waterCap ?? 20;
+        const ratio = cap > 0 ? state.resources.water / cap : 1;
+        if (ratio < 0.6) {
+          state = restWithWaterChain(state, stats);
+        } else {
+          try {
+            state = rest(state, 1);
+            stats.decisionsMade += 1;
+            firedEventToday = true;
+          } catch (err) {
+            stats.errors.push(`rest: ${(err as Error).message}`);
+            break;
+          }
         }
       } else {
         // Travel day.
@@ -486,6 +553,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
       recordDeaths(state, stats);
       prevLowHealthIds = recordHealthDrama(state, prevLowHealthIds, stats);
       prevLiveOxen = recordOxDeaths(state, prevLiveOxen, stats);
+      trace(actionType);
 
       if (firedEventToday) {
         stats.daysWithoutEvent = 0;
