@@ -20,7 +20,7 @@ import { rest } from '../../game/actions/rest';
 import { hunt, type HuntTarget, type AmmoBand } from '../../game/actions/hunt';
 import { trade } from '../../game/actions/trade';
 import { ford, type FordMethod, type RiverState } from '../../game/actions/ford';
-import { stayAtInn } from '../../game/systems/town-services';
+import { stayAtInn, repairWagon } from '../../game/systems/town-services';
 import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-purity';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
@@ -30,7 +30,10 @@ import { getPersona, makeBotRng, type Persona } from './personas';
 import { computeFunScore } from './scoring';
 import type { BotRunOpts, BotRunReport } from './types';
 
-const DEFAULT_MAX_DAYS = 250;
+// Real emigrant journeys ran 4–6 months. 365 = ~1 year, comfortable
+// headroom for slow / interrupted runs without letting infinite-loop
+// bugs cook for hours.
+const DEFAULT_MAX_DAYS = 365;
 
 interface RunningStats {
   eventsFiredById: Record<string, number>;
@@ -110,24 +113,78 @@ function pickHuntTarget(state: GameState): { target: HuntTarget; ammo: AmmoBand 
   return { target: 'small', ammo: 'light' };
 }
 
-/** Build a buy list of staples the bot wants when trading at a post.
- *  Filters to items the post actually stocks. */
+/** Build a buy list the bot wants when trading at a post. Filters to
+ *  items the post actually stocks. Three layers, in priority order:
+ *  (1) **survival gear** — coats / blankets / tents for cold-camp
+ *  protection (the #1 cause of "Exposure" deaths in v2 smoke runs);
+ *  (2) **food staples** — top up flour / bacon / beans when below
+ *  threshold; (3) **utility** — shovel / cookware / water_skin if
+ *  missing. Quantities tuned for a 3-person party. */
 function buildBotShoppingList(
   state: GameState,
   here: Landmark
 ): Array<{ item: string; qty: number }> {
   const stock = new Set(here.stock ?? []);
+  const inv = state.inventory;
+  const aliveCount = state.party.filter((m) => !m.dead).length || 1;
   const buys: Array<{ item: string; qty: number }> = [];
-  if (stock.has('flour') && (state.inventory.flour ?? 0) < 100) {
+
+  // Survival gear — coat + blanket per person, one tent for the party.
+  // Period reality: emigrants who left Independence without warm gear
+  // either bought at Kearny / Laramie or froze on the high plains.
+  if (stock.has('coat')) {
+    const need = Math.max(0, aliveCount - (inv.coat ?? 0));
+    if (need > 0) buys.push({ item: 'coat', qty: need });
+  }
+  if (stock.has('blanket')) {
+    const need = Math.max(0, aliveCount - (inv.blanket ?? 0));
+    if (need > 0) buys.push({ item: 'blanket', qty: need });
+  }
+  if (stock.has('tent') && (inv.tent ?? 0) < 1) {
+    buys.push({ item: 'tent', qty: 1 });
+  }
+  if (stock.has('boots')) {
+    const need = Math.max(0, aliveCount - (inv.boots ?? 0));
+    if (need > 0) buys.push({ item: 'boots', qty: need });
+  }
+
+  // Utility — shovel, cookware, water_skins.
+  if (stock.has('shovel') && (inv.shovel ?? 0) < 1) {
+    buys.push({ item: 'shovel', qty: 1 });
+  }
+  if (stock.has('cookware') && (inv.cookware ?? 0) < 1) {
+    buys.push({ item: 'cookware', qty: 1 });
+  }
+  if (stock.has('water_skin') && (inv.water_skin ?? 0) < 2) {
+    buys.push({ item: 'water_skin', qty: 1 });
+  }
+  if (stock.has('rope') && (inv.rope ?? 0) < 1) {
+    buys.push({ item: 'rope', qty: 1 });
+  }
+
+  // Food staples.
+  if (stock.has('flour') && (inv.flour ?? 0) < 100) {
     buys.push({ item: 'flour', qty: 50 });
   }
-  if (stock.has('bacon') && (state.inventory.bacon ?? 0) < 30) {
+  if (stock.has('bacon') && (inv.bacon ?? 0) < 30) {
     buys.push({ item: 'bacon', qty: 20 });
   }
-  if (stock.has('beans') && (state.inventory.beans ?? 0) < 20) {
+  if (stock.has('beans') && (inv.beans ?? 0) < 20) {
     buys.push({ item: 'beans', qty: 10 });
   }
+
   return buys;
+}
+
+/** Has the party got the basic survival gear? Used by the persona's
+ *  shouldTradeAtPost trigger so the bot stops at posts that stock
+ *  warmth gear even when food is fine. */
+function missingSurvivalGear(state: GameState): boolean {
+  const inv = state.inventory;
+  const aliveCount = state.party.filter((m) => !m.dead).length || 1;
+  return (inv.coat ?? 0) < aliveCount
+    || (inv.blanket ?? 0) < aliveCount
+    || (inv.tent ?? 0) < 1;
 }
 
 /** Try to handle the landmark we're parked at. Returns the new state
@@ -153,19 +210,49 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
     }
 
     if (here.kind === 'trading_post') {
-      // Maybe buy supplies, maybe stay at inn, then leave.
+      // Order at a post: smithy repair → trade for goods → inn stay → leave.
+      // Repair first because hauling broken-wagon damage further is the
+      // worst outcome; cash spent on repair stops the bleed.
+      const services = new Set(here.services ?? []);
+      if (services.has('blacksmith') && s.wagon.condition < 70 && s.cash >= 20) {
+        try {
+          const want = Math.min(40, s.cash, Math.round(100 - s.wagon.condition));
+          if (want > 0) {
+            s = repairWagon(s, want).state;
+            stats.decisionsMade += 1;
+          }
+        } catch {
+          // Repair failed — skip.
+        }
+      }
+
       if (persona.shouldTradeAtPost(s, here, rng)) {
         const buys = buildBotShoppingList(s, here);
-        const totalGuess = buys.reduce((sum, b) => sum + b.qty * 0.5, 0); // rough cap
-        if (buys.length > 0 && s.cash >= totalGuess) {
+        // Conservative cash check — assume average $1.50/unit; trade()
+        // will refuse if the actual total exceeds cash.
+        const cashCap = buys.reduce((sum, b) => sum + b.qty * 1.5, 0);
+        if (buys.length > 0 && s.cash >= cashCap * 0.5) {
           try {
             s = trade(s, { buys });
             stats.decisionsMade += 1;
           } catch {
-            // Trade failed (cash, stock, etc.) — skip.
+            // Trade failed (cash, stock, etc.) — try a smaller buy
+            // (food only) as a fallback.
+            const fallback = buys.filter((b) =>
+              b.item === 'flour' || b.item === 'bacon' || b.item === 'beans'
+            );
+            if (fallback.length > 0) {
+              try {
+                s = trade(s, { buys: fallback });
+                stats.decisionsMade += 1;
+              } catch {
+                // Even the fallback failed — skip silently.
+              }
+            }
           }
         }
       }
+
       if (persona.shouldStayAtInn(s, here, rng)) {
         try {
           s = stayAtInn(s, 1, here.innNightlyRate).state;
@@ -174,6 +261,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           // Inn failed (cash etc.) — skip.
         }
       }
+
       // Leave the post.
       s = { ...s, location: { ...s.location, atLandmarkId: null } };
       return s;
@@ -276,14 +364,22 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         state = handleLandmark(state, persona, stats, botRng);
         firedEventToday = true;
       } else if (persona.shouldFindWater(state, botRng)) {
-        // Rest one day with find_water (and boil_water if firewood +
-        // boiling-knowledge). Falls back to find_water alone (dirty
-        // water — disease risk — beats dying of thirst). Falls back to
-        // plain rest if even that fails.
-        const tryCamps: Array<readonly ('find_water' | 'boil_water')[]> = [];
+        // Rest one day. Camp-action sequence preferences:
+        //   1) gather_firewood + find_water + boil_water (if firewood is
+        //      low or zero, gather first so boil_water can fire);
+        //   2) find_water + boil_water (firewood already > 0);
+        //   3) find_water alone (no boil knowledge or no firewood —
+        //      drink dirty, accept disease risk);
+        //   4) plain rest (no camp actions — final fallback).
+        const tryCamps: Array<readonly ('find_water' | 'boil_water' | 'gather_firewood')[]> = [];
         const fw = state.resources.firewood ?? 0;
-        if (canBoilWaterInState(state) && fw >= 1) {
-          tryCamps.push(['find_water', 'boil_water']);
+        if (canBoilWaterInState(state)) {
+          if (fw < 5) {
+            tryCamps.push(['gather_firewood', 'find_water', 'boil_water']);
+          }
+          if (fw >= 1) {
+            tryCamps.push(['find_water', 'boil_water']);
+          }
         }
         tryCamps.push(['find_water']);
         let restored = false;
