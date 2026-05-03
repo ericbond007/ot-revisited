@@ -14,6 +14,7 @@ import { addNews, generatePostGossip, generateNewspaper, applyNewspaper } from '
 import { maybeDeliverLetter } from '$lib/game/systems/letters';
 import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide, forgeOxShoes, useBathHouse } from '$lib/game/systems/town-services';
 import { joinTrain, leaveTrain } from '$lib/game/systems/wagon-train';
+import { tradeWithCompanion } from '$lib/game/actions/trade-companion';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -586,6 +587,35 @@ export const actions: Actions = {
     let state = await loadState(locals, slot);
     if (!state.wagonTrain) throw error(409, 'not in a wagon train');
     state = leaveTrain(state);
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  // #289 — phase-1 quick-give. Body: { wagonId, item, qty }. Builds
+  // a gift-only offer (player gives, gets nothing) and runs through
+  // tradeWithCompanion. Future phases (#289 phase 2) extend with
+  // barter and buy/sell flows; the engine action already supports
+  // them — only the UI is incremental.
+  townGiveToCompanion: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const wagonId = fd.get('wagonId')?.toString() ?? '';
+    const item = fd.get('item')?.toString() ?? 'flour';
+    const qty = parseInt(fd.get('qty')?.toString() ?? '20', 10);
+    let state = await loadState(locals, slot);
+    if (!state.wagonTrain) throw error(409, 'not in a wagon train');
+    if (qty <= 0) throw error(400, 'qty must be positive');
+    if ((state.inventory[item] ?? 0) < qty) {
+      throw error(409, `not enough ${item} (have ${state.inventory[item] ?? 0})`);
+    }
+    const result = tradeWithCompanion(state, wagonId, {
+      give: [{ item, qty }]
+    });
+    if (!result.accepted) {
+      throw error(409, result.declineReason ?? 'They declined.');
+    }
+    state = result.state;
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },
