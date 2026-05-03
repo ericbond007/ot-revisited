@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-05-02 (post-merge of #240 Sublette Cutoff). 12 open.
+As of 2026-05-02 (post-merge of #241 gift parlay). 11 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -76,8 +76,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Native interaction expansion (extends #121)
 
-- **#241** — [H] Gift-first parlay — small tobacco / sugar gift opens better trade rates on first contact
-
 ### New landmarks
 
 - **#242** — [H] Lone Elm Campground (mile 40, KS) — first-night company-organizing camp
@@ -119,6 +117,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#241** Gift-first parlay — new `_giftedTribe_<id>` flag tracks one-time smoke-the-pipe diplomacy per tribe, plus `hasGiftedTribe` / `markGiftedTribe` helpers in `systems/tribe-relations.ts`. New `gift_smoke_first` choice on the `encounter_native_trade` event: "Smoke a pipe first (2 tobacco gift + 1 trade)" — gates on **3+ tobacco** AND **at least one un-gifted tribe at the current mile that's friendly enough to trade**. Apply: deducts 3 tobacco total (2 gift + 1 trade), bumps that tribe's attitude +6, sets the per-tribe gifted flag, grants 12 lb pemmican baseline (the gift-first rate — matches the Indian Trader bonus). With a live Indian Trader the rate stacks to 16 lb — both bonuses come from "knowing how to do business" with these people. The attitude bump persists for the rest of the journey, so subsequent encounters with the gifted tribe see better baseline trade gates. New news line: "the [tribe] speak well of your party — they say you know how to greet a man." Period sources: Catlin's plains journals, Sage 1846, Frizzell 1852 — refusing to share a pipe was read as an open insult; opening with tobacco got dramatically better terms. 15 new tests; 1316/1316 green.
 - **#240** Sublette Cutoff fork at Parting of the Ways — new approach event `approach_sublette_cutoff` fires 5 mi out from `parting_of_ways`, mirroring the #234 Three Island detour pattern and the #235 Barlow / Columbia fork. Three choices: **Continue south to Fort Bridger** (default — silent commit, normal route), **Strike west on the cutoff alone** (sets `_subletteCutoff` flag, water -50%, +18 ox fatigue, morale -3 — period reality of the 50-mile waterless pull, Frizzell 1852 / Egbert 1849 diaries), **Hire a Shoshone guide** ($10 + 2 lb tobacco; gates on Shoshone attitude ≥50; bumps Shoshone +2; sets the flag without applying the dry-stretch penalty — guide knows the springs). New bypass entry in `systems/travel.ts`: `_subletteCutoff` makes `ft_bridger` non-stop-worthy, so the wagon walks past the post without parking. Period sources: Frizzell 1852 paid "ten dollars and a paper of tobacco" for Shoshone trail-wisdom on the cutoff; Egbert 1849 records the same arrangement. NOTE: this branch deliberately doesn't compress miles — the savings come from skipping the Bridger stop overhead, same shape as Three Island detour. A proper miles-shorter cutoff is a follow-up tied to #119 (travel distance audit). 18 new tests; 1300/1300 green.
 - **#238** Native-run ferry option — new `nativeFerry: { tribeId, priceItem, priceQty, blurb }` field on `RiverStats` (optional). FordModal shows a 5th method "Native ferry" only when the river has the field AND the tribe attitude is ≥50 AND the party has the trade currency. Crossing: deduct trade item, advance 1 day (vs caulk's 2, ferry's 1), zero loss risk, +2 attitude bump. New `'native_ferry'` `FordMethod` + 🪶 glyph in `ford_methods` icon dictionary. FordSummaryModal renders the new method label "Took the native ferry." Server-side gates re-checked in `ford()` (throws on missing config / unfriendly tribe / insufficient currency). Stocked at: Green River (Shoshone bull-boat — 6 strings of beads, per Sage 1846 / Frizzell 1852), Three Island Crossing (Bannock-Shoshone raft — 4 beads, Snake is wider but bands here ran a regular service for emigrants). NOT at the Columbia / The Dalles — Cayuse ran rafts there too but post-1847 Cayuse War makes the attitude gate impossible to clear in the gameplay window. 9 new tests; 1282/1282 green.
 - **#139 follow-up** `press_cheese` now visible in the camp UI — the action was registered in `CAMP_ACTIONS_BY_ID` but missing from the iterable `CAMP_ACTIONS` array, so the cheese-pressing flow was reachable via dev-harness only and invisible in the camp grid for normal play. Added `pressCheese` to the practical-section of the array. New regression-guard test in `camp-actions.test.ts`: every entry in `CAMP_ACTIONS_BY_ID` must also appear in the iterable list (would have caught the original miss). 1273/1273 green.
