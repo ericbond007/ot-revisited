@@ -9,9 +9,12 @@ export const PRICES: Record<string, PriceEntry> = {
   // Cornmeal — period prices ran half of wheat flour, often locally milled.
   cornmeal:    { buy: 0.10, sell: 0.05 },
   beans:       { buy: 0.25, sell: 0.15 },
-  bacon:       { buy: 0.40, sell: 0.30 },
+  // #276 Sell margin tightened from 0.30 → 0.20 (audit found 1.33×
+  // sell-to-buy too generous against the period 1.8–2.5× target).
+  bacon:       { buy: 0.40, sell: 0.20 },
   // Salt pork — heavier-cure, period barrel meat. Slightly above bacon.
-  salt_pork:   { buy: 0.45, sell: 0.30 },
+  // #276 Sell tightened to match bacon margin.
+  salt_pork:   { buy: 0.45, sell: 0.22 },
   hardtack:    { buy: 0.15, sell: 0.08 },
   dried_fruit: { buy: 0.60, sell: 0.35 },
   pemmican:    { buy: 0.80, sell: 0.45 },
@@ -38,8 +41,10 @@ export const PRICES: Record<string, PriceEntry> = {
 
   // Wagon parts
   wheel:       { buy: 10.00, sell: 6.00 },
-  axle:        { buy: 12.00, sell: 8.00 },
-  tongue:      { buy: 8.00, sell: 5.00 },
+  // #276 Period mid-trail $6–10; was running double. Brought down.
+  axle:        { buy: 7.00,  sell: 4.00 },
+  // #276 Period $2–3 at Independence, $4–6 trail; was running 2-3×.
+  tongue:      { buy: 5.00,  sell: 2.50 },
   canvas:      { buy: 6.00, sell: 3.00 },
   spare_plank: { buy: 2.00, sell: 1.00 },
   tar_bucket:  { buy: 1.50, sell: 0.50 },
@@ -53,7 +58,9 @@ export const PRICES: Record<string, PriceEntry> = {
   rifle:              { buy: 20.00, sell: 12.00 },
   gunpowder:          { buy: 0.04,  sell: 0.02 },
   lead_pig:           { buy: 1.50,  sell: 0.75 },
-  lead_balls:         { buy: 0.05,  sell: 0.025 },
+  // #276 Period commercially-cast was $1/100 = $0.01/ball; was 5×.
+  // Casting from a pig stays the better economics.
+  lead_balls:         { buy: 0.02,  sell: 0.01 },
   percussion_caps:    { buy: 0.01,  sell: 0.005 },
   bullet_mold:        { buy: 1.50,  sell: 0.75 },
   rifle_cleaning_kit: { buy: 3.00,  sell: 1.50 },
@@ -87,17 +94,20 @@ export const PRICES: Record<string, PriceEntry> = {
   butter_crock: { buy: 2.50, sell: 1.20 },
 
   // Tools
-  iron_toolkit: { buy: 40.00, sell: 25.00 },
+  // #276 Marcy 1859 listed full kit at $15–25; was running $40 (high).
+  iron_toolkit: { buy: 25.00, sell: 15.00 },
   cookware:     { buy: 8.00,  sell: 4.00 },
   rope:         { buy: 2.50,  sell: 1.20 },
-  shovel:       { buy: 4.00,  sell: 2.00 },
+  // #276 Period shovel was $1–2; was running $4.
+  shovel:       { buy: 2.50,  sell: 1.20 },
   salt:         { buy: 1.50,  sell: 0.60 },
   saleratus:    { buy: 0.20,  sell: 0.08 },
   // #269 Lye soap. Per Marcy 1859 — "soap, 5¢ a bar" wholesale; emigrant
   // outfitters charged 8-10× markup at Independence and more on the trail.
   soap:         { buy: 0.50,  sell: 0.20 },
   lard:         { buy: 0.25,  sell: 0.10 },
-  compass:      { buy: 8.00,  sell: 4.00 },
+  // #276 Period pocket compass was $2–5; was running $8.
+  compass:      { buy: 4.00,  sell: 2.00 },
   water_skin:   { buy: 2.00,  sell: 1.00 },
   ox_shoes:     { buy: 1.00,  sell: 0.50 },
   spyglass:     { buy: 15.00, sell: 8.00 },
@@ -106,7 +116,9 @@ export const PRICES: Record<string, PriceEntry> = {
   quinine:         { buy: 4.00, sell: 2.00 },
   laudanum:        { buy: 2.50, sell: 1.20 },
   calomel:         { buy: 2.00, sell: 1.00 },
-  bandages:        { buy: 1.50, sell: 0.75 },
+  // #276 Period bandages were nearly free (cloth scraps) or boxed
+  // $0.50–1; was running $1.50.
+  bandages:        { buy: 0.75, sell: 0.30 },
   herbal_poultice: { buy: 1.00, sell: 0.50 },
   patent_medicine: { buy: 3.00, sell: 1.50 },
   vinegar:         { buy: 1.00, sell: 0.40 },
@@ -123,9 +135,11 @@ export const PRICES: Record<string, PriceEntry> = {
   // Comfort
   tobacco:   { buy: 1.00, sell: 0.50 },
   whiskey:   { buy: 2.50, sell: 1.20 },
-  harmonica: { buy: 3.00, sell: 1.50 },
+  // #276 German imports $0.50–1.50 period; was running $3.
+  harmonica: { buy: 1.50, sell: 0.75 },
   fiddle:    { buy: 12.00, sell: 6.00 },
-  bible:     { buy: 5.00, sell: 2.50 },
+  // #276 American Bible Society pocket edition $1–2 period; was $5.
+  bible:     { buy: 2.00, sell: 1.00 },
   grandfather_clock: { buy: 50.00, sell: 25.00 },
   // Cheap to buy, brutal to haul — the prestige is in delivery (#148).
   anvil:             { buy:  5.00, sell:  3.00 },
@@ -135,7 +149,8 @@ export const PRICES: Record<string, PriceEntry> = {
   // Native trade goods
   moccasins:    { buy: 3.00, sell: 1.50 },
   buffalo_robe: { buy: 8.00, sell: 4.00 },
-  beads:        { buy: 0.50, sell: 0.25 },
+  // #276 Catlin 1841: $0.10–0.25/string; was running $0.50.
+  beads:        { buy: 0.30, sell: 0.15 },
 
   // #216 trade goods — Plains-trader prices. Vermilion most expensive
   // (mercury sulfide was a controlled chemical), calico mid-range
