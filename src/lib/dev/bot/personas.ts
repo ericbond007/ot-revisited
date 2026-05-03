@@ -143,7 +143,7 @@ export const cautiousPersona: Persona = {
       ?? defaultChoice(state, event);
   },
   pickPace(state) {
-    if (minPartyHealth(state) < 60) return 'slow';
+    if (minPartyHealth(state) < 50) return 'slow';
     return 'moderate';
   },
   pickRations(state) {
