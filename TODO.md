@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-05-02 (post-merge of #238 native ferry). 13 open.
+As of 2026-05-02 (post-merge of #240 Sublette Cutoff). 12 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -76,7 +76,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Native interaction expansion (extends #121)
 
-- **#240** — [H] Hire-a-guide for the Sublette Cutoff (Bridger detour past South Pass). Barlow side shipped via #235.
 - **#241** — [H] Gift-first parlay — small tobacco / sugar gift opens better trade rates on first contact
 
 ### New landmarks
@@ -120,6 +119,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#240** Sublette Cutoff fork at Parting of the Ways — new approach event `approach_sublette_cutoff` fires 5 mi out from `parting_of_ways`, mirroring the #234 Three Island detour pattern and the #235 Barlow / Columbia fork. Three choices: **Continue south to Fort Bridger** (default — silent commit, normal route), **Strike west on the cutoff alone** (sets `_subletteCutoff` flag, water -50%, +18 ox fatigue, morale -3 — period reality of the 50-mile waterless pull, Frizzell 1852 / Egbert 1849 diaries), **Hire a Shoshone guide** ($10 + 2 lb tobacco; gates on Shoshone attitude ≥50; bumps Shoshone +2; sets the flag without applying the dry-stretch penalty — guide knows the springs). New bypass entry in `systems/travel.ts`: `_subletteCutoff` makes `ft_bridger` non-stop-worthy, so the wagon walks past the post without parking. Period sources: Frizzell 1852 paid "ten dollars and a paper of tobacco" for Shoshone trail-wisdom on the cutoff; Egbert 1849 records the same arrangement. NOTE: this branch deliberately doesn't compress miles — the savings come from skipping the Bridger stop overhead, same shape as Three Island detour. A proper miles-shorter cutoff is a follow-up tied to #119 (travel distance audit). 18 new tests; 1300/1300 green.
 - **#238** Native-run ferry option — new `nativeFerry: { tribeId, priceItem, priceQty, blurb }` field on `RiverStats` (optional). FordModal shows a 5th method "Native ferry" only when the river has the field AND the tribe attitude is ≥50 AND the party has the trade currency. Crossing: deduct trade item, advance 1 day (vs caulk's 2, ferry's 1), zero loss risk, +2 attitude bump. New `'native_ferry'` `FordMethod` + 🪶 glyph in `ford_methods` icon dictionary. FordSummaryModal renders the new method label "Took the native ferry." Server-side gates re-checked in `ford()` (throws on missing config / unfriendly tribe / insufficient currency). Stocked at: Green River (Shoshone bull-boat — 6 strings of beads, per Sage 1846 / Frizzell 1852), Three Island Crossing (Bannock-Shoshone raft — 4 beads, Snake is wider but bands here ran a regular service for emigrants). NOT at the Columbia / The Dalles — Cayuse ran rafts there too but post-1847 Cayuse War makes the attitude gate impossible to clear in the gameplay window. 9 new tests; 1282/1282 green.
 - **#139 follow-up** `press_cheese` now visible in the camp UI — the action was registered in `CAMP_ACTIONS_BY_ID` but missing from the iterable `CAMP_ACTIONS` array, so the cheese-pressing flow was reachable via dev-harness only and invisible in the camp grid for normal play. Added `pressCheese` to the practical-section of the array. New regression-guard test in `camp-actions.test.ts`: every entry in `CAMP_ACTIONS_BY_ID` must also appear in the iterable list (would have caught the original miss). 1273/1273 green.
 - **#269** Soap as a craftable item — new `soap` item (`tool` category, 0.5 lb/bar, $0.50 buy / $0.20 sell — Marcy 1859 lists "soap, 5¢ a bar" wholesale, emigrant outfitters charged 8-10× markup). Stocks: Independence outfitter, Ft Laramie, Ft Hall, The Dalles. **wash_clothes camp action** now branches: with 1+ bar in inventory, lifts +50 cleanliness (matches the bath-house single-visit boost) and consumes one bar; without soap, +30 (the original baseline). Frizzell 1852 / Royce 1849 describe trail laundry as "barely better than a rinse" without soap; with a fresh bar the same wash was "the cleanest we've been since St. Joseph." **make_soap camp action** (`🧼`, 2 hr, available wherever there's tallow): 3 lb tallow → 2 bars soap. Period reality: Beecher 1846 + Frizzell 1852 record lye-soap making as a regular pioneer chore — leach lye from hardwood ashes, boil with rendered tallow until it saponifies. We abstract the wood ash (cookfire produces it daily) and round to 3 lb tallow → 2 bars to keep the trade-off real (tallow is desperation food, draw order 6.5). 16 new tests; 1272/1272 green.

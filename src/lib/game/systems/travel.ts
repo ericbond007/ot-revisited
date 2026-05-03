@@ -141,6 +141,10 @@ function isBypassed(state: GameState, landmarkId: string): boolean {
   if (state.flags._columbiaRaft && (landmarkId === 'barlow_road' || landmarkId === 'laurel_hill')) {
     return true;
   }
+  // #240 — Sublette Cutoff bypasses Fort Bridger. The cutoff itself
+  // doesn't compress miles in the model; the trade-off is the dry-stretch
+  // penalty applied at decision time vs. losing the resupply / repair stop.
+  if (landmarkId === 'ft_bridger' && state.flags._subletteCutoff) return true;
   return false;
 }
 
