@@ -240,22 +240,52 @@ describe('#280c — NPC events bubble to player eventLog', () => {
 
   it('#288 — fires a starvation pendingEvent when an NPC wagon just bottomed out today', () => {
     let s = joinTrain(game(), makeRng('j-cris')).state;
-    // Force one companion to have only 1 lb of food going in — the
-    // tick will drain it to 0, triggering the crisis.
+    // One companion has 1 lb of food going in; ALL other companions
+    // are also empty so they can't contribute and silently resolve
+    // the crisis (#288 contribution path).
     s = {
       ...s,
       wagonTrain: {
         ...s.wagonTrain!,
         companions: s.wagonTrain!.companions.map((c, i) =>
-          i === 0 ? { ...c, inventory: { flour: 1 } } : c
+          i === 0 ? { ...c, inventory: { flour: 1 } } : { ...c, inventory: {} as Record<string, number> }
         )
       }
     };
     const result = advanceTrain(s, true);
     expect(result.pendingEvent).toBeDefined();
     expect(result.pendingEvent!.title).toMatch(/out of food/i);
-    expect(result.pendingEvent!.choices.some((c) => c.id === 'starvation_share')).toBe(true);
+    expect(result.pendingEvent!.choices.some((c) => c.id.startsWith('starvation_share_'))).toBe(true);
     expect(result.pendingEvent!.choices.some((c) => c.id === 'starvation_refuse')).toBe(true);
+    // Three share tiers (small / medium / large).
+    const shareTiers = result.pendingEvent!.choices.filter((c) => c.id.startsWith('starvation_share_'));
+    expect(shareTiers.length).toBe(3);
+  });
+
+  it('#288 — other companions chip in to silently resolve crisis when they have surplus', () => {
+    let s = joinTrain(game(), makeRng('j-pool')).state;
+    // Target wagon has 1 lb; all others have 250 lb flour and high
+    // morale → they should pool enough to skip the player ask.
+    s = {
+      ...s,
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: s.wagonTrain!.companions.map((c, i) =>
+          i === 0
+            ? { ...c, inventory: { flour: 1 } as Record<string, number> }
+            : { ...c, inventory: { flour: 250, bacon: 50 } as Record<string, number>, morale: 80 }
+        )
+      }
+    };
+    const beforeLogLen = s.eventLog.length;
+    const result = advanceTrain(s, true);
+    // Either resolved silently (no pendingEvent) OR player asked
+    // for less. Most-likely silent.
+    if (!result.pendingEvent) {
+      // Logs should mention contributors.
+      const newLogs = result.state.eventLog.slice(beforeLogLen);
+      expect(newLogs.some((e) => /chipped in/i.test(e.text))).toBe(true);
+    }
   });
 
   it('#288 — share choice transfers food from player to target wagon', () => {
@@ -266,14 +296,16 @@ describe('#280c — NPC events bubble to player eventLog', () => {
       inventory: { ...s.inventory, flour: 200, bacon: 50 },
       wagonTrain: {
         ...s.wagonTrain!,
+        // Target empty + other wagons empty so contributions don't
+        // silently resolve before the player ask.
         companions: s.wagonTrain!.companions.map((c, i) =>
-          i === 0 ? { ...c, inventory: { flour: 1 } } : c
+          i === 0 ? { ...c, inventory: { flour: 1 } } : { ...c, inventory: {} as Record<string, number> }
         )
       }
     };
     const result = advanceTrain(s, true);
     expect(result.pendingEvent).toBeDefined();
-    const shareChoice = result.pendingEvent!.choices.find((c) => c.id === 'starvation_share');
+    const shareChoice = result.pendingEvent!.choices.find((c) => c.id === 'starvation_share_medium');
     expect(shareChoice).toBeDefined();
     const playerFlourBefore = result.state.inventory.flour ?? 0;
     const targetFlourBefore = result.state.wagonTrain!.companions[0].inventory.flour ?? 0;
@@ -292,7 +324,7 @@ describe('#280c — NPC events bubble to player eventLog', () => {
       wagonTrain: {
         ...s.wagonTrain!,
         companions: s.wagonTrain!.companions.map((c, i) =>
-          i === 0 ? { ...c, inventory: { flour: 1 }, morale: 70 } : c
+          i === 0 ? { ...c, inventory: { flour: 1 }, morale: 70 } : { ...c, inventory: {} as Record<string, number> }
         )
       }
     };

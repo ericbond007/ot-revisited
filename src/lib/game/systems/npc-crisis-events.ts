@@ -11,11 +11,15 @@
 import type { GameState, NpcWagonState } from '../types';
 import type { GameEvent, EventChoice } from '../content/events';
 
-// How much food the player offers when they share or sell. Calibrated
-// to be meaningful (≈10 days of food for the smallest NPC families)
-// without being a bigger gift than the player's own daily margin.
-const SHARE_FLOUR_LB = 30;
-const SHARE_BACON_LB = 10;
+// Three share scales — the player picks based on their own surplus
+// and how much they want to commit. Period reality: emigrant diaries
+// describe gifts as "a few pounds of flour" or "a quarter-barrel" or
+// "half what we had." We mirror that with small/medium/large.
+const SHARE_TIERS: Record<'small' | 'medium' | 'large', { flour: number; bacon: number }> = {
+  small: { flour: 10, bacon: 3 },
+  medium: { flour: 30, bacon: 10 },
+  large: { flour: 60, bacon: 20 }
+};
 // Sale price when the player sells food at trail rates. Matches period
 // "desperate trail prices" — Helen Carpenter (1857) describes flour at
 // $20/barrel mid-trail, ~$0.50/lb (vs $0.05/lb in Missouri). Bacon
@@ -23,15 +27,21 @@ const SHARE_BACON_LB = 10;
 const SELL_FLOUR_PER_LB = 0.5;
 const SELL_BACON_PER_LB = 1.0;
 
-// Morale impacts. Sharing freely is a lift; refusing is a guilt drag;
-// profiteering on the desperate is a smaller drag than refusal but
-// still nonzero.
-const SHARE_PLAYER_MORALE = 4;
+// Morale scales with share size — small gifts buy small thanks; a
+// big haul buys real loyalty. Refusal cost is fixed (it's a posture,
+// not a quantity).
+const SHARE_PLAYER_MORALE: Record<keyof typeof SHARE_TIERS, number> = {
+  small: 2,
+  medium: 4,
+  large: 7
+};
+const HELP_NPC_MORALE: Record<keyof typeof SHARE_TIERS, number> = {
+  small: 5,
+  medium: 12,
+  large: 20
+};
 const REFUSE_PLAYER_MORALE = -6;
 const SELL_PLAYER_MORALE = -2;
-// NPC morale lift when helped. Bigger for share than for sale (gift
-// vs purchase). Trade is in between.
-const HELP_NPC_MORALE = 12;
 const SELL_NPC_MORALE = 4;
 const REFUSE_NPC_MORALE = -10;
 
@@ -83,57 +93,67 @@ export function buildStarvationCrisisEvent(target: NpcWagonState): GameEvent {
   const wagonId = target.id;
   const wagonName = target.name;
 
-  const shareChoice: EventChoice = {
-    id: 'starvation_share',
-    icon: '🤝',
-    label: `Share ${SHARE_FLOUR_LB} lb flour + ${SHARE_BACON_LB} lb bacon`,
-    isDefault: true,
-    silentLog: true,
-    requires: { itemId: 'flour', icon: '🌾', reason: `Need ${SHARE_FLOUR_LB} lb flour` },
-    apply: (s) => {
-      const playerFlour = s.inventory.flour ?? 0;
-      const playerBacon = s.inventory.bacon ?? 0;
-      // Defensive: if requires gate didn't catch insufficiency, scale
-      // down to what's available.
-      const flourGiven = Math.min(SHARE_FLOUR_LB, playerFlour);
-      const baconGiven = Math.min(SHARE_BACON_LB, playerBacon);
-      let next: GameState = {
-        ...s,
-        inventory: {
-          ...s.inventory,
-          flour: playerFlour - flourGiven,
-          bacon: playerBacon - baconGiven
-        },
-        morale: Math.min(100, s.morale + SHARE_PLAYER_MORALE)
-      };
-      next = withWagonUpdated(next, wagonId, (w) => ({
-        ...w,
-        inventory: {
-          ...w.inventory,
-          flour: (w.inventory.flour ?? 0) + flourGiven,
-          bacon: (w.inventory.bacon ?? 0) + baconGiven
-        },
-        morale: Math.min(100, w.morale + HELP_NPC_MORALE)
-      }));
-      return logBoth(
-        next,
-        wagonId,
-        `Shared ${flourGiven} lb flour and ${baconGiven} lb bacon with ${wagonName}. The children ate that night. Morale +${SHARE_PLAYER_MORALE}.`
-      );
-    }
-  };
+  function buildShareChoice(tier: keyof typeof SHARE_TIERS): EventChoice {
+    const amounts = SHARE_TIERS[tier];
+    const playerMorale = SHARE_PLAYER_MORALE[tier];
+    const npcMorale = HELP_NPC_MORALE[tier];
+    const tierIcon = tier === 'small' ? '🥄' : tier === 'medium' ? '🤝' : '🎁';
+    return {
+      id: `starvation_share_${tier}`,
+      icon: tierIcon,
+      label: `Share ${amounts.flour} lb flour + ${amounts.bacon} lb bacon`,
+      // Medium is the default — small is stingy, large is generous.
+      isDefault: tier === 'medium',
+      silentLog: true,
+      requires: { itemId: 'flour', icon: '🌾', reason: `Need ${amounts.flour} lb flour` },
+      apply: (s) => {
+        const playerFlour = s.inventory.flour ?? 0;
+        const playerBacon = s.inventory.bacon ?? 0;
+        const flourGiven = Math.min(amounts.flour, playerFlour);
+        const baconGiven = Math.min(amounts.bacon, playerBacon);
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...s.inventory,
+            flour: playerFlour - flourGiven,
+            bacon: playerBacon - baconGiven
+          },
+          morale: Math.min(100, s.morale + playerMorale)
+        };
+        next = withWagonUpdated(next, wagonId, (w) => ({
+          ...w,
+          inventory: {
+            ...w.inventory,
+            flour: (w.inventory.flour ?? 0) + flourGiven,
+            bacon: (w.inventory.bacon ?? 0) + baconGiven
+          },
+          morale: Math.min(100, w.morale + npcMorale)
+        }));
+        return logBoth(
+          next,
+          wagonId,
+          `Shared ${flourGiven} lb flour and ${baconGiven} lb bacon with ${wagonName}. Morale +${playerMorale}.`
+        );
+      }
+    };
+  }
+  const shareSmall = buildShareChoice('small');
+  const shareMedium = buildShareChoice('medium');
+  const shareLarge = buildShareChoice('large');
 
+  // Sell uses the medium tier scale.
+  const SELL_AMOUNTS = SHARE_TIERS.medium;
   const sellChoice: EventChoice = {
     id: 'starvation_sell',
     icon: '💰',
-    label: `Sell ${SHARE_FLOUR_LB} lb flour + ${SHARE_BACON_LB} lb bacon at trail prices`,
+    label: `Sell ${SELL_AMOUNTS.flour} lb flour + ${SELL_AMOUNTS.bacon} lb bacon at trail prices`,
     silentLog: true,
-    requires: { itemId: 'flour', icon: '🌾', reason: `Need ${SHARE_FLOUR_LB} lb flour` },
+    requires: { itemId: 'flour', icon: '🌾', reason: `Need ${SELL_AMOUNTS.flour} lb flour` },
     apply: (s) => {
       const playerFlour = s.inventory.flour ?? 0;
       const playerBacon = s.inventory.bacon ?? 0;
-      const flourGiven = Math.min(SHARE_FLOUR_LB, playerFlour);
-      const baconGiven = Math.min(SHARE_BACON_LB, playerBacon);
+      const flourGiven = Math.min(SELL_AMOUNTS.flour, playerFlour);
+      const baconGiven = Math.min(SELL_AMOUNTS.bacon, playerBacon);
       const askedPrice = Math.round(
         flourGiven * SELL_FLOUR_PER_LB + baconGiven * SELL_BACON_PER_LB
       );
@@ -203,6 +223,6 @@ export function buildStarvationCrisisEvent(target: NpcWagonState): GameEvent {
     // advanceTrain's pendingEvent return. The gate would never
     // be true via random selection.
     gate: () => false,
-    choices: [shareChoice, sellChoice, refuseChoice]
+    choices: [shareSmall, shareMedium, shareLarge, sellChoice, refuseChoice]
   };
 }
