@@ -7,7 +7,7 @@
 
 import type { Outcome, ProfessionId } from '../../game/types';
 
-export type PersonaId = 'cautious' | 'balanced' | 'aggressive';
+export type PersonaId = 'cautious' | 'balanced' | 'aggressive' | 'chaos';
 
 export interface BotRunOpts {
   /** Seed string forwarded into the engine RNG. */

@@ -12,35 +12,43 @@
 import type { GameState } from '../../game/types';
 import type { GameEvent } from '../../game/content/events';
 import type { Landmark } from '../../game/content/landmarks';
+import type { Rng } from '../../game/rng';
+import { makeRng } from '../../game/rng';
 import type { PersonaId } from './types';
 
 export type FordMethod = 'ford' | 'caulk' | 'ferry' | 'wait' | 'native_ferry';
 
+// All persona methods receive an Rng. Deterministic personas
+// (cautious/balanced/aggressive) ignore it and produce the same
+// answer for a given state. The chaos persona uses it to pick
+// seeded-random choices — still reproducible per run seed, but
+// exercises weird decision sequences a heuristic player would never
+// take.
 export interface Persona {
   id: PersonaId;
   /** Pick a choice for an event. Returns the choice id. */
-  pickEventChoice(state: GameState, event: GameEvent): string;
+  pickEventChoice(state: GameState, event: GameEvent, rng: Rng): string;
   /** Daily pace setting. May change as the run progresses. */
-  pickPace(state: GameState): GameState['pace'];
+  pickPace(state: GameState, rng: Rng): GameState['pace'];
   /** Daily rations. */
-  pickRations(state: GameState): GameState['rations'];
+  pickRations(state: GameState, rng: Rng): GameState['rations'];
   /** Should the party rest a day? */
-  shouldRest(state: GameState): boolean;
+  shouldRest(state: GameState, rng: Rng): boolean;
   /** Should the party hunt? Returns true when food is low + ammo available. */
-  shouldHunt(state: GameState): boolean;
+  shouldHunt(state: GameState, rng: Rng): boolean;
   /** Pick a river-crossing method. `native_ferry` is preferred when the
    *  river has the option AND the party can pay. */
-  pickFordMethod(state: GameState, here: Landmark): FordMethod;
+  pickFordMethod(state: GameState, here: Landmark, rng: Rng): FordMethod;
   /** Should the party trade at this post? Returns true when food/water/
    *  ammo are low AND the party has cash to spend. */
-  shouldTradeAtPost(state: GameState, here: Landmark): boolean;
+  shouldTradeAtPost(state: GameState, here: Landmark, rng: Rng): boolean;
   /** Should the party stay at the inn? Returns true when the post has an
    *  inn AND morale or party HP justifies the cost. */
-  shouldStayAtInn(state: GameState, here: Landmark): boolean;
+  shouldStayAtInn(state: GameState, here: Landmark, rng: Rng): boolean;
   /** Should the party rest a day to find + boil water? Returns true
    *  when the keg is heading toward empty AND off-desert AND we have
    *  the means to boil (doctor or post-1854). */
-  shouldFindWater(state: GameState): boolean;
+  shouldFindWater(state: GameState, rng: Rng): boolean;
 }
 
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
@@ -230,12 +238,74 @@ export const aggressivePersona: Persona = {
   }
 };
 
+// `chaos` makes seeded-random choices — the "dumbass tourist" mode.
+// Same seed → same outcome (Rng is threaded), but the bot will
+// happily refuse every toll, ford the deepest rivers without coats,
+// pick aggressive pace at low health, etc. The point is fuzz coverage
+// of decision sequences a heuristic player would never produce.
+//
+// All chaos methods accept the Rng arg and use it to roll choices
+// uniformly over the available options.
+export const chaosPersona: Persona = {
+  id: 'chaos',
+  pickEventChoice(state, event, rng) {
+    const visible = event.choices.filter((c) => {
+      if (c.hidden && c.hidden(state)) return false;
+      if (c.requires && (state.inventory[c.requires.itemId] ?? 0) <= 0) return false;
+      return true;
+    });
+    const pool = visible.length > 0 ? visible : event.choices;
+    return pool[rng.int(0, pool.length - 1)].id;
+  },
+  pickPace(_state, rng) {
+    const paces: GameState['pace'][] = ['slow', 'moderate', 'fast', 'grueling'];
+    return paces[rng.int(0, paces.length - 1)];
+  },
+  pickRations(_state, rng) {
+    const rations: GameState['rations'][] = ['meager', 'normal', 'filling'];
+    return rations[rng.int(0, rations.length - 1)];
+  },
+  shouldRest(_state, rng) {
+    return rng.chance(0.15);
+  },
+  shouldHunt(state, rng) {
+    return canHunt(state) && rng.chance(0.20);
+  },
+  pickFordMethod(state, here, rng) {
+    // Build the universe of methods this river actually allows. All
+    // four are technically callable; native_ferry only when the river
+    // has the config AND attitude+inventory line up — but chaos rolls
+    // without checking, the runner's tryFordWithFallback catches the
+    // throw and degrades to plain ford.
+    const methods: FordMethod[] = ['ford', 'caulk', 'ferry', 'wait'];
+    if (here.river?.nativeFerry) methods.push('native_ferry');
+    return methods[rng.int(0, methods.length - 1)];
+  },
+  shouldTradeAtPost(state, _here, rng) {
+    return state.cash >= 5 && rng.chance(0.5);
+  },
+  shouldStayAtInn(state, here, rng) {
+    return (here.services ?? []).includes('inn') && state.cash >= 5 && rng.chance(0.4);
+  },
+  shouldFindWater(state, rng) {
+    return state.location.terrain !== 'desert' && rng.chance(0.25);
+  }
+};
+
 export const PERSONAS: Record<PersonaId, Persona> = {
   cautious: cautiousPersona,
   balanced: balancedPersona,
-  aggressive: aggressivePersona
+  aggressive: aggressivePersona,
+  chaos: chaosPersona
 };
 
 export function getPersona(id: PersonaId): Persona {
   return PERSONAS[id];
+}
+
+/** Convenience for the runner — derive a per-run RNG keyed off the
+ *  game seed and a `:bot` namespace so persona randomness doesn't
+ *  share entropy with the engine's tick RNG. */
+export function makeBotRng(seed: string): Rng {
+  return makeRng(`${seed}:bot`);
 }
