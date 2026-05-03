@@ -158,13 +158,14 @@ describe('advanceTrain — engine integration', () => {
   it('is a no-op when player is not in a train', () => {
     const s = game();
     const after = advanceTrain(s, true);
-    expect(after).toBe(s);
+    expect(after.state).toBe(s);
+    expect(after.pendingEvent).toBeUndefined();
   });
 
   it('ticks every companion when in a train', () => {
     let s = joinTrain(game(), makeRng('j')).state;
     const before = totalFood(s.wagonTrain!.companions[0].inventory);
-    s = advanceTrain(s, true);
+    s = advanceTrain(s, true).state;
     const after = totalFood(s.wagonTrain!.companions[0].inventory);
     expect(after).toBeLessThan(before);
   });
@@ -235,6 +236,104 @@ describe('#280c — NPC events bubble to player eventLog', () => {
       || after.conditions.length > beforeWagons[i].conditions.length
     );
     expect(someChange).toBe(true);
+  });
+
+  it('#288 — fires a starvation pendingEvent when an NPC wagon just bottomed out today', () => {
+    let s = joinTrain(game(), makeRng('j-cris')).state;
+    // Force one companion to have only 1 lb of food going in — the
+    // tick will drain it to 0, triggering the crisis.
+    s = {
+      ...s,
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: s.wagonTrain!.companions.map((c, i) =>
+          i === 0 ? { ...c, inventory: { flour: 1 } } : c
+        )
+      }
+    };
+    const result = advanceTrain(s, true);
+    expect(result.pendingEvent).toBeDefined();
+    expect(result.pendingEvent!.title).toMatch(/out of food/i);
+    expect(result.pendingEvent!.choices.some((c) => c.id === 'starvation_share')).toBe(true);
+    expect(result.pendingEvent!.choices.some((c) => c.id === 'starvation_refuse')).toBe(true);
+  });
+
+  it('#288 — share choice transfers food from player to target wagon', () => {
+    let s = joinTrain(game(), makeRng('j-share')).state;
+    s = {
+      ...s,
+      cash: 100,
+      inventory: { ...s.inventory, flour: 200, bacon: 50 },
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: s.wagonTrain!.companions.map((c, i) =>
+          i === 0 ? { ...c, inventory: { flour: 1 } } : c
+        )
+      }
+    };
+    const result = advanceTrain(s, true);
+    expect(result.pendingEvent).toBeDefined();
+    const shareChoice = result.pendingEvent!.choices.find((c) => c.id === 'starvation_share');
+    expect(shareChoice).toBeDefined();
+    const playerFlourBefore = result.state.inventory.flour ?? 0;
+    const targetFlourBefore = result.state.wagonTrain!.companions[0].inventory.flour ?? 0;
+    const next = shareChoice!.apply(result.state, makeRng('apply'));
+    const playerFlourAfter = next.inventory.flour ?? 0;
+    const targetFlourAfter = next.wagonTrain!.companions[0].inventory.flour ?? 0;
+    expect(playerFlourAfter).toBeLessThan(playerFlourBefore);
+    expect(targetFlourAfter).toBeGreaterThan(targetFlourBefore);
+  });
+
+  it('#288 — refuse choice docks player morale and target morale, no inventory change', () => {
+    let s = joinTrain(game(), makeRng('j-refuse')).state;
+    s = {
+      ...s,
+      morale: 80,
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: s.wagonTrain!.companions.map((c, i) =>
+          i === 0 ? { ...c, inventory: { flour: 1 }, morale: 70 } : c
+        )
+      }
+    };
+    const result = advanceTrain(s, true);
+    const refuseChoice = result.pendingEvent!.choices.find((c) => c.id === 'starvation_refuse');
+    const playerInvBefore = result.state.inventory;
+    const next = refuseChoice!.apply(result.state, makeRng('apply'));
+    expect(next.morale).toBeLessThan(result.state.morale);
+    expect(next.wagonTrain!.companions[0].morale).toBeLessThan(result.state.wagonTrain!.companions[0].morale);
+    expect(next.inventory).toEqual(playerInvBefore);
+  });
+
+  it('#288 — NPC auto-cannibalizes when food=0 and a fresh adult corpse exists', () => {
+    const train = freshTrain('cann');
+    // Find a wagon with at least 2 alive adults so we can kill one.
+    const idx = train.companions.findIndex(
+      (c) => c.party.filter((m) => !m.dead && m.kind === 'adult').length >= 2
+    );
+    expect(idx).toBeGreaterThanOrEqual(0);
+    const baseWagon = train.companions[idx];
+    const adults = baseWagon.party.filter((m) => !m.dead && m.kind === 'adult');
+    let wagon: NpcWagonState = {
+      ...baseWagon,
+      inventory: {},
+      party: baseWagon.party.map((m) =>
+        m.id === adults[0].id
+          ? { ...m, dead: true, health: 0, deathDay: 0, deathCause: 'starvation' }
+          : m
+      )
+    };
+    const result = tickNpcWagon(
+      wagon,
+      { day: 1, traveled: false, pace: 'moderate', terrain: 'prairie' },
+      makeRng('cann1')
+    );
+    // Corpse should now be marked consumed, game_meat appears in inventory.
+    const consumedCorpse = result.wagon.party.find((m) => m.id === adults[0].id);
+    expect(consumedCorpse?.consumed).toBe(true);
+    expect(result.wagon.inventory.game_meat ?? 0).toBeGreaterThan(0);
+    // Player log surfaces the grim event.
+    expect(result.playerLogs.some((t) => /eating their (own )?dead/i.test(t))).toBe(true);
   });
 
   it('finished wagons (outcome != in-progress) do not fire further events', () => {

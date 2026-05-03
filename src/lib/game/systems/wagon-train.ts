@@ -11,6 +11,8 @@ import { generateTrain, trainHasProfession } from '../content/trains';
 import { hasLiveBlacksmith } from '../professions/predicates';
 import { tickNpcWagon, type NpcTickContext } from './npc-engine';
 import { makeRng } from '../rng';
+import type { GameEvent } from '../content/events';
+import { buildStarvationCrisisEvent } from './npc-crisis-events';
 
 /** True when the party is currently traveling with a wagon train. */
 export function isInTrain(state: GameState): boolean {
@@ -90,8 +92,32 @@ export function joinTrain(state: GameState, rng: Rng): JoinTrainResult {
   return { state: next, train };
 }
 
-/** #280b/#280c — advance every companion wagon by one day. Call this
- *  once per day-completion alongside the player's tick (in
+/** Food keys that count for "out of food" detection — matches the
+ *  draw order in npc-engine. Used by the #288 starvation crisis
+ *  detector to spot wagons that just bottomed out today. */
+const FOOD_KEYS_FOR_STARVATION = [
+  'game_meat', 'berries', 'egg', 'milk',
+  'jerky', 'pemmican', 'salt_pork', 'bacon',
+  'flour', 'cornmeal', 'beans', 'hardtack',
+  'dried_fruit', 'cheese', 'butter'
+];
+
+function totalFood(inv: Record<string, number>): number {
+  return FOOD_KEYS_FOR_STARVATION.reduce((sum, k) => sum + (inv[k] ?? 0), 0);
+}
+
+export interface AdvanceTrainResult {
+  state: GameState;
+  /** #288 — surfaces when an NPC wagon's food just hit 0 today and
+   *  the player needs to decide whether to help. The pending event
+   *  carries the target wagon id so its `apply` choices can mutate
+   *  the right wagon. Only one crisis fires per tick (others queue
+   *  for the next tick). */
+  pendingEvent?: GameEvent;
+}
+
+/** #280b/#280c/#288 — advance every companion wagon by one day. Call
+ *  this once per day-completion alongside the player's tick (in
  *  `tickDayPausable`, `applyPendingChoice`, and any action that
  *  consumes a calendar day — rest / ford / hunt / inn-stay). No-op if
  *  the player isn't in a train.
@@ -101,9 +127,13 @@ export function joinTrain(state: GameState, rng: Rng): JoinTrainResult {
  *  out of flour at mile 1100; you didn't"). NPC events (wheel break,
  *  ox lame, cholera) fire here too — their player-visible news lines
  *  bubble up onto the player's `state.eventLog` so the train feels
- *  alive even though only the player sees the UI. */
-export function advanceTrain(state: GameState, traveled: boolean): GameState {
-  if (!state.wagonTrain) return state;
+ *  alive even though only the player sees the UI.
+ *
+ *  Starvation crisis detection: if any wagon's food just went from
+ *  >0 to =0 today, returns a pendingEvent so `tickDayPausable` can
+ *  pause the player and surface a help-or-refuse modal (#288). */
+export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainResult {
+  if (!state.wagonTrain) return { state };
   const ctx: NpcTickContext = {
     day: state.day,
     traveled,
@@ -112,21 +142,37 @@ export function advanceTrain(state: GameState, traveled: boolean): GameState {
   };
   const companions: typeof state.wagonTrain.companions = [];
   const playerLogs: { day: number; text: string }[] = [];
+  let pendingEvent: GameEvent | undefined;
   for (const c of state.wagonTrain.companions) {
+    const wasFood = totalFood(c.inventory);
     const rng = makeRng(`${c.seed}:${state.day}`);
     const result = tickNpcWagon(c, ctx, rng);
     companions.push(result.wagon);
     for (const text of result.playerLogs) {
       playerLogs.push({ day: state.day, text });
     }
+    // Crisis detection: only fire if a wagon transitioned from
+    // having food to having none today. Limit to one crisis per
+    // tick — others naturally re-queue tomorrow if still empty.
+    const nowFood = totalFood(result.wagon.inventory);
+    if (
+      !pendingEvent
+      && wasFood > 0
+      && nowFood === 0
+      && result.wagon.outcome === 'in-progress'
+      && result.wagon.party.some((p) => !p.dead)
+    ) {
+      pendingEvent = buildStarvationCrisisEvent(result.wagon);
+    }
   }
-  return {
+  const next: GameState = {
     ...state,
     wagonTrain: { ...state.wagonTrain, companions },
     eventLog: playerLogs.length === 0
       ? state.eventLog
       : [...state.eventLog, ...playerLogs]
   };
+  return pendingEvent ? { state: next, pendingEvent } : { state: next };
 }
 
 /** Split off from the wagon train — the party continues alone.

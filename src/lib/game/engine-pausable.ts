@@ -168,10 +168,15 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = applyDehydration(s);
   s = reapDead(s, rng);
 
-  // #280b — advance NPC wagons one day alongside the player. Travel
-  // day, so `traveled=true`. Each companion runs its own attrition
-  // (food drain, condition tick, ox fatigue, possible death).
-  s = advanceTrain(s, true);
+  // #280b/#288 — advance NPC wagons one day alongside the player.
+  // Travel day, so `traveled=true`. Each companion runs its own
+  // attrition. May return a pendingEvent if a companion just hit
+  // a starvation crisis — surface it before advancing the day.
+  const trainResult = advanceTrain(s, true);
+  s = trainResult.state;
+  if (trainResult.pendingEvent) {
+    return { state: s, pendingEvent: trainResult.pendingEvent };
+  }
 
   return {
     state: {
@@ -197,9 +202,12 @@ export function applyPendingChoice(
   s = attemptFire(s, rng);
   s = reapDead(s, rng);
 
-  // #280b — advance NPC wagons. Event-day still counts as travel for
-  // them (the train was on the move when the event interrupted).
-  s = advanceTrain(s, true);
+  // #280b/#288 — advance NPC wagons. Event-day still counts as travel
+  // for them. NPC starvation crisis events that arise here are NOT
+  // re-surfaced (would chain modals on the same tick); they queue
+  // for tomorrow's tickDayPausable.
+  const trainResult = advanceTrain(s, true);
+  s = trainResult.state;
 
   return {
     ...s,
