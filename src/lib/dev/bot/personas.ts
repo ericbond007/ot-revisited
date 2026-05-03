@@ -85,17 +85,18 @@ function postStocksMissingWarmthGear(state: GameState, here: Landmark): boolean 
   return false;
 }
 
-/** Medicine restock trigger: bot is light on quinine / bandages /
- *  laudanum (the three drugs that cover the most condition damage),
- *  and the post stocks them. Without this, the bot only stops at the
- *  first warmth-gear post and never resupplies medicine — chronic
- *  cholera/typhoid rest-cycle traps the run. */
+/** Medicine restock trigger: bot is light on any of the front-line
+ *  drugs that cover the most condition damage. Without this, the bot
+ *  only stops at the first warmth-gear post and never resupplies
+ *  medicine — chronic cholera/typhoid/dysentery cycles trap the run. */
 function postStocksMissingMedicine(state: GameState, here: Landmark): boolean {
   const stock = new Set(here.stock ?? []);
   const inv = state.inventory;
   if (stock.has('quinine') && (inv.quinine ?? 0) < 3) return true;
   if (stock.has('bandages') && (inv.bandages ?? 0) < 3) return true;
   if (stock.has('laudanum') && (inv.laudanum ?? 0) < 2) return true;
+  if (stock.has('calomel') && (inv.calomel ?? 0) < 2) return true;
+  if (stock.has('paregoric') && (inv.paregoric ?? 0) < 2) return true;
   return false;
 }
 
@@ -112,6 +113,28 @@ function waterRatio(state: GameState): number {
   const cap = state.resources.waterCap ?? 20;
   if (cap === 0) return 1;
   return state.resources.water / cap;
+}
+
+/** Average fatigue across alive oxen (0-100). Returns 0 when no oxen
+ *  alive — distinct from "fresh team", but `oxenWornOut` will catch
+ *  that case via the count check below. */
+function avgOxFatigue(state: GameState): number {
+  const alive = state.oxen.filter((o) => o.health > 0);
+  if (alive.length === 0) return 0;
+  return alive.reduce((sum, o) => sum + o.fatigue, 0) / alive.length;
+}
+
+/** True when the team is in trouble — heavy avg fatigue OR no oxen
+ *  left at all. Drives `shouldRest` so the bot stops before the team
+ *  is run into the ground. v8 finding: bot was letting fatigue climb
+ *  to 100 across all oxen by day ~60, killing the team and stranding
+ *  the party at mi=400 for the rest of the year. Threshold 70 leaves
+ *  headroom; the wagon's minTeam (1-4 depending on model) gates actual
+ *  movement at the engine level — `milesPerDay` returns 0 below it. */
+function oxenWornOut(state: GameState): boolean {
+  const alive = state.oxen.filter((o) => o.health > 0).length;
+  if (alive === 0) return true;
+  return avgOxFatigue(state) > 70;
 }
 
 /** Has a working rifle + ammo? Required for hunt(). */
@@ -186,17 +209,17 @@ export const cautiousPersona: Persona = {
     return flour > 50 ? 'filling' : 'normal';
   },
   shouldRest(state) {
-    // <45 HP / <25 morale tuned in v4 — when the bot rests less than
-    // this, it dies of disease (cholera + foul water cycle) faster
-    // than it covers ground. Smoke tuning showed: <30 HP threshold +
-    // 4-day rest streak cap → 100% wipes; unbounded rest at <45 →
-    // 0% wipes, full year survival, ~1500 mi avg. The bot trades
-    // arrival for survival; this is the right call until medicine-
-    // use is wired in (laudanum/quinine to clear conditions).
-    return minPartyHealth(state) < 45 || state.morale < 25;
+    // <45 HP / <25 morale tuned in v4. v8 added oxen check — without
+    // it, the bot ran 4-ox teams to 100 fatigue by day ~60 and killed
+    // the team while the party was still at full HP, stranding the
+    // wagon for the rest of the year. Resting at high ox fatigue lets
+    // grain + grazing recover the team before damage compounds.
+    return minPartyHealth(state) < 45
+      || state.morale < 25
+      || oxenWornOut(state);
   },
   shouldHunt(state) {
-    return canHunt(state) && foodOnHand(state) < 80;
+    return canHunt(state) && foodOnHand(state) < 150;
   },
   pickFordMethod(state, here) {
     // Cautious prefers safety: native_ferry > ferry > caulk > ford.
@@ -243,10 +266,15 @@ export const balancedPersona: Persona = {
     return 'normal';
   },
   shouldRest(state) {
-    return minPartyHealth(state) < 40 || state.morale < 20;
+    return minPartyHealth(state) < 40
+      || state.morale < 20
+      || oxenWornOut(state);
   },
   shouldHunt(state) {
-    return canHunt(state) && foodOnHand(state) < 50;
+    // Lifted from <50 in v8 — bot was waiting until it was already
+    // starving to hunt. Below 100 lb total, a 3-person party has
+    // less than 7 days of food left. Hunt proactively.
+    return canHunt(state) && foodOnHand(state) < 100;
   },
   pickFordMethod(state, here) {
     // Balanced ferries when cash is comfortable, fords otherwise.
@@ -289,7 +317,9 @@ export const aggressivePersona: Persona = {
     return 'meager';
   },
   shouldRest(state) {
-    return minPartyHealth(state) < 20;
+    // Aggressive still respects oxen — burning the team to extinction
+    // is not "aggressive", it's just a stuck wagon.
+    return minPartyHealth(state) < 20 || oxenWornOut(state);
   },
   shouldHunt(state) {
     // Aggressive only hunts when starving — burns ammo for nothing
