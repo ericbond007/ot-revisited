@@ -358,7 +358,8 @@ function generateNpcWagon(
       hasBranBarrel: wagonModel.shipsWithBranBarrel === true
     },
     eventLog: [],
-    outcome: 'in-progress'
+    outcome: 'in-progress',
+    rations: 'normal'
   };
 }
 

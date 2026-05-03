@@ -9,6 +9,8 @@ import type { GameState, Pace, WagonTrain } from '../types';
 import type { Rng } from '../rng';
 import { generateTrain, trainHasProfession } from '../content/trains';
 import { hasLiveBlacksmith } from '../professions/predicates';
+import { tickNpcWagon, type NpcTickContext } from './npc-engine';
+import { makeRng } from '../rng';
 
 /** True when the party is currently traveling with a wagon train. */
 export function isInTrain(state: GameState): boolean {
@@ -86,6 +88,33 @@ export function joinTrain(state: GameState, rng: Rng): JoinTrainResult {
     ]
   };
   return { state: next, train };
+}
+
+/** #280b — advance every companion wagon by one day. Call this once
+ *  per day-completion alongside the player's tick (in `tickDayPausable`,
+ *  `applyPendingChoice`, and any action that consumes a calendar day —
+ *  rest / ford / hunt / inn-stay). No-op if the player isn't in a train.
+ *
+ *  Each NPC wagon ticks with its own seed-derived RNG so divergent
+ *  fates emerge from the same starting roster ("the Sager family ran
+ *  out of flour at mile 1100; you didn't"). Player events / pace /
+ *  rations don't transfer — NPCs run their own attrition curve. */
+export function advanceTrain(state: GameState, traveled: boolean): GameState {
+  if (!state.wagonTrain) return state;
+  const ctx: NpcTickContext = {
+    day: state.day,
+    traveled,
+    pace: state.pace,
+    terrain: state.location.terrain
+  };
+  const companions = state.wagonTrain.companions.map((c) => {
+    const rng = makeRng(`${c.seed}:${state.day}`);
+    return tickNpcWagon(c, ctx, rng);
+  });
+  return {
+    ...state,
+    wagonTrain: { ...state.wagonTrain, companions }
+  };
 }
 
 /** Split off from the wagon train — the party continues alone.

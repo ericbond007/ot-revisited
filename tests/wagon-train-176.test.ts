@@ -47,7 +47,8 @@ function stubNpc(over: Partial<NpcWagonState> & { id: string; leaderProfession: 
     cash: 100,
     wagon: { ...game0.wagon },
     eventLog: [],
-    outcome: 'in-progress'
+    outcome: 'in-progress',
+    rations: 'normal'
   };
   return { ...base, ...over };
 }

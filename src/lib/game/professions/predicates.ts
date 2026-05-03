@@ -1,10 +1,14 @@
 import type { GameState, PartyMember, ProfessionId } from '../types';
 
-export function aliveOf(state: GameState, id: ProfessionId): PartyMember[] {
+// `aliveOf` / `hasLive` only need a `party` field — keeping the
+// argument structurally typed lets the same predicate work on
+// player `GameState` and on `NpcWagonState` (#280a) without any
+// coupling.
+export function aliveOf(state: { party: PartyMember[] }, id: ProfessionId): PartyMember[] {
   return state.party.filter((m) => !m.dead && m.profession === id);
 }
 
-export function hasLive(state: GameState, id: ProfessionId): boolean {
+export function hasLive(state: { party: PartyMember[] }, id: ProfessionId): boolean {
   return aliveOf(state, id).length > 0;
 }
 

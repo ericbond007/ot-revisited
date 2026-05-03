@@ -269,6 +269,10 @@ export interface NpcWagonState extends WagonStateLike {
    *  arrived independent of the player. Train-level state is the
    *  union of all wagons' outcomes. */
   outcome: Outcome;
+  /** #280b — per-wagon rations setting. Bot AI (or #285 leader call)
+   *  may flip this when the wagon's food runs low. Defaults to
+   *  'normal' on generation. */
+  rations: Rations;
   /** Optional companion dog — parity with the player. */
   dog?: Dog;
 }
