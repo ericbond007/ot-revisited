@@ -86,6 +86,14 @@ export interface Landmark {
   // that mile. Same gate semantics as `abandonedAfterYear` — treated
   // by `isLandmarkAbandoned` as "not yet built" in the gate.
   abandonedBeforeYear?: number;
+  // #276 follow-up — per-post buy/sell multiplier on the canonical
+  // PRICES table. 1.0 = mid-trail tier (Laramie / Hall / Walla Walla
+  // baseline). >1 = gouge tier (Bridger 1.5, Dalles 1.3 end-of-trail,
+  // Robidoux 1.3 mountain-trader, Boise 1.2 sparse HBC). <1 = charity
+  // (Whitman 0.9 mission). Applies symmetrically: a 1.5× post charges
+  // 50% more on player buys AND pays 50% more on player sells, holding
+  // the markup ratio constant. Defaults to 1.0 when omitted.
+  priceMultiplier?: number;
   // Tribe affiliation for native trading-post landmarks (#202). Drives
   // tribe-attitude gating: a hostile tribe's camp turns up empty/avoided,
   // wary trades work but at worse rates, friendly+ trades flow normally.
@@ -226,6 +234,8 @@ export const LANDMARKS: readonly Landmark[] = [
     // and whatever furs he's willing to spare.
     postKind: 'mountain',
     stockScale: 0.4,
+    // #276 Mountain trader — 30% above mid-trail tier.
+    priceMultiplier: 1.3,
     services: ['gossip', 'blacksmith'],
     blurb: "Joseph Robidoux's trading post at the pass south of Scotts Bluff. A fur-trader outfit with a working forge — moccasins, beads, and a few hard-won comforts.",
     stock: [
@@ -338,6 +348,10 @@ export const LANDMARKS: readonly Landmark[] = [
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
     stockScale: 0.45,
+    // #276 Bridger 1849 was the period gouge-king — 50% above mid-trail.
+    // Period sources: Sage 1846, Frizzell 1852, Bryant 1848 all
+    // remark on Bridger's exorbitant prices for what little he had.
+    priceMultiplier: 1.5,
     services: ['gossip', 'blacksmith'],
     blurb: "Jim Bridger's stockade is famously thin on stock. Moccasins, buffalo robes, and whatever the mountain men happened to bring in this week. Take what you can get.",
     stock: [
@@ -451,6 +465,8 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'mission',
     abandonedAfterYear: 1847,
     stockScale: 0.5,
+    // #276 Mission charity pricing — 10% below mid-trail tier.
+    priceMultiplier: 0.9,
     services: ['gossip', 'inn', 'blacksmith'],
     innNightlyRate: 1,
     blurb: "Waiilatpu mission station on the Walla Walla. Marcus and Narcissa Whitman keep wheat, peas, potatoes, and beef from the farm; cheese and butter from the dairy. Dr. Whitman tends the sick when there's a doctor's call. Sparse on dry goods — they're missionaries, not traders.",
@@ -488,6 +504,9 @@ export const LANDMARKS: readonly Landmark[] = [
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
     stockScale: 1.3,
+    // #276 End-of-trail markup — 30% above mid-trail tier (the blurb
+    // says "prices are ruinous" but until now they matched Laramie).
+    priceMultiplier: 1.3,
     services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'bath_house'],
     innNightlyRate: 2,
     blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",

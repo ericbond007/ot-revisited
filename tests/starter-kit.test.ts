@@ -50,8 +50,10 @@ describe('starter kit', () => {
   });
 
   it('banker adds starting cash', () => {
+    // #276 follow-up — period-realistic banker wealth $1500–3000.
+    // BASE $400 + Banker $1000 = $1400 total (was $400 + $600).
     const kit = buildStarterKit(['banker']);
-    expect(kit.cash).toBe(BASE_KIT.cash + 600);
+    expect(kit.cash).toBe(BASE_KIT.cash + 1000);
   });
 
   it('stacks duplicate professions', () => {

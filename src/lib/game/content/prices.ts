@@ -26,7 +26,13 @@ export const PRICES: Record<string, PriceEntry> = {
   berries:     { buy: 0.40, sell: 0.20 },
   egg:         { buy: 0.10, sell: 0.05 },
   sugar:       { buy: 0.35, sell: 0.20 },
-  coffee:      { buy: 1.50, sell: 0.80 },
+  // #276 follow-up — Independence outfitter rate $0.20–0.40/lb;
+  // dropped from $1.50 to historical. Per Marcy 1859 + Ware 1849,
+  // green beans were a bulk staple, not a luxury. Period emigrants
+  // overwhelmingly carried it; we don't lean on it as a "decision"
+  // currency for waterborne disease (period emigrants didn't know
+  // germ theory — coffee's protection was an unobserved benefit).
+  coffee:      { buy: 0.30, sell: 0.15 },
   tea:         { buy: 1.00, sell: 0.60 },
 
   // Livestock
@@ -140,7 +146,12 @@ export const PRICES: Record<string, PriceEntry> = {
   fiddle:    { buy: 12.00, sell: 6.00 },
   // #276 American Bible Society pocket edition $1–2 period; was $5.
   bible:     { buy: 2.00, sell: 1.00 },
-  grandfather_clock: { buy: 50.00, sell: 25.00 },
+  // #276 follow-up — period $25–50 for a real grandfather clock.
+  // This is a buy-only-at-Independence prestige item for end-game
+  // scoring (#148). Dropped from $50 to historical low end so the
+  // weight tax (100 lb hauling for 2000 mi) is the gameplay friction,
+  // not the price tag.
+  grandfather_clock: { buy: 25.00, sell: 12.00 },
   // Cheap to buy, brutal to haul — the prestige is in delivery (#148).
   anvil:             { buy:  5.00, sell:  3.00 },
   china_tea_set:     { buy: 25.00, sell: 12.00 },

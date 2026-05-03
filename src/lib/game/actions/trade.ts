@@ -71,7 +71,7 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
   const buys = opts.buys ?? [];
   const sells = opts.sells ?? [];
 
-  const { buyMult, sellMult } = professionDiscount(state);
+  const { buyMult: profBuyMult, sellMult: profSellMult } = professionDiscount(state);
 
   // Per-post buyer gating (#204). The post may refuse certain item
   // categories — road ranches don't deal in fur-trade specialty (raw
@@ -80,6 +80,15 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
     ? getLandmark(state.location.atLandmarkId)
     : null;
   const excludedCats = new Set(here?.excludeBuyCategories ?? []);
+
+  // #276 follow-up — per-post tier multiplier. Bridger gouges at 1.5×,
+  // Whitman charges 0.9×, mid-trail posts default to 1.0×. Applied
+  // symmetrically: a 1.5× post charges 50% more on buys AND pays 50%
+  // more on sells (the markup ratio stays constant; the absolute price
+  // scale shifts). Stacks multiplicatively with the profession bonus.
+  const postMult = here?.priceMultiplier ?? 1.0;
+  const buyMult = profBuyMult * postMult;
+  const sellMult = profSellMult * postMult;
 
   for (const { item, qty } of sells) {
     const have = state.inventory[item] ?? 0;
@@ -149,13 +158,14 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
   }));
 
   // Savings estimate vs "no profession bonus" so the Merchant/Banker
-  // value is legible on the receipt. buyMult=1 / sellMult=1 is the
-  // no-bonus baseline.
+  // value is legible on the receipt. The post-tier multiplier still
+  // applies to the no-bonus baseline — the post charges the same scale
+  // to either bonus tier; only the profession discount/bonus differs.
   const rawCostNoBonus = buys.reduce(
-    (sum, { item, qty }) => sum + getPrice(item).buy * qty, 0
+    (sum, { item, qty }) => sum + getPrice(item).buy * qty * postMult, 0
   );
   const rawRevenueNoBonus = sells.reduce(
-    (sum, { item, qty }) => sum + getPrice(item).sell * qty, 0
+    (sum, { item, qty }) => sum + getPrice(item).sell * qty * postMult, 0
   );
   const estimatedSavings =
     (rawCostNoBonus - rawCost) + (rawRevenue - rawRevenueNoBonus);

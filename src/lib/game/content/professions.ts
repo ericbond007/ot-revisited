@@ -17,8 +17,13 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   banker: {
     id: 'banker',
     name: 'Banker',
-    bonusSummary: 'Starts with $600. −10% buy / +10% sell at posts.',
-    starterGear: [{ item: 'cash', qty: 600 }]
+    bonusSummary: 'Starts with $1000. −10% buy / +10% sell at posts.',
+    // #276 follow-up — period reality: a banker / wealthy merchant
+    // emigrant carried $1500–3000 of personal wealth, vs. the typical
+    // $400–700 family outfit budget. With BASE_KIT $400 cash baseline
+    // the Banker now totals $1400 starter — period-plausible upper-
+    // middle-class wealth. Was $1000 total (BASE $400 + $600).
+    starterGear: [{ item: 'cash', qty: 1000 }]
   },
   farmer: {
     id: 'farmer',
