@@ -192,6 +192,51 @@ export interface GameState {
   flags: Record<string, boolean | number | string | Record<string, unknown> | null>;
   completed: boolean;
   outcome: Outcome;
+  /** #176 — When the party has joined a wagon train, the persistent
+   *  roster of NPC companion wagons. `null` (or undefined on legacy
+   *  saves) means traveling solo. The shape is deliberately narrow —
+   *  members carry only the fields shared with a future `RealPlayer`
+   *  variant (#284 multiplayer) so an NPC slot can be swapped for a
+   *  human without a state-shape rewrite. NPC-only attributes
+   *  (relationship tracks, attitude state) live on side maps when
+   *  added in #280+. */
+  wagonTrain?: WagonTrain | null;
+}
+
+// #176 — Wagon-train state. Generated at join time, persists until the
+// player splits from the train (or the run ends). See
+// `src/lib/game/content/trains.ts` for roster generation.
+export interface WagonTrain {
+  /** Stable id for the train — train-<seed>-<joinDay>. */
+  id: string;
+  /** Display name — "Captain Wexford's Company", etc. */
+  name: string;
+  /** Day the player joined. Used for in-train morale curves and to
+   *  persist members across saves. */
+  joinedDay: number;
+  /** Where the player joined — useful for the leave-train flavor and
+   *  for #281 California/Oregon split detection. */
+  joinedAtLandmarkId: string | null;
+  /** 5-15 wagon-companion NPCs. Each is a "wagon," not a person — one
+   *  member ≈ one family wagon, with ox count + profession + flag for
+   *  whether they're traveling with children. */
+  members: TrainMember[];
+}
+
+export interface TrainMember {
+  /** Stable id within the train — member-N. */
+  id: string;
+  /** Family or surname display label — "the Sager family." */
+  name: string;
+  /** Head-of-wagon profession. Drives the train's pooled-services list. */
+  profession: ProfessionId;
+  /** Working ox count for this member's wagon — drives #283 ox-pool. */
+  oxCount: number;
+  /** Visible-children flag for flavor (and future child-mortality arcs
+   *  in #280). */
+  hasChildren: boolean;
+  /** Cash on hand — flavor for #283 trade dynamics. */
+  cash: number;
 }
 
 export type GameStateFlag =

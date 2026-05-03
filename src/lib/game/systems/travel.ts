@@ -82,7 +82,15 @@ export function milesPerDay(state: GameState): number {
   // Hard gate: under wagon's minTeam, the wagon simply can't be pulled.
   if (aliveTeam.length < wagon.minTeam) return 0;
 
-  const base = PACE_BASE_MILES[state.pace];
+  // #176 — while in a wagon train, pace is clamped to moderate. The
+  // train moves at the slowest member's pace, so 'fast' / 'grueling'
+  // selections silently downgrade. The trade is the safety net
+  // (services, share-watch, morale +1/day).
+  const effectivePace = state.wagonTrain
+    && (state.pace === 'fast' || state.pace === 'grueling')
+    ? 'moderate'
+    : state.pace;
+  const base = PACE_BASE_MILES[effectivePace];
   let terrain = TERRAIN_MULTIPLIER[state.location.terrain];
   const oxen = oxenSpeedFactorFor(state);
 

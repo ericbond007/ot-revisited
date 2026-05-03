@@ -13,6 +13,7 @@ import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-st
 import { addNews, generatePostGossip, generateNewspaper, applyNewspaper } from '$lib/game/systems/news';
 import { maybeDeliverLetter } from '$lib/game/systems/letters';
 import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide, forgeOxShoes, useBathHouse } from '$lib/game/systems/town-services';
+import { joinTrain, leaveTrain } from '$lib/game/systems/wagon-train';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -558,6 +559,33 @@ export const actions: Actions = {
     if (!(here.services ?? []).includes('guide')) throw error(409, 'no guide here');
     const result = hireGuide(state, dollars);
     state = result.state;
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  // #176 — Wagon-train services. Join at any trading post; leave at
+  // any landmark (the leave action runs from the in-train info panel).
+  townJoinTrain: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    if (!state.location.atLandmarkId) throw error(409, 'not at a landmark');
+    const here = getLandmark(state.location.atLandmarkId);
+    if (here.kind !== 'trading_post') throw error(409, 'must be at a trading post');
+    if (state.wagonTrain) throw error(409, 'already in a wagon train');
+    const rng = makeRng(`${state.seed}:wagon-train:${here.id}:${state.day}`);
+    const result = joinTrain(state, rng);
+    state = result.state;
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  townLeaveTrain: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    if (!state.wagonTrain) throw error(409, 'not in a wagon train');
+    state = leaveTrain(state);
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },

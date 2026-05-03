@@ -21,6 +21,7 @@ import { hunt, type HuntTarget, type AmmoBand } from '../../game/actions/hunt';
 import { trade } from '../../game/actions/trade';
 import { ford, type FordMethod, type RiverState } from '../../game/actions/ford';
 import { stayAtInn, repairWagon } from '../../game/systems/town-services';
+import { joinTrain } from '../../game/systems/wagon-train';
 import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-purity';
 import { hasLiveHunter, hasLiveBlacksmith } from '../../game/professions/predicates';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
@@ -351,6 +352,22 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
     }
 
     if (here.kind === 'trading_post') {
+      // #176 — first thing the bot does at any trading post: join a
+      // wagon train if one's not already on hand. Period reality:
+      // emigrants joined at the first practical gathering point and
+      // stayed in the company for as long as the route held. The bot
+      // gets +1 morale/day, possibly half-price smithy, and pace-clamp
+      // safety — all positive-EV unless the player is committing to a
+      // grueling-pace push (the bot doesn't, so this is pure upside).
+      if (!s.wagonTrain) {
+        try {
+          s = joinTrain(s, rng).state;
+          stats.decisionsMade += 1;
+        } catch {
+          // Already in a train — silent skip.
+        }
+      }
+
       // Order at a post: smithy repair → trade for goods → inn stay → leave.
       // Repair first because hauling broken-wagon damage further is the
       // worst outcome; cash spent on repair stops the bleed.
