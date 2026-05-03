@@ -1,6 +1,6 @@
 # Remaining TODOs
 
-As of 2026-05-02 (post-merge of #269 soap). 14 open.
+As of 2026-05-02 (post-merge of #238 native ferry). 13 open.
 
 **Tags:** `[H]` = historical-accuracy / period-flavor item (research lives in `docs/historical-pass/`).
 
@@ -76,7 +76,6 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ### Native interaction expansion (extends #121)
 
-- **#238** — [H] Native-run ferry option — Shoshone / Cayuse ferries at Green / Snake / Columbia
 - **#240** — [H] Hire-a-guide for the Sublette Cutoff (Bridger detour past South Pass). Barlow side shipped via #235.
 - **#241** — [H] Gift-first parlay — small tobacco / sugar gift opens better trade rates on first contact
 
@@ -121,6 +120,7 @@ Research pass on items / mechanics / landmarks / diary sources vs. period realit
 
 ## Recently shipped
 
+- **#238** Native-run ferry option — new `nativeFerry: { tribeId, priceItem, priceQty, blurb }` field on `RiverStats` (optional). FordModal shows a 5th method "Native ferry" only when the river has the field AND the tribe attitude is ≥50 AND the party has the trade currency. Crossing: deduct trade item, advance 1 day (vs caulk's 2, ferry's 1), zero loss risk, +2 attitude bump. New `'native_ferry'` `FordMethod` + 🪶 glyph in `ford_methods` icon dictionary. FordSummaryModal renders the new method label "Took the native ferry." Server-side gates re-checked in `ford()` (throws on missing config / unfriendly tribe / insufficient currency). Stocked at: Green River (Shoshone bull-boat — 6 strings of beads, per Sage 1846 / Frizzell 1852), Three Island Crossing (Bannock-Shoshone raft — 4 beads, Snake is wider but bands here ran a regular service for emigrants). NOT at the Columbia / The Dalles — Cayuse ran rafts there too but post-1847 Cayuse War makes the attitude gate impossible to clear in the gameplay window. 9 new tests; 1282/1282 green.
 - **#139 follow-up** `press_cheese` now visible in the camp UI — the action was registered in `CAMP_ACTIONS_BY_ID` but missing from the iterable `CAMP_ACTIONS` array, so the cheese-pressing flow was reachable via dev-harness only and invisible in the camp grid for normal play. Added `pressCheese` to the practical-section of the array. New regression-guard test in `camp-actions.test.ts`: every entry in `CAMP_ACTIONS_BY_ID` must also appear in the iterable list (would have caught the original miss). 1273/1273 green.
 - **#269** Soap as a craftable item — new `soap` item (`tool` category, 0.5 lb/bar, $0.50 buy / $0.20 sell — Marcy 1859 lists "soap, 5¢ a bar" wholesale, emigrant outfitters charged 8-10× markup). Stocks: Independence outfitter, Ft Laramie, Ft Hall, The Dalles. **wash_clothes camp action** now branches: with 1+ bar in inventory, lifts +50 cleanliness (matches the bath-house single-visit boost) and consumes one bar; without soap, +30 (the original baseline). Frizzell 1852 / Royce 1849 describe trail laundry as "barely better than a rinse" without soap; with a fresh bar the same wash was "the cleanest we've been since St. Joseph." **make_soap camp action** (`🧼`, 2 hr, available wherever there's tallow): 3 lb tallow → 2 bars soap. Period reality: Beecher 1846 + Frizzell 1852 record lye-soap making as a regular pioneer chore — leach lye from hardwood ashes, boil with rendered tallow until it saponifies. We abstract the wood ash (cookfire produces it daily) and round to 3 lb tallow → 2 bars to keep the trade-off real (tallow is desperation food, draw order 6.5). 16 new tests; 1272/1272 green.
 - **#270** Bath-house at major trading posts — new `useBathHouse` town service in `systems/town-services.ts`: $1/alive-member flat fee, +50 cleanliness across the alive party (capped at 100, dead members untouched), +4 morale (capped at 100), event-log line "Soaked in the bath-house — hot water, soap, a real towel." Stocked at Ft Laramie + The Dalles only — small forts (Bridger, Boise) and rough army posts (Kearny) skipped per period reality. Period reality: Royce 1849 + Frizzell 1852 describe these as "the first proper bath in three months" — a paid hot-water soak at a real bath-house, big jump above the +30 from the 3-hour wash_clothes camp action. Wired through `'bath_house'` in the services union, 🛁 glyph in `town_services` icon dictionary, `townBathHouse` server action gating on the post stocking it, direct-form-submit service card in TownStage (gossip/newspaper pattern — flat-rate, no tunable quantity). 12 new tests; 1256/1256 green.

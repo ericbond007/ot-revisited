@@ -13,13 +13,15 @@
     ford: 'Forded',
     caulk: 'Caulked & floated',
     ferry: 'Took the ferry',
-    wait: 'Waited'
+    wait: 'Waited',
+    native_ferry: 'Took the native ferry'
   };
   const METHOD_GLYPH: Record<FordResult['method'], string> = {
-    ford:  ICON.ford_methods.river,
-    caulk: ICON.ford_methods.caulk,
-    ferry: ICON.ford_methods.ferry,
-    wait:  ICON.ford_methods.wait
+    ford:         ICON.ford_methods.river,
+    caulk:        ICON.ford_methods.caulk,
+    ferry:        ICON.ford_methods.ferry,
+    wait:         ICON.ford_methods.wait,
+    native_ferry: ICON.ford_methods.native
   };
 
   // Round to integer for display — the underlying condition can carry
