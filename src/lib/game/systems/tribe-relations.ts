@@ -58,6 +58,35 @@ export function hostileEncounterChance(state: GameState, tribeId: string): numbe
   return Math.max(0.02, 0.5 - a * 0.0048);
 }
 
+// #241 Gift-first parlay. Period reality: emigrants who opened a
+// negotiation by sharing tobacco (or sugar in later years) got
+// markedly better trade terms and lasting goodwill. Catlin's plains
+// journals, Sage 1846, and Frizzell 1852 all describe the smoke-first
+// custom — refusing to share a pipe was read as an open insult.
+//
+// We track the one-time gift per tribe via a `_giftedTribe_<id>`
+// flag. Subsequent encounters check the flag for native-side
+// behaviors that key off "this party is known to us" — for now
+// that's the bonus pemmican rate in the trading-party encounter.
+
+function giftedFlagKey(tribeId: string): string {
+  return `_giftedTribe_${tribeId}`;
+}
+
+/** Returns true once the party has shared a smoke / gift with this
+ *  tribe. Persistent for the rest of the journey. */
+export function hasGiftedTribe(state: GameState, tribeId: string): boolean {
+  return Boolean(state.flags[giftedFlagKey(tribeId)]);
+}
+
+/** Sets the one-time gift flag for the named tribe. Idempotent. */
+export function markGiftedTribe(state: GameState, tribeId: string): GameState {
+  return {
+    ...state,
+    flags: { ...state.flags, [giftedFlagKey(tribeId)]: true }
+  };
+}
+
 /** Exported convenience — encounter pickers will call this first. */
 export { tribesAtMile, getTribe } from '../content/tribes';
 export type { Tribe, AttitudeLevel };

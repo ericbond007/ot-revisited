@@ -5,7 +5,9 @@ import { inTerrain, yearAtLeast, milesBetween, and } from './event-gating';
 import { tribesAtMile, type Tribe } from './tribes';
 import {
   getTribeAttitude,
-  adjustTribeAttitude
+  adjustTribeAttitude,
+  hasGiftedTribe,
+  markGiftedTribe
 } from '../systems/tribe-relations';
 import { addNews, effectHuntBonus, effectCholeraScare } from '../systems/news';
 import { hasLiveIndianTrader } from '../professions/predicates';
@@ -471,6 +473,70 @@ const native_trading_party: GameEvent = {
     return here.some((t) => getTribeAttitude(s, t.id) >= 41);
   },
   choices: [
+    {
+      // #241 Gift-first parlay. Smoke-the-pipe diplomacy from period
+      // sources — Catlin, Frizzell, Sage. Costs an extra gift up front
+      // (2 tobacco) but lifts the tribe attitude permanently and lands
+      // a markedly better one-shot trade (+50% pemmican). Hidden when
+      // the party can't afford OR the gift has already been given to
+      // any tribe at this mile (one-time per tribe, persistent).
+      id: 'gift_smoke_first',
+      icon: '🕊️',
+      label: 'Smoke a pipe first (2 tobacco gift + 1 trade)',
+      silentLog: true,
+      hidden: (s) => {
+        // Need 3 tobacco total — 2 for the gift, 1 for the trade.
+        if ((s.inventory.tobacco ?? 0) < 3) return true;
+        // Skip if every tribe at this mile has already been gifted.
+        const here = tribesAtMile(s.location.milesTraveled).filter(
+          (t) => getTribeAttitude(s, t.id) >= 41
+        );
+        if (here.length === 0) return true;
+        return here.every((t) => hasGiftedTribe(s, t.id));
+      },
+      apply: (s, rng) => {
+        // Pick a tribe matching the encounter gate that hasn't yet been
+        // gifted — the gift-first benefit is one-time per tribe.
+        const candidates = tribesAtMile(s.location.milesTraveled).filter(
+          (t) => getTribeAttitude(s, t.id) >= 41 && !hasGiftedTribe(s, t.id)
+        );
+        const tribe = candidates.length > 0 ? candidates[rng.int(0, candidates.length - 1)] : null;
+        if (!tribe) {
+          return logLine(s, 'No new tribe to share with — they rode on.');
+        }
+        // Gift first: -2 tobacco, +6 attitude, set gifted flag.
+        let next: GameState = {
+          ...s,
+          inventory: { ...s.inventory, tobacco: (s.inventory.tobacco ?? 0) - 2 }
+        };
+        next = adjustTribeAttitude(next, tribe.id, 6);
+        next = markGiftedTribe(next, tribe.id);
+        // Then the trade: -1 tobacco, +12 lb pemmican (the gift-first
+        // rate, matches the Indian Trader bonus). With an Indian
+        // Trader in the party the rate stacks to 16 lb — both bonuses
+        // come from "knowing how to do business" with these people.
+        const traderBonus = hasLiveIndianTrader(next) ? 4 : 0;
+        const pemmican = 12 + traderBonus;
+        next = {
+          ...next,
+          inventory: {
+            ...next.inventory,
+            tobacco: (next.inventory.tobacco ?? 0) - 1,
+            pemmican: (next.inventory.pemmican ?? 0) + pemmican
+          }
+        };
+        next = logLine(
+          next,
+          `Shared a pipe with the ${tribe.name} headman, then traded — ${pemmican} lb pemmican. Relations +6, lasting respect.`
+        );
+        return addNews(next, {
+          text: `The ${tribe.name} speak well of your party — they say you know how to greet a man.`,
+          source: `${tribe.name} elder`,
+          topic: 'opportunity',
+          day: s.day
+        });
+      }
+    },
     {
       id: 'trade',
       icon: '💰',
