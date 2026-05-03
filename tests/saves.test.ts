@@ -51,7 +51,7 @@ describe('save format versioning', () => {
     const s = fresh();
     const json = serialize(s);
     const parsed = JSON.parse(json);
-    expect(parsed.version).toBe(1);
+    expect(parsed.version).toBe(2);
     expect(parsed.state).toBeDefined();
   });
 

@@ -98,6 +98,60 @@ describe('wagon-train roster generation (#280a per-wagon)', () => {
     const t = generateTrain('s', 1, null, makeRng('s'));
     expect(t.leaderId).toBe('player');
   });
+
+  it('roster has compositional variety — over many seeds, all four archetypes appear', () => {
+    const compositions = new Set<string>();
+    for (let i = 0; i < 30; i++) {
+      const t = generateTrain('var-' + i, i, null, makeRng('var-' + i));
+      for (const c of t.companions) {
+        if (c.party.length === 1) compositions.add('solo');
+        else if (c.party.every((p) => p.kind === 'adult')) compositions.add('all_adult');
+        else if (c.party.some((p) => p.kind === 'child')) compositions.add('family-or-mixed');
+      }
+    }
+    // Across 30 trains × ~8 wagons each = ~240 samples we should see
+    // at least solo, all-adult, and family-or-mixed archetypes.
+    expect(compositions.has('solo')).toBe(true);
+    expect(compositions.has('all_adult')).toBe(true);
+    expect(compositions.has('family-or-mixed')).toBe(true);
+  });
+
+  it('fresh=true gives every wagon full health, fresh oxen, pristine wagon', () => {
+    const t = generateTrain('s', 1, 'independence_mo', makeRng('s'), { fresh: true });
+    for (const c of t.companions) {
+      for (const p of c.party) expect(p.health).toBe(100);
+      for (const o of c.oxen) {
+        expect(o.health).toBe(100);
+        expect(o.fatigue).toBe(0);
+        expect(o.shod).toBe(true);
+      }
+      expect(c.wagon.condition).toBe(100);
+      expect(c.wagon.canvas).toBe(100);
+      expect(c.morale).toBe(80);
+    }
+  });
+
+  it('fresh=false (default) gives trail-worn state — varied health and fatigued oxen', () => {
+    const t = generateTrain('s', 30, 'fort_kearny', makeRng('s'), { fresh: false });
+    // At least one ox somewhere should have non-zero fatigue (the trail
+    // wear path picks fatigue 10-40 randomly).
+    const hasFatigued = t.companions.some((c) => c.oxen.some((o) => o.fatigue > 0));
+    expect(hasFatigued).toBe(true);
+  });
+
+  it('joinTrain auto-detects Independence-start as fresh (full health)', () => {
+    const s = createInitialState({
+      seed: 'i',
+      leader: { name: 'L', profession: 'farmer' },
+      companions: [{ name: 'C', profession: 'doctor' }],
+      startDate: { year: 1849, month: 4, day: 15 }
+    });
+    const r = joinTrain(s, makeRng('jt-fresh'));
+    for (const c of r.state.wagonTrain!.companions) {
+      for (const p of c.party) expect(p.health).toBe(100);
+      for (const o of c.oxen) expect(o.fatigue).toBe(0);
+    }
+  });
 });
 
 describe('joinTrain / leaveTrain', () => {

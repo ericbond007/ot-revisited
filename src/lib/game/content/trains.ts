@@ -83,20 +83,51 @@ function pickGivenName(rng: Rng, sex: 'male' | 'female'): string {
   return pool[rng.int(0, pool.length - 1)];
 }
 
-/** Generate the party for an NPC wagon: 1 leader + 0-4 dependents.
- *  Dependents include a spouse (likely if `hasChildren`) and 0-3
- *  children. Period reality: most wagons carried family-of-five
- *  averages, with extremes from solo prospectors to 8-person extended
- *  families. */
+/** Wagon composition archetypes — period-realistic mix per Unruh
+ *  *Plains Across* + Mattes census. Family wagons were the bulk; the
+ *  long tail is groups-of-friends, in-law clusters, and solo
+ *  prospectors. Affects party generation: who's in the wagon, how
+ *  they're related, whether children are aboard. */
+export type WagonComposition = 'family' | 'mixed' | 'all_adult' | 'solo';
+
+const COMPOSITION_WEIGHTS: Array<[WagonComposition, number]> = [
+  ['family', 60],
+  ['mixed', 15],
+  ['all_adult', 15],
+  ['solo', 10]
+];
+
+function pickComposition(rng: Rng): WagonComposition {
+  const total = COMPOSITION_WEIGHTS.reduce((sum, [, w]) => sum + w, 0);
+  let r = rng.next() * total;
+  for (const [id, w] of COMPOSITION_WEIGHTS) {
+    r -= w;
+    if (r <= 0) return id;
+  }
+  return 'family';
+}
+
+/** Generate the party for an NPC wagon based on composition archetype.
+ *  Period reality: family wagons (60%) carried 4-6 souls (parents +
+ *  kids); mixed wagons (15%) added unrelated adults (in-laws, hired
+ *  hands, friends); all-adult wagons (15%) were 2-4 unrelated men
+ *  prospecting or freighting together; solo (10%) was the rare
+ *  Joe-Meek-style trapper-turned-emigrant. The optional `fresh` flag
+ *  gives every member 100 HP — used at Independence-start joins where
+ *  no trail wear has accumulated. */
 function generateNpcParty(
   wagonId: string,
   surname: string,
   leaderProf: ProfessionId,
-  hasChildren: boolean,
+  composition: WagonComposition,
+  fresh: boolean,
   rng: Rng
 ): PartyMember[] {
   const party: PartyMember[] = [];
   const leaderSex: 'male' | 'female' = rng.chance(0.85) ? 'male' : 'female';
+  const adultHp = (): number => fresh ? 100 : rng.int(70, 100);
+  const childHp = (): number => fresh ? 100 : rng.int(75, 100);
+
   const leader: PartyMember = {
     id: `${wagonId}-p0`,
     name: `${pickGivenName(rng, leaderSex)} ${surname}`,
@@ -105,15 +136,18 @@ function generateNpcParty(
     isLeader: true,
     profession: leaderProf,
     age: rng.int(22, 48),
-    health: rng.int(70, 100),
+    health: adultHp(),
     cleanliness: 100,
     conditions: [],
     dead: false
   };
   party.push(leader);
 
-  // Spouse — present in most family wagons, absent in solo prospectors.
-  if (hasChildren || rng.chance(0.7)) {
+  if (composition === 'solo') return party;
+
+  // Spouse — present in family + mixed wagons. all_adult skips spouse,
+  // adds peers below.
+  if (composition === 'family' || composition === 'mixed') {
     const spouseSex = leaderSex === 'male' ? 'female' : 'male';
     party.push({
       id: `${wagonId}-p1`,
@@ -122,15 +156,15 @@ function generateNpcParty(
       kind: 'adult',
       isLeader: false,
       age: rng.int(20, 44),
-      health: rng.int(70, 100),
+      health: adultHp(),
       cleanliness: 100,
       conditions: [],
       dead: false
     });
   }
 
-  // Children — 0-3 if `hasChildren`, otherwise none.
-  if (hasChildren) {
+  // Children — only family + mixed wagons; mixed wagons sometimes skip.
+  if (composition === 'family' || (composition === 'mixed' && rng.chance(0.6))) {
     const childCount = rng.int(1, 3);
     for (let c = 0; c < childCount; c++) {
       const childSex: 'male' | 'female' = rng.chance(0.5) ? 'male' : 'female';
@@ -141,7 +175,33 @@ function generateNpcParty(
         kind: 'child',
         isLeader: false,
         age: rng.int(2, 14),
-        health: rng.int(75, 100),
+        health: childHp(),
+        cleanliness: 100,
+        conditions: [],
+        dead: false
+      });
+    }
+  }
+
+  // Extra adults — peers, in-laws, hired hands, brothers-in-arms.
+  // Mixed wagons get 1-2; all_adult wagons get 1-3 to round out the
+  // crew. Surnames may differ from the leader (in-laws, friends) —
+  // we mix in 50/50.
+  if (composition === 'mixed' || composition === 'all_adult') {
+    const extraCount = composition === 'all_adult' ? rng.int(1, 3) : rng.int(1, 2);
+    for (let e = 0; e < extraCount; e++) {
+      const sex: 'male' | 'female' = rng.chance(0.85) ? 'male' : 'female';
+      const extraSurname = rng.chance(0.5)
+        ? FAMILY_NAMES[rng.int(0, FAMILY_NAMES.length - 1)]
+        : surname;
+      party.push({
+        id: `${wagonId}-e${e}`,
+        name: `${pickGivenName(rng, sex)} ${extraSurname}`,
+        sex,
+        kind: 'adult',
+        isLeader: false,
+        age: rng.int(18, 50),
+        health: adultHp(),
         cleanliness: 100,
         conditions: [],
         dead: false
@@ -205,16 +265,43 @@ function generateNpcInventory(
   return inv;
 }
 
-/** Generate the ox team for an NPC wagon. 2-6 oxen, all alive at
- *  generation time with light fatigue (joining the train mid-trail
- *  means they've already been pulling). */
-function generateNpcOxen(wagonId: string, count: number, rng: Rng): Ox[] {
+/** Generate the ox team for an NPC wagon. 2-6 oxen. `fresh=true`
+ *  gives full health and zero fatigue (Independence-start joins);
+ *  `fresh=false` is the trail-fatigued team for mid-trail joins. */
+function generateNpcOxen(
+  wagonId: string,
+  count: number,
+  fresh: boolean,
+  rng: Rng
+): Ox[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `${wagonId}-ox-${i}`,
-    health: rng.int(70, 100),
-    fatigue: rng.int(10, 40),
-    shod: rng.chance(0.85)
+    health: fresh ? 100 : rng.int(70, 100),
+    fatigue: fresh ? 0 : rng.int(10, 40),
+    shod: fresh ? true : rng.chance(0.85)
   }));
+}
+
+/** Composition-aware label for an NPC wagon — "the Sager family,"
+ *  "the Reed brothers," "Joe Meek." Reads naturally in the roster
+ *  panel and event log. */
+function wagonLabel(surname: string, composition: WagonComposition, party: PartyMember[]): string {
+  if (composition === 'solo') {
+    const leader = party[0];
+    return leader.name;
+  }
+  if (composition === 'all_adult') {
+    return `the ${surname} party`;
+  }
+  // family + mixed both read as "the X family"
+  return `the ${surname} family`;
+}
+
+export interface GenerateNpcWagonOpts {
+  /** `true` for Independence-start joins → full health, fresh oxen,
+   *  pristine wagon condition. `false` for mid-trail joins → light
+   *  trail wear (the train has been moving). */
+  fresh?: boolean;
 }
 
 /** Generate one NPC wagon — the full state, not a flat record. */
@@ -223,28 +310,31 @@ function generateNpcWagon(
   index: number,
   surname: string,
   leaderProf: ProfessionId,
-  hasChildren: boolean,
-  rng: Rng
+  composition: WagonComposition,
+  rng: Rng,
+  opts: GenerateNpcWagonOpts = {}
 ): NpcWagonState {
   const wagonId = `wagon-${index}`;
-  const party = generateNpcParty(wagonId, surname, leaderProf, hasChildren, rng);
+  const fresh = opts.fresh === true;
+  const party = generateNpcParty(wagonId, surname, leaderProf, composition, fresh, rng);
   const oxenCount = rng.int(2, 6);
   const wagonModel = getWagon(DEFAULT_WAGON_MODEL);
+  const hasChildren = party.some((p) => p.kind === 'child');
   return {
     id: wagonId,
-    name: `the ${surname} family`,
+    name: wagonLabel(surname, composition, party),
     leaderProfession: leaderProf,
     hasChildren,
     seed: `${trainSeed}-${wagonId}`,
     party,
     inventory: generateNpcInventory(leaderProf, party.length, rng),
-    oxen: generateNpcOxen(wagonId, oxenCount, rng),
-    morale: rng.int(60, 90),
+    oxen: generateNpcOxen(wagonId, oxenCount, fresh, rng),
+    morale: fresh ? 80 : rng.int(60, 90),
     cash: rng.int(40, 300),
     wagon: {
       model: DEFAULT_WAGON_MODEL,
-      condition: rng.int(70, 100),
-      canvas: rng.int(80, 100),
+      condition: fresh ? 100 : rng.int(70, 100),
+      canvas: fresh ? 100 : rng.int(80, 100),
       carryCapacity: wagonModel.carryCapacity,
       hasBranBarrel: wagonModel.shipsWithBranBarrel === true
     },
@@ -253,15 +343,27 @@ function generateNpcWagon(
   };
 }
 
+export interface GenerateTrainOpts {
+  /** `true` for Independence-start joins (every wagon at full
+   *  health/condition); `false` for mid-trail (light trail wear). */
+  fresh?: boolean;
+}
+
 /** Generate a wagon-train roster keyed by (seed, joinDay). The same
  *  inputs always produce the same roster — so a player's "Sager
  *  family" stays the Sager family across save/load. Player joins as
- *  the default leader (#285 voting can flip this later). */
+ *  the default leader (#285 voting can flip this later).
+ *
+ *  Composition is rolled per-wagon: most are families (60%), some are
+ *  mixed (15%), some are all-adult parties (15%), a few are solo
+ *  prospectors (10%). The roster reads as a real-feeling cross-section
+ *  of overland traffic, not a fleet of identical family wagons. */
 export function generateTrain(
   seed: string,
   joinDay: number,
   joinedAtLandmarkId: string | null,
-  rng: Rng
+  rng: Rng,
+  opts: GenerateTrainOpts = {}
 ): WagonTrain {
   const memberCount = rng.int(5, 12);
   const captain = CAPTAIN_NAMES[rng.int(0, CAPTAIN_NAMES.length - 1)];
@@ -285,8 +387,9 @@ export function generateTrain(
       i,
       surname,
       pickProfession(rng),
-      rng.chance(0.6),
-      rng
+      pickComposition(rng),
+      rng,
+      { fresh: opts.fresh }
     ));
   }
 

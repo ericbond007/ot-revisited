@@ -54,16 +54,25 @@ export interface JoinTrainResult {
 
 /** Join a wagon train at the current landmark. Generates a deterministic
  *  roster from (seed, day) — same inputs → same roster. Throws if the
- *  party is already in a train. */
+ *  party is already in a train.
+ *
+ *  Detects Independence-start vs mid-trail and generates accordingly:
+ *  if the player is at `independence_mo` or hasn't moved (day 1 / 0
+ *  miles), every NPC wagon spawns at full health, full condition,
+ *  fresh oxen — the train hasn't begun moving. Otherwise generation
+ *  applies light trail wear (the train has been on the road). */
 export function joinTrain(state: GameState, rng: Rng): JoinTrainResult {
   if (isInTrain(state)) {
     throw new Error('joinTrain: already in a wagon train');
   }
+  const fresh = state.location.atLandmarkId === 'independence_mo'
+    || (state.day <= 1 && state.location.milesTraveled === 0);
   const train = generateTrain(
     state.seed,
     state.day,
     state.location.atLandmarkId ?? null,
-    rng
+    rng,
+    { fresh }
   );
   const next: GameState = {
     ...state,
