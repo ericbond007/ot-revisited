@@ -204,10 +204,29 @@ function reapDead(wagon: NpcWagonState, day: number): NpcWagonState {
 // did this without consultation when food=0 and a fresh body was
 // available. NPCs don't get a player choice — the bot decides — so
 // when both conditions hold we silently mark a recent corpse consumed
-// and add ~50 lb game_meat to the wagon. The grim flavor surfaces as
-// a player-visible log line so the player feels the tonal shift.
-const NPC_CANNIBAL_MEAT_LBS = 50;
+// and add fresh meat to the wagon. The grim flavor surfaces as a
+// player-visible log line so the player feels the tonal shift.
+//
+// Adult corpse → 50 lb game meat. Child corpse → 25 lb (smaller
+// frame). Children are eligible only when their death cause was
+// starvation — period diaries (Sager 1844, Donner 1846) confirm
+// survivors did consume children's bodies but only when they too
+// had starved; never an injury or disease death.
+const NPC_CANNIBAL_ADULT_MEAT_LBS = 50;
+const NPC_CANNIBAL_CHILD_MEAT_LBS = 25;
 const NPC_CANNIBAL_FRESHNESS_DAYS = 5;
+
+function isCannibalEligible(m: PartyMember, day: number): boolean {
+  if (!m.dead || m.consumed) return false;
+  if (typeof m.deathDay !== 'number') return false;
+  if (day - m.deathDay > NPC_CANNIBAL_FRESHNESS_DAYS) return false;
+  // Adults: any death cause. Children: only starvation.
+  if (m.kind === 'adult') return true;
+  if (m.kind === 'child') {
+    return m.deathCause === 'starvation' || m.deathCause === 'attrition';
+  }
+  return false;
+}
 
 function maybeCannibalize(
   wagon: NpcWagonState,
@@ -219,21 +238,14 @@ function maybeCannibalize(
     0
   );
   if (food > 0) return { wagon };
-  // Find a fresh adult corpse — children excluded (period diaries
-  // don't record this; the line had to land somewhere even at the
-  // Donner end).
-  const corpses = wagon.party.filter(
-    (m) =>
-      m.dead
-      && m.kind === 'adult'
-      && !m.consumed
-      && typeof m.deathDay === 'number'
-      && day - m.deathDay <= NPC_CANNIBAL_FRESHNESS_DAYS
-  );
+  const corpses = wagon.party.filter((m) => isCannibalEligible(m, day));
   if (corpses.length === 0) return { wagon };
   const corpse = [...corpses].sort(
     (a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0)
   )[0];
+  const meatLbs = corpse.kind === 'child' ? NPC_CANNIBAL_CHILD_MEAT_LBS : NPC_CANNIBAL_ADULT_MEAT_LBS;
+  // Child cannibalism is more devastating to morale than adult.
+  const moraleHit = corpse.kind === 'child' ? 25 : 15;
   const next: NpcWagonState = {
     ...wagon,
     party: wagon.party.map((m) =>
@@ -241,14 +253,14 @@ function maybeCannibalize(
     ),
     inventory: {
       ...wagon.inventory,
-      game_meat: (wagon.inventory.game_meat ?? 0) + NPC_CANNIBAL_MEAT_LBS
+      game_meat: (wagon.inventory.game_meat ?? 0) + meatLbs
     },
-    morale: Math.max(0, wagon.morale - 15),
+    morale: Math.max(0, wagon.morale - moraleHit),
     eventLog: [
       ...wagon.eventLog,
       {
         day,
-        text: `Took ${corpse.name}'s body for meat. Nobody spoke. Morale −15.`
+        text: `Took ${corpse.name}'s body for meat. Nobody spoke. Morale −${moraleHit}.`
       }
     ]
   };

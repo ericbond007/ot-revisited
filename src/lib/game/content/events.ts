@@ -955,16 +955,22 @@ function hasNoFoodAtBurial(state: GameState): boolean {
 }
 
 function freshUnconsumedDead(state: GameState): GameState['party'][number] | null {
-  // The most-recently-dead-and-unconsumed adult — same shape as the
-  // camp-action recentCorpse helper. Used by the burial cannibalism
-  // choice to pick whose body is actually on the ground.
-  const fresh = state.party.filter((m) =>
-    m.dead
-    && m.kind === 'adult'
-    && !m.consumed
-    && typeof m.deathDay === 'number'
-    && state.day - m.deathDay <= 5
-  );
+  // Most-recently-dead-and-unconsumed body the survivors could eat.
+  // Adults are always eligible (Donner precedent). Children are
+  // eligible only when their death cause was starvation — period
+  // diaries (Sager 1844, Donner 1846) confirm survivors did consume
+  // children's bodies but only when starvation killed them, never
+  // injury or disease.
+  const fresh = state.party.filter((m) => {
+    if (!m.dead || m.consumed) return false;
+    if (typeof m.deathDay !== 'number') return false;
+    if (state.day - m.deathDay > 5) return false;
+    if (m.kind === 'adult') return true;
+    if (m.kind === 'child') {
+      return m.deathCause === 'starvation' || m.deathCause === 'cannibalism_volunteered';
+    }
+    return false;
+  });
   if (fresh.length === 0) return null;
   return fresh.sort((a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0))[0];
 }

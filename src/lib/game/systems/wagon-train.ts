@@ -143,6 +143,7 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
   const companions: typeof state.wagonTrain.companions = [];
   const playerLogs: { day: number; text: string }[] = [];
   let pendingEvent: GameEvent | undefined;
+  let pendingCrisisIdx = -1;
   for (const c of state.wagonTrain.companions) {
     const wasFood = totalFood(c.inventory);
     const rng = makeRng(`${c.seed}:${state.day}`);
@@ -162,9 +163,91 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
       && result.wagon.outcome === 'in-progress'
       && result.wagon.party.some((p) => !p.dead)
     ) {
-      pendingEvent = buildStarvationCrisisEvent(result.wagon);
+      // Stash the index — we'll run the other-wagon contribution
+      // pass below before deciding whether to surface a player ask.
+      pendingCrisisIdx = companions.length - 1;
     }
   }
+
+  // #288 — other-wagon contributions before the player gets asked.
+  // Period reality: emigrant diaries (Carpenter 1857, Palmer 1845)
+  // describe distressed wagons being bailed out by collections from
+  // other company members long before any single household had to
+  // shoulder it. Roll across each non-target companion: if they have
+  // good morale + enough surplus, they chip in. If contributions
+  // total enough food (~30 lb), the crisis resolves silently — the
+  // player isn't even asked.
+  if (pendingCrisisIdx !== -1) {
+    const targetWagon = companions[pendingCrisisIdx];
+    const contributionRng = makeRng(`${targetWagon.id}:${state.day}:contrib`);
+    let totalFlour = 0;
+    let totalBacon = 0;
+    const contributorLogs: string[] = [];
+    const updated = companions.map((c, i) => {
+      if (i === pendingCrisisIdx) return c;
+      if (c.outcome !== 'in-progress') return c;
+      // Only happy + well-stocked wagons chip in.
+      if (c.morale < 50) return c;
+      const cFlour = c.inventory.flour ?? 0;
+      const cBacon = c.inventory.bacon ?? 0;
+      // Need ≥ 5 days' food for their own party first.
+      const eaters = c.party.filter((p) => !p.dead).length;
+      const minSelf = Math.max(50, eaters * 5 * 2.5);
+      if (cFlour < minSelf) return c;
+      // 50% chance to contribute when eligible. Each contribution
+      // is 5-10 lb flour + a couple lb bacon.
+      if (!contributionRng.chance(0.5)) return c;
+      const giveFlour = Math.min(cFlour - minSelf, contributionRng.int(5, 10));
+      const giveBacon = Math.min(cBacon, contributionRng.int(2, 5));
+      if (giveFlour <= 0 && giveBacon <= 0) return c;
+      totalFlour += giveFlour;
+      totalBacon += giveBacon;
+      contributorLogs.push(`${c.name} chipped in ${giveFlour} lb flour${giveBacon > 0 ? ` + ${giveBacon} lb bacon` : ''}.`);
+      return {
+        ...c,
+        inventory: {
+          ...c.inventory,
+          flour: cFlour - giveFlour,
+          bacon: cBacon - giveBacon
+        }
+      };
+    });
+    if (totalFlour > 0 || totalBacon > 0) {
+      // Apply pooled contributions to the target.
+      updated[pendingCrisisIdx] = {
+        ...updated[pendingCrisisIdx],
+        inventory: {
+          ...updated[pendingCrisisIdx].inventory,
+          flour: (updated[pendingCrisisIdx].inventory.flour ?? 0) + totalFlour,
+          bacon: (updated[pendingCrisisIdx].inventory.bacon ?? 0) + totalBacon
+        }
+      };
+      for (const text of contributorLogs) {
+        playerLogs.push({ day: state.day, text });
+      }
+      // Threshold for "the train solved it" — 30 lb of staples is
+      // ~6 days for a small family. If the pooled contributions
+      // cover that, no player ask. Otherwise the player still gets
+      // the modal but the contributors' help is logged first.
+      const poolTotal = totalFlour + totalBacon;
+      if (poolTotal >= 30) {
+        playerLogs.push({
+          day: state.day,
+          text: `${updated[pendingCrisisIdx].name} carried on without your help — the train pooled what it could.`
+        });
+      } else {
+        // Train chipped in but it wasn't enough — surface the player
+        // ask so they can decide on the rest.
+        pendingEvent = buildStarvationCrisisEvent(updated[pendingCrisisIdx]);
+      }
+    } else {
+      // Nobody else could spare anything — straight to player ask.
+      pendingEvent = buildStarvationCrisisEvent(updated[pendingCrisisIdx]);
+    }
+    // Replace companions with the contribution-updated array.
+    for (let i = 0; i < companions.length; i++) companions[i] = updated[i];
+  }
+
   const next: GameState = {
     ...state,
     wagonTrain: { ...state.wagonTrain, companions },
