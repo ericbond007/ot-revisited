@@ -1,4 +1,4 @@
-// #176 — wagon-train system tests.
+// #176 wagon-train system + #280a per-wagon stateful tests.
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -12,14 +12,15 @@ import {
 import {
   generateTrain,
   trainHasProfession,
-  trainOxSurplus
+  trainOxSurplus,
+  wagonOxCount
 } from '../src/lib/game/content/trains';
 import { createInitialState } from '../src/lib/game/engine';
 import { repairWagon, forgeOxShoes } from '../src/lib/game/systems/town-services';
 import { adjustMorale } from '../src/lib/game/systems/morale';
 import { milesPerDay } from '../src/lib/game/systems/travel';
 import { makeRng } from '../src/lib/game/rng';
-import type { GameState, Ox } from '../src/lib/game/types';
+import type { GameState, NpcWagonState, Ox } from '../src/lib/game/types';
 
 function game(): GameState {
   return createInitialState({
@@ -30,31 +31,72 @@ function game(): GameState {
   });
 }
 
-describe('wagon-train roster generation', () => {
+/** Minimal NPC wagon stub for tests that don't care about full state. */
+function stubNpc(over: Partial<NpcWagonState> & { id: string; leaderProfession: NpcWagonState['leaderProfession'] }): NpcWagonState {
+  const game0 = game();
+  const base: NpcWagonState = {
+    id: over.id,
+    name: `the ${over.id} family`,
+    leaderProfession: over.leaderProfession,
+    hasChildren: false,
+    seed: 's',
+    party: [],
+    inventory: {},
+    oxen: Array.from({ length: 4 }, (_, i) => ({ id: `${over.id}-ox-${i}`, health: 100, fatigue: 0, shod: true })),
+    morale: 70,
+    cash: 100,
+    wagon: { ...game0.wagon },
+    eventLog: [],
+    outcome: 'in-progress'
+  };
+  return { ...base, ...over };
+}
+
+describe('wagon-train roster generation (#280a per-wagon)', () => {
   it('produces a deterministic roster from (seed, joinDay)', () => {
     const a = generateTrain('seed-a', 5, 'fort_kearny', makeRng('seed-a:bot:5'));
     const b = generateTrain('seed-a', 5, 'fort_kearny', makeRng('seed-a:bot:5'));
-    expect(a.members.length).toBe(b.members.length);
-    expect(a.members[0].name).toBe(b.members[0].name);
-    expect(a.members[0].profession).toBe(b.members[0].profession);
+    expect(a.companions.length).toBe(b.companions.length);
+    expect(a.companions[0].name).toBe(b.companions[0].name);
+    expect(a.companions[0].leaderProfession).toBe(b.companions[0].leaderProfession);
   });
 
-  it('rosters carry 5-12 members', () => {
+  it('rosters carry 5-12 companion wagons', () => {
     for (let i = 0; i < 20; i++) {
       const t = generateTrain('seed-' + i, i, 'fort_kearny', makeRng('seed-' + i));
-      expect(t.members.length).toBeGreaterThanOrEqual(5);
-      expect(t.members.length).toBeLessThanOrEqual(12);
+      expect(t.companions.length).toBeGreaterThanOrEqual(5);
+      expect(t.companions.length).toBeLessThanOrEqual(12);
     }
   });
 
-  it('every member has profession + ox count + cash', () => {
+  it('every companion wagon has full state — party + inventory + oxen + cash', () => {
     const t = generateTrain('s', 1, null, makeRng('s'));
-    for (const m of t.members) {
-      expect(typeof m.profession).toBe('string');
-      expect(m.oxCount).toBeGreaterThanOrEqual(2);
-      expect(m.oxCount).toBeLessThanOrEqual(6);
-      expect(m.cash).toBeGreaterThanOrEqual(40);
+    for (const c of t.companions) {
+      expect(typeof c.leaderProfession).toBe('string');
+      expect(c.party.length).toBeGreaterThanOrEqual(1);
+      expect(c.party[0].isLeader).toBe(true);
+      expect(c.party[0].profession).toBe(c.leaderProfession);
+      expect(wagonOxCount(c)).toBeGreaterThanOrEqual(2);
+      expect(wagonOxCount(c)).toBeLessThanOrEqual(6);
+      expect(c.cash).toBeGreaterThanOrEqual(40);
+      expect(c.morale).toBeGreaterThanOrEqual(60);
+      expect(c.outcome).toBe('in-progress');
+      // Inventory carries at least the period staples.
+      expect((c.inventory.flour ?? 0)).toBeGreaterThan(0);
     }
+  });
+
+  it('companions with `hasChildren` carry kid party members', () => {
+    const t = generateTrain('s', 1, null, makeRng('s'));
+    const family = t.companions.find((c) => c.hasChildren);
+    if (family) {
+      expect(family.party.some((p) => p.kind === 'child')).toBe(true);
+    }
+  });
+
+  it('train initializes with player as leader (#285)', () => {
+    const t = generateTrain('s', 1, null, makeRng('s'));
+    expect(t.leaderId).toBe('player');
   });
 });
 
@@ -64,7 +106,7 @@ describe('joinTrain / leaveTrain', () => {
     expect(isInTrain(s)).toBe(false);
     const r = joinTrain(s, makeRng('j'));
     expect(isInTrain(r.state)).toBe(true);
-    expect(r.state.wagonTrain!.members.length).toBeGreaterThan(0);
+    expect(r.state.wagonTrain!.companions.length).toBeGreaterThan(0);
     expect(r.state.eventLog[r.state.eventLog.length - 1].text).toMatch(/joined/i);
   });
 
@@ -93,7 +135,6 @@ describe('wagon-train morale + pace effects', () => {
     const baseline = adjustMorale(game(), makeRng('m'));
     let inTrain = joinTrain(game(), makeRng('m')).state;
     inTrain = adjustMorale(inTrain, makeRng('m2'));
-    // Setting morale should be at least 1 higher than the solo baseline.
     expect(inTrain.morale).toBeGreaterThan(baseline.morale);
   });
 
@@ -117,7 +158,6 @@ describe('wagon-train morale + pace effects', () => {
     const inTrain = joinTrain(base, makeRng('t')).state;
     const trainFast = milesPerDay({ ...inTrain, pace: 'fast' });
     const trainMod = milesPerDay({ ...inTrain, pace: 'moderate' });
-    // fast pace clamps to moderate inside a train — same miles.
     expect(trainFast).toBe(trainMod);
   });
 });
@@ -139,23 +179,21 @@ describe('wagon-train smithy support', () => {
       ...s,
       wagonTrain: {
         id: 't', name: 'T', joinedDay: 1, joinedAtLandmarkId: null,
-        members: [
-          { id: 'm0', name: 'the X family', profession: 'blacksmith', oxCount: 4, hasChildren: false, cash: 100 }
-        ]
+        leaderId: 'player',
+        companions: [stubNpc({ id: 'wagon-0', leaderProfession: 'blacksmith' })]
       }
     };
     expect(hasBlacksmithSupport(s)).toBe(true);
   });
 
   it('repairWagon discount applies when train has a blacksmith', () => {
-    let solo = { ...game(), cash: 100, wagon: { ...game().wagon, condition: 50 } };
-    let withTrain = {
+    const solo = { ...game(), cash: 100, wagon: { ...game().wagon, condition: 50 } };
+    const withTrain = {
       ...solo,
       wagonTrain: {
         id: 't', name: 'T', joinedDay: 1, joinedAtLandmarkId: null,
-        members: [
-          { id: 'm0', name: 'the X family', profession: 'blacksmith' as const, oxCount: 4, hasChildren: false, cash: 100 }
-        ]
+        leaderId: 'player' as const,
+        companions: [stubNpc({ id: 'wagon-0', leaderProfession: 'blacksmith' })]
       }
     };
     const soloPoints = repairWagon(solo, 20).pointsRestored;
@@ -164,14 +202,13 @@ describe('wagon-train smithy support', () => {
   });
 
   it('forgeOxShoes discount applies when train has a blacksmith', () => {
-    let solo = { ...game(), cash: 50, inventory: {} };
-    let withTrain = {
+    const solo = { ...game(), cash: 50, inventory: {} };
+    const withTrain = {
       ...solo,
       wagonTrain: {
         id: 't', name: 'T', joinedDay: 1, joinedAtLandmarkId: null,
-        members: [
-          { id: 'm0', name: 'the X family', profession: 'blacksmith' as const, oxCount: 4, hasChildren: false, cash: 100 }
-        ]
+        leaderId: 'player' as const,
+        companions: [stubNpc({ id: 'wagon-0', leaderProfession: 'blacksmith' })]
       }
     };
     const soloCost = forgeOxShoes(solo, 4).cost;
@@ -181,19 +218,25 @@ describe('wagon-train smithy support', () => {
 });
 
 describe('train roster helpers', () => {
-  it('trainHasProfession finds matching members', () => {
+  it('trainHasProfession reads leaderProfession on companion wagons', () => {
     const t = generateTrain('s', 1, null, makeRng('s'));
-    // generated rosters always include at least one farmer (highest weight).
     expect(typeof trainHasProfession(t, 'farmer')).toBe('boolean');
   });
 
-  it('trainOxSurplus sums oxCount excess over 4', () => {
+  it('trainOxSurplus sums alive-ox excess over 4', () => {
     const train = {
       id: 't', name: 'T', joinedDay: 1, joinedAtLandmarkId: null,
-      members: [
-        { id: 'm0', name: 'a', profession: 'farmer' as const, oxCount: 6, hasChildren: false, cash: 0 },
-        { id: 'm1', name: 'b', profession: 'farmer' as const, oxCount: 3, hasChildren: false, cash: 0 },
-        { id: 'm2', name: 'c', profession: 'farmer' as const, oxCount: 5, hasChildren: false, cash: 0 }
+      leaderId: 'player' as const,
+      companions: [
+        // 6 alive oxen → +2 surplus
+        stubNpc({ id: 'wagon-0', leaderProfession: 'farmer',
+                  oxen: Array.from({ length: 6 }, (_, i) => ({ id: `o${i}`, health: 100, fatigue: 0, shod: true })) }),
+        // 3 alive oxen → 0 surplus
+        stubNpc({ id: 'wagon-1', leaderProfession: 'farmer',
+                  oxen: Array.from({ length: 3 }, (_, i) => ({ id: `o${i}`, health: 100, fatigue: 0, shod: true })) }),
+        // 5 alive oxen → +1 surplus
+        stubNpc({ id: 'wagon-2', leaderProfession: 'farmer',
+                  oxen: Array.from({ length: 5 }, (_, i) => ({ id: `o${i}`, health: 100, fatigue: 0, shod: true })) })
       ]
     };
     expect(trainOxSurplus(train)).toBe(2 + 0 + 1);
