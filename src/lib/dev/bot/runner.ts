@@ -22,6 +22,7 @@ import { trade } from '../../game/actions/trade';
 import { ford, type FordMethod, type RiverState } from '../../game/actions/ford';
 import { stayAtInn, repairWagon } from '../../game/systems/town-services';
 import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-purity';
+import { hasLiveHunter, hasLiveBlacksmith } from '../../game/professions/predicates';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
 import type { GameState, ProfessionId } from '../../game/types';
@@ -237,6 +238,45 @@ function buildBotShoppingList(
     buys.push({ item: 'grain', qty: 30 });
   }
 
+  // Hunter on the party → hunt is the primary food source on long
+  // legs, so ammo capacity is a load-bearing input. Stock more
+  // gunpowder + lead + caps so the bot doesn't run dry mid-stretch.
+  if (hasLiveHunter(state)) {
+    if (stock.has('gunpowder') && (inv.gunpowder ?? 0) < 30) {
+      buys.push({ item: 'gunpowder', qty: 30 - (inv.gunpowder ?? 0) });
+    }
+    if (stock.has('lead_balls') && (inv.lead_balls ?? 0) < 30) {
+      buys.push({ item: 'lead_balls', qty: 30 - (inv.lead_balls ?? 0) });
+    }
+    if (stock.has('percussion_caps') && (inv.percussion_caps ?? 0) < 30) {
+      buys.push({ item: 'percussion_caps', qty: 30 - (inv.percussion_caps ?? 0) });
+    }
+    if (stock.has('salt') && (inv.salt ?? 0) < 10) {
+      // Salt preserves fresh game meat (#122) — without it, meat spoils
+      // and the hunt's haul rots before the next post.
+      buys.push({ item: 'salt', qty: 10 - (inv.salt ?? 0) });
+    }
+  }
+
+  // Blacksmith on the party → smithy repair is half-price (engine
+  // #154), so the bot buys more spare wagon parts to leverage that
+  // and keep the wagon high-condition. Period: blacksmith was the
+  // emigrant's value-multiplier at every fort along the trail.
+  if (hasLiveBlacksmith(state)) {
+    if (stock.has('axle') && (inv.axle ?? 0) < 1) {
+      buys.push({ item: 'axle', qty: 1 });
+    }
+    if (stock.has('wheel') && (inv.wheel ?? 0) < 1) {
+      buys.push({ item: 'wheel', qty: 1 });
+    }
+    if (stock.has('tongue') && (inv.tongue ?? 0) < 1) {
+      buys.push({ item: 'tongue', qty: 1 });
+    }
+    if (stock.has('tar_bucket') && (inv.tar_bucket ?? 0) < 1) {
+      buys.push({ item: 'tar_bucket', qty: 1 });
+    }
+  }
+
   // Medicine — without these, cholera / typhoid / dysentery deal full
   // daily damage and the bot grinds to a rest-cycle halt. Period
   // reality: emigrants who could afford it stocked quinine, bandages,
@@ -425,12 +465,35 @@ function doBotHunt(state: GameState, stats: RunningStats): GameState {
   }
 }
 
+/** Auto-fill companion professions to reach the requested party size,
+ *  picking in priority order: doctor (medic), hunter (food), teamster
+ *  (oxen), blacksmith (repairs), scout (speed). Capped at 5 companions
+ *  (= party size 6). Skips the leader's profession to avoid duplicates
+ *  when the leader is one of the priority roles. */
+const COMPANION_PRIORITY: ProfessionId[] = ['doctor', 'hunter', 'teamster', 'blacksmith', 'scout'];
+
+function defaultCompanions(partySize: number, leader: ProfessionId): ProfessionId[] {
+  const want = Math.max(0, Math.min(5, partySize - 1));
+  const picks: ProfessionId[] = [];
+  for (const p of COMPANION_PRIORITY) {
+    if (picks.length >= want) break;
+    if (p !== leader) picks.push(p);
+  }
+  // If the leader was in the priority list, the loop above produced one
+  // short — pad with farmer (generic able-body) until we hit the count.
+  while (picks.length < want) picks.push('farmer');
+  return picks;
+}
+
 export function runBot(opts: BotRunOpts): BotRunReport {
   const persona = getPersona(opts.persona);
   const startDate = opts.startDate ?? { year: 1849, month: 4, day: 15 };
   const maxDays = opts.maxDays ?? DEFAULT_MAX_DAYS;
   const leaderProfession: ProfessionId = opts.leaderProfession ?? 'farmer';
-  const companions = (opts.companionProfessions ?? ['doctor', 'hunter']).map((p, i) => ({
+  const partySize = Math.max(1, Math.min(6, opts.partySize ?? 3));
+  const companionProfs = opts.companionProfessions
+    ?? defaultCompanions(partySize, leaderProfession);
+  const companions = companionProfs.map((p, i) => ({
     name: `Comp${i + 1}`,
     profession: p,
     sex: i % 2 === 0 ? ('female' as const) : ('male' as const)
