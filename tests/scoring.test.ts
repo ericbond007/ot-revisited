@@ -63,15 +63,41 @@ describe('score', () => {
 
   it('multiple luxuries sum and sort by points descending', () => {
     const s = score(fixture({
-      inventory: { grandfather_clock: 1, fiddle: 1, harmonica: 2, tobacco: 5 }
+      inventory: { grandfather_clock: 1, fiddle: 1, harmonica: 2, buffalo_robe: 1 }
     }));
-    // 1×1000 + 1×50 + 2×20 + 5×5 = 1115
+    // 1×1000 + 1×50 + 2×20 + 1×25 = 1115
     expect(s.luxuries).toBe(1115);
-    expect(s.luxuryItems.map((l) => l.id)).toEqual(['grandfather_clock', 'fiddle', 'harmonica', 'tobacco']);
+    // Sort is by total points: harmonica 2×20=40 beats buffalo_robe 1×25=25.
+    expect(s.luxuryItems.map((l) => l.id)).toEqual(['grandfather_clock', 'fiddle', 'harmonica', 'buffalo_robe']);
   });
 
-  it('LUXURY_POINTS table is exported and grandfather clock is the top-scoring luxury', () => {
+  it('LUXURY_POINTS table includes #277 frontier-startup items, with printing press as the top-scoring haul', () => {
     const max = Math.max(...Object.values(LUXURY_POINTS));
-    expect(LUXURY_POINTS.grandfather_clock).toBe(max);
+    // #277 — printing press is the period-headline haul (Brannan
+    // 1846 California Star), bumping above the grandfather clock.
+    expect(LUXURY_POINTS.printing_press).toBe(max);
+    expect(LUXURY_POINTS.printing_press).toBe(2500);
+    // Sanity check: the case-study items all clear 1000.
+    for (const id of ['anvil', 'fruit_tree_saplings', 'medicine_chest', 'carpenter_chest', 'grandfather_clock']) {
+      expect(LUXURY_POINTS[id]).toBeGreaterThanOrEqual(1000);
+    }
+  });
+
+  it('#277 epilogue paragraphs surface for delivered frontier-startup items, ordered by point value', () => {
+    const s = score(fixture({
+      inventory: { fruit_tree_saplings: 1, garden_seeds: 1, plow: 1 }
+    }));
+    expect(s.epilogueLines.length).toBe(3);
+    expect(s.epilogueLines[0].id).toBe('fruit_tree_saplings'); // highest points
+    expect(s.epilogueLines[0].line).toMatch(/orchard/i);
+    expect(s.epilogueLines.map((e) => e.id)).toEqual(['fruit_tree_saplings', 'plow', 'garden_seeds']);
+  });
+
+  it('#277 epilogue paragraphs are empty when the party did not arrive', () => {
+    const s = score(fixture({
+      inventory: { anvil: 1, grandfather_clock: 1 },
+      outcome: 'wiped'
+    }));
+    expect(s.epilogueLines).toEqual([]);
   });
 });

@@ -157,6 +157,32 @@ export const PRICES: Record<string, PriceEntry> = {
   china_tea_set:     { buy: 25.00, sell: 12.00 },
   feather_mattress:  { buy: 15.00, sell:  7.00 },
 
+  // #277 Frontier-startup items — buy-at-Independence prestige goods.
+  // Prices grounded in `docs/historical-pass/07-frontier-startups.md`.
+  // Sell margin tight (~50%) — these are buy-and-haul, not a trading
+  // commodity. The arrival-score payoff (scoring.ts LUXURY_POINTS) is
+  // the real return.
+  seed_grain:          { buy:  4.00, sell:  2.00 },
+  fruit_tree_saplings: { buy: 12.00, sell:  6.00 },
+  garden_seeds:        { buy:  2.00, sell:  1.00 },
+  plow:                { buy:  8.00, sell:  4.00 },
+  fruit_vine_cuttings: { buy:  6.00, sell:  3.00 },
+  carpenter_chest:     { buy: 25.00, sell: 12.00 },
+  medicine_chest:      { buy: 40.00, sell: 20.00 },
+  medical_books:       { buy:  6.00, sell:  3.00 },
+  iron_strongbox:      { buy: 15.00, sell:  7.00 },
+  gold_scales:         { buy:  4.00, sell:  2.00 },
+  trade_inventory:     { buy: 30.00, sell: 15.00 },
+  printing_press:      { buy: 50.00, sell: 25.00 },
+  surveying_kit:       { buy: 20.00, sell: 10.00 },
+  family_bible:        { buy:  3.00, sell:  1.50 },
+  silver_tea_service:  { buy: 30.00, sell: 15.00 },
+  shelf_clock:         { buy: 12.00, sell:  6.00 },
+  feather_pillows:     { buy:  3.00, sell:  1.50 },
+  sewing_chest:        { buy:  8.00, sell:  4.00 },
+  daguerreotype_case:  { buy:  5.00, sell:  2.50 },
+  lap_desk:            { buy:  4.00, sell:  2.00 },
+
   // Native trade goods
   moccasins:    { buy: 3.00, sell: 1.50 },
   buffalo_robe: { buy: 8.00, sell: 4.00 },

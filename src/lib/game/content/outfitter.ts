@@ -25,5 +25,14 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   // Native trade goods (#216) — Plains-trader pack per Marcy 1859.
   'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife',
   // Luxuries — useless on the trail, prestige score on arrival (#148).
-  'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock'
+  'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
+  // #277 Frontier-startup items — buy-at-Independence prestige goods.
+  // What you brought to *build a life* with after arrival, not what
+  // you used on the trail. Heavy, expensive, big delivery payoff.
+  'seed_grain', 'fruit_tree_saplings', 'garden_seeds', 'plow', 'fruit_vine_cuttings',
+  'carpenter_chest', 'medicine_chest', 'medical_books',
+  'iron_strongbox', 'gold_scales', 'trade_inventory', 'printing_press',
+  'surveying_kit',
+  'family_bible', 'silver_tea_service', 'shelf_clock', 'feather_pillows',
+  'sewing_chest', 'daguerreotype_case', 'lap_desk'
 ];
