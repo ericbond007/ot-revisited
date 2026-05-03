@@ -25,7 +25,8 @@ import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-pu
 import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
 import type { GameState, ProfessionId } from '../../game/types';
-import { getPersona, type Persona } from './personas';
+import type { Rng } from '../../game/rng';
+import { getPersona, makeBotRng, type Persona } from './personas';
 import { computeFunScore } from './scoring';
 import type { BotRunOpts, BotRunReport } from './types';
 
@@ -131,7 +132,7 @@ function buildBotShoppingList(
 
 /** Try to handle the landmark we're parked at. Returns the new state
  *  with atLandmarkId cleared (or unchanged at the end-of-trail). */
-function handleLandmark(state: GameState, persona: Persona, stats: RunningStats): GameState {
+function handleLandmark(state: GameState, persona: Persona, stats: RunningStats, rng: Rng): GameState {
   const id = state.location.atLandmarkId;
   if (!id) return state;
   const here = getLandmark(id);
@@ -139,7 +140,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats)
 
   try {
     if (here.kind === 'river') {
-      const method = persona.pickFordMethod(s, here);
+      const method = persona.pickFordMethod(s, here, rng);
       const river: RiverState = {
         depthFt: here.river?.depthFt ?? 3,
         currentMph: here.river?.currentMph ?? 3,
@@ -153,7 +154,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats)
 
     if (here.kind === 'trading_post') {
       // Maybe buy supplies, maybe stay at inn, then leave.
-      if (persona.shouldTradeAtPost(s, here)) {
+      if (persona.shouldTradeAtPost(s, here, rng)) {
         const buys = buildBotShoppingList(s, here);
         const totalGuess = buys.reduce((sum, b) => sum + b.qty * 0.5, 0); // rough cap
         if (buys.length > 0 && s.cash >= totalGuess) {
@@ -165,7 +166,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats)
           }
         }
       }
-      if (persona.shouldStayAtInn(s, here)) {
+      if (persona.shouldStayAtInn(s, here, rng)) {
         try {
           s = stayAtInn(s, 1, here.innNightlyRate).state;
           stats.decisionsMade += 1;
@@ -221,8 +222,10 @@ function tryFordWithFallback(
 function doBotHunt(state: GameState, stats: RunningStats): GameState {
   try {
     const { target, ammo } = pickHuntTarget(state);
+    // hunt() caps hunters at 2 — partner-hunting was the period max.
     const aliveAdults = state.party.filter((m) => !m.dead && m.kind === 'adult').length;
-    return hunt(state, { target, ammo, hunters: Math.max(1, aliveAdults) });
+    const hunters = Math.min(2, Math.max(1, aliveAdults));
+    return hunt(state, { target, ammo, hunters });
   } catch (err) {
     stats.errors.push(`hunt: ${(err as Error).message}`);
     return state;
@@ -255,6 +258,11 @@ export function runBot(opts: BotRunOpts): BotRunReport {
   );
   let prevLiveOxen = new Set<string>(state.oxen.filter((o) => o.health > 0).map((o) => o.id));
 
+  // Bot-side RNG — distinct from the engine's tick RNG so chaos
+  // randomness doesn't reach into engine state. Threaded into every
+  // persona method.
+  const botRng = makeBotRng(opts.seed);
+
   let dayCount = 0;
   while (!state.completed && dayCount < maxDays) {
     dayCount += 1;
@@ -265,9 +273,9 @@ export function runBot(opts: BotRunOpts): BotRunReport {
       if (state.location.atLandmarkId) {
         // Landmark handling — may advance multiple days (inn stay) or
         // exactly one (ford), or zero (just clear scenic flag).
-        state = handleLandmark(state, persona, stats);
+        state = handleLandmark(state, persona, stats, botRng);
         firedEventToday = true;
-      } else if (persona.shouldFindWater(state)) {
+      } else if (persona.shouldFindWater(state, botRng)) {
         // Rest one day with find_water (and boil_water if firewood +
         // boiling-knowledge). Falls back to find_water alone (dirty
         // water — disease risk — beats dying of thirst). Falls back to
@@ -300,11 +308,11 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         }
         stats.decisionsMade += 1;
         firedEventToday = true;
-      } else if (persona.shouldHunt(state)) {
+      } else if (persona.shouldHunt(state, botRng)) {
         state = doBotHunt(state, stats);
         firedEventToday = true;
         stats.decisionsMade += 1;
-      } else if (persona.shouldRest(state)) {
+      } else if (persona.shouldRest(state, botRng)) {
         try {
           state = rest(state, 1);
           stats.decisionsMade += 1;
@@ -318,8 +326,8 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         // Travel day.
         state = {
           ...state,
-          pace: persona.pickPace(state),
-          rations: persona.pickRations(state)
+          pace: persona.pickPace(state, botRng),
+          rations: persona.pickRations(state, botRng)
         };
         const tick = tickDayPausable(state);
         state = tick.state;
@@ -328,7 +336,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
           firedEventToday = true;
           const ev = tick.pendingEvent;
           stats.eventsFiredById[ev.id] = (stats.eventsFiredById[ev.id] ?? 0) + 1;
-          const choiceId = persona.pickEventChoice(state, ev);
+          const choiceId = persona.pickEventChoice(state, ev, botRng);
           stats.decisionsMade += 1;
           state = applyPendingChoice(state, ev, choiceId);
         }

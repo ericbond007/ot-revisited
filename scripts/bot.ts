@@ -31,12 +31,13 @@ function parseArgs(argv: string[]): CliOpts {
     else if (a === '--quiet') opts.quiet = true;
     else if (a === '--verbose' || a === '-v') opts.verbose = true;
     else if (a === '--help' || a === '-h') {
-      console.log('Usage: npm run bot -- [--runs N] [--persona cautious|balanced|aggressive] [--seed STR] [--quiet] [--verbose]');
+      console.log('Usage: npm run bot -- [--runs N] [--persona cautious|balanced|aggressive|chaos] [--seed STR] [--quiet] [--verbose]');
+      console.log('       chaos = seeded-random "dumbass tourist" mode for fuzz coverage');
       process.exit(0);
     }
   }
-  if (!['cautious', 'balanced', 'aggressive'].includes(opts.persona)) {
-    console.error(`Unknown persona "${opts.persona}". Use cautious | balanced | aggressive.`);
+  if (!['cautious', 'balanced', 'aggressive', 'chaos'].includes(opts.persona)) {
+    console.error(`Unknown persona "${opts.persona}". Use cautious | balanced | aggressive | chaos.`);
     process.exit(1);
   }
   return opts;
