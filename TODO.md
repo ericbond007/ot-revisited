@@ -34,7 +34,7 @@ _(empty — items shipped or moved to other sections)_
 - **#86** — Expand hover tooltips across all data points
 - **#102** — Pre-made vs custom starter kit choice
 - **#145** — Camp view — eliminate laptop scroll
-- **#170** — Use new ox-team design beyond the travel strip
+- **#170** — Use new ox-team design beyond the travel strip. Historical research done — see `docs/historical-pass/07-ox-team-harness.md`. Detail upgrades for OxTeam.svelte: explicit yoke beam + hickory bows visible across each pair, lead/swing/wheel pair role distinction (wheel-pair stronger silhouette + horns kept for downhill braking), mule alternate render with collar+hames+traces (no yoke), walking bullwhacker driver figure for ox teams vs seated muleskinner for mule teams, mixed-team rendering policy (group by kind, small gap between).
 - **#171** — Laurel Hill landmark art — only gap from #89 batch
 - **#189** — Landmark / trading-post screen rework — better town actions
 - **#191** — Save format: add migration runner; deserializer hard-crashes now
@@ -44,7 +44,7 @@ _(empty — items shipped or moved to other sections)_
 
 ## For Claude Design or another SVG animation generator
 
-- **#156** — Wagon SVG visual revisit — proportions / damage / addons
+- **#156** — Wagon SVG visual revisit — proportions / damage / addons. Historical research done — see `docs/historical-pass/06-wagon-anatomy.md`, `08-wagon-accessories-placement.md`, `09-canvas-and-wear-states.md`. Format locked: SVG + raster pattern fills per `10-wagon-format-decision.md`. Build sequence: phase A SVG body refactor with anchor groups + 4–6 seamless raster textures (canvas weave / weathered wood / paint-flake / rust / leather) → phase B accessory `<symbol>` overlays toggled by inventory state (tar bucket / water keg / butter pail under wagon / chicken coop / milk cow tied behind / axe-shovel side rack) → phase C wear-state SVG overlays driven by `wagon.condition` (5 stops fresh→dusty→worn→ragged→failing) → phase D party figures (deferred).
 - **#87** — Rich event visuals
 - **#162** — Components revisit — StatBar + PartyPanel avatar designer pass
 - **#211** — [H] Bespoke teepee landmark art per tribe (Cheyenne / Shoshone) — replaces placeholder
