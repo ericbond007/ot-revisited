@@ -13,6 +13,7 @@ import { tickNpcWagon, type NpcTickContext } from './npc-engine';
 import { makeRng } from '../rng';
 import type { GameEvent } from '../content/events';
 import { buildStarvationCrisisEvent } from './npc-crisis-events';
+import { processDepartures } from './npc-departures';
 
 /** True when the party is currently traveling with a wagon train. */
 export function isInTrain(state: GameState): boolean {
@@ -248,13 +249,25 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
     for (let i = 0; i < companions.length; i++) companions[i] = updated[i];
   }
 
-  const next: GameState = {
+  let next: GameState = {
     ...state,
     wagonTrain: { ...state.wagonTrain, companions },
     eventLog: playerLogs.length === 0
       ? state.eventLog
       : [...state.eventLog, ...playerLogs]
   };
+
+  // #290 — departures. Low-morale wagons roll to leave the train.
+  // Runs after tick + crisis so the day's morale drops factor in.
+  // Skipped if a starvation-crisis pendingEvent is already queued —
+  // we don't want a wagon leaving the same tick they bottom out
+  // (the player should at least get the chance to react).
+  if (!pendingEvent && next.wagonTrain) {
+    const departureRng = makeRng(`${state.seed}:${state.day}:departures`);
+    const dep = processDepartures(next, departureRng);
+    next = dep.state;
+  }
+
   return pendingEvent ? { state: next, pendingEvent } : { state: next };
 }
 

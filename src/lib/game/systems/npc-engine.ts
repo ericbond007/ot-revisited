@@ -178,7 +178,10 @@ function applyStarvation(wagon: NpcWagonState): NpcWagonState {
     if (m.dead) return m;
     return { ...m, health: Math.max(0, m.health - STARVATION_HP_PER_DAY) };
   });
-  return { ...wagon, party };
+  // Starvation also crushes morale — the wagon's people stop
+  // believing the captain knows what he's doing. Drives the
+  // departure rolls in #290.
+  return { ...wagon, party, morale: Math.max(0, wagon.morale - 3) };
 }
 
 function reapDead(wagon: NpcWagonState, day: number): NpcWagonState {
