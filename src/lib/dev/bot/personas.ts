@@ -85,6 +85,20 @@ function postStocksMissingWarmthGear(state: GameState, here: Landmark): boolean 
   return false;
 }
 
+/** Medicine restock trigger: bot is light on quinine / bandages /
+ *  laudanum (the three drugs that cover the most condition damage),
+ *  and the post stocks them. Without this, the bot only stops at the
+ *  first warmth-gear post and never resupplies medicine — chronic
+ *  cholera/typhoid rest-cycle traps the run. */
+function postStocksMissingMedicine(state: GameState, here: Landmark): boolean {
+  const stock = new Set(here.stock ?? []);
+  const inv = state.inventory;
+  if (stock.has('quinine') && (inv.quinine ?? 0) < 3) return true;
+  if (stock.has('bandages') && (inv.bandages ?? 0) < 3) return true;
+  if (stock.has('laudanum') && (inv.laudanum ?? 0) < 2) return true;
+  return false;
+}
+
 /** Total food on hand (lb). Used by hunt + trade decisions. */
 function foodOnHand(state: GameState): number {
   const inv = state.inventory;
@@ -135,11 +149,31 @@ function choiceMatching(state: GameState, event: GameEvent, ...patterns: RegExp[
   return null;
 }
 
+/** Health/water events default to the risky path (`risk_drink`,
+ *  `press_on` while keg sits foul, etc.) — picking the default is
+ *  a fast track to chronic disease that the engine has no cure for
+ *  (cholera deals -10 HP/day with only doctor's 30% relief, never
+ *  clears). This finder prefers safety-flagged choices: dump bad
+ *  water, walk upstream, boil, wait, etc. Returns null if no safe
+ *  choice exists. */
+function saferHealthChoice(state: GameState, event: GameEvent): string | null {
+  const isHealthish = event.category === 'health'
+    || /water|cholera|sick|disease|drink|stream|foul|river/i.test(event.title);
+  if (!isHealthish) return null;
+  return choiceMatching(state, event,
+    /upstream/i, /boil/i, /dump/i, /pour/i, /pure/i, /clean/i, /avoid/i, /skip/i, /carefully/i, /wait/i
+  );
+}
+
 export const cautiousPersona: Persona = {
   id: 'cautious',
   pickEventChoice(state, event) {
-    // Cautious avoids violence, pays tolls, accepts trades, helps strangers.
-    return choiceMatching(state, event, /pay/i, /trade/i, /help/i, /share/i, /accept/i)
+    // Cautious avoids violence + chronic disease. Prefer safety on
+    // health events first, then the cooperative-trade patterns, then
+    // the marked default. Period reality: emigrant captains who
+    // refused to drink dirty water lived; Donner Party did not.
+    return saferHealthChoice(state, event)
+      ?? choiceMatching(state, event, /pay/i, /trade/i, /help/i, /share/i, /accept/i)
       ?? defaultChoice(state, event);
   },
   pickPace(state) {
@@ -175,7 +209,9 @@ export const cautiousPersona: Persona = {
   },
   shouldTradeAtPost(state, here) {
     if (state.cash < 10) return false;
-    return foodOnHand(state) < 100 || postStocksMissingWarmthGear(state, here);
+    return foodOnHand(state) < 100
+      || postStocksMissingWarmthGear(state, here)
+      || postStocksMissingMedicine(state, here);
   },
   shouldStayAtInn(state, here) {
     return (here.services ?? []).includes('inn')
@@ -194,7 +230,11 @@ export const cautiousPersona: Persona = {
 export const balancedPersona: Persona = {
   id: 'balanced',
   pickEventChoice(state, event) {
-    return defaultChoice(state, event);
+    // Balanced takes the marked default for most events but still
+    // routes around the "risk-drink" health trap — period emigrants
+    // (and any sane modern player) chose the upstream walk over the
+    // cholera roll. Aggressive overrides this; balanced doesn't.
+    return saferHealthChoice(state, event) ?? defaultChoice(state, event);
   },
   pickPace() {
     return 'moderate';
@@ -220,7 +260,9 @@ export const balancedPersona: Persona = {
   },
   shouldTradeAtPost(state, here) {
     if (state.cash < 20) return false;
-    return foodOnHand(state) < 60 || postStocksMissingWarmthGear(state, here);
+    return foodOnHand(state) < 60
+      || postStocksMissingWarmthGear(state, here)
+      || postStocksMissingMedicine(state, here);
   },
   shouldStayAtInn(state, here) {
     return (here.services ?? []).includes('inn')

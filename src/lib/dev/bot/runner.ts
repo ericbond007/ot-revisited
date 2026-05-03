@@ -178,6 +178,33 @@ function buildBotShoppingList(
     buys.push({ item: 'beans', qty: 10 });
   }
 
+  // Medicine — without these, cholera / typhoid / dysentery deal full
+  // daily damage and the bot grinds to a rest-cycle halt. Period
+  // reality: emigrants who could afford it stocked quinine, bandages,
+  // laudanum at every major post. Modest quantities — these are
+  // priced like luxuries. Treatment items are consumed one per day per
+  // condition, so 3-5 doses per drug usually covers a 3-person party
+  // through the next disease cluster.
+  if (stock.has('quinine') && (inv.quinine ?? 0) < 4) {
+    buys.push({ item: 'quinine', qty: 4 - (inv.quinine ?? 0) });
+  }
+  if (stock.has('bandages') && (inv.bandages ?? 0) < 4) {
+    buys.push({ item: 'bandages', qty: 4 - (inv.bandages ?? 0) });
+  }
+  if (stock.has('laudanum') && (inv.laudanum ?? 0) < 3) {
+    buys.push({ item: 'laudanum', qty: 3 - (inv.laudanum ?? 0) });
+  }
+  if (stock.has('dovers_powder') && (inv.dovers_powder ?? 0) < 3) {
+    buys.push({ item: 'dovers_powder', qty: 3 - (inv.dovers_powder ?? 0) });
+  }
+  if (stock.has('calomel') && (inv.calomel ?? 0) < 3) {
+    buys.push({ item: 'calomel', qty: 3 - (inv.calomel ?? 0) });
+  }
+  // Dried fruit is the scurvy auto-cure — stockpile a small supply.
+  if (stock.has('dried_fruit') && (inv.dried_fruit ?? 0) < 5) {
+    buys.push({ item: 'dried_fruit', qty: 5 - (inv.dried_fruit ?? 0) });
+  }
+
   return buys;
 }
 
