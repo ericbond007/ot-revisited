@@ -109,11 +109,31 @@ describe('wagon-train roster generation (#280a per-wagon)', () => {
         else if (c.party.some((p) => p.kind === 'child')) compositions.add('family-or-mixed');
       }
     }
-    // Across 30 trains × ~8 wagons each = ~240 samples we should see
-    // at least solo, all-adult, and family-or-mixed archetypes.
     expect(compositions.has('solo')).toBe(true);
     expect(compositions.has('all_adult')).toBe(true);
     expect(compositions.has('family-or-mixed')).toBe(true);
+  });
+
+  it('solo wagons are common at mid-trail joins (survivors of attrition) and rare at Independence', () => {
+    function soloRate(fresh: boolean): number {
+      let solos = 0, total = 0;
+      for (let i = 0; i < 50; i++) {
+        const t = generateTrain('comp-' + i, fresh ? 1 : 30, fresh ? 'independence_mo' : 'fort_kearny', makeRng('comp-' + i + '-f' + fresh), { fresh });
+        for (const c of t.companions) {
+          if (c.party.length === 1) solos += 1;
+          total += 1;
+        }
+      }
+      return solos / total;
+    }
+    const freshRate = soloRate(true);
+    const midRate = soloRate(false);
+    // Fresh joins should rarely have solos; mid-trail joins should
+    // have many. Big gap is the period-faithful signal — survivors
+    // of dead families show up as solos on the mid-trail roster.
+    expect(midRate).toBeGreaterThan(freshRate * 2);
+    expect(freshRate).toBeLessThan(0.15);
+    expect(midRate).toBeGreaterThan(0.10);
   });
 
   it('fresh=true gives every wagon full health, fresh oxen, pristine wagon', () => {

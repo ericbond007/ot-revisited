@@ -90,17 +90,36 @@ function pickGivenName(rng: Rng, sex: 'male' | 'female'): string {
  *  they're related, whether children are aboard. */
 export type WagonComposition = 'family' | 'mixed' | 'all_adult' | 'solo';
 
-const COMPOSITION_WEIGHTS: Array<[WagonComposition, number]> = [
-  ['family', 60],
-  ['mixed', 15],
-  ['all_adult', 15],
-  ['solo', 10]
+// Independence-start weights. Period reality: emigrants assembled
+// into companies BEFORE departure — guidebooks (Marcy 1859, Ware
+// 1849) emphasized never starting alone. So solos at Independence
+// were rare oddballs (Joe-Meek-types, recently-arrived single men).
+const COMPOSITION_WEIGHTS_FRESH: Array<[WagonComposition, number]> = [
+  ['family', 65],
+  ['mixed', 18],
+  ['all_adult', 13],
+  ['solo', 4]
 ];
 
-function pickComposition(rng: Rng): WagonComposition {
-  const total = COMPOSITION_WEIGHTS.reduce((sum, [, w]) => sum + w, 0);
+// Mid-trail-join weights. Solo gets significantly more share here:
+// the natural mid-trail solo wagon is a *survivor* — leader whose
+// family died of cholera or accident, continuing alone. Helen
+// Carpenter (1857) and Bryant (1846) both describe these "widow
+// wagons" and "orphan wagons" trailing the main companies. Family
+// share drops accordingly — the dead families that attrited into
+// solos came from somewhere.
+const COMPOSITION_WEIGHTS_MIDTRAIL: Array<[WagonComposition, number]> = [
+  ['family', 45],
+  ['mixed', 17],
+  ['all_adult', 18],
+  ['solo', 20]
+];
+
+function pickComposition(rng: Rng, fresh: boolean): WagonComposition {
+  const weights = fresh ? COMPOSITION_WEIGHTS_FRESH : COMPOSITION_WEIGHTS_MIDTRAIL;
+  const total = weights.reduce((sum, [, w]) => sum + w, 0);
   let r = rng.next() * total;
-  for (const [id, w] of COMPOSITION_WEIGHTS) {
+  for (const [id, w] of weights) {
     r -= w;
     if (r <= 0) return id;
   }
@@ -387,7 +406,7 @@ export function generateTrain(
       i,
       surname,
       pickProfession(rng),
-      pickComposition(rng),
+      pickComposition(rng, opts.fresh === true),
       rng,
       { fresh: opts.fresh }
     ));
