@@ -71,6 +71,20 @@ function firstAvailableChoice(state: GameState, event: GameEvent): string {
   return event.choices[0].id;
 }
 
+/** Cold-camp gear deficit: coats + blankets per alive person, one tent
+ *  for the party. Returns true when the party is short any of these
+ *  and the post stocks the gear. Drives `shouldTradeAtPost` — first
+ *  post that stocks warmth gear should be a stop, not a flyby. */
+function postStocksMissingWarmthGear(state: GameState, here: Landmark): boolean {
+  const stock = new Set(here.stock ?? []);
+  const aliveCount = state.party.filter((m) => !m.dead).length || 1;
+  const inv = state.inventory;
+  if (stock.has('coat') && (inv.coat ?? 0) < aliveCount) return true;
+  if (stock.has('blanket') && (inv.blanket ?? 0) < aliveCount) return true;
+  if (stock.has('tent') && (inv.tent ?? 0) < 1) return true;
+  return false;
+}
+
 /** Total food on hand (lb). Used by hunt + trade decisions. */
 function foodOnHand(state: GameState): number {
   const inv = state.inventory;
@@ -138,7 +152,10 @@ export const cautiousPersona: Persona = {
     return flour > 50 ? 'filling' : 'normal';
   },
   shouldRest(state) {
-    return minPartyHealth(state) < 60 || state.morale < 35;
+    // Tightened from <60 to <45 (HP) so cautious doesn't burn the
+    // calendar on rest days. Real emigrant captains weighed days
+    // ahead vs. recovery; the bot does the same.
+    return minPartyHealth(state) < 45 || state.morale < 25;
   },
   shouldHunt(state) {
     return canHunt(state) && foodOnHand(state) < 80;
@@ -152,8 +169,9 @@ export const cautiousPersona: Persona = {
     if (state.cash >= (here.river?.ferryPrice ?? 5)) return 'ferry';
     return 'caulk';
   },
-  shouldTradeAtPost(state) {
-    return state.cash >= 10 && foodOnHand(state) < 100;
+  shouldTradeAtPost(state, here) {
+    if (state.cash < 10) return false;
+    return foodOnHand(state) < 100 || postStocksMissingWarmthGear(state, here);
   },
   shouldStayAtInn(state, here) {
     return (here.services ?? []).includes('inn')
@@ -161,6 +179,10 @@ export const cautiousPersona: Persona = {
       && (state.morale < 50 || minPartyHealth(state) < 70);
   },
   shouldFindWater(state) {
+    // Cautious refills at 50% — smoke tuning showed this is the
+    // sweet spot. Going lower (<25%) lets the keg run dry on a hot
+    // day and triggers a dehydration cascade that costs more rest
+    // days than the proactive find_water would have.
     return waterRatio(state) < 0.5 && state.location.terrain !== 'desert';
   }
 };
@@ -192,8 +214,9 @@ export const balancedPersona: Persona = {
     }
     return 'ford';
   },
-  shouldTradeAtPost(state) {
-    return state.cash >= 20 && foodOnHand(state) < 60;
+  shouldTradeAtPost(state, here) {
+    if (state.cash < 20) return false;
+    return foodOnHand(state) < 60 || postStocksMissingWarmthGear(state, here);
   },
   shouldStayAtInn(state, here) {
     return (here.services ?? []).includes('inn')
@@ -201,7 +224,7 @@ export const balancedPersona: Persona = {
       && (state.morale < 30 || minPartyHealth(state) < 50);
   },
   shouldFindWater(state) {
-    return waterRatio(state) < 0.35 && state.location.terrain !== 'desert';
+    return waterRatio(state) < 0.18 && state.location.terrain !== 'desert';
   }
 };
 

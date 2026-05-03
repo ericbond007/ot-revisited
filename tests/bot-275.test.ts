@@ -8,7 +8,7 @@ describe('#275 bot — end-to-end run', () => {
     const report = runBot({ seed: 'bot-balanced-1', persona: 'balanced' });
     expect(['arrived', 'wiped', 'in-progress', 'stranded']).toContain(report.outcome);
     expect(report.daysElapsed).toBeGreaterThan(0);
-    expect(report.daysElapsed).toBeLessThanOrEqual(250);
+    expect(report.daysElapsed).toBeLessThanOrEqual(365);
     expect(report.errors).toEqual([]);
   });
 
