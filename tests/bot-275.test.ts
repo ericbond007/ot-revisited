@@ -75,6 +75,10 @@ describe('#275 personas — registry coverage', () => {
       expect(typeof p.pickRations).toBe('function');
       expect(typeof p.shouldRest).toBe('function');
       expect(typeof p.shouldHunt).toBe('function');
+      expect(typeof p.pickFordMethod).toBe('function');
+      expect(typeof p.shouldTradeAtPost).toBe('function');
+      expect(typeof p.shouldStayAtInn).toBe('function');
+      expect(typeof p.shouldFindWater).toBe('function');
     }
   });
 });
