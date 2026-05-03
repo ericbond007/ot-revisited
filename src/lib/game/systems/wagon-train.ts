@@ -90,15 +90,18 @@ export function joinTrain(state: GameState, rng: Rng): JoinTrainResult {
   return { state: next, train };
 }
 
-/** #280b — advance every companion wagon by one day. Call this once
- *  per day-completion alongside the player's tick (in `tickDayPausable`,
- *  `applyPendingChoice`, and any action that consumes a calendar day —
- *  rest / ford / hunt / inn-stay). No-op if the player isn't in a train.
+/** #280b/#280c — advance every companion wagon by one day. Call this
+ *  once per day-completion alongside the player's tick (in
+ *  `tickDayPausable`, `applyPendingChoice`, and any action that
+ *  consumes a calendar day — rest / ford / hunt / inn-stay). No-op if
+ *  the player isn't in a train.
  *
  *  Each NPC wagon ticks with its own seed-derived RNG so divergent
  *  fates emerge from the same starting roster ("the Sager family ran
- *  out of flour at mile 1100; you didn't"). Player events / pace /
- *  rations don't transfer — NPCs run their own attrition curve. */
+ *  out of flour at mile 1100; you didn't"). NPC events (wheel break,
+ *  ox lame, cholera) fire here too — their player-visible news lines
+ *  bubble up onto the player's `state.eventLog` so the train feels
+ *  alive even though only the player sees the UI. */
 export function advanceTrain(state: GameState, traveled: boolean): GameState {
   if (!state.wagonTrain) return state;
   const ctx: NpcTickContext = {
@@ -107,13 +110,22 @@ export function advanceTrain(state: GameState, traveled: boolean): GameState {
     pace: state.pace,
     terrain: state.location.terrain
   };
-  const companions = state.wagonTrain.companions.map((c) => {
+  const companions: typeof state.wagonTrain.companions = [];
+  const playerLogs: { day: number; text: string }[] = [];
+  for (const c of state.wagonTrain.companions) {
     const rng = makeRng(`${c.seed}:${state.day}`);
-    return tickNpcWagon(c, ctx, rng);
-  });
+    const result = tickNpcWagon(c, ctx, rng);
+    companions.push(result.wagon);
+    for (const text of result.playerLogs) {
+      playerLogs.push({ day: state.day, text });
+    }
+  }
   return {
     ...state,
-    wagonTrain: { ...state.wagonTrain, companions }
+    wagonTrain: { ...state.wagonTrain, companions },
+    eventLog: playerLogs.length === 0
+      ? state.eventLog
+      : [...state.eventLog, ...playerLogs]
   };
 }
 

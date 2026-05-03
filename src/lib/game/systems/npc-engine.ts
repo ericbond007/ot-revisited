@@ -33,6 +33,7 @@ import type {
 } from '../types';
 import { getCondition } from '../content/conditions';
 import { hasLive } from '../professions/predicates';
+import { rollNpcEvent } from './npc-events';
 
 /** Inputs the NPC tick needs from the train's shared environment. */
 export interface NpcTickContext {
@@ -208,21 +209,34 @@ function updateOutcome(wagon: NpcWagonState): NpcWagonState {
   return wagon;
 }
 
+/** Result of advancing one NPC wagon by one day — the new state plus
+ *  any player-visible news entries from #280c events. */
+export interface NpcTickResult {
+  wagon: NpcWagonState;
+  /** One-line news strings for the player's eventLog. Empty on quiet
+   *  days (the common case). */
+  playerLogs: string[];
+}
+
 /** Advance one NPC wagon by one day. The order mirrors the player's
  *  daily pipeline at a coarse level: conditions drain HP first
  *  (treatments may consume inventory), then food consumption, then
- *  starvation onset if food=0, then ox fatigue/recovery, then death
- *  reaping, then outcome update. */
+ *  starvation onset if food=0, then ox fatigue/recovery, then a
+ *  daily NPC event roll (#280c — wheel break, ox lame, snakebite,
+ *  cholera, etc.), then death reaping, then outcome update. */
 export function tickNpcWagon(
   wagon: NpcWagonState,
   ctx: NpcTickContext,
   rng: Rng
-): NpcWagonState {
+): NpcTickResult {
   // Already-finished wagons don't tick — they sit in their final state
   // for the wagon-party view (#280d) until the run ends.
-  if (wagon.outcome !== 'in-progress') return wagon;
+  if (wagon.outcome !== 'in-progress') {
+    return { wagon, playerLogs: [] };
+  }
 
   let next = wagon;
+  const playerLogs: string[] = [];
 
   // 1. Conditions tick + treatment.
   next = tickConditions(next, rng);
@@ -241,11 +255,20 @@ export function tickNpcWagon(
   // 4. Ox tick — fatigue on travel, recovery on rest.
   next = ctx.traveled ? tickOxenTravel(next, ctx) : tickOxenRest(next, ctx);
 
-  // 5. Death reaping.
+  // 5. NPC event roll (#280c). May damage wagon, sicken a member,
+  // kill an ox, etc. Result bubbles up as a player news entry.
+  const eventResult = rollNpcEvent(next, ctx, rng);
+  if (eventResult) {
+    next = eventResult.wagon;
+    if (eventResult.playerLog) playerLogs.push(eventResult.playerLog);
+  }
+
+  // 6. Death reaping (catches event-induced deaths too — e.g. an ox
+  // kick to a child after `member_injury` fired earlier this tick).
   next = reapDead(next, ctx.day);
 
-  // 6. Outcome.
+  // 7. Outcome.
   next = updateOutcome(next);
 
-  return next;
+  return { wagon: next, playerLogs };
 }
