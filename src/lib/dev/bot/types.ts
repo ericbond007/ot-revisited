@@ -47,6 +47,20 @@ export interface BotRunReport {
   longestBoringStretch: number;
   /** Choices the bot actually had to make (vs auto-advances). */
   decisionsMade: number;
+  /** Per-action-type day counters — where the calendar actually went.
+   *  Travel = ticked through tickDayPausable; rest, findWater, hunt,
+   *  ford, etc. all consume one or more days but don't move the
+   *  wagon. Use this to diagnose pacing issues. */
+  actionDays: {
+    travel: number;
+    rest: number;
+    findWater: number;
+    hunt: number;
+    ford: number;
+    tradingPost: number;
+    eventChoice: number;
+    other: number;
+  };
   /** Errors thrown during the run, if any. */
   errors: string[];
   /** Existing #148 arrival score (miles + survivors + arrival + luxuries). */

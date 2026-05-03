@@ -115,6 +115,10 @@ function printReport(report: BotRunReport, opts: CliOpts): void {
     console.log('    decisions:', report.decisionsMade, 'unique-events:', report.uniqueEventCount, 'drama:', report.dramaBeatCount);
     console.log('    deaths-by-cause:', JSON.stringify(report.deathsByCause));
     console.log('    fun-breakdown:', JSON.stringify(report.funBreakdown));
+    const ad = report.actionDays;
+    const total = ad.travel + ad.rest + ad.findWater + ad.hunt + ad.ford + ad.tradingPost + ad.eventChoice + ad.other;
+    const pct = (n: number) => total > 0 ? Math.round(100 * n / total) + '%' : '-';
+    console.log(`    days-by-action: travel=${ad.travel} (${pct(ad.travel)}) rest=${ad.rest} (${pct(ad.rest)}) findWater=${ad.findWater} (${pct(ad.findWater)}) hunt=${ad.hunt} ford=${ad.ford} post=${ad.tradingPost} event=${ad.eventChoice}`);
     const top = Object.entries(report.eventsFiredById)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
