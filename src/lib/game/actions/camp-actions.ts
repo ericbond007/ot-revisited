@@ -955,6 +955,7 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   // Practical
   gatherFirewood,
   washClothes,
+  pressCheese,
   makeSoap,
   findWater,
   boilWater,

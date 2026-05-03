@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { rest } from '../src/lib/game/actions/rest';
+import { CAMP_ACTIONS, CAMP_ACTIONS_BY_ID } from '../src/lib/game/actions/camp-actions';
 import { createInitialState } from '../src/lib/game/engine';
 import type { GameState } from '../src/lib/game/types';
 
@@ -16,6 +17,20 @@ function newGame(): GameState {
   // Clamp the party's morale to a mid range so we can see swings.
   return { ...s, morale: 50 };
 }
+
+describe('camp actions registry integrity', () => {
+  // Regression guard for #139 follow-up: press_cheese was registered in
+  // CAMP_ACTIONS_BY_ID but missing from the iterable CAMP_ACTIONS list,
+  // making it invisible in the camp UI grid. Hidden actions (cannibalism
+  // body-eating variant) are intentionally omitted from the grid via
+  // CampStage's hidden filter; everything that's in BY_ID belongs in the
+  // master list and the UI then decides what to show.
+  it('every action in CAMP_ACTIONS_BY_ID is also in the iterable CAMP_ACTIONS', () => {
+    const listIds = new Set(CAMP_ACTIONS.map((a) => a.id));
+    const missing = Object.keys(CAMP_ACTIONS_BY_ID).filter((id) => !listIds.has(id as never));
+    expect(missing).toEqual([]);
+  });
+});
 
 describe('camp actions', () => {
   it('pass_whiskey consumes 1 whiskey and writes a log line', () => {
