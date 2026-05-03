@@ -11,6 +11,18 @@ export interface ProfessionMeta {
   bonusSummary: string;
   starterGear: StarterGearEntry[];
   femaleOnly?: boolean;
+  /** #285 — leadership charisma 0-5. Drives weighted election rolls
+   *  for wagon-train captaincy. Period anchor: the most-elected
+   *  captains in the diary record were preachers (Jason Lee at the
+   *  Methodist Mission), bankers / merchants (William Russell, Sam
+   *  Brannan — wealth + literacy = authority), and scouts (Joe Meek,
+   *  Kit Carson — "the man who knows the trail"). Most working
+   *  laborers and farmers ranked low not because they were less
+   *  capable but because the company didn't think to elect them.
+   *  Default 1; preacher 5, banker / scout 4, merchant / doctor 3,
+   *  most others 2, whore 1 (but eligible — period reality: Eleanor
+   *  Dumont was a respected camp figure even when reviled). */
+  charisma?: number;
 }
 
 export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
@@ -23,13 +35,15 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     // $400–700 family outfit budget. With BASE_KIT $400 cash baseline
     // the Banker now totals $1400 starter — period-plausible upper-
     // middle-class wealth. Was $1000 total (BASE $400 + $600).
-    starterGear: [{ item: 'cash', qty: 1000 }]
+    starterGear: [{ item: 'cash', qty: 1000 }],
+    charisma: 4
   },
   farmer: {
     id: 'farmer',
     name: 'Farmer',
     bonusSummary: '−10% food consumed/day. Forages 4 lb berries per rest day Apr–Sep.',
-    starterGear: [{ item: 'flour', qty: 100 }]
+    starterGear: [{ item: 'flour', qty: 100 }],
+    charisma: 1
   },
   carpenter: {
     id: 'carpenter',
@@ -38,7 +52,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     starterGear: [
       { item: 'axle', qty: 2 },
       { item: 'wheel', qty: 2 }
-    ]
+    ],
+    charisma: 2
   },
   doctor: {
     id: 'doctor',
@@ -48,7 +63,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
       { item: 'quinine', qty: 2 },
       { item: 'laudanum', qty: 4 },
       { item: 'bandages', qty: 4 }
-    ]
+    ],
+    charisma: 3
   },
   blacksmith: {
     id: 'blacksmith',
@@ -57,7 +73,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     starterGear: [
       { item: 'iron_toolkit', qty: 1 },
       { item: 'ox_shoes', qty: 10 }
-    ]
+    ],
+    charisma: 2
   },
   hunter: {
     id: 'hunter',
@@ -70,7 +87,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
       { item: 'lead_balls', qty: 30 },
       { item: 'percussion_caps', qty: 30 },
       { item: 'lead_pig', qty: 1 }
-    ]
+    ],
+    charisma: 2
   },
   teamster: {
     id: 'teamster',
@@ -80,7 +98,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
       { item: 'ox', qty: 1 },
       { item: 'yoke', qty: 1 },
       { item: 'ox_shoes', qty: 4 }
-    ]
+    ],
+    charisma: 2
   },
   merchant: {
     id: 'merchant',
@@ -89,7 +108,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     starterGear: [
       { item: 'tobacco', qty: 20 },
       { item: 'beads', qty: 30 }
-    ]
+    ],
+    charisma: 3
   },
   whore: {
     id: 'whore',
@@ -101,7 +121,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
       { item: 'tobacco', qty: 5 },
       { item: 'whiskey', qty: 5 },
       { item: 'tea', qty: 10 }
-    ]
+    ],
+    charisma: 1
   },
   scout: {
     id: 'scout',
@@ -111,7 +132,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
       { item: 'compass', qty: 1 },
       { item: 'water_skin', qty: 2 },
       { item: 'spyglass', qty: 1 }
-    ]
+    ],
+    charisma: 4
   },
   preacher: {
     id: 'preacher',
@@ -120,7 +142,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     starterGear: [
       { item: 'bible', qty: 1 },
       { item: 'herbal_poultice', qty: 10 }
-    ]
+    ],
+    charisma: 5
   },
   indian_trader: {
     id: 'indian_trader',
@@ -129,7 +152,8 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     starterGear: [
       { item: 'beads', qty: 30 },
       { item: 'pemmican', qty: 2 }
-    ]
+    ],
+    charisma: 3
   },
   gunsmith: {
     id: 'gunsmith',
@@ -142,9 +166,17 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
       { item: 'lead_balls', qty: 15 },
       { item: 'percussion_caps', qty: 15 },
       { item: 'rifle', qty: 1 }
-    ]
+    ],
+    charisma: 2
   }
 };
+
+/** #285 — convenience helper. Default 1 when a profession doesn't
+ *  declare charisma (defensive — keeps elections sensible if a new
+ *  profession is added without a value). */
+export function professionCharisma(id: ProfessionId): number {
+  return PROFESSIONS[id]?.charisma ?? 1;
+}
 
 export function getProfession(id: ProfessionId): ProfessionMeta {
   const p = PROFESSIONS[id];
