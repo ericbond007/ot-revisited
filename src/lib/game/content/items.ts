@@ -255,6 +255,49 @@ export const ITEMS: Record<string, ItemMeta> = {
   // lists, often abandoned at Independence Rock when wagons lightened.
   feather_mattress: { id: 'feather_mattress', name: 'Feather mattress', category: 'comfort', weightLbPerUnit: 40, description: 'Bulky comfort. Often abandoned at Independence Rock — the ones that arrive are prized.' },
 
+  // #277 — Frontier-startup items. Not trail consumables — these are
+  // the tools, seeds, books, and heirlooms emigrants packed for the
+  // life waiting at the end of the trail. Heavy to haul, big arrival
+  // score on delivery, each tied to an epilogue paragraph in the
+  // arrival screen. Research grounded in `docs/historical-pass/07-frontier-startups.md`.
+  // Buy-at-Independence only (mostly) — period reality, you couldn't
+  // pick up a printing press at Fort Bridger.
+
+  // Farmer's startup kit
+  seed_grain:           { id: 'seed_grain',           name: 'Seed grain',           category: 'tool', weightLbPerUnit:  80, description: "Wheat / corn / oats / barley in tin cans, sealed with wax. Plants the first crop after arrival. Useless on the trail — pure delivery bonus." },
+  fruit_tree_saplings:  { id: 'fruit_tree_saplings',  name: 'Fruit-tree saplings',  category: 'tool', weightLbPerUnit: 100, description: "Grafted apple / peach / cherry saplings rooted in soil-filled boxes. Henderson Luelling's 1847 wagon seeded the entire Willamette Valley fruit industry." },
+  garden_seeds:         { id: 'garden_seeds',         name: 'Garden seeds',         category: 'tool', weightLbPerUnit:   5, description: 'Oilskin packets — potatoes, beans, peas, carrots, cabbage, turnips, onions, herbs. The kitchen garden of the new homestead.' },
+  plow:                 { id: 'plow',                 name: 'Plow',                 category: 'tool', weightLbPerUnit:  60, description: 'Disassembled — moldboard, share, beam, handles. Breaks new ground when the wagons stop.' },
+  fruit_vine_cuttings:  { id: 'fruit_vine_cuttings',  name: 'Fruit-vine cuttings',  category: 'tool', weightLbPerUnit:  20, description: 'Grape and hop cuttings rooted in damp moss. Grapes for wine, hops for beer.' },
+
+  // Carpenter's startup kit — the tool chest builds the homestead and
+  // every neighbor's barn that first year. Hancock 1852 Lane County
+  // case study: 150 lb of tools, paid in beef, milk, lodging.
+  carpenter_chest:      { id: 'carpenter_chest',      name: 'Carpenter chest',      category: 'tool', weightLbPerUnit: 120, description: "Felling axe, broadaxe, adze, rip + crosscut saws, planes, brace + bits, chisels, square, levels, nails. Hancock 1852: 'Built three buildings the first month.'" },
+
+  // Doctor's startup kit
+  medicine_chest:       { id: 'medicine_chest',       name: 'Fitted medicine chest', category: 'tool', weightLbPerUnit:  30, description: '30-60 vial fitted oak case — laudanum, calomel, quinine, ipecac, mercurial pills, blistering plasters, paregoric, jalap. The frontier physician\'s working tool.' },
+  medical_books:        { id: 'medical_books',        name: 'Medical books',         category: 'comfort', weightLbPerUnit: 12, description: "Gunn's *Domestic Medicine*, Buchan, Eberle, anatomy atlas. The frontier doctor's library." },
+
+  // Banker's / merchant's startup kit
+  iron_strongbox:       { id: 'iron_strongbox',       name: 'Iron strongbox',        category: 'tool', weightLbPerUnit:  40, description: 'Lockable iron chest — ledgers, deeds, gold. The famous "Donner Party strongbox" was a banker\'s.' },
+  gold_scales:          { id: 'gold_scales',          name: 'Gold scales',           category: 'tool', weightLbPerUnit:   3, description: "Apothecary's brass balance, calibrated to the grain. Indispensable after Sutter's strike." },
+  trade_inventory:      { id: 'trade_inventory',      name: 'Trade-goods inventory', category: 'tool', weightLbPerUnit:  80, description: 'Bolts of calico, needles, knives, mirrors, beads, kettles. Seed inventory for a frontier mercantile.' },
+  printing_press:       { id: 'printing_press',       name: 'Printing press',        category: 'tool', weightLbPerUnit: 200, description: "Lever press — Sam Brannan's *California Star* model. The territory's first newspaper rolls off this." },
+
+  // Cross-cutting (any profession can carry, big claim-filing payoff)
+  surveying_kit:        { id: 'surveying_kit',        name: 'Surveying kit',         category: 'tool', weightLbPerUnit:  60, description: 'Transit, chain, plumb. Files Donation Land Claims with proper boundaries; every fence line in the county follows these notes.' },
+
+  // Heirloom layer — comfort category. Sentimental items with light
+  // gameplay weight, real arrival-score weight.
+  family_bible:         { id: 'family_bible',         name: 'Family Bible',          category: 'comfort', weightLbPerUnit: 12, description: "Large family edition — three generations of births recorded in the front. Distinct from the pocket Bible (the trail-flavor item)." },
+  silver_tea_service:   { id: 'silver_tea_service',   name: 'Silver tea service',    category: 'comfort', weightLbPerUnit: 15, description: 'Wedding-gift heirloom — silver pot, sugar bowl, creamer, six cups. Lashed deep in the trunk for 2000 miles.' },
+  shelf_clock:          { id: 'shelf_clock',          name: 'Shelf clock',           category: 'comfort', weightLbPerUnit: 25, description: "Smaller than a grandfather. Tick-tock in the parlor while the snow falls outside." },
+  feather_pillows:      { id: 'feather_pillows',      name: 'Feather pillows',       category: 'comfort', weightLbPerUnit:  8, description: 'Set of four. Pairs with a feather mattress for the first soft sleep your children remember.' },
+  sewing_chest:         { id: 'sewing_chest',         name: 'Sewing chest',          category: 'tool',    weightLbPerUnit: 20, description: 'Full kit + fabric stash — needles, thread, scissors, shears, thimbles, fabric bolts, button card. Frontier wives sewed everything from shirts to wagon canvas.' },
+  daguerreotype_case:   { id: 'daguerreotype_case',   name: 'Daguerreotype case',    category: 'comfort', weightLbPerUnit:  1, description: 'Tinted glass-plate portraits in hinged morocco-leather case — the only picture of your mother that survived the trip.' },
+  lap_desk:             { id: 'lap_desk',             name: 'Lap desk',              category: 'tool',    weightLbPerUnit:  8, description: 'Hinged writing-box with quills, ink, paper. Letters home went through this every Sunday.' },
+
   moccasins: { id: 'moccasins', name: 'Moccasins', category: 'native_trade', weightLbPerUnit: 1, description: 'Warmth +10 per person. Lightweight cold mitigation; pairs well with a coat.' },
   buffalo_robe: { id: 'buffalo_robe', name: 'Buffalo robe', category: 'native_trade', weightLbPerUnit: 8, description: 'Warmth +25 per person. Heavy but the warmest single item — indispensable in winter.' },
   beads: { id: 'beads', name: 'Trade beads / calico', category: 'native_trade', weightLbPerUnit: 2, description: 'Currency for trading with Native tribes.' },

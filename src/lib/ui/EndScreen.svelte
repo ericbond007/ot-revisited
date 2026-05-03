@@ -119,6 +119,17 @@
       </ul>
     </div>
 
+    {#if result.epilogueLines.length > 0}
+      <div class="epilogue">
+        <div class="epilogue-head">WHAT THOSE CHOICES BECAME</div>
+        <ul class="epilogue-list">
+          {#each result.epilogueLines as line}
+            <li>{line.line}</li>
+          {/each}
+        </ul>
+      </div>
+    {/if}
+
     {#if cliffInscription}
       <div class="cliff-inscription">
         <div class="cliff-head">CHISELED INTO REGISTER CLIFF</div>
@@ -395,5 +406,35 @@
     font-size: 1.2em;
     letter-spacing: 0.06em;
     color: var(--c-tan-bright);
+  }
+  .epilogue {
+    margin: 1.2em 0 0.6em;
+    padding: 0.9em 1em;
+    border-top: 1px solid var(--c-wood);
+    border-bottom: 1px solid var(--c-wood);
+  }
+  .epilogue-head {
+    font-size: 0.72em;
+    letter-spacing: 0.18em;
+    color: var(--c-wood);
+    font-weight: 700;
+    margin-bottom: 0.6em;
+    text-align: center;
+  }
+  .epilogue-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55em;
+  }
+  .epilogue-list li {
+    font-family: 'IM Fell English', 'Special Elite', Georgia, serif;
+    font-size: 1.02em;
+    line-height: 1.45;
+    color: var(--c-tan-bright);
+    padding-left: 0.9em;
+    border-left: 2px solid var(--c-wood);
   }
 </style>
