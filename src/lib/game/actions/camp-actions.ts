@@ -40,6 +40,7 @@ export type CampActionId =
   | 'sing_along'
   | 'read_bible'
   | 'share_the_whore'
+  | 'service_train'
   | 'cure_meat'
   | 'cast_balls'
   | 'fish'
@@ -222,6 +223,142 @@ const shareTheWhore: CampAction = {
       { ...s, morale: Math.min(100, s.morale + delta) },
       `${name} entertained the men by lantern-light. Spirits high — morale +${delta}.`
     );
+  }
+};
+
+// #291 — service-the-train. Period reality: emigrant women who
+// survived as sex workers on the trail (Helena Frizell, the Sacramento
+// "Painted Ladies" who came overland) made the bulk of their money
+// during company camp halts — wagon-train travelers were captive
+// customers. The "share the whore" action above stays in-party-only;
+// this one routes outward to the companion wagons. Per-wagon refusal
+// rules track period attitudes — preacher-led wagons abstain always
+// (faith); families with young children almost always refuse (mom
+// won't have it); other wagons refuse only sometimes (general
+// principle vs. boredom + cash-on-hand).
+
+type TrainContribution =
+  | { kind: 'cash'; qty: number }
+  | { kind: 'item'; item: string; qty: number };
+
+// Period anchor: emigrant sex workers wanted cash + portable luxuries,
+// not bulk staples. Diaries name whiskey, sugar, coffee, fine tobacco,
+// calico, and silver coin as the standard offerings; nobody paid in
+// flour or beans (every wagon already had too much). The pool here
+// matches that — high-value consumables + tradeable trade goods.
+const TRAIN_CONTRIB_ITEMS: Array<{ item: string; min: number; max: number }> = [
+  { item: 'whiskey',   min: 1, max: 2  },
+  { item: 'sugar',     min: 2, max: 5  },
+  { item: 'coffee',    min: 1, max: 4  },
+  { item: 'tobacco',   min: 1, max: 3  },
+  { item: 'tea',       min: 2, max: 5  },
+  { item: 'calico',    min: 4, max: 10 },
+  { item: 'vermilion', min: 1, max: 2  },
+  { item: 'beads',     min: 8, max: 20 }
+];
+
+/** Refuse rate per companion based on profile. Preacher-led: always
+ *  refuse (faith). Has children: usually refuse (mom won't have it).
+ *  Otherwise: rare refusal (general principle).
+ *  Returns probability ∈ [0, 1]. */
+function refuseRateFor(c: { leaderProfession: string; hasChildren: boolean }): number {
+  if (c.leaderProfession === 'preacher') return 1;
+  if (c.hasChildren) return 0.7;
+  return 0.2;
+}
+
+/** Roll a contribution for a wagon that didn't refuse. Weighted: 50%
+ *  cash, 50% one-of-the-luxury-items. Period reality: cash was the
+ *  preferred currency; trade goods were the second-best because they
+ *  could be re-sold at the next post. Bulk staples (flour/beans) were
+ *  never offered — every wagon had too much already. */
+function rollContribution(rng: Rng): TrainContribution {
+  if (rng.chance(0.5)) {
+    return { kind: 'cash', qty: 5 + Math.floor(rng.next() * 11) }; // $5-15
+  }
+  const tmpl = TRAIN_CONTRIB_ITEMS[Math.floor(rng.next() * TRAIN_CONTRIB_ITEMS.length)];
+  const qty = tmpl.min + Math.floor(rng.next() * (tmpl.max - tmpl.min + 1));
+  return { kind: 'item', item: tmpl.item, qty };
+}
+
+const serviceTrain: CampAction = {
+  id: 'service_train',
+  label: 'Service the wagon train',
+  sub: 'Whore · 3 hr · cash + luxuries from the company · +5 morale per contributor',
+  icon: '🛏️',
+  hourCost: 3,
+  availability: (s) => {
+    if (!hasLiveWhore(s)) return { available: false, reason: 'No Whore in the party' };
+    if (!s.wagonTrain) return { available: false, reason: 'Only with a wagon train' };
+    const live = s.wagonTrain.companions.filter((c) => c.outcome === 'in-progress');
+    if (live.length === 0) return { available: false, reason: 'No companions left in the train' };
+    return { available: true };
+  },
+  apply: (s, rng) => {
+    if (!s.wagonTrain) return s; // defensive — availability gates this
+    const whore = s.party.find((m) => !m.dead && m.profession === 'whore');
+    const whoreName = whore?.name ?? 'The Whore';
+    const live = s.wagonTrain.companions.filter((c) => c.outcome === 'in-progress');
+
+    let cashGained = 0;
+    const itemsGained: Record<string, number> = {};
+    const refusers: string[] = [];
+    const contributorIds = new Set<string>();
+
+    for (const c of live) {
+      if (rng.chance(refuseRateFor(c))) {
+        refusers.push(c.name);
+        continue;
+      }
+      const contrib = rollContribution(rng);
+      contributorIds.add(c.id);
+      if (contrib.kind === 'cash') cashGained += contrib.qty;
+      else itemsGained[contrib.item] = (itemsGained[contrib.item] ?? 0) + contrib.qty;
+    }
+
+    const nextInventory: Record<string, number> = { ...s.inventory };
+    for (const [item, qty] of Object.entries(itemsGained)) {
+      nextInventory[item] = (nextInventory[item] ?? 0) + qty;
+    }
+
+    // Train-wide morale shift: contributors +5, refusers unchanged.
+    const updatedTrain = {
+      ...s.wagonTrain,
+      companions: s.wagonTrain.companions.map((c) =>
+        contributorIds.has(c.id)
+          ? { ...c, morale: Math.min(100, c.morale + 5) }
+          : c
+      )
+    };
+
+    // Compose the period-flavored log lines. Headline is bawdy +
+    // matter-of-fact (matches the #130 share-the-whore tone). Refusers
+    // get named individually when there are 1-3; >3 collapses to a
+    // count.
+    const summaryParts: string[] = [];
+    if (cashGained > 0) summaryParts.push(`$${cashGained}`);
+    for (const [item, qty] of Object.entries(itemsGained)) {
+      summaryParts.push(`${qty} ${item.replace(/_/g, ' ')}`);
+    }
+    const summary = summaryParts.length > 0 ? summaryParts.join(', ') : 'nothing';
+    const refuseLine = refusers.length === 0
+      ? ''
+      : refusers.length <= 3
+        ? ` ${refusers.map((n) => `${n} would not have it`).join('; ')}.`
+        : ` ${refusers.length} wagons would not have it.`;
+
+    let next: GameState = {
+      ...s,
+      cash: s.cash + cashGained,
+      inventory: nextInventory,
+      wagonTrain: updatedTrain,
+      morale: Math.min(100, s.morale + Math.min(5, contributorIds.size))
+    };
+    next = logLine(
+      next,
+      `${whoreName} had a wagon train ran on her tonight — took ${summary} from the company.${refuseLine}`
+    );
+    return next;
   }
 };
 
@@ -941,6 +1078,7 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   singAlong,
   readBible,
   shareTheWhore,
+  serviceTrain,
   // Preservation
   cureMeat,
   // Ammunition prep
@@ -972,6 +1110,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   sing_along: singAlong,
   read_bible: readBible,
   share_the_whore: shareTheWhore,
+  service_train: serviceTrain,
   cure_meat: cureMeat,
   cast_balls: castBalls,
   fish,
