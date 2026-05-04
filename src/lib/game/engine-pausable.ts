@@ -22,6 +22,7 @@ import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { advanceTrain } from './systems/wagon-train';
+import { maybeElectCaptain } from './systems/wagon-train-elections';
 import type { GameEvent } from './content/events';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickApproachEvent, approachFiredFlag } from './content/landmark-approach-events';
@@ -104,6 +105,18 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = applyTravel(s, rng);
 
   const arrivedAtLandmark = s.location.atLandmarkId !== null && s.location.atLandmarkId !== undefined;
+
+  // #285 — Wagon-train captain elections. Fires when the player
+  // arrives at a major post (Kearny / Laramie / Bridger / Hall /
+  // Boise) while in a train AND avg train morale is below the
+  // threshold (period-faithful: re-elections were petitioned by an
+  // unhappy company, not scheduled). Per-(landmark, day) flag inside
+  // maybeElectCaptain prevents re-rolls; just adds a log line + may
+  // swap leaderId. No modal yet — the player learns the result via
+  // the day's log.
+  if (arrivedAtLandmark && s.wagonTrain) {
+    s = maybeElectCaptain(s, rng).state;
+  }
 
   // Landmark arrival events fire when we cross a scenic landmark (one
   // that doesn't already pause for a Visit/Ford/End screen). Detected by
