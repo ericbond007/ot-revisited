@@ -261,9 +261,11 @@ export const actions: Actions = {
     const styleRaw = fd.get('style')?.toString();
     const style: 'full' | 'prize_only' = styleRaw === 'prize_only' ? 'prize_only' : 'full';
     const renderTallow = fd.get('render_tallow')?.toString() !== 'no';
+    const modeRaw = fd.get('mode')?.toString();
+    const mode: 'solo' | 'company' = modeRaw === 'company' ? 'company' : 'solo';
     if (!target || !ammo) throw error(400, 'target and ammo required');
     let state = await loadState(locals, slot);
-    state = hunt(state, { target, ammo, hunters, style, renderTallow });
+    state = hunt(state, { target, ammo, hunters, style, renderTallow, mode });
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },

@@ -19,6 +19,7 @@
   type Target = 'small' | 'medium' | 'big' | 'gather';
   type Ammo = 'light' | 'moderate' | 'heavy';
   type Style = 'full' | 'prize_only';
+  type Mode = 'solo' | 'company';
 
   let target = $state<Target>('small');
   let ammo = $state<Ammo>('moderate');
@@ -32,6 +33,18 @@
   // beyond hunt time; default on. Player can opt out if their wagon
   // weight budget is tight (tallow is heavy).
   let tallowChoice = $state<'yes' | 'no'>('yes');
+  // #294 — solo (current) vs company (in-train hunting party). Default
+  // to company when in a train; the equity rule is the period default.
+  // The initial value is captured non-reactively via untrack — the
+  // modal opens once per hunt and wagonTrain doesn't change underneath.
+  import { untrack } from 'svelte';
+  let mode = $state<Mode>(untrack(() => gameState.wagonTrain != null ? 'company' : 'solo'));
+
+  const liveCompanionCount = $derived(
+    gameState.wagonTrain
+      ? gameState.wagonTrain.companions.filter((c) => c.outcome === 'in-progress').length
+      : 0
+  );
 
   // Guardrails: if rifles vanish or party shrinks while the modal is open.
   $effect(() => {
@@ -110,6 +123,26 @@
     { value: 'no'  as const, label: 'Skip tallow',   sublabel: 'Save wagon weight, leave the fat',     icon: '🚫' }
   ];
 
+  // #294 — solo vs company hunt picker, only relevant when in a train.
+  // Period: trains organized hunts at sundown; solo hunts while
+  // attached to a company drew side-eye for breaking equity.
+  const modeOptions = $derived([
+    {
+      value: 'company' as const,
+      label: 'Lead the company hunt',
+      sublabel: liveCompanionCount > 0
+        ? `${liveCompanionCount} other ${liveCompanionCount === 1 ? 'wagon' : 'wagons'} chip in — bigger haul, divided by household`
+        : 'Bigger haul, divided across the train',
+      icon: '🤝'
+    },
+    {
+      value: 'solo' as const,
+      label: 'Hunt alone',
+      sublabel: 'Keep the whole kill — the company will notice (-train morale)',
+      icon: '🧍'
+    }
+  ]);
+
   const peopleOptions = $derived([
     {
       value: 1,
@@ -166,6 +199,12 @@
         {/if}
 
         <CardRadio label="Party" name="hunters" bind:value={hunters} options={peopleOptions} columns={2} />
+
+        {#if gameState.wagonTrain && liveCompanionCount > 0 && target !== 'gather'}
+          <CardRadio label="Hunting style" name="mode" bind:value={mode} options={modeOptions} columns={2} />
+        {:else}
+          <input type="hidden" name="mode" value="solo" />
+        {/if}
 
         <div class="actions">
           <button type="submit" class="go-btn">Go</button>
