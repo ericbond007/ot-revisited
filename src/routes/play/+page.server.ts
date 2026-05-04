@@ -15,6 +15,7 @@ import { maybeDeliverLetter } from '$lib/game/systems/letters';
 import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide, forgeOxShoes, useBathHouse } from '$lib/game/systems/town-services';
 import { joinTrain, leaveTrain } from '$lib/game/systems/wagon-train';
 import { tradeWithCompanion } from '$lib/game/actions/trade-companion';
+import { transferBetweenCompanions, doctorVisit, isCaptain } from '$lib/game/systems/wagon-train-leader';
 import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
@@ -590,6 +591,53 @@ export const actions: Actions = {
     let state = await loadState(locals, slot);
     if (!state.wagonTrain) throw error(409, 'not in a wagon train');
     state = leaveTrain(state);
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  // #286 — captain-only doctor visit. Body: { wagonId }. Uses 1 charge
+  // of medicine_chest (logical — chest is not consumed; player must
+  // own it). Treats the lowest-HP party member of the target wagon,
+  // bumps wagon morale +5.
+  townDoctorVisit: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const wagonId = fd.get('wagonId')?.toString() ?? '';
+    let state = await loadState(locals, slot);
+    if (!isCaptain(state)) throw error(403, 'Only the captain can call a doctor visit.');
+    if ((state.inventory.medicine_chest ?? 0) <= 0) {
+      throw error(409, 'No medicine chest in your wagon.');
+    }
+    const result = doctorVisit(state, wagonId);
+    if (!result.treated) {
+      throw error(409, "Nobody in that wagon needs treatment right now.");
+    }
+    state = result.state;
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
+  // #286 — captain-only inter-companion item transfer. Body:
+  // { fromWagonId, toWagonId, item, qty }. Tightly scoped form: a
+  // single line transfer; future UI extension could send multiple
+  // lines as JSON. Hostile-morale destination refuses (409).
+  townHandToCompanion: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const fromWagonId = fd.get('fromWagonId')?.toString() ?? '';
+    const toWagonId = fd.get('toWagonId')?.toString() ?? '';
+    const item = fd.get('item')?.toString() ?? '';
+    const qty = parseInt(fd.get('qty')?.toString() ?? '0', 10);
+    let state = await loadState(locals, slot);
+    if (!isCaptain(state)) throw error(403, 'Only the captain can move items between companions.');
+    if (!item || qty <= 0) throw error(400, 'item and positive qty required');
+    const result = transferBetweenCompanions(state, fromWagonId, toWagonId, [{ item, qty }]);
+    if (!result.accepted) {
+      throw error(409, result.declineReason ?? 'They declined.');
+    }
+    state = result.state;
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
   },
