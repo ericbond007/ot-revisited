@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { runBot } from '../src/lib/dev/bot/runner';
 import { computeFunScore } from '../src/lib/dev/bot/scoring';
-import { PERSONAS } from '../src/lib/dev/bot/personas';
+import { PERSONAS } from '../src/lib/game/ai';
 
 describe('#275 bot — end-to-end run', () => {
   it('balanced persona drives a run to a terminal outcome (no infinite loop)', () => {

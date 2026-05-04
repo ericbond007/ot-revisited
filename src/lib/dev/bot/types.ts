@@ -6,8 +6,10 @@
 // that grades whether the run had drama, variety, and meaningful choices.
 
 import type { Outcome, ProfessionId } from '../../game/types';
-
-export type PersonaId = 'cautious' | 'balanced' | 'aggressive' | 'chaos';
+// #302 — PersonaId moved to game/ai/types. Re-exported here so existing
+// importers (scripts/bot.ts CLI, BotRunOpts consumers) keep working.
+import type { PersonaId } from '../../game/ai/types';
+export type { PersonaId };
 
 export interface BotRunOpts {
   /** Seed string forwarded into the engine RNG. */
