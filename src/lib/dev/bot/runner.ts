@@ -28,7 +28,7 @@ import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
 import type { GameState, ProfessionId } from '../../game/types';
 import type { Rng } from '../../game/rng';
-import { getPersona, makeBotRng, type Persona } from './personas';
+import { getPersona, makeBotRng, type Persona } from '../../game/ai';
 import { computeFunScore } from './scoring';
 import type { BotRunOpts, BotRunReport } from './types';
 
