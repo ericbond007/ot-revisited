@@ -311,11 +311,7 @@ describe('doctorVisit', () => {
     expect(wagonLast.text).toMatch(/Captain visited/);
   });
 
-  it('does NOT treat condition-only patients at full HP — visit returns treated:false', () => {
-    // Until condition-clearing is a real mechanic (#296), the visit's
-    // only effect on a full-HP-with-condition patient would be a
-    // confusing "+0 HP" outcome and a free morale lift. Filter them
-    // out instead.
+  it('#296 — treats a full-HP patient with a chest-curable disease (cholera) and clears it', () => {
     let s = trainState();
     s = {
       ...s,
@@ -340,11 +336,55 @@ describe('doctorVisit', () => {
       }
     };
     const r = doctorVisit(s, 'cond');
-    expect(r.treated).toBe(false);
-    expect(r.state).toBe(s);
+    expect(r.treated).toBe(true);
+    expect(r.patientName).toBe('Stoic');
+    expect(r.conditionsCleared).toEqual(['cholera']);
+    expect(r.injuriesEased).toEqual([]);
+    const wagon = r.state.wagonTrain!.companions[0];
+    const stoic = wagon.party.find((p) => p.id === 'cond-p1')!;
+    expect(stoic.conditions.length).toBe(0);
+    expect(r.hpGained).toBe(0); // already at 100
+    const playerLast = r.state.eventLog[r.state.eventLog.length - 1];
+    expect(playerLast.text).toMatch(/cholera/);
+    // Log copy must NOT say "+0 HP" when no HP was gained — would
+    // read like a bug to the player.
+    expect(playerLast.text).not.toMatch(/\+0 HP/);
+    const wagonLast = wagon.eventLog[wagon.eventLog.length - 1];
+    expect(wagonLast.text).not.toMatch(/\+0 HP/);
   });
 
-  it('treats a member who has BOTH low HP and a condition (HP path)', () => {
+  it('#296 — pox is chest-curable (calomel = period mercury treatment)', () => {
+    let s = trainState();
+    s = {
+      ...s,
+      inventory: { medicine_chest: 1 },
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: [
+          fakeCompanion({
+            id: 'pox',
+            leaderProfession: 'farmer',
+            party: [
+              {
+                id: 'pox-p1', name: 'Old Hand', kind: 'adult', sex: 'male', age: 45,
+                profession: 'farmer', isLeader: true,
+                health: 70,
+                dead: false,
+                conditions: [{ id: 'pox', daysSinceOnset: 60 }]
+              }
+            ]
+          })
+        ]
+      }
+    };
+    const r = doctorVisit(s, 'pox');
+    expect(r.treated).toBe(true);
+    expect(r.conditionsCleared).toEqual(['pox']);
+    const patient = r.state.wagonTrain!.companions[0].party[0];
+    expect(patient.conditions.length).toBe(0);
+  });
+
+  it('#296 — treats a member who has BOTH low HP and a chest-curable disease (HP gain + cure)', () => {
     let s = trainState();
     s = {
       ...s,
@@ -372,10 +412,193 @@ describe('doctorVisit', () => {
     expect(r.treated).toBe(true);
     expect(r.patientName).toBe('Mary');
     expect(r.hpGained).toBe(30);
-    // Condition not cleared (out of scope for phase 1).
+    expect(r.conditionsCleared).toEqual(['cholera']);
+    expect(r.injuriesEased).toEqual([]);
     const wagon = r.state.wagonTrain!.companions[0];
     const mary = wagon.party.find((p) => p.id === 'both-p1')!;
-    expect(mary.conditions.length).toBe(1);
+    expect(mary.conditions.length).toBe(0);
+    expect(mary.health).toBe(70);
+  });
+
+  it('#296 — eases injuries (broken_leg) without clearing them — extra +15 HP, condition stays', () => {
+    let s = trainState();
+    s = {
+      ...s,
+      inventory: { medicine_chest: 1 },
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: [
+          fakeCompanion({
+            id: 'inj',
+            leaderProfession: 'farmer',
+            party: [
+              {
+                id: 'inj-p1', name: 'Tom', kind: 'adult', sex: 'male', age: 35,
+                profession: 'farmer', isLeader: true,
+                health: 50,
+                dead: false,
+                conditions: [{ id: 'broken_leg', daysSinceOnset: 1 }]
+              }
+            ]
+          })
+        ]
+      }
+    };
+    const r = doctorVisit(s, 'inj');
+    expect(r.treated).toBe(true);
+    expect(r.conditionsCleared).toEqual([]);
+    expect(r.injuriesEased).toEqual(['broken_leg']);
+    expect(r.hpGained).toBe(45); // 30 base + 15 injury bonus
+    const wagon = r.state.wagonTrain!.companions[0];
+    const tom = wagon.party.find((p) => p.id === 'inj-p1')!;
+    expect(tom.conditions.length).toBe(1);
+    expect(tom.conditions[0].id).toBe('broken_leg');
+    expect(tom.health).toBe(95);
+  });
+
+  it('#296 — handles mixed curable + helpable + non-affectable on the same patient', () => {
+    let s = trainState();
+    s = {
+      ...s,
+      inventory: { medicine_chest: 1 },
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: [
+          fakeCompanion({
+            id: 'mixed',
+            leaderProfession: 'farmer',
+            party: [
+              {
+                id: 'mix-p1', name: 'Suffering Sam', kind: 'adult', sex: 'male', age: 40,
+                profession: 'farmer', isLeader: true,
+                health: 30,
+                dead: false,
+                conditions: [
+                  { id: 'cholera', daysSinceOnset: 2 },
+                  { id: 'broken_leg', daysSinceOnset: 5 },
+                  { id: 'frostbite', daysSinceOnset: 1 }
+                ]
+              }
+            ]
+          })
+        ]
+      }
+    };
+    const r = doctorVisit(s, 'mixed');
+    expect(r.treated).toBe(true);
+    expect(r.conditionsCleared).toEqual(['cholera']);
+    expect(r.injuriesEased).toEqual(['broken_leg']);
+    expect(r.hpGained).toBe(45);
+    const wagon = r.state.wagonTrain!.companions[0];
+    const sam = wagon.party.find((p) => p.id === 'mix-p1')!;
+    // Two conditions remain: broken_leg (eased) and frostbite (not affectable).
+    expect(sam.conditions.map((c) => c.id).sort()).toEqual(['broken_leg', 'frostbite']);
+    expect(sam.health).toBe(75);
+  });
+
+  it('#296 — skips a patient whose only condition is non-affectable (frostbite)', () => {
+    let s = trainState();
+    s = {
+      ...s,
+      inventory: { medicine_chest: 1 },
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: [
+          fakeCompanion({
+            id: 'frost',
+            leaderProfession: 'farmer',
+            party: [
+              {
+                id: 'frost-p1', name: 'Cold One', kind: 'adult', sex: 'male', age: 30,
+                profession: 'farmer', isLeader: true,
+                health: 100,
+                dead: false,
+                conditions: [{ id: 'frostbite', daysSinceOnset: 1 }]
+              }
+            ]
+          })
+        ]
+      }
+    };
+    const r = doctorVisit(s, 'frost');
+    expect(r.treated).toBe(false);
+    expect(r.state).toBe(s);
+  });
+
+  it('#296 — all four chest-curable diseases (cholera, dysentery, typhoid, measles) clear in one visit', () => {
+    let s = trainState();
+    s = {
+      ...s,
+      inventory: { medicine_chest: 1 },
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: [
+          fakeCompanion({
+            id: 'plague',
+            leaderProfession: 'farmer',
+            party: [
+              {
+                id: 'plague-p1', name: 'Walking Plague', kind: 'adult', sex: 'male', age: 30,
+                profession: 'farmer', isLeader: true,
+                health: 50,
+                dead: false,
+                conditions: [
+                  { id: 'cholera', daysSinceOnset: 1 },
+                  { id: 'dysentery', daysSinceOnset: 1 },
+                  { id: 'typhoid', daysSinceOnset: 1 },
+                  { id: 'measles', daysSinceOnset: 1 }
+                ]
+              }
+            ]
+          })
+        ]
+      }
+    };
+    const r = doctorVisit(s, 'plague');
+    expect(r.treated).toBe(true);
+    expect(r.conditionsCleared!.sort()).toEqual(['cholera', 'dysentery', 'measles', 'typhoid']);
+    const wagon = r.state.wagonTrain!.companions[0];
+    const patient = wagon.party.find((p) => p.id === 'plague-p1')!;
+    expect(patient.conditions.length).toBe(0);
+  });
+
+  it('#296 — all three chest-helpable injuries (broken_leg, bear_mauling, snakebite) get +15 HP each', () => {
+    let s = trainState();
+    s = {
+      ...s,
+      inventory: { medicine_chest: 1 },
+      wagonTrain: {
+        ...s.wagonTrain!,
+        companions: [
+          fakeCompanion({
+            id: 'wreck',
+            leaderProfession: 'farmer',
+            party: [
+              {
+                id: 'wreck-p1', name: 'Wreck', kind: 'adult', sex: 'male', age: 30,
+                profession: 'farmer', isLeader: true,
+                health: 10,
+                dead: false,
+                conditions: [
+                  { id: 'broken_leg', daysSinceOnset: 1 },
+                  { id: 'bear_mauling', daysSinceOnset: 1 },
+                  { id: 'snakebite', daysSinceOnset: 1 }
+                ]
+              }
+            ]
+          })
+        ]
+      }
+    };
+    const r = doctorVisit(s, 'wreck');
+    expect(r.treated).toBe(true);
+    expect(r.conditionsCleared).toEqual([]);
+    // 30 base + 3 injuries × 15 = 75 hp gain. Patient went 10 → 85.
+    expect(r.hpGained).toBe(75);
+    const wagon = r.state.wagonTrain!.companions[0];
+    const w = wagon.party.find((p) => p.id === 'wreck-p1')!;
+    expect(w.health).toBe(85);
+    expect(w.conditions.length).toBe(3);
   });
 
   it('rejects departed (wiped/arrived/stranded) wagons', () => {
@@ -411,10 +634,7 @@ describe('wagonHasSickMember', () => {
     expect(wagonHasSickMember(c)).toBe(true);
   });
 
-  it('false at full HP even with an active condition (#296 — until visit clears conditions)', () => {
-    // Mirrors the pickSickMember filter: condition-only patients are
-    // excluded for now to avoid the confusing "treated +0 HP" outcome.
-    // Once #296 lands, broaden both this test and the engine filter.
+  it('#296 — true at full HP with a chest-curable disease (cholera)', () => {
     const c = fakeCompanion({
       id: 'c',
       leaderProfession: 'farmer',
@@ -423,6 +643,39 @@ describe('wagonHasSickMember', () => {
           id: 'p1', name: 'X', kind: 'adult', sex: 'male', age: 30,
           profession: 'farmer', isLeader: true, health: 100, dead: false,
           conditions: [{ id: 'cholera', daysSinceOnset: 1 }]
+        }
+      ]
+    });
+    expect(wagonHasSickMember(c)).toBe(true);
+  });
+
+  it('#296 — true at full HP with a chest-helpable injury (broken_leg)', () => {
+    const c = fakeCompanion({
+      id: 'c',
+      leaderProfession: 'farmer',
+      party: [
+        {
+          id: 'p1', name: 'X', kind: 'adult', sex: 'male', age: 30,
+          profession: 'farmer', isLeader: true, health: 100, dead: false,
+          conditions: [{ id: 'broken_leg', daysSinceOnset: 1 }]
+        }
+      ]
+    });
+    expect(wagonHasSickMember(c)).toBe(true);
+  });
+
+  it('#296 — false at full HP with only non-affectable conditions (frostbite, scurvy)', () => {
+    const c = fakeCompanion({
+      id: 'c',
+      leaderProfession: 'farmer',
+      party: [
+        {
+          id: 'p1', name: 'X', kind: 'adult', sex: 'male', age: 30,
+          profession: 'farmer', isLeader: true, health: 100, dead: false,
+          conditions: [
+            { id: 'frostbite', daysSinceOnset: 1 },
+            { id: 'scurvy', daysSinceOnset: 5 }
+          ]
         }
       ]
     });
