@@ -131,6 +131,19 @@
             </div>
           </div>
         {/if}
+
+        {#if haul.mode === 'company' && (haul.companyShareLb ?? 0) > 0}
+          <div class="haul-row company">
+            <span class="row-glyph">🤝</span>
+            <div class="row-body">
+              <span class="row-name">Divided across the train</span>
+              <span class="row-detail">
+                <strong>{haul.companyShareLb} lb</strong> went to the other wagons by household — the
+                company keeps the equity rule. <span class="good">+2 train morale.</span>
+              </span>
+            </div>
+          </div>
+        {/if}
       </div>
 
       {#if haul.meat > 0}

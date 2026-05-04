@@ -27,6 +27,16 @@ export interface HuntOptions {
    * Default true. Setting false skips the rendering step — saves time
    * but forfeits the tallow byproduct. */
   renderTallow?: boolean;
+  /** #294 — 'solo' (default) keeps the existing behavior: yield goes
+   * to the player wagon. 'company' assembles a hunting party from the
+   * train (only valid when in-train), bumps the yield with each
+   * companion's contribution, and divides the meat by alive-soul count
+   * across all wagons (Marcy 1859 equity rule). Period: trains
+   * organized hunts at sundown for the next morning; the captain
+   * picked riders + rifles, and the kill was divided by household.
+   * Going solo while in-train slightly drops train morale — the
+   * company saw you break the equity rule. */
+  mode?: 'solo' | 'company';
 }
 
 // Structured haul summary written to flags._huntHaul by hunt(). Consumed
@@ -34,10 +44,12 @@ export interface HuntOptions {
 // acknowledges. Kept JSON-serializable — goes through the save format.
 export interface HuntHaul {
   target: HuntTarget;
-  meat: number;       // lb of fresh game_meat added
+  meat: number;       // lb of fresh game_meat added (player's share on company hunt)
   berries: number;    // lb of wild berries gathered
   liver: boolean;     // organ eaten fresh — morale/health already applied
-  // #182 byproducts — set on medium/big kills.
+  // #182 byproducts — set on medium/big kills. Stay with the player
+  // wagon even on company hunts — period: hides/tallow traveled with
+  // the killer wagon.
   tallow: number;     // lb of rendered fat (medium 5–10, big 15–40)
   prizeCut: number;   // lb of tongue+hump delicacy (big only, 1–2)
   rawHides: number;   // count of raw hides taken (medium 60% ×1, big 80% ×1–2)
@@ -48,6 +60,12 @@ export interface HuntHaul {
    * variant. Optional for save-format compatibility with pre-#198 saves. */
   mauled?: boolean;
   spoilDay: number | null; // day meat pile spoils; null when no meat
+  // #294 — company-hunt fields. `mode` records which path ran;
+  // `companyShareLb` is total lb redistributed to companion wagons
+  // (already moved into their inventories when this haul is written).
+  // Both optional for save-format compatibility with pre-#294 saves.
+  mode?: 'solo' | 'company';
+  companyShareLb?: number;
 }
 
 const AMMO_BY_BAND: Record<AmmoBand, number> = {
@@ -134,6 +152,20 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   if (opts.hunters === 2) {
     carryMultiplier = rifleCount >= 2 ? 1.8 : 1.5;
   }
+  // #294 — company hunt assembles a hunting party from the train.
+  // Each in-progress companion contributes a hunter (period: every
+  // wagon could field at least one man with a rifle). Yield bumps
+  // 0.3x per companion — calibrated so a 5-companion train roughly
+  // doubles the haul (1 + 5×0.3 = 2.5x with 5 wagons, the larger
+  // share-out below offsets that). Forage doesn't get the bump (no
+  // company-foraging mechanic).
+  const isCompanyHunt = opts.mode === 'company' && !!s.wagonTrain;
+  const liveCompanions = isCompanyHunt
+    ? s.wagonTrain!.companions.filter((c) => c.outcome === 'in-progress')
+    : [];
+  if (isCompanyHunt && !isGather) {
+    carryMultiplier *= 1 + 0.3 * liveCompanions.length;
+  }
 
   const rawYield = rng.int(profile.min, profile.max);
   const meatLbs = isGather
@@ -219,8 +251,50 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     lead_balls:      availBalls  - spentBullets,
     percussion_caps: availCaps   - spentBullets
   };
-  if (meatGain > 0) {
-    nextInventory.game_meat = (s.inventory.game_meat ?? 0) + meatGain;
+
+  // #294 — divide the meat across all wagons by alive-soul count when
+  // running a company hunt. Period anchor: Marcy 1859 codifies the
+  // captain enforcing "share by household" for buffalo/elk hunts. The
+  // player's wagon gets its proportional cut (`playerShareLb`); the
+  // rest moves into companion inventories below. Solo hunts skip this
+  // — the player keeps everything regardless of train.
+  //
+  // Distribute from the running `leftover` and `remainingSouls` so
+  // rounding never overshoots — the final companion always gets the
+  // remainder, and intermediate rounds can't drive `leftover` negative
+  // because each round takes a fraction of what's left, not of the
+  // total. Floors at 0 defensively for the last share even though the
+  // math should prevent it.
+  let playerShareLb = meatGain;
+  let companyShareLb = 0;
+  type CompanionShare = { wagonId: string; lb: number };
+  const companionShares: CompanionShare[] = [];
+  if (isCompanyHunt && meatGain > 0) {
+    const playerSouls = s.party.filter((m) => !m.dead).length;
+    const compSouls = liveCompanions.map((c) => c.party.filter((p) => !p.dead).length);
+    const totalSouls = playerSouls + compSouls.reduce((a, b) => a + b, 0);
+    if (totalSouls > 0) {
+      playerShareLb = Math.round(meatGain * (playerSouls / totalSouls));
+      let leftover = meatGain - playerShareLb;
+      let remainingSouls = totalSouls - playerSouls;
+      for (let i = 0; i < liveCompanions.length; i++) {
+        const compSoul = compSouls[i];
+        const isLast = i === liveCompanions.length - 1;
+        const lb = isLast
+          ? Math.max(0, leftover)
+          : remainingSouls > 0
+            ? Math.round(leftover * (compSoul / remainingSouls))
+            : 0;
+        leftover -= lb;
+        remainingSouls -= compSoul;
+        companionShares.push({ wagonId: liveCompanions[i].id, lb });
+      }
+      companyShareLb = companionShares.reduce((a, c) => a + c.lb, 0);
+    }
+  }
+
+  if (playerShareLb > 0) {
+    nextInventory.game_meat = (s.inventory.game_meat ?? 0) + playerShareLb;
   }
   if (berriesGain > 0) {
     nextInventory.berries = (s.inventory.berries ?? 0) + berriesGain;
@@ -234,10 +308,60 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   if (rawHideGain > 0) {
     nextInventory.raw_hide = (s.inventory.raw_hide ?? 0) + rawHideGain;
   }
-  const nextFlags = meatGain > 0
+  const nextFlags = playerShareLb > 0
     ? { ...s.flags, _gameMeatSpoilDay: computeSpoilDay(s.day) }
     : { ...s.flags };
   s = { ...s, inventory: nextInventory, flags: nextFlags };
+
+  // #294 — apply company-hunt redistribution + train-morale shifts.
+  // Solo hunt while in-train: small −1 train morale per in-progress
+  // companion (capped −5) — the company saw you keep the kill alone.
+  // Company hunt success: +2 morale per in-progress companion.
+  if (s.wagonTrain) {
+    const liveTrain = s.wagonTrain.companions.filter((c) => c.outcome === 'in-progress');
+    if (isCompanyHunt && companionShares.length > 0) {
+      // Known asymmetry (logged as #294 follow-up): NPC wagons don't
+      // run applySpoilage — `tickNpcWagon` only consumes from
+      // FOOD_DRAW_ORDER. Meat handed over here will be eaten before
+      // staples but won't rot from heat/time the way the player's pile
+      // does. Acceptable for phase 1; revisit when NPC spoilage gets a
+      // sibling system to player spoilage.
+      const shareById = new Map(companionShares.map((c) => [c.wagonId, c.lb]));
+      s = {
+        ...s,
+        wagonTrain: {
+          ...s.wagonTrain,
+          companions: s.wagonTrain.companions.map((c) => {
+            if (c.outcome !== 'in-progress') return c;
+            const share = shareById.get(c.id) ?? 0;
+            return {
+              ...c,
+              inventory: share > 0
+                ? { ...c.inventory, game_meat: (c.inventory.game_meat ?? 0) + share }
+                : c.inventory,
+              morale: Math.min(100, c.morale + 2)
+            };
+          })
+        }
+      };
+    } else if (!isCompanyHunt && !isGather && meatGain > 0 && liveTrain.length > 0) {
+      // Solo hunt while in-train with a real haul — the company saw you
+      // keep the kill alone. Drop train morale a bit. No effect for
+      // empty hunts (no kill = no breach of equity).
+      const moraleDrop = Math.min(5, liveTrain.length);
+      s = {
+        ...s,
+        wagonTrain: {
+          ...s.wagonTrain,
+          companions: s.wagonTrain.companions.map((c) =>
+            c.outcome === 'in-progress'
+              ? { ...c, morale: Math.max(0, c.morale - moraleDrop) }
+              : c
+          )
+        }
+      };
+    }
+  }
 
   let injuredName: string | null = null;
   let mauled = false;
@@ -304,7 +428,9 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
         ? `Took ${prizeCutGain} lb of tongue and hump and left the rest for the wolves (${spentBullets} shots). Feast tonight.`
         : `Shots missed; came back empty-handed (${spentBullets} shots).`
       : meatLbs > 0
-        ? `Hunt returned ${meatLbs} lb of fresh game meat (${spentBullets} shots). Eat it or cure it before it spoils.`
+        ? isCompanyHunt
+          ? `Company hunt brought in ${meatLbs} lb (${spentBullets} shots). Divided by household — your wagon's share: ${playerShareLb} lb.`
+          : `Hunt returned ${meatLbs} lb of fresh game meat (${spentBullets} shots). Eat it or cure it before it spoils.`
         : `Hunt returned empty-handed (${spentBullets} shots).`;
   s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: logText }] };
 
@@ -313,7 +439,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   // returns to /play. Cleared by the ?/ackHunt action.
   const haul: HuntHaul = {
     target: opts.target,
-    meat: meatGain,
+    meat: playerShareLb,
     berries: berriesGain,
     liver: liverFound,
     tallow: tallowGain,
@@ -322,7 +448,9 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     bullets: spentBullets,
     injured: injuredName,
     mauled,
-    spoilDay: meatGain > 0 ? computeSpoilDay(s.day) : null
+    spoilDay: playerShareLb > 0 ? computeSpoilDay(s.day) : null,
+    mode: isCompanyHunt ? 'company' : 'solo',
+    companyShareLb
   };
   // Cast required because HuntHaul is a named interface (stricter than
    // the Record<string, unknown> branch of flags). Round-trips fine through
