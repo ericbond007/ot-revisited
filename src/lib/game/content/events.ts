@@ -54,6 +54,19 @@ export interface GameEvent {
   weight: number;
   choices: EventChoice[];
   gate?: (state: GameState) => boolean;
+  // Optional fire-time hook (#282 / #289 integration). Runs once when
+  // the event is selected, after rollEvent / arrival / approach
+  // returns it. Use it to stash dynamic context the choices will read
+  // back at apply time — e.g., a randomly picked companion + barter
+  // offer for the train-companion-barter event. Should set
+  // `flags._pendingEventBody` if the body needs to be dynamic. The
+  // engine wires this in alongside bodyKey resolution.
+  //
+  // **Mutual exclusion with `bodyKey`**: pick one. The engine resolves
+  // `bodyKey` first, then runs `prepare` — if both write
+  // `_pendingEventBody`, prepare wins. A dev-mode console warning
+  // fires in `prepareEventForSurfacing` if an event sets both.
+  prepare?: (state: GameState, rng: Rng) => GameState;
 }
 
 // The full registry is built up in Tasks 2-5. Task 1 ships an empty-or-placeholder
@@ -1534,3 +1547,11 @@ EVENTS.push(...WATER_EVENTS);
 // in the existing ox-fatigue calibration.
 import { NOON_EVENTS } from './noon-events';
 EVENTS.push(...NOON_EVENTS);
+
+// #282 wagon-train events — only fire while in a train. Campfire
+// stories, animal-doctoring favors, marching-order disputes, Sunday
+// meetings, news-pump from passing parties, tool-lending, fiddle
+// nights, lost children. Gated on `state.wagonTrain != null` plus
+// per-event sub-gates (Sunday + preacher, fiddle in inventory, etc.).
+import { TRAIN_EVENTS } from './train-events';
+EVENTS.push(...TRAIN_EVENTS);

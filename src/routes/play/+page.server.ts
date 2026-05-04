@@ -158,6 +158,7 @@ export const actions: Actions = {
     const pendingSummaryDay = flags._pendingTravelSummaryDay;
     delete (flags as Record<string, unknown>)._pendingEventId;
     delete (flags as Record<string, unknown>)._pendingEventBody;
+    delete (flags as Record<string, unknown>)._pendingTradeOffer;
     delete (flags as Record<string, unknown>)._travelRemaining;
     delete (flags as Record<string, unknown>)._pendingTravelSummary;
     delete (flags as Record<string, unknown>)._pendingTravelSummaryDay;

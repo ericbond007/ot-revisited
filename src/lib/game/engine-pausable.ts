@@ -1,5 +1,6 @@
 import type { GameState } from './types';
 import { makeRng } from './rng';
+import type { Rng } from './rng';
 import { upgradeState } from './upgrade';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { applyStarvation } from './systems/starvation';
@@ -42,6 +43,36 @@ function advanceDate(d: { year: number; month: number; day: number }) {
 export interface PausableTickResult {
   state: GameState;
   pendingEvent?: GameEvent;
+}
+
+/** Surface a fired event for the player by resolving its dynamic
+ *  context (bodyKey text-pool variant, then the optional `prepare`
+ *  hook for #282/#289-style events). Used at all 3 firing sites
+ *  (rollEvent / arrival / approach) so the wire is one-place-only and
+ *  testable in isolation. */
+export function prepareEventForSurfacing(
+  state: GameState,
+  event: GameEvent,
+  rng: Rng
+): GameState {
+  let s = state;
+  if (event.bodyKey) {
+    const resolvedBody = pickText(event.bodyKey, rng, event.body);
+    s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
+  }
+  if (event.prepare) {
+    if (import.meta.env?.DEV && event.bodyKey) {
+      // The prepare hook is allowed to overwrite _pendingEventBody, but
+      // doing so silently masks the bodyKey resolution. Surface this in
+      // dev so it's visible when an event accidentally sets both.
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[event ${event.id}] sets both bodyKey and prepare — prepare's body wins.`
+      );
+    }
+    s = event.prepare(s, rng);
+  }
+  return s;
 }
 
 export function tickDayPausable(state: GameState): PausableTickResult {
@@ -131,10 +162,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   ) {
     const arrival = getLandmarkArrivalEvent(prevLandmarkAfter, s);
     if (arrival) {
-      if (arrival.bodyKey) {
-        const resolvedBody = pickText(arrival.bodyKey, rng, arrival.body);
-        s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
-      }
+      s = prepareEventForSurfacing(s, arrival, rng);
       return { state: s, pendingEvent: arrival };
     }
   }
@@ -150,10 +178,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
         ...s,
         flags: { ...s.flags, [approachFiredFlag(approach.landmarkId)]: true }
       };
-      if (approach.event.bodyKey) {
-        const resolvedBody = pickText(approach.event.bodyKey, rng, approach.event.body);
-        s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
-      }
+      s = prepareEventForSurfacing(s, approach.event, rng);
       return { state: s, pendingEvent: approach.event };
     }
   }
@@ -166,12 +191,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   if (!arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
     const pending = rollEvent(s, rng);
     if (pending) {
-      // Resolve body variant at fire time so it stays consistent across renders.
-      // Falls back to the inline body string when no pool is registered yet.
-      if (pending.bodyKey) {
-        const resolvedBody = pickText(pending.bodyKey, rng, pending.body);
-        s = { ...s, flags: { ...s.flags, _pendingEventBody: resolvedBody } };
-      }
+      s = prepareEventForSurfacing(s, pending, rng);
       return { state: s, pendingEvent: pending };
     }
   }
