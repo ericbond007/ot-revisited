@@ -9,10 +9,12 @@ import { describe, it, expect } from 'vitest';
 import {
   maybeElectCaptain,
   playerIsCaptain,
+  forceElection,
   ELECTION_LANDMARKS,
   MORALE_VOTE_THRESHOLD
 } from '../src/lib/game/systems/wagon-train-elections';
 import { joinTrain } from '../src/lib/game/systems/wagon-train';
+import { buildStarvationCrisisEvent } from '../src/lib/game/systems/npc-crisis-events';
 import { createInitialState } from '../src/lib/game/engine';
 import { tickDayPausable } from '../src/lib/game/engine-pausable';
 import { runningMilesTo } from '../src/lib/game/systems/travel';
@@ -268,6 +270,154 @@ describe('engine wire-up — integration through tickDayPausable', () => {
     };
     const result = tickDayPausable(s);
     expect(result.state.flags._electionFiredAt_ft_kearny).toBeUndefined();
+  });
+});
+
+describe('#285 phase 2 — stand-aside preference', () => {
+  it('player is excluded from candidates when wagonTrain.playerStandsAside is true', () => {
+    let s = makeGrumpy(joinTrain(game(), makeRng('j')).state);
+    s = atLandmark(s, 'ft_kearny');
+    // Player flips the flag; they're currently the captain.
+    s = { ...s, wagonTrain: { ...s.wagonTrain!, playerStandsAside: true } };
+    const r = maybeElectCaptain(s, makeRng('a'));
+    expect(r.ran).toBe(true);
+    // The new leader cannot be the player.
+    expect(r.newLeader).not.toBe('player');
+    // Captaincy actually changed (player was incumbent, now isn't).
+    expect(r.changed).toBe(true);
+  });
+
+  it('stand-aside with no companions left yields a single-candidate no-op', () => {
+    let s = makeGrumpy(joinTrain(game(), makeRng('j')).state);
+    s = {
+      ...s,
+      wagonTrain: { ...s.wagonTrain!, companions: [], playerStandsAside: true }
+    };
+    s = atLandmark(s, 'ft_kearny');
+    const r = maybeElectCaptain(s, makeRng('a'));
+    expect(r.ran).toBe(false);
+    expect(r.skipReason).toBe('single_candidate');
+  });
+});
+
+describe('#285 phase 2 — forceElection (crisis-triggered)', () => {
+  it('runs an election ignoring the morale gate', () => {
+    // High morale — landmark path would skip with skip='morale_ok'.
+    let s = joinTrain(game(), makeRng('j')).state;
+    expect(s.morale).toBeGreaterThan(MORALE_VOTE_THRESHOLD);
+    const r = forceElection(s, makeRng('crisis'), 'refused-starvation-share');
+    expect(r.ran).toBe(true);
+    expect(r.newLeader).toBeDefined();
+  });
+
+  it('runs an election ignoring the landmark gate (no landmark required)', () => {
+    let s = joinTrain(game(), makeRng('j')).state;
+    expect(s.location.atLandmarkId).toBeUndefined();
+    const r = forceElection(s, makeRng('crisis'), 'refused-starvation-share');
+    expect(r.ran).toBe(true);
+  });
+
+  it('writes a crisis-flavored log line', () => {
+    let s = joinTrain(game(), makeRng('j')).state;
+    const r = forceElection(s, makeRng('crisis'), 'refused-starvation-share');
+    const last = r.state.eventLog[r.state.eventLog.length - 1];
+    expect(last.text).toMatch(/refused to share food/i);
+  });
+
+  it('uses second-person ("you refused") when the incumbent is the player', () => {
+    // Player is incumbent (default after joinTrain).
+    const s = joinTrain(game(), makeRng('j')).state;
+    const r = forceElection(s, makeRng('crisis'), 'refused-starvation-share');
+    const last = r.state.eventLog[r.state.eventLog.length - 1];
+    expect(last.text).toMatch(/After you refused/);
+    expect(last.text).not.toMatch(/After the captain refused/);
+  });
+
+  it('uses third-person ("the captain refused") when incumbent is a companion', () => {
+    let s = joinTrain(game(), makeRng('j')).state;
+    s = { ...s, wagonTrain: { ...s.wagonTrain!, leaderId: s.wagonTrain!.companions[0].id } };
+    const r = forceElection(s, makeRng('crisis'), 'refused-starvation-share');
+    const last = r.state.eventLog[r.state.eventLog.length - 1];
+    expect(last.text).toMatch(/After the captain refused/);
+    expect(last.text).not.toMatch(/After you refused/);
+  });
+
+  it('clears the _pendingCaptaincyVote flag from state', () => {
+    let s = joinTrain(game(), makeRng('j')).state;
+    s = { ...s, flags: { ...s.flags, _pendingCaptaincyVote: { reason: 'refused-starvation-share' } } };
+    const r = forceElection(s, makeRng('crisis'), 'refused-starvation-share');
+    expect(r.state.flags._pendingCaptaincyVote).toBeUndefined();
+  });
+
+  it('honors stand-aside in crisis votes too', () => {
+    let s = joinTrain(game(), makeRng('j')).state;
+    s = { ...s, wagonTrain: { ...s.wagonTrain!, playerStandsAside: true } };
+    const r = forceElection(s, makeRng('crisis'), 'refused-starvation-share');
+    expect(r.ran).toBe(true);
+    expect(r.newLeader).not.toBe('player');
+  });
+
+  it('no-op + flag cleared when companion-less train', () => {
+    let s = joinTrain(game(), makeRng('j')).state;
+    s = { ...s, wagonTrain: { ...s.wagonTrain!, companions: [] } };
+    s = { ...s, flags: { ...s.flags, _pendingCaptaincyVote: { reason: 'refused-starvation-share' } } };
+    const r = forceElection(s, makeRng('crisis'), 'refused-starvation-share');
+    expect(r.ran).toBe(false);
+    expect(r.state.flags._pendingCaptaincyVote).toBeUndefined();
+  });
+});
+
+describe('#285 phase 2 — starvation refuse arms the crisis trigger', () => {
+  it('refuse choice sets _pendingCaptaincyVote when player is in a train + captain', () => {
+    let s = joinTrain(game(), makeRng('jt')).state;
+    expect(s.wagonTrain?.leaderId).toBe('player');
+    const target = s.wagonTrain!.companions[0];
+    const event = buildStarvationCrisisEvent(target);
+    const refuseChoice = event.choices.find((c) => c.id === 'starvation_refuse')!;
+    const after = refuseChoice.apply(s, makeRng('refuse'));
+    expect(after.flags._pendingCaptaincyVote).toEqual({ reason: 'refused-starvation-share' });
+  });
+
+  it('refuse choice does NOT arm trigger when player is not the captain', () => {
+    let s = joinTrain(game(), makeRng('jt')).state;
+    s = { ...s, wagonTrain: { ...s.wagonTrain!, leaderId: s.wagonTrain!.companions[0].id } };
+    const target = s.wagonTrain!.companions[0];
+    const event = buildStarvationCrisisEvent(target);
+    const refuseChoice = event.choices.find((c) => c.id === 'starvation_refuse')!;
+    const after = refuseChoice.apply(s, makeRng('refuse'));
+    expect(after.flags._pendingCaptaincyVote).toBeUndefined();
+  });
+});
+
+describe('#285 phase 2 — tickDayPausable consumes _pendingCaptaincyVote', () => {
+  // The crisis trigger is set by the starvation-refuse choice apply
+  // (see npc-crisis-events.ts). On the next tick, the engine should
+  // see the flag, run forceElection, and clear it. Catches the same
+  // bug class that bit #285 phase 1 (wired in isolation but never
+  // invoked through the engine path).
+  it('consumes the flag and runs an election on the next tick', () => {
+    let s = joinTrain(game(), makeRng('jt')).state;
+    s = {
+      ...s,
+      flags: { ...s.flags, _pendingCaptaincyVote: { reason: 'refused-starvation-share' } }
+    };
+    const r = tickDayPausable(s);
+    // Flag is gone — the engine consumed it.
+    expect(r.state.flags._pendingCaptaincyVote).toBeUndefined();
+    // A vote-result log line landed.
+    const voteLine = r.state.eventLog.find((l) =>
+      /refused to share food/i.test(l.text)
+    );
+    expect(voteLine).toBeDefined();
+  });
+
+  it('drops a stale flag when the player is no longer in a train', () => {
+    const s: GameState = {
+      ...game(),
+      flags: { _pendingCaptaincyVote: { reason: 'refused-starvation-share' } }
+    };
+    const r = tickDayPausable(s);
+    expect(r.state.flags._pendingCaptaincyVote).toBeUndefined();
   });
 });
 

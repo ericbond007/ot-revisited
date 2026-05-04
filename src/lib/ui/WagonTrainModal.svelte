@@ -4,10 +4,14 @@
   // count + avg fatigue, morale, most-recent event blurb. No
   // inventory detail (deliberate — too much density without play
   // value at this stage; see #289 phase 2 for the trade UI).
+  //
+  // #285 phase 2 — adds a "stand for captaincy / stand aside" toggle.
+  import { enhance } from '$app/forms';
   import type { GameState, NpcWagonState, PartyMember } from '$lib/game/types';
 
-  let { state, onclose }: {
+  let { state, slot, onclose }: {
     state: GameState;
+    slot: string;
     onclose: () => void;
   } = $props();
 
@@ -113,6 +117,30 @@
         {/each}
       </ul>
 
+      <div class="captaincy">
+        <div class="cap-line">
+          <strong>Captaincy:</strong>
+          {#if train.leaderId === 'player'}
+            you hold it
+          {:else}
+            {train.companions.find((c) => c.id === train.leaderId)?.name ?? 'a companion'}
+          {/if}
+          {#if train.playerStandsAside}
+            · <span class="cap-aside">standing aside at the next vote</span>
+          {/if}
+        </div>
+        <form
+          method="POST"
+          action="?/townToggleStandAside&slot={slot}"
+          use:enhance={() => () => {}}
+          class="cap-form"
+        >
+          <button type="submit" class="cap-btn">
+            {train.playerStandsAside ? 'Stand for captaincy' : 'Stand aside next vote'}
+          </button>
+        </form>
+      </div>
+
       <div class="actions">
         <button type="button" onclick={onclose}>Close</button>
       </div>
@@ -213,4 +241,28 @@
     font-family: inherit;
   }
   .actions button:hover { border-color: var(--c-rust); }
+  .captaincy {
+    margin-top: 1em;
+    padding-top: 0.6em;
+    border-top: 1px solid rgba(232, 217, 184, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8em;
+    flex-wrap: wrap;
+  }
+  .cap-line { font-size: 0.9em; color: var(--c-tan); }
+  .cap-aside { color: var(--c-rust); font-style: italic; }
+  .cap-form { margin: 0; }
+  .cap-btn {
+    background: var(--c-bg-raised);
+    border: 1px solid var(--c-wood);
+    color: var(--c-tan);
+    padding: 0.35em 0.9em;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85em;
+  }
+  .cap-btn:hover { border-color: var(--c-rust); }
 </style>

@@ -592,6 +592,32 @@ export const actions: Actions = {
     return { state };
   },
 
+  // #285 phase 2 — toggle the player's stand-aside preference. When
+  // set, the player's wagon is excluded from candidate lists at vote
+  // time so the captaincy goes to the highest-charisma companion.
+  townToggleStandAside: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    if (!state.wagonTrain) throw error(409, 'not in a wagon train');
+    const next = !state.wagonTrain.playerStandsAside;
+    state = {
+      ...state,
+      wagonTrain: { ...state.wagonTrain, playerStandsAside: next },
+      eventLog: [
+        ...state.eventLog,
+        {
+          day: state.day,
+          text: next
+            ? "You let the company know you'll stand aside at the next vote."
+            : "You let the company know you'll stand for captaincy at the next vote."
+        }
+      ]
+    };
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
   // #289 — phase-1 quick-give. Body: { wagonId, item, qty }. Builds
   // a gift-only offer (player gives, gets nothing) and runs through
   // tradeWithCompanion. Future phases (#289 phase 2) extend with

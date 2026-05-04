@@ -205,6 +205,21 @@ export function buildStarvationCrisisEvent(target: NpcWagonState): GameEvent {
         ...w,
         morale: Math.max(0, w.morale + REFUSE_NPC_MORALE)
       }));
+      // #285 phase 2 — refusing a starving wagon is a captaincy
+      // crisis. The company gathers at the next camp and calls for a
+      // new vote (consumed by tickDayPausable on the next tick). Only
+      // arms the trigger when the player is actually in a train and
+      // currently captain — refusing as a non-captain doesn't get
+      // pinned on you the same way.
+      if (s.wagonTrain && s.wagonTrain.leaderId === 'player') {
+        next = {
+          ...next,
+          flags: {
+            ...next.flags,
+            _pendingCaptaincyVote: { reason: 'refused-starvation-share' }
+          }
+        };
+      }
       return logBoth(
         next,
         wagonId,

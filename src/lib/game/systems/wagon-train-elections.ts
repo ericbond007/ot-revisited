@@ -79,9 +79,10 @@ function buildCandidates(state: GameState): Candidate[] {
   if (!state.wagonTrain) return [];
   const incumbent = state.wagonTrain.leaderId;
   const candidates: Candidate[] = [];
-  // Player slot — eligible if leader is alive.
+  // Player slot — eligible if leader is alive AND the player hasn't
+  // chosen to stand aside (#285 phase 2 — set from the WagonTrain modal).
   const playerProf = playerLeaderProfession(state);
-  if (playerProf) {
+  if (playerProf && !state.wagonTrain.playerStandsAside) {
     candidates.push({
       id: 'player',
       name: state.party.find((m) => m.isLeader)?.name ?? 'Captain',
@@ -236,6 +237,87 @@ function landmarkLabel(id: string): string {
 /** True when the player's slot currently holds the captaincy. */
 export function playerIsCaptain(state: GameState): boolean {
   return state.wagonTrain?.leaderId === 'player';
+}
+
+/** Reasons a crisis vote can be triggered. Stored in
+ *  `state.flags._pendingCaptaincyVote` by the source event (e.g.,
+ *  starvation refusal) and consumed by `tickDayPausable` on the next
+ *  tick — gives the company a beat to gather around the campfire
+ *  before the vote happens. */
+export type CrisisVoteReason = 'refused-starvation-share';
+
+/** Crisis preface — varies by reason AND by whether the player was the
+ *  one whose action triggered the vote. Avoids the third-person /
+ *  second-person voice mix when the player is simultaneously the
+ *  refuser and the (re-)elected captain. */
+function crisisPreface(reason: CrisisVoteReason, refuserIsPlayer: boolean): string {
+  switch (reason) {
+    case 'refused-starvation-share':
+      return refuserIsPlayer
+        ? 'After you refused to share food with a starving wagon, the company gathered and called for a new vote.'
+        : 'After the captain refused to share food with a starving wagon, the company gathered and called for a new vote.';
+  }
+}
+
+/** Run an election triggered by a crisis (not by arrival at a post).
+ *  Bypasses the landmark and morale gates — the company has already
+ *  organized; the vote happens. Uses the same charisma + incumbent
+ *  weighting as the landmark path, and respects `playerStandsAside`.
+ *  Clears the trigger flag. */
+export function forceElection(
+  state: GameState,
+  rng: Rng,
+  reason: CrisisVoteReason
+): ElectionResult {
+  if (!state.wagonTrain) return { state, ran: false, skipReason: 'not_in_train' };
+  // Strip the trigger flag whether the vote runs or not — we don't
+  // want it stuck if e.g. only one candidate remains.
+  const clearedFlags = { ...state.flags };
+  delete (clearedFlags as Record<string, unknown>)._pendingCaptaincyVote;
+  const cleared: GameState = { ...state, flags: clearedFlags };
+
+  const candidates = buildCandidates(cleared);
+  if (candidates.length < 2) {
+    return { state: cleared, ran: false, skipReason: 'single_candidate' };
+  }
+  const weights = candidates.map((c) => weightFor(c, rng));
+  const total = weights.reduce((s, w) => s + w, 0);
+  let r = rng.next() * total;
+  let winner = candidates[0];
+  for (let i = 0; i < candidates.length; i++) {
+    r -= weights[i];
+    if (r <= 0) {
+      winner = candidates[i];
+      break;
+    }
+  }
+
+  const incumbent = cleared.wagonTrain!.leaderId;
+  const changed = winner.id !== incumbent;
+  const previousName = incumbent === 'player'
+    ? (cleared.party.find((m) => m.isLeader)?.name ?? 'the player')
+    : cleared.wagonTrain!.companions.find((c) => c.id === incumbent)?.name ?? 'the previous captain';
+
+  // The incumbent at the moment the vote is called is the captain
+  // who took the action — i.e., the refuser for refused-starvation-share.
+  const preface = crisisPreface(reason, incumbent === 'player');
+  let logText: string;
+  if (!changed) {
+    logText = winner.id === 'player'
+      ? `${preface} They re-elected you captain.`
+      : `${preface} ${winner.name} kept the captaincy.`;
+  } else {
+    logText = winner.id === 'player'
+      ? `${preface} They elected you captain over ${previousName}.`
+      : `${preface} ${winner.name} took the captaincy from ${previousName}.`;
+  }
+
+  const next: GameState = {
+    ...cleared,
+    wagonTrain: { ...cleared.wagonTrain!, leaderId: winner.id },
+    eventLog: [...cleared.eventLog, { day: cleared.day, text: logText }]
+  };
+  return { state: next, ran: true, newLeader: winner.id, changed };
 }
 
 // Re-export for tests.

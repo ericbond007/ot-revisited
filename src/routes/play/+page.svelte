@@ -300,7 +300,7 @@
 {/if}
 
 {#if showTrain}
-  <WagonTrainModal state={gs} onclose={() => (showTrain = false)} />
+  <WagonTrainModal state={gs} slot={data.slot} onclose={() => (showTrain = false)} />
 {/if}
 
 {#if showParty}
