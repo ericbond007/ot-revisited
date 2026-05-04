@@ -23,7 +23,8 @@ import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { advanceTrain } from './systems/wagon-train';
-import { maybeElectCaptain } from './systems/wagon-train-elections';
+import { maybeElectCaptain, forceElection } from './systems/wagon-train-elections';
+import type { CrisisVoteReason } from './systems/wagon-train-elections';
 import type { GameEvent } from './content/events';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickApproachEvent, approachFiredFlag } from './content/landmark-approach-events';
@@ -80,6 +81,27 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
 
   let s = tickWeather(normalized, rng);
+
+  // #285 phase 2 — crisis-triggered re-election. Consumed at the top of
+  // the next tick after the trigger was set (currently the only
+  // trigger is refusing a starvation share; see npc-crisis-events).
+  // Runs before the morale / travel / event systems below so the new
+  // captaincy is in effect for those — `tickWeather` above is purely
+  // meteorological and has no captaincy dependency. If a future system
+  // is captaincy-sensitive AND must run before this block, move it
+  // below; otherwise leave it.
+  const pendingVote = s.flags._pendingCaptaincyVote as
+    | { reason: CrisisVoteReason }
+    | undefined;
+  if (pendingVote && s.wagonTrain) {
+    s = forceElection(s, rng, pendingVote.reason).state;
+  } else if (pendingVote) {
+    // Trigger set but the player left the train — drop the flag so it
+    // doesn't sit forever.
+    const cleared = { ...s.flags };
+    delete (cleared as Record<string, unknown>)._pendingCaptaincyVote;
+    s = { ...s, flags: cleared };
+  }
 
   // Sabbath-breaking morale debit (#224). Religious diaries from
   // Catherine Sager to the Reed family record the guilt of traveling

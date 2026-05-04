@@ -242,6 +242,10 @@ export interface WagonTrain {
    *  same shape the player carries. The bot AI (#275) drives each
    *  one's decisions. */
   companions: NpcWagonState[];
+  /** #285 phase 2 — when set, the player declines to be a candidate
+   *  in elections. Set/cleared from the wagon-train roster modal. The
+   *  captaincy will go to the highest-charisma companion instead. */
+  playerStandsAside?: boolean;
 }
 
 // #280a — NPC wagon state. Same field-shape as the player's relevant
