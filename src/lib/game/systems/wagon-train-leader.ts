@@ -23,8 +23,39 @@
 //   - leader-override-with-morale-cost
 //   - call emergency vote on abandoning a struggling wagon
 
-import type { GameState, NpcWagonState, PartyMember } from '../types';
+import type { GameState, NpcWagonState, PartyMember, ConditionId } from '../types';
 import { playerIsCaptain } from './wagon-train-elections';
+
+// #296 — chest-curable conditions: the drugs in a fitted medicine
+// chest (laudanum / calomel / quinine / ipecac / dovers_powder /
+// paregoric / jalap / hartshorn) were specifically curative for these
+// disease conditions in period emigrant medicine. Marcy 1859 and
+// Ramsey's Practice (1842) both prescribe quinine for cholera/typhoid
+// and calomel/paregoric for dysentery as the standard chest doses.
+// Pox (period name for syphilis) gets the mercury cure: calomel was
+// the standard treatment ("a night with Venus, a lifetime with
+// Mercury"). Period outcomes were grim — but the cure was real.
+const CHEST_CURABLE_CONDITIONS: ReadonlySet<ConditionId> = new Set([
+  'cholera',
+  'dysentery',
+  'typhoid',
+  'measles',
+  'pox'
+]);
+
+// #296 — chest-helpable injuries: laudanum + bandages eased pain and
+// stopped infection, but the underlying wound still needed time + rest
+// to heal. The visit grants extra HP per such injury (a flat first-aid
+// bonus) without clearing the condition — the patient still has the
+// broken leg / mauling / venom moving through them.
+const CHEST_HELPABLE_INJURIES: ReadonlySet<ConditionId> = new Set([
+  'broken_leg',
+  'bear_mauling',
+  'snakebite'
+]);
+
+const VISIT_HP_BASE = 30;
+const VISIT_HP_PER_INJURY = 15;
 
 /** Captain-only predicate. Returns false when the player isn't in a
  *  train, or they're a wagon but not the leader. UI gates and engine
@@ -136,20 +167,43 @@ export interface DoctorVisitResult {
   treated: boolean;
   /** Name of the treated party member (when `treated=true`). */
   patientName?: string;
-  /** HP gained by the patient. */
+  /** HP gained by the patient (base + injury first-aid bonus). */
   hpGained?: number;
+  /** Disease conditions cleared by the chest's drugs. */
+  conditionsCleared?: ConditionId[];
+  /** Injuries the chest eased (extra HP gain) but didn't cure. */
+  injuriesEased?: ConditionId[];
 }
 
 /** Period anchor: Marcy 1859 — "the medical man's chest is the
  *  company's." Wagons with a fitted medicine_chest shared it freely
  *  on the trail; the captain often coordinated who got dosed when.
  *
- *  Captain only. Costs 1 charge of `medicine_chest` from the player's
- *  inventory (1 chest = many charges; no consumption mechanic here yet,
- *  treated as an unlimited resource — the player must carry the chest
- *  but doesn't lose it on use). Picks the lowest-HP alive member of the
- *  target companion wagon, restores 30 HP (capped at 100), bumps that
- *  wagon's morale +5. No-op when there's nobody sick. */
+ *  Captain only. Requires `medicine_chest` in the player's inventory
+ *  (the chest itself is a tool, not consumed on use). Picks the
+ *  lowest-HP alive member, OR — if everyone's at full HP — picks
+ *  someone with a chest-affectable condition (curable disease or
+ *  helpable injury).
+ *
+ *  Effects on the patient:
+ *   - +30 HP base (capped at 100).
+ *   - **Diseases** in CHEST_CURABLE_CONDITIONS (cholera, dysentery,
+ *     typhoid, measles, pox): cleared from the conditions array.
+ *     Period: the chest had quinine/calomel/paregoric/dovers_powder,
+ *     the era's standard cure for each. Pox (syphilis) gets the
+ *     mercury treatment via calomel — period-real, period-grim.
+ *   - **Injuries** in CHEST_HELPABLE_INJURIES (broken_leg, bear_mauling,
+ *     snakebite): NOT cleared (wounds need time + bandages + rest), but
+ *     the patient gets an extra +15 HP per injury treated as a first-
+ *     aid bonus — pain dampened, infection cleaned, the body has more
+ *     to fight with.
+ *   - Other conditions (frostbite, scurvy, exhaustion, starvation):
+ *     no effect — those need other items/systems (warming, vitamin C,
+ *     food, rest). The visit can still happen if the patient also has
+ *     HP loss or one of the affectable conditions.
+ *
+ *  Wagon-level: morale +5 (the company saw the captain coordinating
+ *  care). Both player + wagon eventLogs updated. */
 export function doctorVisit(state: GameState, wagonId: string): DoctorVisitResult {
   if (!state.wagonTrain) {
     throw new Error('doctorVisit: not in a wagon train');
@@ -167,26 +221,41 @@ export function doctorVisit(state: GameState, wagonId: string): DoctorVisitResul
     throw new Error(`doctorVisit: ${target.name} is no longer with the train`);
   }
 
-  const sick = pickSickMember(target.party);
-  if (!sick) {
+  const patient = pickSickMember(target.party);
+  if (!patient) {
     return { state, treated: false };
   }
 
-  const HP_GAIN = 30;
-  const newHp = Math.min(100, sick.health + HP_GAIN);
-  const actualGain = newHp - sick.health;
+  const conditionsCleared: ConditionId[] = [];
+  const injuriesEased: ConditionId[] = [];
+  const remainingConditions = patient.conditions.filter((c) => {
+    if (CHEST_CURABLE_CONDITIONS.has(c.id)) {
+      conditionsCleared.push(c.id);
+      return false;
+    }
+    if (CHEST_HELPABLE_INJURIES.has(c.id)) {
+      injuriesEased.push(c.id);
+    }
+    return true;
+  });
+
+  const totalHpDelta = VISIT_HP_BASE + injuriesEased.length * VISIT_HP_PER_INJURY;
+  const newHp = Math.min(100, patient.health + totalHpDelta);
+  const actualGain = newHp - patient.health;
 
   const updatedTarget: NpcWagonState = {
     ...target,
     party: target.party.map((p) =>
-      p.id === sick.id ? { ...p, health: newHp } : p
+      p.id === patient.id
+        ? { ...p, health: newHp, conditions: remainingConditions }
+        : p
     ),
     morale: Math.min(100, target.morale + 5),
     eventLog: [
       ...target.eventLog,
       {
         day: state.day,
-        text: `Captain visited with the chest — ${sick.name} dosed and bandaged. +${actualGain} HP.`
+        text: buildWagonLog(patient.name, actualGain, conditionsCleared, injuriesEased)
       }
     ]
   };
@@ -203,36 +272,87 @@ export function doctorVisit(state: GameState, wagonId: string): DoctorVisitResul
       ...state.eventLog,
       {
         day: state.day,
-        text: `You walked over to ${target.name} with the medicine chest. Treated ${sick.name}. +${actualGain} HP, +5 wagon morale.`
+        text: buildPlayerLog(target.name, patient.name, actualGain, conditionsCleared, injuriesEased)
       }
     ]
   };
   return {
     state: next,
     treated: true,
-    patientName: sick.name,
-    hpGained: actualGain
+    patientName: patient.name,
+    hpGained: actualGain,
+    conditionsCleared,
+    injuriesEased
   };
 }
 
+/** Period-flavored log. Names the diseases cleared explicitly ("ran
+ *  the cholera off"); injuries get a softer phrasing ("eased the
+ *  mauling, bandages and laudanum"). */
+function buildWagonLog(
+  patientName: string,
+  hpGained: number,
+  cleared: ConditionId[],
+  eased: ConditionId[]
+): string {
+  const parts: string[] = [];
+  if (cleared.length > 0) parts.push(`cleared ${cleared.map(conditionLabel).join(', ')}`);
+  if (eased.length > 0) parts.push(`eased ${eased.map(conditionLabel).join(', ')}`);
+  if (hpGained > 0) parts.push(`+${hpGained} HP`);
+  const detail = parts.length > 0 ? ` — ${parts.join('; ')}` : '';
+  return `Captain visited with the chest. ${patientName} dosed and bandaged${detail}.`;
+}
+
+function buildPlayerLog(
+  wagonName: string,
+  patientName: string,
+  hpGained: number,
+  cleared: ConditionId[],
+  eased: ConditionId[]
+): string {
+  const parts: string[] = [];
+  if (hpGained > 0) parts.push(`+${hpGained} HP`);
+  if (cleared.length > 0) parts.push(`cleared ${cleared.map(conditionLabel).join(' + ')}`);
+  if (eased.length > 0) parts.push(`eased ${eased.map(conditionLabel).join(' + ')}`);
+  parts.push('+5 wagon morale');
+  return `You walked over to ${wagonName} with the medicine chest. Treated ${patientName} — ${parts.join(', ')}.`;
+}
+
+function conditionLabel(id: ConditionId): string {
+  return id.replace(/_/g, ' ');
+}
+
+/** True when at least one of the patient's conditions is something
+ *  the chest can act on (cure or ease). Drives both `pickSickMember`
+ *  eligibility (so a full-HP cholera patient still counts) and the
+ *  Doctor visit UI gate. Conditions outside both sets (frostbite,
+ *  scurvy, exhaustion, pox, starvation) don't qualify someone for a
+ *  visit on their own — those need other items/systems. */
+function hasChestAffectableCondition(p: PartyMember): boolean {
+  return p.conditions.some(
+    (c) => CHEST_CURABLE_CONDITIONS.has(c.id) || CHEST_HELPABLE_INJURIES.has(c.id)
+  );
+}
+
 /** Pick the most-injured alive member of a wagon's party, or null
- *  when nobody needs treatment. "Sick" = HP < 100. Lowest HP wins
- *  ties. Members at full HP with active conditions are NOT included
- *  here — the visit currently bumps HP and morale but doesn't clear
- *  conditions, so a condition-only patient produces a confusing
- *  "treated +0 HP" outcome. Once condition-clearing lands as a
- *  separate mechanic (logged as #296), broaden this filter. */
+ *  when nobody can be helped by a chest visit. Eligible = HP < 100
+ *  OR has at least one chest-affectable condition (curable disease or
+ *  helpable injury). Lowest HP wins ties so the most-injured member
+ *  is treated first; if everyone's at full HP, the patient with an
+ *  affectable condition is picked. */
 function pickSickMember(party: PartyMember[]): PartyMember | null {
-  const candidates = party.filter((p) => !p.dead && p.health < 100);
+  const candidates = party.filter(
+    (p) => !p.dead && (p.health < 100 || hasChestAffectableCondition(p))
+  );
   if (candidates.length === 0) return null;
   return [...candidates].sort((a, b) => a.health - b.health)[0];
 }
 
-/** True when this wagon has anyone the captain could plausibly help
- *  with the current visit mechanic — drives the `Doctor visit` button
- *  enable-state on WagonTrainModal. Mirrors the `pickSickMember`
- *  filter (HP < 100 only); condition-only patients are excluded until
- *  the visit also clears conditions (#296). */
+/** True when this wagon has anyone the captain could help with a
+ *  chest visit — drives the Doctor visit button enable-state. Mirrors
+ *  `pickSickMember` exactly. */
 export function wagonHasSickMember(wagon: NpcWagonState): boolean {
-  return wagon.party.some((p) => !p.dead && p.health < 100);
+  return wagon.party.some(
+    (p) => !p.dead && (p.health < 100 || hasChestAffectableCondition(p))
+  );
 }
