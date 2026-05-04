@@ -1,12 +1,16 @@
-import type { GameState } from './types';
+import type { GameState, NpcWagonState } from './types';
+import { computeWaterCap } from './systems/water-cap';
+import { DEFAULT_WAGON_MODEL } from './content/wagons';
 
 // v1 → v2 (#280a): wagonTrain.members[] (flat TrainMember records) was
 // replaced by wagonTrain.companions[] (full NpcWagonState). Old saves
 // that carried a v1 train are incompatible — the migration drops the
-// wagonTrain (the player just resumes solo). Acceptable since #176
-// phase 1 was the only release with the old shape and saves are
-// per-device development builds.
-const SAVE_VERSION = 2;
+// wagonTrain (the player just resumes solo).
+//
+// v2 → v3 (#303e): NpcWagonState gained required `water`, `dirtyWater`,
+// `waterCap`, `dryDays` fields. v2 saves with a wagonTrain get the
+// fields filled in on load — full kegs, no dirty water, no dry days.
+const SAVE_VERSION = 3;
 
 const REQUIRED_KEYS: readonly (keyof GameState)[] = [
   'seed', 'day', 'date', 'location', 'party', 'wagon', 'oxen',
@@ -58,6 +62,22 @@ export function deserialize(json: string): GameState {
     const wt = stateObj.wagonTrain as { members?: unknown } | null | undefined;
     if (wt && 'members' in wt) {
       stateObj.wagonTrain = null;
+    }
+  }
+
+  // v2 → v3 (#303e): NpcWagonState gained water tracking. Fill in
+  // sensible defaults — full keg, no dirty water, no dry days — on
+  // each companion in any v2 wagonTrain.
+  if (version < 3) {
+    const wt = stateObj.wagonTrain as { companions?: unknown[] } | null | undefined;
+    if (wt && Array.isArray(wt.companions)) {
+      wt.companions = wt.companions.map((raw) => {
+        const wagon = raw as Partial<NpcWagonState> & Record<string, unknown>;
+        if (typeof wagon.water === 'number') return wagon;
+        const inv = (wagon.inventory as Record<string, number>) ?? {};
+        const cap = computeWaterCap(DEFAULT_WAGON_MODEL, inv);
+        return { ...wagon, water: cap, dirtyWater: 0, waterCap: cap, dryDays: 0 };
+      });
     }
   }
   return stateObj as unknown as GameState;

@@ -17,6 +17,7 @@ import type {
   WagonTrain
 } from '../types';
 import { DEFAULT_WAGON_MODEL, getWagon } from './wagons';
+import { computeWaterCap } from '../systems/water-cap';
 
 // Period captain surnames — used for "Captain X's Company" naming.
 const CAPTAIN_NAMES = [
@@ -339,6 +340,13 @@ function generateNpcWagon(
   const oxenCount = rng.int(2, 6);
   const wagonModel = getWagon(DEFAULT_WAGON_MODEL);
   const hasChildren = party.some((p) => p.kind === 'child');
+  const inventory = generateNpcInventory(leaderProf, party.length, rng);
+  // #303e — water tracking. Cap from wagon model + any starter water_skin
+  // (none today, but kept symmetric with the player's computeWaterCap so
+  // when NPCs gain trade access the cap follows). Fresh joins start at
+  // full keg; mid-trail joins start at 60-100% to reflect light wear.
+  const waterCap = computeWaterCap(DEFAULT_WAGON_MODEL, inventory);
+  const water = fresh ? waterCap : Math.round(waterCap * (0.6 + rng.int(0, 40) / 100));
   return {
     id: wagonId,
     name: wagonLabel(surname, composition, party),
@@ -346,7 +354,7 @@ function generateNpcWagon(
     hasChildren,
     seed: `${trainSeed}-${wagonId}`,
     party,
-    inventory: generateNpcInventory(leaderProf, party.length, rng),
+    inventory,
     oxen: generateNpcOxen(wagonId, oxenCount, fresh, rng),
     morale: fresh ? 80 : rng.int(60, 90),
     cash: rng.int(40, 300),
@@ -359,7 +367,11 @@ function generateNpcWagon(
     },
     eventLog: [],
     outcome: 'in-progress',
-    rations: 'normal'
+    rations: 'normal',
+    water,
+    dirtyWater: 0,
+    waterCap,
+    dryDays: 0
   };
 }
 

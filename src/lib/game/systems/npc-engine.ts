@@ -29,11 +29,17 @@ import type {
   Outcome,
   Pace,
   PartyMember,
-  Terrain
+  Terrain,
+  Weather
 } from '../types';
 import { getCondition } from '../content/conditions';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
+import {
+  applyNpcWaterDrain,
+  applyNpcDehydration,
+  applyNpcDirtyWaterRisk
+} from './npc-water';
 
 /** Inputs the NPC tick needs from the train's shared environment. */
 export interface NpcTickContext {
@@ -46,6 +52,9 @@ export interface NpcTickContext {
   pace: Pace;
   /** Today's terrain — affects ox grazing recovery on rest days. */
   terrain: Terrain;
+  /** Today's weather — drives water consumption mult (heat doubles)
+   *  and read by future weather-sensitive systems. */
+  weather: Weather | undefined;
 }
 
 // Per-rations daily food draw (lb/eater/day). Matches the player's
@@ -322,10 +331,17 @@ export function tickNpcWagon(
     next = { ...next, inventory: result.inventory };
   }
 
-  // 3. Starvation if food=0.
+  // 3. Water consumption (#303e). Clean drained first, then dirty.
+  // Dirty draw triggers a per-adult dysentery / cholera roll —
+  // mirrors player applyDirtyWaterRisk, doctor halves the chance.
+  const waterResult = applyNpcWaterDrain(next, ctx.weather);
+  next = waterResult.wagon;
+  next = applyNpcDirtyWaterRisk(next, waterResult.dirtyDrawn, rng, ctx.day);
+
+  // 4. Starvation if food=0.
   next = applyStarvation(next);
 
-  // 4. Ox tick — fatigue on travel, recovery on rest.
+  // 5. Ox tick — fatigue on travel, recovery on rest.
   next = ctx.traveled ? tickOxenTravel(next, ctx) : tickOxenRest(next, ctx);
 
   // 5. NPC event roll (#280c). May damage wagon, sicken a member,
@@ -339,6 +355,15 @@ export function tickNpcWagon(
   // 6. Death reaping (catches event-induced deaths too — e.g. an ox
   // kick to a child after `member_injury` fired earlier this tick).
   next = reapDead(next, ctx.day);
+
+  // 6b. Dehydration HP/morale damage when keg=0 at end of tick (#303e).
+  // After reap so already-dead members don't take extra damage.
+  // Terrain mult: desert 1.5, forest 0.85, others 1.0 — mirrors player
+  // applyDehydration TERRAIN_MULT.
+  const terrainDryMult = ctx.terrain === 'desert' ? 1.5
+    : ctx.terrain === 'forest' ? 0.85
+    : 1.0;
+  next = applyNpcDehydration(next, terrainDryMult, ctx.day);
 
   // 7. NPC auto-cannibalism (#288). When food=0 AND there's a fresh
   // adult corpse, the survivors take the body. Donner Party precedent.

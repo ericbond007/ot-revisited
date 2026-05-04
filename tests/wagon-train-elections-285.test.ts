@@ -72,7 +72,11 @@ function withCompanion(
     wagon: { ...s.wagon },
     eventLog: [],
     outcome: 'in-progress',
-    rations: 'normal'
+    rations: 'normal',
+    water: 30,
+    dirtyWater: 0,
+    waterCap: 30,
+    dryDays: 0
   };
   return {
     ...s,

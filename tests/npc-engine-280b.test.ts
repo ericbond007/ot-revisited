@@ -42,7 +42,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     const before = totalFood(wagon.inventory);
     const { wagon: next } = tickNpcWagon(
       wagon,
-      { day: 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
+      { day: 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
       makeRng('t1')
     );
     const after = totalFood(next.inventory);
@@ -55,7 +55,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     for (let i = 0; i < 5; i++) {
       wagon = tickNpcWagon(
         wagon,
-        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
+        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
         makeRng('tt' + i)
       ).wagon;
     }
@@ -65,7 +65,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     for (let i = 0; i < 3; i++) {
       wagon = tickNpcWagon(
         wagon,
-        { day: 6 + i, traveled: false, pace: 'moderate', terrain: 'prairie' },
+        { day: 6 + i, traveled: false, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
         makeRng('rr' + i)
       ).wagon;
     }
@@ -79,7 +79,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     for (let i = 0; i < 5; i++) {
       wagon = tickNpcWagon(
         wagon,
-        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
+        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
         makeRng('s' + i)
       ).wagon;
     }
@@ -98,7 +98,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     for (let i = 0; i < 4; i++) {
       wagon = tickNpcWagon(
         wagon,
-        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
+        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
         makeRng('d' + i)
       ).wagon;
     }
@@ -117,14 +117,14 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     for (let i = 0; i < 10; i++) {
       wagon = tickNpcWagon(
         wagon,
-        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
+        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
         makeRng('w' + i)
       ).wagon;
     }
     expect(wagon.outcome).toBe('wiped');
     const sealed = tickNpcWagon(
       wagon,
-      { day: 99, traveled: true, pace: 'moderate', terrain: 'prairie' },
+      { day: 99, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
       makeRng('post')
     );
     expect(sealed.wagon).toBe(wagon);
@@ -147,7 +147,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     const beforeQuinine = wagon.inventory.quinine ?? 0;
     wagon = tickNpcWagon(
       wagon,
-      { day: 1, traveled: true, pace: 'moderate', terrain: 'prairie' },
+      { day: 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
       makeRng('treat')
     ).wagon;
     expect((wagon.inventory.quinine ?? 0)).toBe(beforeQuinine - 1);
@@ -190,13 +190,22 @@ describe('advanceTrain — engine integration', () => {
 
   it('NPC wagons accumulate divergent state over many days', () => {
     let s = joinTrain(game(), makeRng('j')).state;
-    const startFood = s.wagonTrain!.companions.map((c) => totalFood(c.inventory));
-    s = rest(s, 30);
-    const endFood = s.wagonTrain!.companions.map((c) => totalFood(c.inventory));
-    for (let i = 0; i < startFood.length; i++) {
-      expect(endFood[i]).toBeLessThan(startFood[i]);
+    // 12-day rest is short enough to survive water exhaustion (#303e
+    // pool dries the train around day 8-10) but long enough for food
+    // drain to differentiate per-wagon party sizes. Also filter to
+    // surviving wagons — departures (#290) can prune the roster.
+    const startById = new Map(
+      s.wagonTrain!.companions.map((c) => [c.id, totalFood(c.inventory)])
+    );
+    s = rest(s, 12);
+    const survivors = s.wagonTrain!.companions;
+    expect(survivors.length).toBeGreaterThan(0);
+    for (const c of survivors) {
+      const start = startById.get(c.id);
+      expect(start).toBeDefined();
+      expect(totalFood(c.inventory)).toBeLessThan(start!);
     }
-    const distinct = new Set(endFood);
+    const distinct = new Set(survivors.map((c) => totalFood(c.inventory)));
     expect(distinct.size).toBeGreaterThan(1);
   });
 });
@@ -357,7 +366,7 @@ describe('#280c — NPC events bubble to player eventLog', () => {
     };
     const result = tickNpcWagon(
       wagon,
-      { day: 1, traveled: false, pace: 'moderate', terrain: 'prairie' },
+      { day: 1, traveled: false, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
       makeRng('cann1')
     );
     // Corpse should now be marked consumed, game_meat appears in inventory.
