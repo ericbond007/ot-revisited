@@ -33,6 +33,7 @@ import type {
   Weather
 } from '../types';
 import { getCondition } from '../content/conditions';
+import { applyNpcSpoilage, applyNpcHeatSpoilage } from './spoilage';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
 import {
@@ -54,8 +55,10 @@ export interface NpcTickContext {
   /** Today's terrain — affects ox grazing recovery on rest days. */
   terrain: Terrain;
   /** Today's weather — drives water consumption mult (heat doubles)
-   *  and read by future weather-sensitive systems. */
-  weather: Weather | undefined;
+   *  and heat-spoilage on bacon / salt_pork (#295), same as the player.
+   *  Required so callers can't silently no-op heat-sensitive systems
+   *  by forgetting to pass it. */
+  weather: Weather;
 }
 
 // Per-rations daily food draw (lb/eater/day). Matches the player's
@@ -363,6 +366,18 @@ export function tickNpcWagon(
 
   // 1. Conditions tick + treatment.
   next = tickConditions(next, rng);
+
+  // 1b. #295 — spoilage. Runs BEFORE food consumption (mirrors the
+  // player path) so a rotten pile can't be eaten on its spoil day.
+  // Game meat / eggs / berries / milk rot off their per-pile clock;
+  // bacon + salt_pork take heat attrition (with bran-barrel mitigation
+  // matching the player's mechanic).
+  const spoil = applyNpcSpoilage(next, ctx.day);
+  next = spoil.wagon;
+  for (const log of spoil.logs) playerLogs.push(log);
+  const heatSpoil = applyNpcHeatSpoilage(next, ctx.weather);
+  next = heatSpoil.wagon;
+  if (heatSpoil.log) playerLogs.push(heatSpoil.log);
 
   // 2. Food consumption.
   const eaters = next.party.filter((m) => !m.dead).length;

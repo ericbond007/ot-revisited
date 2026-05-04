@@ -1,4 +1,4 @@
-import type { GameState } from '../types';
+import type { GameState, NpcWagonState } from '../types';
 import { makeRng } from '../rng';
 import { hasLiveHunter, hasLiveGunsmith } from '../professions/predicates';
 import { upgradeState } from '../upgrade';
@@ -6,7 +6,7 @@ import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
-import { applySpoilage, computeSpoilDay } from '../systems/spoilage';
+import { applySpoilage, computeSpoilDay, setNpcSpoilClock } from '../systems/spoilage';
 import { applyDehydration } from '../systems/dehydration';
 import { applyEggLay } from '../systems/eggs';
 
@@ -320,12 +320,14 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   if (s.wagonTrain) {
     const liveTrain = s.wagonTrain.companions.filter((c) => c.outcome === 'in-progress');
     if (isCompanyHunt && companionShares.length > 0) {
-      // Known asymmetry (logged as #294 follow-up): NPC wagons don't
-      // run applySpoilage — `tickNpcWagon` only consumes from
-      // FOOD_DRAW_ORDER. Meat handed over here will be eaten before
-      // staples but won't rot from heat/time the way the player's pile
-      // does. Acceptable for phase 1; revisit when NPC spoilage gets a
-      // sibling system to player spoilage.
+      // #295 — companion meat now spoils on the same curve as the
+      // player's pile (`setNpcSpoilClock` matches the player's
+      // `_gameMeatSpoilDay` set in nextFlags above). The NPC tick
+      // consumes from FOOD_DRAW_ORDER first (game_meat is at index 0),
+      // so a wagon will eat the share before it spoils most of the
+      // time — but a wagon that's already loaded with bulk staples
+      // will see the share rot if it's not consumed within
+      // GAME_MEAT_FRESH_DAYS.
       const shareById = new Map(companionShares.map((c) => [c.wagonId, c.lb]));
       s = {
         ...s,
@@ -334,13 +336,14 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
           companions: s.wagonTrain.companions.map((c) => {
             if (c.outcome !== 'in-progress') return c;
             const share = shareById.get(c.id) ?? 0;
-            return {
+            const morale = Math.min(100, c.morale + 2);
+            if (share <= 0) return { ...c, morale };
+            const updated: NpcWagonState = {
               ...c,
-              inventory: share > 0
-                ? { ...c.inventory, game_meat: (c.inventory.game_meat ?? 0) + share }
-                : c.inventory,
-              morale: Math.min(100, c.morale + 2)
+              inventory: { ...c.inventory, game_meat: (c.inventory.game_meat ?? 0) + share },
+              morale
             };
+            return setNpcSpoilClock(updated, 'game_meat', s.day);
           })
         }
       };
