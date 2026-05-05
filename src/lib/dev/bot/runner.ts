@@ -423,6 +423,23 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         actionType = 'findWater';
         state = restWithWaterChain(state, stats);
         firedEventToday = true;
+      } else if (persona.shouldPan(state, botRng)) {
+        // #313 — gold panning camp action. Half-day spent at a creek in
+        // gold country (mile ≥ 700, river terrain, year ≥ 1849). Mostly
+        // yields nothing per period reality; gentle cash trickle.
+        // Cooldown lives in `canPanForGold` to keep weekly cadence.
+        actionType = 'rest';
+        try {
+          state = rest(state, 1, { campActions: ['pan_for_gold'] });
+          state = {
+            ...state,
+            flags: { ...state.flags, _lastPannedDay: state.day }
+          };
+          stats.decisionsMade += 1;
+          firedEventToday = true;
+        } catch (err) {
+          stats.errors.push(`pan: ${(err as Error).message}`);
+        }
       } else if (persona.shouldHunt(state, botRng)) {
         actionType = 'hunt';
         state = doBotHunt(state, stats);

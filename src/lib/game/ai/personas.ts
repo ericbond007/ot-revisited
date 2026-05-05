@@ -79,6 +79,22 @@ function postStocksMissingEquipment(state: GameState, here: Landmark): boolean {
   return false;
 }
 
+/** Gold-panning gate (#313): same axes as the camp action — river
+ *  terrain + miles ≥ 700 + year ≥ 1849 + cooldown so the bot doesn't
+ *  spam-pan every day at a long river crossing. Period: emigrants
+ *  panned occasionally when the timing was right, not obsessively. */
+function canPanForGold(state: GameState): boolean {
+  if (state.date.year < 1849) return false;
+  if (state.location.terrain !== 'river') return false;
+  if (state.location.milesTraveled < 700) return false;
+  // Cooldown: at least 7 days since last pan attempt — the bot
+  // doesn't recognize the gold-bearing creek as "exhausted" but a
+  // weekly cap keeps gameplay moving and matches period frequency.
+  const last = (state.flags._lastPannedDay as number | undefined) ?? -100;
+  if (state.day - last < 7) return false;
+  return true;
+}
+
 /** Saleratus-low trigger (#308 from #307 audit): bot starts with 4
  *  units (2 lb) which lasts ~133 days for a 3-eater family. Once it
  *  hits 0, every flour-day takes −1 morale until restock. Without
@@ -263,6 +279,11 @@ export const cautiousPersona: Persona = {
     // day and triggers a dehydration cascade that costs more rest
     // days than the proactive find_water would have.
     return waterRatio(state) < 0.5 && state.location.terrain !== 'desert';
+  },
+  shouldPan() {
+    // Cautious skips panning — period: didn't dawdle on speculative
+    // money when the calendar was tight. Survival > opportunism.
+    return false;
   }
 };
 
@@ -325,6 +346,12 @@ export const balancedPersona: Persona = {
   },
   shouldFindWater(state) {
     return waterRatio(state) < 0.18 && state.location.terrain !== 'desert';
+  },
+  shouldPan(state) {
+    // Balanced tries panning when the timing is right — period:
+    // typical emigrant who'd give it an evening at a known creek.
+    // Cooldown in canPanForGold prevents weekly spamming.
+    return canPanForGold(state);
   }
 };
 
@@ -360,6 +387,12 @@ export const aggressivePersona: Persona = {
   shouldFindWater(state) {
     // Only when nearly out of water — aggressive doesn't waste time on stops.
     return waterRatio(state) < 0.2 && state.location.terrain !== 'desert';
+  },
+  shouldPan(state) {
+    // Aggressive bot has Gold Rush fever — pans every chance.
+    // Period: the desperate-prospector personality, which most often
+    // ended up broke or dead.
+    return canPanForGold(state);
   }
 };
 
@@ -414,6 +447,15 @@ export const chaosPersona: Persona = {
   },
   shouldFindWater(state, rng) {
     return state.location.terrain !== 'desert' && rng.chance(0.25);
+  },
+  shouldPan(state, rng) {
+    // Chaos pans 30% of eligible days regardless of cooldown — gates
+    // are still on year/terrain/miles to keep it sane (no panning at
+    // the Big Blue), but spam-frequency varies to exercise the action.
+    if (state.date.year < 1849) return false;
+    if (state.location.terrain !== 'river') return false;
+    if (state.location.milesTraveled < 700) return false;
+    return rng.chance(0.30);
   }
 };
 
