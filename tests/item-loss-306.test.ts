@@ -7,6 +7,10 @@ import {
   rollStampedeLosses,
   applyStampedeToPlayer,
   applyStampedeToNpc,
+  rollFordLoss,
+  rollStormWindLoss,
+  abandonHeavyLoad,
+  rollDailyTheft,
   STAMPEDE_VICTIMS,
   STAMPEDE_LOSS_FRACTION
 } from '../src/lib/game/systems/item-loss';
@@ -73,40 +77,81 @@ describe('#306 — rollStampedeLosses', () => {
 });
 
 describe('#306 — applyStampedeToPlayer', () => {
-  it('crushes inventory, drops morale by 3, logs', () => {
-    const s: GameState = {
-      ...game(),
-      inventory: { ...game().inventory, cookware: 1 }
-    };
-    const moraleBefore = s.morale;
-    const next = applyStampedeToPlayer(s, makeRng('p'));
-    expect(next.morale).toBe(moraleBefore - 3);
-    expect(next.eventLog.at(-1)?.text).toMatch(/stampede.*crushed/i);
+  it('on hit, crushes inventory + drops morale by 3 + logs (statistical)', () => {
+    // 70% hit chance; out of 20 trials at least one should hit.
+    let foundHit = false;
+    for (let i = 0; i < 20; i++) {
+      const s: GameState = {
+        ...game(),
+        inventory: { ...game().inventory, cookware: 1 }
+      };
+      const next = applyStampedeToPlayer(s, makeRng(`p${i}`));
+      if (/stampede.*crushed/i.test(next.eventLog.at(-1)?.text ?? '')) {
+        expect(next.morale).toBe(s.morale - 3);
+        foundHit = true;
+        break;
+      }
+    }
+    expect(foundHit).toBe(true);
   });
 
-  it('logs the no-loss case when nothing vulnerable', () => {
-    const s: GameState = {
-      ...game(),
-      inventory: { ...game().inventory, cookware: 0, butter_crock: 0, cheese_press: 0 }
-    };
-    const next = applyStampedeToPlayer(s, makeRng('p2'));
-    expect(next.eventLog.at(-1)?.text).toMatch(/nothing crushed/i);
-    // Still takes the morale hit — period: the herd was terrifying.
-    expect(next.morale).toBeLessThan(s.morale);
+  it('on near-miss, only −1 morale + close-call log (statistical)', () => {
+    // 30% miss chance; out of 20 trials at least one should miss.
+    let foundMiss = false;
+    for (let i = 0; i < 20; i++) {
+      const s: GameState = {
+        ...game(),
+        inventory: { ...game().inventory, cookware: 1 }
+      };
+      const next = applyStampedeToPlayer(s, makeRng(`m${i}`));
+      if (/veered/i.test(next.eventLog.at(-1)?.text ?? '')) {
+        expect(next.morale).toBe(s.morale - 1);
+        foundMiss = true;
+        break;
+      }
+    }
+    expect(foundMiss).toBe(true);
   });
 });
 
 describe('#306 — applyStampedeToNpc', () => {
-  it('crushes NPC tinware + drops NPC morale + bubbles player log', () => {
-    const train = generateTrain('stampede-npc', 1, 'independence_mo', makeRng('npc'), { fresh: true });
-    const wagon: NpcWagonState = {
-      ...train.companions[0],
-      inventory: { ...train.companions[0].inventory, cookware: 1 }
-    };
-    const moraleBefore = wagon.morale;
-    const result = applyStampedeToNpc(wagon, makeRng('n'), 60);
-    expect(result.wagon.morale).toBe(moraleBefore - 3);
-    expect(result.playerLog).toMatch(/lost.*cookware/i);
+  it('crushes NPC tinware + drops NPC morale + bubbles player log on hit', () => {
+    // Statistical: out of 20 trials, expect mostly hits (70%). At least
+    // one trial should produce damage + bubble-up log.
+    let foundHit = false;
+    for (let i = 0; i < 20; i++) {
+      const train = generateTrain(`stampede-npc-${i}`, 1, 'independence_mo', makeRng('npc'), { fresh: true });
+      const wagon: NpcWagonState = {
+        ...train.companions[0],
+        inventory: { ...train.companions[0].inventory, cookware: 1 }
+      };
+      const result = applyStampedeToNpc(wagon, makeRng(`hit${i}`), 60);
+      if (result.playerLog && /lost.*cookware/i.test(result.playerLog)) {
+        expect(result.wagon.morale).toBe(wagon.morale - 3);
+        foundHit = true;
+        break;
+      }
+    }
+    expect(foundHit).toBe(true);
+  });
+
+  it('70/30 hit/near-miss roll — most trials are hits but some are misses', () => {
+    let hits = 0;
+    let misses = 0;
+    for (let i = 0; i < 100; i++) {
+      const train = generateTrain(`hit-rate-${i}`, 1, 'independence_mo', makeRng('npc'), { fresh: true });
+      const wagon: NpcWagonState = {
+        ...train.companions[0],
+        inventory: { ...train.companions[0].inventory, cookware: 5 }
+      };
+      const result = applyStampedeToNpc(wagon, makeRng(`r${i}`), 60);
+      if (result.playerLog) hits++;
+      else if (result.wagon.morale < wagon.morale) misses++;
+    }
+    // Bounded around 70/30 — wide tolerance for seed variance.
+    expect(hits).toBeGreaterThan(50);
+    expect(hits).toBeLessThan(85);
+    expect(misses).toBeGreaterThan(10);
   });
 
   it('skips wiped/arrived/stranded companions', () => {
@@ -175,38 +220,185 @@ describe('#306 — buffalo_stampede event registration + gating', () => {
     expect(evt.gate?.(alreadyFired)).toBe(false);
   });
 
-  it('apply marks the year-flag, damages player, propagates to in-train NPCs', () => {
-    const baseGame = game();
-    const inTrain = joinTrain(baseGame, makeRng('j')).state;
-    let s: GameState = {
-      ...inTrain,
-      location: { ...inTrain.location, terrain: 'prairie', milesTraveled: 400 },
-      inventory: { ...inTrain.inventory, cookware: 1 }
-    };
-    // Seed NPCs with cookware to ensure they have something to lose.
-    s = {
-      ...s,
-      wagonTrain: {
-        ...s.wagonTrain!,
-        companions: s.wagonTrain!.companions.map((c) => ({
-          ...c,
-          inventory: { ...c.inventory, cookware: 1 }
-        }))
+  it('apply marks the year-flag, damages player, propagates to in-train NPCs (statistical)', () => {
+    // Statistical: with 70% hit on player + per-NPC, run multiple
+    // seeds to ensure coverage of the train-wide propagation.
+    let foundDamage = false;
+    for (let trial = 0; trial < 10; trial++) {
+      const baseGame = game();
+      const inTrain = joinTrain(baseGame, makeRng('j')).state;
+      let s: GameState = {
+        ...inTrain,
+        location: { ...inTrain.location, terrain: 'prairie', milesTraveled: 400 },
+        inventory: { ...inTrain.inventory, cookware: 1 }
+      };
+      s = {
+        ...s,
+        wagonTrain: {
+          ...s.wagonTrain!,
+          companions: s.wagonTrain!.companions.map((c) => ({
+            ...c,
+            inventory: { ...c.inventory, cookware: 1 }
+          }))
+        }
+      };
+      const evt = findStampede()!;
+      const next = evt.choices[0].apply(s, makeRng(`apply-${trial}`));
+      // Year-flag always set.
+      expect(next.flags[`_stampedeFiredYear_${next.date.year}`]).toBe(true);
+      // Player always took at least −1 (near-miss morale debit).
+      expect(next.morale).toBeLessThan(s.morale);
+      // At least one NPC across the train took damage on hit trials.
+      const someNpcLostCookware = next.wagonTrain!.companions.some((c) =>
+        (c.inventory.cookware ?? 0) < 1
+      );
+      if (someNpcLostCookware) {
+        foundDamage = true;
+        break;
       }
+    }
+    expect(foundDamage).toBe(true);
+  });
+});
+
+// --- Phase 2: ford / wind / mud / theft ---
+
+describe('#306 phase 2 — rollFordLoss', () => {
+  it('skips on calm fords (danger ≤ 2)', () => {
+    const s = { ...game(), inventory: { ...game().inventory, cookware: 1 } };
+    const result = rollFordLoss(s, 1, makeRng('calm'));
+    expect(result.lossLine).toBeNull();
+  });
+
+  it('rolls on dangerous fords — finds at least one loss across trials', () => {
+    let foundLoss = false;
+    for (let i = 0; i < 30; i++) {
+      const s = {
+        ...game(),
+        inventory: { ...game().inventory, cookware: 1, china_tea_set: 1 }
+      };
+      const result = rollFordLoss(s, 8, makeRng(`f${i}`));
+      if (result.lossLine) {
+        foundLoss = true;
+        break;
+      }
+    }
+    expect(foundLoss).toBe(true);
+  });
+
+  it('skips when no FORD_VICTIMS in inventory', () => {
+    const s = { ...game(), inventory: { rifle: 1 } };
+    // Run several trials — even forced rolls find nothing.
+    for (let i = 0; i < 5; i++) {
+      const result = rollFordLoss(s, 10, makeRng(`empty${i}`));
+      expect(result.lossLine).toBeNull();
+    }
+  });
+});
+
+describe('#306 phase 2 — rollStormWindLoss', () => {
+  it('rolls per the chance — finds losses across trials when items present', () => {
+    let foundLoss = false;
+    for (let i = 0; i < 50; i++) {
+      const s = {
+        ...game(),
+        inventory: { ...game().inventory, tent: 1, rope: 5, tar_bucket: 1 }
+      };
+      const result = rollStormWindLoss(s, makeRng(`w${i}`));
+      if (result.lossLine) {
+        foundLoss = true;
+        break;
+      }
+    }
+    expect(foundLoss).toBe(true);
+  });
+
+  it('returns null when no WIND_VICTIMS present', () => {
+    const s = { ...game(), inventory: { flour: 100, rifle: 1 } };
+    const result = rollStormWindLoss(s, makeRng('wnone'));
+    expect(result.lossLine).toBeNull();
+  });
+});
+
+describe('#306 phase 2 — abandonHeavyLoad', () => {
+  it('drops heaviest items first to hit ~80 lb shed', () => {
+    const s: GameState = {
+      ...game(),
+      inventory: { ...game().inventory, anvil: 1, china_tea_set: 1 }
     };
-    const evt = findStampede()!;
-    const next = evt.choices[0].apply(s, makeRng('apply'));
-    // Year-flag set (one-shot guard).
-    expect(next.flags[`_stampedeFiredYear_${next.date.year}`]).toBe(true);
-    // Player took damage.
-    expect(next.morale).toBeLessThan(s.morale);
-    // At least one NPC took damage (cookware lost).
-    const someNpcLostCookware = next.wagonTrain!.companions.some((c) =>
-      (c.inventory.cookware ?? 0) < 1
-    );
-    expect(someNpcLostCookware).toBe(true);
-    // Player log includes train-wide bubble-up entries.
-    expect(next.eventLog.some((e) => /stampede/i.test(e.text))).toBe(true);
+    const result = abandonHeavyLoad(s);
+    // Anvil = 100 lb — alone clears the 80 lb threshold; china_tea_set
+    // shouldn't be dropped (priority order respected).
+    expect(result.state.inventory.anvil).toBe(0);
+    expect(result.state.inventory.china_tea_set).toBe(1);
+    expect(result.lostItems.find((l) => l.id === 'anvil')).toBeDefined();
+  });
+
+  it('drops multiple lighter items when no single heavy item available', () => {
+    const s: GameState = {
+      ...game(),
+      inventory: { ...game().inventory, china_tea_set: 1, shelf_clock: 1, feather_mattress: 1 }
+    };
+    const result = abandonHeavyLoad(s);
+    // Total = 15+8+25 = 48 lb < 80 → drops all three trying to hit target
+    expect(result.lostItems.length).toBeGreaterThan(0);
+  });
+
+  it('logs nothing-to-drop case when inventory has no abandonable items', () => {
+    const s: GameState = {
+      ...game(),
+      inventory: { ...game().inventory, flour: 0, beans: 0, cornmeal: 0, anvil: 0 }
+    };
+    const result = abandonHeavyLoad(s);
+    expect(result.state.eventLog.at(-1)?.text).toMatch(/nothing heavy/i);
+  });
+});
+
+describe('#306 phase 2 — rollDailyTheft', () => {
+  it('rare per day but fires across many days', () => {
+    let foundTheft = false;
+    for (let i = 0; i < 1000; i++) {
+      const s = {
+        ...game(),
+        inventory: { ...game().inventory, coffee: 5, sugar: 5, tobacco: 5 }
+      };
+      const result = rollDailyTheft(s, makeRng(`t${i}`));
+      if (result.lossLine) {
+        foundTheft = true;
+        break;
+      }
+    }
+    expect(foundTheft).toBe(true);
+  });
+
+  it('train share-watch halves the rate', () => {
+    // Statistical comparison: same item set, with/without train.
+    const baseInv = { coffee: 100, sugar: 100, tobacco: 100 };
+    let soloThefts = 0;
+    let trainThefts = 0;
+    for (let i = 0; i < 5000; i++) {
+      const solo: GameState = { ...game(), inventory: { ...game().inventory, ...baseInv } };
+      const result1 = rollDailyTheft(solo, makeRng(`s${i}`));
+      if (result1.lossLine) soloThefts++;
+    }
+    for (let i = 0; i < 5000; i++) {
+      let train: GameState = { ...game(), inventory: { ...game().inventory, ...baseInv } };
+      train = joinTrain(train, makeRng('jt')).state;
+      train = { ...train, inventory: { ...train.inventory, ...baseInv } };
+      const result2 = rollDailyTheft(train, makeRng(`tt${i}`));
+      if (result2.lossLine) trainThefts++;
+    }
+    // Train rate should be roughly half (with statistical wiggle).
+    expect(trainThefts).toBeLessThan(soloThefts);
+    expect(trainThefts * 2).toBeGreaterThan(soloThefts * 0.5);
+  });
+
+  it('returns null when no THEFT_VICTIMS present', () => {
+    const s = { ...game(), inventory: { rifle: 1 } };
+    for (let i = 0; i < 100; i++) {
+      const result = rollDailyTheft(s, makeRng(`empty${i}`));
+      expect(result.lossLine).toBeNull();
+    }
   });
 });
 

@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { and, inTerrain, milesBetween, monthIs, weatherIs, yearAtLeast, yearBetween } from './event-gating';
-import { applyStampedeToPlayer, applyStampedeToNpc } from '../systems/item-loss';
+import { applyStampedeToPlayer, applyStampedeToNpc, rollStormWindLoss, abandonHeavyLoad } from '../systems/item-loss';
 import { consumeWagonPart, deathMoralePenalty } from '../professions/bonuses';
 import { randomChildName } from './historical-names';
 
@@ -95,10 +95,20 @@ const storm: GameEvent = {
       label: 'Press on',
       isDefault: true,
       silentLog: true,
-      apply: (s) => logLine(
-        { ...s, morale: Math.max(0, s.morale - 2), wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 2) } },
-        'Pushed through the storm. Morale −2, wagon condition −2.'
-      )
+      apply: (s, rng) => {
+        let next: GameState = {
+          ...s,
+          morale: Math.max(0, s.morale - 2),
+          wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 2) }
+        };
+        // #306 phase 2 — wind-loss roll. Period: Bryant 1846 "the wind
+        // took the canvas and our flour barrel" — items not lashed
+        // tight blew off when the wagon kept moving. ~20% chance per
+        // press-through-the-storm; takes one item from WIND_VICTIMS.
+        const windResult = rollStormWindLoss(next, rng);
+        next = windResult.state;
+        return logLine(next, 'Pushed through the storm. Morale −2, wagon condition −2.');
+      }
     },
     {
       id: 'shelter',
@@ -1233,6 +1243,18 @@ const stuck_in_mud: GameEvent = {
         { ...s, morale: Math.max(0, s.morale - 1) },
         'Camped a day waiting out the mud. Good rest, but a day lost. Morale −1.'
       )
+    },
+    {
+      // #306 phase 2 — Joel Palmer 1845: "had to leave the cookware to
+      // get the wagon out of the slough." Marcy 1859 calls the discard
+      // pattern "lining the trail with iron." Drop heavy items in
+      // priority order until ~80 lb shed. Player choice — never the
+      // default; only pick this when other options aren't enough.
+      id: 'abandon_load',
+      icon: '🪦',
+      label: 'Lighten the load — abandon heavy gear',
+      silentLog: true,
+      apply: (s) => abandonHeavyLoad(s).state
     }
   ]
 };

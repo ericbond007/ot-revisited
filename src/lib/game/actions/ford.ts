@@ -8,6 +8,7 @@ import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
 import { applyDehydration } from '../systems/dehydration';
 import { applyEggLay } from '../systems/eggs';
+import { rollFordLoss } from '../systems/item-loss';
 import { exposureMult } from '../systems/warmth';
 import { adjustTribeAttitude, getTribeAttitude } from '../systems/tribe-relations';
 
@@ -278,6 +279,19 @@ export function ford(state: GameState, opts: FordOptions): GameState {
             eventLog: [...s.eventLog, { day: s.day, text: line }]
           };
         }
+      }
+
+      // #306 phase 2 — catastrophic-loss roll. Period: Sager 1844 lost
+      // a trunk in the Snake; Carpenter 1857 lost barrels at Green
+      // River; Frizzell 1852 records a chest off the raft at the
+      // Platte. Picks heavy items from FORD_VICTIMS — cookware,
+      // butter_crock, china_tea_set, etc. Danger-scaled; calm fords
+      // skip entirely. Independent of the flour-bag roll above (one
+      // event can take both the flour AND a trunk).
+      const fordResult = rollFordLoss(s, danger, rng);
+      if (fordResult.lossLine) {
+        events.push(fordResult.lossLine);
+        s = fordResult.state;
       }
 
       // Chickens in the coop are exposed on the ford method too — coops
