@@ -107,15 +107,18 @@ const FOOD_PRIORITY = ['flour', 'bacon', 'sugar', 'beans', 'coffee', 'salt', 'sa
 
 export interface FoodRestockOpts {
   /** Days-per-soul "low" floor — only restock when current food (in
-   *  this category) is below this. Default 7 — period emigrants
-   *  considered a week's food the trigger to top off. */
+   *  this category) is below this. Default 30 — period emigrants
+   *  considered a month's food the trigger to top off, sized for
+   *  longest inter-post stretches (Bridger→Hall is ~22 mountain
+   *  days; Hall→Boise is ~25). #309 finding: 7-day floor caused bot
+   *  to skip restocks at intermediate posts ("flour=81 lb is fine")
+   *  and run out 30 days later. NPC #299 callers explicitly pass 5
+   *  for a tighter household-cash-constrained buffer. */
   daysFloor?: number;
-  /** Days-per-soul ceiling — buy up to this much, no further. Default 60.
-   *  Period emigrants like Carpenter 1857 aimed for 30-60 days at major
-   *  resupply, sized for the longest inter-post stretch (Bridger→Hall
-   *  is ~22 mountain days). Bot uses default; NPC #299 callers pass a
-   *  tighter 5/10 floor/cap reflecting period-realistic NPC household
-   *  cash constraints. */
+  /** Days-per-soul ceiling — buy up to this much, no further. Default 90.
+   *  Period emigrants like Carpenter 1857 aimed for ~3-month buffers
+   *  at major resupply for the longest legs. NPC callers pass a
+   *  tighter 10-day cap. */
   daysCap?: number;
 }
 
@@ -130,8 +133,8 @@ export function pickFoodRestock(
 ): BuyOrder[] {
   const inv = wagon.inventory;
   const eaters = aliveCount(wagon);
-  const daysFloor = opts.daysFloor ?? 7;
-  const daysCap = opts.daysCap ?? 60;
+  const daysFloor = opts.daysFloor ?? 30;
+  const daysCap = opts.daysCap ?? 90;
   const buys: BuyOrder[] = [];
   for (const item of FOOD_PRIORITY) {
     if (!stock.has(item)) continue;
