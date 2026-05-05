@@ -1,5 +1,9 @@
 # Bot CLI / game-ai effectiveness audit (#307)
 
+> **#309 correction (2026-05-04)** — this audit hypothesized "rest cycle from chronic conditions" based on the 56% rest-day reading on `determinism-check`. Wrong root cause. `BOT_TRACE=30` revealed the actual trigger: `pickFoodRestock` default 7-day floor was too aggressive — bot at flour=81 said "fine, skip" then ran out 30 days later, sitting in 184 days of starvation rest. The 56% rest was the *symptom*, not the cause. Fix: raise default floor 7→30, cap 60→90 (#309). Recovery: balanced 5-seed avg 989 → 1149 mi (+16%). Lesson for future audits: per-action-day percentages are downstream effects — read inventory + condition snapshots over time to find the upstream trigger before drawing root-cause conclusions.
+
+
+
 **Date:** 2026-05-04 (post #16-#22 mechanics shipped)
 **Scope:** review the player-bot driver against the new mechanics shipped this session — water tracking (#303e), shopping extraction (#303a), NPC restock (#299), post-stock period fix (#19), saleratus/cookware (#304+#305), buffalo stampede (#306 phase 1), ford/wind/mud/theft + RNG softeners (#306 phase 2). Identify where the bot can or cannot express the right behavior on the new gameplay levers.
 
