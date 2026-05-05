@@ -103,23 +103,25 @@ describe('#303a — pickEquipmentRestock', () => {
 });
 
 describe('#303a — pickFoodRestock (NPC #299 consumer, period-faithful basket)', () => {
-  it('buys the Marcy 5 + beans (period basket) at default 7-day floor / 60-day cap', () => {
-    // 1-adult party, default opts: cap = 60 days × rate × 1 eater
+  it('buys the Marcy 5 + beans (period basket) at default 30-day floor / 90-day cap', () => {
+    // 1-adult party, default opts: cap = 90 days × rate × 1 eater (#309 raised
+    // from 7/60 to 30/90 because 7-day floor caused bot to skip restocks at
+    // intermediate posts and run out 30 days later).
     const buys = pickFoodRestock(
       input({}, ['flour', 'bacon', 'sugar', 'beans', 'coffee', 'salt'])
     );
-    // flour: 60 × 1.0 = 60 lb cap
-    expect(buys).toContainEqual({ item: 'flour', qty: 60 });
-    // bacon: 60 × 0.3 = 18 lb cap
-    expect(buys).toContainEqual({ item: 'bacon', qty: 18 });
-    // sugar: 60 × 0.1 = 6 lb cap
-    expect(buys).toContainEqual({ item: 'sugar', qty: 6 });
-    // beans: 60 × 0.15 = 9 lb cap
-    expect(buys).toContainEqual({ item: 'beans', qty: 9 });
-    // coffee: 60 × 0.05 = 3 lb cap
-    expect(buys).toContainEqual({ item: 'coffee', qty: 3 });
-    // salt: 60 × 0.02 ≈ 1 lb cap (rounded)
-    expect(buys).toContainEqual({ item: 'salt', qty: 1 });
+    // flour: 90 × 1.0 = 90 lb cap
+    expect(buys).toContainEqual({ item: 'flour', qty: 90 });
+    // bacon: 90 × 0.3 = 27 lb cap
+    expect(buys).toContainEqual({ item: 'bacon', qty: 27 });
+    // sugar: 90 × 0.1 = 9 lb cap
+    expect(buys).toContainEqual({ item: 'sugar', qty: 9 });
+    // beans: 90 × 0.15 = 14 lb cap (rounded)
+    expect(buys).toContainEqual({ item: 'beans', qty: 14 });
+    // coffee: 90 × 0.05 = 5 lb cap (rounded)
+    expect(buys).toContainEqual({ item: 'coffee', qty: 5 });
+    // salt: 90 × 0.02 ≈ 2 lb cap
+    expect(buys).toContainEqual({ item: 'salt', qty: 2 });
   });
 
   it('respects custom days-floor / days-cap (NPC #299 uses 5/10)', () => {
@@ -135,16 +137,16 @@ describe('#303a — pickFoodRestock (NPC #299 consumer, period-faithful basket)'
   it('scales by alive-eater count', () => {
     const w = wagon({ party: [adult(), adult({ id: 'm2' }), adult({ id: 'm3' })] });
     const buys = pickFoodRestock({ wagon: w, stock: new Set(['flour']) });
-    // 60 × 1.0 × 3 eaters = 180 lb
-    expect(buys).toEqual([{ item: 'flour', qty: 180 }]);
+    // 90 × 1.0 × 3 eaters = 270 lb (post-#309 default cap)
+    expect(buys).toEqual([{ item: 'flour', qty: 270 }]);
   });
 
   it('skips items already at or above floor', () => {
-    // flour at 8 lb (above 7-day default floor of 7) — skip
-    expect(pickFoodRestock(input({ inventory: { flour: 8 } }, ['flour']))).toEqual([]);
-    // flour at 6 lb (below floor 7) — buy to cap 60
-    expect(pickFoodRestock(input({ inventory: { flour: 6 } }, ['flour'])))
-      .toEqual([{ item: 'flour', qty: 54 }]);
+    // 30-day default floor: 1 eater × 1 × 30 = 30 lb. flour=82 above → skip.
+    expect(pickFoodRestock(input({ inventory: { flour: 82 } }, ['flour']))).toEqual([]);
+    // flour=29 below floor 30 → buy to cap 90.
+    expect(pickFoodRestock(input({ inventory: { flour: 29 } }, ['flour'])))
+      .toEqual([{ item: 'flour', qty: 61 }]);
   });
 
   it('drops jerky / hardtack / dried_fruit (period: not post-restock items)', () => {
