@@ -295,6 +295,16 @@ export interface NpcWagonState extends WagonStateLike {
    *  of `applyNpcDehydration`, reset to 0 on the first wet day. Matches
    *  the player's `flags._dehydrationDays` shape. */
   dryDays: number;
+  /** #295 — per-pile spoil-day clocks (item id → day number on which
+   *  the pile rots). Mirrors the player's `flags._gameMeatSpoilDay` /
+   *  `_eggSpoilDay` / `_berrySpoilDay` / `_milkSpoilDay` clocks but on
+   *  a typed map since NPC wagons don't carry a flags blob. Set when
+   *  perishable food is added (currently game_meat from #294 company
+   *  hunts; future hooks for milk / eggs / berries). Optional —
+   *  pre-#295 saves with no spoilDays object are treated as no clocks
+   *  set, and `applyNpcSpoilage` is a no-op for them until the engine
+   *  next adds a perishable. */
+  spoilDays?: Record<string, number>;
 }
 
 export type GameStateFlag =
