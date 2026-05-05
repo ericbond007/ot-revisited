@@ -159,6 +159,26 @@ describe('#303a — pickFoodRestock (NPC #299 consumer, period-faithful basket)'
     const buys = pickFoodRestock(input({ party: [farmer] }, ['salt']));
     expect(buys.some((b) => b.item === 'salt')).toBe(true);
   });
+
+  it('#308 — includes saleratus (kitchen-staple adjacent to flour)', () => {
+    // Default 7-day floor / 60-day cap, 1 eater. Saleratus rate
+    // 0.015/day × 1 × 60 = 0.9 → max(1, round) = 1 lb cap.
+    const buys = pickFoodRestock(input({}, ['saleratus']));
+    expect(buys.some((b) => b.item === 'saleratus' && b.qty >= 1)).toBe(true);
+  });
+
+  it('#308 — saleratus triggers below floor', () => {
+    // 1 eater, default floor 7 days × 0.015 = 0.105 → max(1) = 1.
+    // have=0 < 1 → buys to cap. have=2 (above 1 lb floor) → skips.
+    const lowSaleratus = pickFoodRestock(
+      input({ inventory: { saleratus: 0 } }, ['saleratus'])
+    );
+    expect(lowSaleratus.length).toBeGreaterThan(0);
+    const highSaleratus = pickFoodRestock(
+      input({ inventory: { saleratus: 2 } }, ['saleratus'])
+    );
+    expect(highSaleratus.length).toBe(0);
+  });
 });
 
 describe('#303a — pickHunterRestock', () => {
