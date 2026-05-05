@@ -34,6 +34,11 @@ export const BASE_KIT: StarterKit = {
     bacon:      30,
     coffee:      2,
     salt:        2,
+    // #305 saleratus — period baking soda. 4 units (2 lb) lasts a
+    // 3-eater family ~4 months at 1 lb flour/eater/day; player needs
+    // to refill at one post mid-trip for a full Independence→Oregon
+    // run. Marcy 1859 outfit prescribes 5 lb per year — generous half.
+    saleratus:   4,
     bandages:    4,
     shovel:      1,
     cookware:    1

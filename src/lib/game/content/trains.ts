@@ -259,6 +259,10 @@ function generateNpcInventory(
     rope: 1,
     shovel: 1,
     cookware: 1,
+    // #305 — saleratus starter (1 unit = 0.5 lb pack, ~35 days for a
+    // small family). Without it the wagon takes a daily morale debit
+    // when flour/cornmeal eaten. Refills at trading posts.
+    saleratus: 1,
     bandages: 2 + rng.int(0, 2)
   };
   // Profession sprinkles — speciality items their head-of-wagon

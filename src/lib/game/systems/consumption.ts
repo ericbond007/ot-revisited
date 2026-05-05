@@ -108,6 +108,12 @@ export function applyDailyConsumption(state: GameState): GameState {
   const inventory = { ...state.inventory };
   let remaining = foodNeeded;
   const groupsDrawn = new Set<NutritionGroup>();
+  // #304/#305 — track flour + cornmeal draws for the saleratus / cookware
+  // pastry-quality pass (`applyPastryQuality`). These are the period
+  // staples that required cooking — biscuits and johnnycakes — and
+  // their daily quality depends on having saleratus to leaven and
+  // cookware to bake in.
+  let pastryDrawn = 0;
   for (const id of foodDrawOrder) {
     if (remaining <= 0) break;
     const have = inventory[id] ?? 0;
@@ -115,6 +121,7 @@ export function applyDailyConsumption(state: GameState): GameState {
     const take = Math.min(have, remaining);
     inventory[id] = have - take;
     remaining -= take;
+    if (id === 'flour' || id === 'cornmeal') pastryDrawn += take;
     const group = NUTRITION_GROUP[id];
     if (group) groupsDrawn.add(group);
   }
@@ -144,7 +151,8 @@ export function applyDailyConsumption(state: GameState): GameState {
     ...state.flags,
     _lastFoodShortfall: remaining,
     _lastDirtyWaterDrawn: dirtyDrawn,
-    _lastFoodGroups: [...groupsDrawn] as unknown as string
+    _lastFoodGroups: [...groupsDrawn] as unknown as string,
+    _pastryDrawnLb: pastryDrawn
   };
 
   return {

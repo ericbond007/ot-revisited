@@ -208,7 +208,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // Hardtack OK here — Army issue ration, distinct from civilian
       // ship's-biscuit which was outfitter-only (Hancock 1852: "no
       // hardtack west of St. Joseph" was the civilian context).
-      'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'coffee', 'sugar', 'salt',
+      'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'coffee', 'sugar', 'salt', 'saleratus',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
       'coat', 'blanket', 'tent',
       'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'rope', 'chicken', 'grain',
@@ -370,7 +370,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // bacon, 5 lb coffee, 8 lb sugar at Fort Bridger"). Salt + beans
       // added for the universal staples Sage 1846 records there.
       // Famously thin overall — kept the basket short.
-      'flour', 'bacon', 'beans', 'coffee', 'sugar', 'salt',
+      'flour', 'bacon', 'beans', 'coffee', 'sugar', 'salt', 'saleratus',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
       'spare_plank', 'ox_shoes', 'rope', 'grain',
@@ -419,7 +419,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // best-stocked emigrant post on the trail). Hardtack / jerky /
       // dried_fruit removed — outfitter-only or homemade per period
       // diaries (Carpenter 1857: "no dried fruit past Independence").
-      'flour', 'beans', 'bacon', 'sugar', 'coffee', 'tea', 'salt',
+      'flour', 'beans', 'bacon', 'sugar', 'coffee', 'tea', 'salt', 'saleratus',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum',
       'epsom_salts', 'camphor', 'paregoric',
       'coat', 'boots', 'blanket', 'tent',
@@ -453,7 +453,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // Marcy 5 partial (period: Frizzell 1852 records flour / bacon /
       // coffee / salt at Boise; sugar rare, beans uncommon). Dried fruit
       // removed — outfitter-only past Independence per Carpenter 1857.
-      'flour', 'bacon', 'coffee', 'salt',
+      'flour', 'bacon', 'coffee', 'salt', 'saleratus',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
       'coat', 'blanket',
       'canvas', 'spare_plank', 'ox_shoes', 'grain',
@@ -499,7 +499,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // a barrel for tea ceremonies and traded modest amounts to
       // emigrants. Dried fruit kept here uniquely (orchard farm-produced
       // — the one place past Independence to find it per Carpenter 1857).
-      'flour', 'beans', 'bacon', 'sugar', 'dried_fruit', 'salt', 'lard',
+      'flour', 'beans', 'bacon', 'sugar', 'dried_fruit', 'salt', 'saleratus', 'lard',
       'milk_cow', 'butter', 'cheese',
       // Light medical — Marcus had a kit, not a pharmacy.
       'bandages', 'quinine', 'laudanum',

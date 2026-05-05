@@ -102,9 +102,10 @@ const STARVATION_HP_PER_DAY = 4;
 function consumeFood(
   inventory: Record<string, number>,
   drawLb: number
-): { inventory: Record<string, number>; ate: number } {
+): { inventory: Record<string, number>; ate: number; pastryDrawn: number } {
   const next = { ...inventory };
   let remaining = drawLb;
+  let pastryDrawn = 0;
   for (const id of FOOD_DRAW_ORDER) {
     if (remaining <= 0) break;
     const have = next[id] ?? 0;
@@ -112,8 +113,47 @@ function consumeFood(
     const take = Math.min(have, remaining);
     next[id] = have - take;
     remaining -= take;
+    if (id === 'flour' || id === 'cornmeal') pastryDrawn += take;
   }
-  return { inventory: next, ate: drawLb - remaining };
+  return { inventory: next, ate: drawLb - remaining, pastryDrawn };
+}
+
+/** #304 + #305 — NPC pastry quality. Mirrors player applyPastryQuality:
+ *  no cookware → -2 morale "ate paste again"; no saleratus → -1
+ *  morale "biscuits sat heavy"; both present → 0 modifier + small
+ *  saleratus consumption. Period rates match the player path. */
+function applyNpcPastryQuality(
+  wagon: NpcWagonState,
+  pastryDrawn: number,
+  day: number
+): NpcWagonState {
+  if (pastryDrawn <= 0) return wagon;
+  const inv = wagon.inventory;
+  const hasCookware = (inv.cookware ?? 0) > 0;
+  const saleratusOnHand = inv.saleratus ?? 0;
+  if (!hasCookware) {
+    return {
+      ...wagon,
+      morale: Math.max(0, wagon.morale - 2),
+      eventLog: [
+        ...wagon.eventLog,
+        { day, text: `${wagon.name} has no cookware — ate paste again. Morale −2.` }
+      ]
+    };
+  }
+  if (saleratusOnHand <= 0) {
+    return {
+      ...wagon,
+      morale: Math.max(0, wagon.morale - 1),
+      eventLog: [
+        ...wagon.eventLog,
+        { day, text: `${wagon.name} ran out of saleratus — biscuits sat heavy. Morale −1.` }
+      ]
+    };
+  }
+  const consumed = Math.max(0.01, pastryDrawn * 0.005);
+  const remaining = Math.max(0, saleratusOnHand - consumed);
+  return { ...wagon, inventory: { ...inv, saleratus: remaining } };
 }
 
 function npcHasLiveDoctor(wagon: NpcWagonState): boolean {
@@ -329,6 +369,10 @@ export function tickNpcWagon(
     const drawLb = eaters * RATIONS_LB_PER_EATER[next.rations];
     const result = consumeFood(next.inventory, drawLb);
     next = { ...next, inventory: result.inventory };
+    // 2b. Pastry quality (#304 + #305) — saleratus + cookware check
+    // when flour or cornmeal was drawn. Period: dense biscuits ate
+    // morale even when they were filling.
+    next = applyNpcPastryQuality(next, result.pastryDrawn, ctx.day);
   }
 
   // 3. Water consumption (#303e). Clean drained first, then dirty.

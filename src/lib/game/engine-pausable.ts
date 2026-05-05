@@ -3,6 +3,7 @@ import { makeRng } from './rng';
 import type { Rng } from './rng';
 import { upgradeState } from './upgrade';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
+import { applyPastryQuality } from './systems/pastry';
 import { applyStarvation } from './systems/starvation';
 import { tickWeather } from './systems/weather';
 import { progressConditions } from './systems/conditions';
@@ -145,6 +146,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = applyDailyConsumption(s);
   s = applyDietVariety(s);
   s = applyHotDrinks(s);
+  // #304 + #305 — pastry quality. Reads `_pastryDrawnLb` flag set by
+  // applyDailyConsumption; consumes saleratus + applies morale modifier
+  // when flour/cornmeal eaten. Order: after diet+hot-drinks so daily
+  // morale state is settled before the pastry check.
+  s = applyPastryQuality(s).state;
   s = applyDirtyWaterRisk(s, rng);
   s = applyStarvation(s);
   s = tickOxen(s, rng);
