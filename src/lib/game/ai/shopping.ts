@@ -88,13 +88,22 @@ const FOOD_RATES_LB_PER_DAY: Record<string, number> = {
   sugar:  0.1,
   beans:  0.15,
   coffee: 0.05,
-  salt:   0.02
+  salt:   0.02,
+  // #308 — saleratus consumed at ~0.005 lb/lb-flour-eaten (#305 pastry).
+  // For a 3-eater household at 1 lb flour/eater/day that's 0.015
+  // lb/day. Period: Marcy 1859 prescribed 5 lb/year per family, fits
+  // the ratio. Item is `category: 'tool'` in the catalog (it's also
+  // used for stomach-settling + alkali water) but for restock purposes
+  // it's a kitchen-staple — belongs adjacent to the period basket.
+  saleratus: 0.015
 };
 
 /** Food restock priority order — matches Marcy 1859's enumeration
  *  ("bacon, flour, coffee, sugar, salt") plus beans last as period-low
- *  priority (most parties shipped beans from home, rarely restocked). */
-const FOOD_PRIORITY = ['flour', 'bacon', 'sugar', 'beans', 'coffee', 'salt'] as const;
+ *  priority (most parties shipped beans from home, rarely restocked).
+ *  Saleratus added per #308 audit — bot was running out around day
+ *  135 and taking −1 morale daily for the rest of the journey. */
+const FOOD_PRIORITY = ['flour', 'bacon', 'sugar', 'beans', 'coffee', 'salt', 'saleratus'] as const;
 
 export interface FoodRestockOpts {
   /** Days-per-soul "low" floor — only restock when current food (in

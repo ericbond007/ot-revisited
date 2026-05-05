@@ -59,6 +59,38 @@ function postStocksMissingWarmthGear(state: GameState, here: Landmark): boolean 
   return false;
 }
 
+/** Equipment-missing trigger (#308 from #307 audit): the bot can lose
+ *  cookware to buffalo stampede (#306 phase 1) or river fords (#306
+ *  phase 2). Without this stop trigger, a bot that's food/warmth/
+ *  medicine fine walks past Laramie or Walla Walla without buying a
+ *  replacement — and carries the −2 morale "ate paste again" debit
+ *  per pastry day for the rest of the journey. Period reality:
+ *  emigrants who lost cooking pots ABSOLUTELY stopped at the next
+ *  post that stocked them. Cookware is the load-bearing item; rope /
+ *  shovel / water_skin are also worth catching since they each have
+ *  a downstream gameplay role. */
+function postStocksMissingEquipment(state: GameState, here: Landmark): boolean {
+  const stock = new Set(here.stock ?? []);
+  const inv = state.inventory;
+  if (stock.has('cookware') && (inv.cookware ?? 0) < 1) return true;
+  if (stock.has('shovel') && (inv.shovel ?? 0) < 1) return true;
+  if (stock.has('rope') && (inv.rope ?? 0) < 1) return true;
+  if (stock.has('water_skin') && (inv.water_skin ?? 0) < 1) return true;
+  return false;
+}
+
+/** Saleratus-low trigger (#308 from #307 audit): bot starts with 4
+ *  units (2 lb) which lasts ~133 days for a 3-eater family. Once it
+ *  hits 0, every flour-day takes −1 morale until restock. Without
+ *  this trigger, a food/warmth/medicine-fine bot walks past
+ *  Laramie/Bridger/Hall without refilling. Threshold of <2 units
+ *  fires the stop early enough to top off before depletion. */
+function postStocksLowSaleratus(state: GameState, here: Landmark): boolean {
+  const stock = new Set(here.stock ?? []);
+  if (!stock.has('saleratus')) return false;
+  return (state.inventory.saleratus ?? 0) < 2;
+}
+
 /** Medicine restock trigger: bot is light on any of the front-line
  *  drugs that cover the most condition damage. Without this, the bot
  *  only stops at the first warmth-gear post and never resupplies
@@ -216,7 +248,9 @@ export const cautiousPersona: Persona = {
     if (state.cash < 10) return false;
     return foodOnHand(state) < 100
       || postStocksMissingWarmthGear(state, here)
-      || postStocksMissingMedicine(state, here);
+      || postStocksMissingMedicine(state, here)
+      || postStocksMissingEquipment(state, here)
+      || postStocksLowSaleratus(state, here);
   },
   shouldStayAtInn(state, here) {
     return (here.services ?? []).includes('inn')
@@ -280,7 +314,9 @@ export const balancedPersona: Persona = {
     if (state.cash < 20) return false;
     return foodOnHand(state) < 60
       || postStocksMissingWarmthGear(state, here)
-      || postStocksMissingMedicine(state, here);
+      || postStocksMissingMedicine(state, here)
+      || postStocksMissingEquipment(state, here)
+      || postStocksLowSaleratus(state, here);
   },
   shouldStayAtInn(state, here) {
     return (here.services ?? []).includes('inn')
