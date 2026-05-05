@@ -203,7 +203,12 @@ export const LANDMARKS: readonly Landmark[] = [
     services: ['gossip', 'blacksmith'],
     blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries, and he will not buy from you.',
     stock: [
-      'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack',
+      // Marcy 5 (period: standard Army-quartermaster issue + sale to
+      // emigrants per Bryant 1846): flour / bacon / coffee / sugar / salt.
+      // Hardtack OK here — Army issue ration, distinct from civilian
+      // ship's-biscuit which was outfitter-only (Hancock 1852: "no
+      // hardtack west of St. Joseph" was the civilian context).
+      'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'coffee', 'sugar', 'salt',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
       'coat', 'blanket', 'tent',
       'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'rope', 'chicken', 'grain',
@@ -256,7 +261,13 @@ export const LANDMARKS: readonly Landmark[] = [
     services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'bath_house'],
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
-      'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'hardtack', 'jerky', 'dried_fruit', 'coffee', 'tea',
+      // Marcy 5 (period: Bryant 1846 + Carpenter 1857 record all five
+      // bought at Laramie). Sugar added — Carpenter 1857 specifically.
+      // Hardtack / jerky / dried_fruit removed: outfitter-only or
+      // homemade per period diaries — Hancock 1852 "no hardtack west
+      // of St. Joseph", Carpenter 1857 "no dried fruit had at any post
+      // past Independence", emigrants made their own jerky from hunts.
+      'flour', 'cornmeal', 'beans', 'bacon', 'salt_pork', 'coffee', 'sugar', 'tea',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine', 'vinegar',
       'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket', 'tent',
@@ -355,7 +366,11 @@ export const LANDMARKS: readonly Landmark[] = [
     services: ['gossip', 'blacksmith'],
     blurb: "Jim Bridger's stockade is famously thin on stock. Moccasins, buffalo robes, and whatever the mountain men happened to bring in this week. Take what you can get.",
     stock: [
-      'flour', 'bacon',
+      // Marcy 5 (period: Carpenter 1857 explicit "50 lb flour, 20 lb
+      // bacon, 5 lb coffee, 8 lb sugar at Fort Bridger"). Salt + beans
+      // added for the universal staples Sage 1846 records there.
+      // Famously thin overall — kept the basket short.
+      'flour', 'bacon', 'beans', 'coffee', 'sugar', 'salt',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
       'spare_plank', 'ox_shoes', 'rope', 'grain',
@@ -400,12 +415,16 @@ export const LANDMARKS: readonly Landmark[] = [
     services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide'],
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
-      'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
+      // Marcy 5 + beans (period: HBC supply lines kept Hall the
+      // best-stocked emigrant post on the trail). Hardtack / jerky /
+      // dried_fruit removed — outfitter-only or homemade per period
+      // diaries (Carpenter 1857: "no dried fruit past Independence").
+      'flour', 'beans', 'bacon', 'sugar', 'coffee', 'tea', 'salt',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum',
       'epsom_salts', 'camphor', 'paregoric',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'grain', 'milk_cow', 'cheese_press', 'butter_crock',
-      'salt', 'soap', 'tobacco', 'whiskey', 'harmonica',
+      'soap', 'tobacco', 'whiskey', 'harmonica',
       // HBC supply lines kept abundant Plains trade goods on hand.
       'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
@@ -431,7 +450,10 @@ export const LANDMARKS: readonly Landmark[] = [
     services: ['gossip', 'blacksmith'],
     blurb: 'A small HBC station by the Boise River. Cottonwoods, worn travelers, and a modest stock — not a major resupply, but the water is good.',
     stock: [
-      'flour', 'bacon', 'dried_fruit',
+      // Marcy 5 partial (period: Frizzell 1852 records flour / bacon /
+      // coffee / salt at Boise; sugar rare, beans uncommon). Dried fruit
+      // removed — outfitter-only past Independence per Carpenter 1857.
+      'flour', 'bacon', 'coffee', 'salt',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
       'coat', 'blanket',
       'canvas', 'spare_plank', 'ox_shoes', 'grain',
@@ -472,7 +494,12 @@ export const LANDMARKS: readonly Landmark[] = [
     blurb: "Waiilatpu mission station on the Walla Walla. Marcus and Narcissa Whitman keep wheat, peas, potatoes, and beef from the farm; cheese and butter from the dairy. Dr. Whitman tends the sick when there's a doctor's call. Sparse on dry goods — they're missionaries, not traders.",
     stock: [
       // Farm produce — the whole point of stopping at Whitman's.
-      'flour', 'beans', 'dried_fruit', 'salt', 'lard',
+      // Bacon added: Whitman butchered cattle from the mission herd
+      // (Sager 1844 records bacon there). Sugar added: Narcissa kept
+      // a barrel for tea ceremonies and traded modest amounts to
+      // emigrants. Dried fruit kept here uniquely (orchard farm-produced
+      // — the one place past Independence to find it per Carpenter 1857).
+      'flour', 'beans', 'bacon', 'sugar', 'dried_fruit', 'salt', 'lard',
       'milk_cow', 'butter', 'cheese',
       // Light medical — Marcus had a kit, not a pharmacy.
       'bandages', 'quinine', 'laudanum',
