@@ -455,6 +455,19 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         } catch (err) {
           stats.errors.push(`raid: ${(err as Error).message}`);
         }
+      } else if (persona.shouldStealFromTrain(state, botRng)) {
+        // #314 — take from the train. Camp action gates on being in a
+        // train with live companions; persona decides the *want*.
+        // Default personas all refuse; chaos rolls 3% for fuzz cover.
+        // 50/35/15 outcome (caught / small grab / bigger grab).
+        actionType = 'rest';
+        try {
+          state = rest(state, 1, { campActions: ['take_from_train'] });
+          stats.decisionsMade += 1;
+          firedEventToday = true;
+        } catch (err) {
+          stats.errors.push(`steal: ${(err as Error).message}`);
+        }
       } else if (persona.shouldHunt(state, botRng)) {
         actionType = 'hunt';
         state = doBotHunt(state, stats);

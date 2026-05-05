@@ -65,4 +65,10 @@ export interface Persona {
    *  ammo, raidable tribe nearby, year ≥ 1845) live in the camp
    *  action availability check; persona only gates the *want*. */
   shouldRaid(state: GameState, rng: Rng): boolean;
+  /** Should the player take from another wagon in the train (#314)?
+   *  Period: extreme-rare moral choice with banishment as the
+   *  caught-outcome. Every default persona refuses. Chaos rolls a
+   *  small chance to fuzz the path. Future named profiles like
+   *  drinker / gambler (#287) can override. */
+  shouldStealFromTrain(state: GameState, rng: Rng): boolean;
 }
