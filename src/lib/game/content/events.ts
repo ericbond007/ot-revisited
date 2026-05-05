@@ -1,6 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
-import { and, inTerrain, monthIs, weatherIs, yearAtLeast, yearBetween } from './event-gating';
+import { and, inTerrain, milesBetween, monthIs, weatherIs, yearAtLeast, yearBetween } from './event-gating';
+import { applyStampedeToPlayer, applyStampedeToNpc } from '../systems/item-loss';
 import { consumeWagonPart, deathMoralePenalty } from '../professions/bonuses';
 import { randomChildName } from './historical-names';
 
@@ -444,7 +445,68 @@ const ox_bow_cracks: GameEvent = {
   ]
 };
 
-EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, axle_breaks, ox_wanders, ox_bow_cracks);
+// --- #306 Buffalo stampede ---
+// Period anchor: Marcy 1859 *The Prairie Traveler* — "buffalo running
+// through camp at night will smash any cookware not stowed inside the
+// wagon." Pre-1860s Platte corridor herds were enormous; a startled
+// herd at dusk could trample a whole company's tinware. One-shot per
+// game (`_stampedeFiredYear` flag scoped per year). Gates on prairie
+// terrain + Platte miles (200-700) + summer months when herds were
+// thickest. Train-wide damage when in a wagon train — period: a
+// stampede took the whole camp, not one wagon.
+const buffalo_stampede: GameEvent = {
+  id: 'buffalo_stampede',
+  category: 'encounter',
+  title: 'Buffalo through the camp',
+  body: 'Just past sundown a wall of dust rises to the south. The ground starts to tremble. A herd, spooked by something — wolves, lightning, a careless rifle shot — comes through camp at full run. The wagons hold; the iron laid out around the cookfire does not.',
+  weight: 3,
+  gate: and(
+    inTerrain('prairie'),
+    monthIs(4, 5, 6, 7, 8),
+    milesBetween(200, 700),
+    (s) => !s.flags[`_stampedeFiredYear_${s.date.year}`]
+  ),
+  choices: [
+    {
+      id: 'pick_up_pieces',
+      icon: '🦬',
+      label: 'Pick up the pieces at dawn',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        // Mark the flag first so re-entry can't double-fire this year.
+        let next: GameState = {
+          ...s,
+          flags: { ...s.flags, [`_stampedeFiredYear_${s.date.year}`]: true }
+        };
+        next = applyStampedeToPlayer(next, rng);
+        // Train-wide propagation — period: stampedes hit the whole
+        // camp, every wagon. Each in-progress companion takes the
+        // same crushed-tinware roll and the player gets a one-line
+        // bubble-up summary per affected wagon.
+        if (next.wagonTrain) {
+          const playerLogs: string[] = [];
+          const updated = next.wagonTrain.companions.map((c) => {
+            const npcResult = applyStampedeToNpc(c, rng, next.day);
+            if (npcResult.playerLog) playerLogs.push(npcResult.playerLog);
+            return npcResult.wagon;
+          });
+          next = {
+            ...next,
+            wagonTrain: { ...next.wagonTrain, companions: updated },
+            eventLog: [
+              ...next.eventLog,
+              ...playerLogs.map((text) => ({ day: next.day, text }))
+            ]
+          };
+        }
+        return next;
+      }
+    }
+  ]
+};
+
+EVENTS.push(storm, heat_wave, fog, early_snow, broken_wheel, ox_lame, ox_threw_shoe, tongue_snaps, canvas_tear, axle_breaks, ox_wanders, ox_bow_cracks, buffalo_stampede);
 
 // --- Health ---
 const cholera_scare: GameEvent = {
