@@ -1,4 +1,4 @@
-import type { GameState, Pace, Terrain } from '../types';
+import type { GameState, NpcWagonState, Pace, Terrain, Weather } from '../types';
 import type { Rng } from '../rng';
 
 const PACE_DECAY: Record<Pace, number> = {
@@ -75,4 +75,79 @@ export function applyAxleGrease(state: GameState, miles: number): GameState {
     };
   }
   return next;
+}
+
+// --- #300 NPC parity ---
+// Companion wagons currently never decay — `tickWagon` is player-only.
+// Period reality (Marcy 1859, every emigrant diary): every wagon broke.
+// Mirror the player's pace × terrain × tar formula on each NPC, run on
+// travel days only. Storm wagon-damage also mirrored via
+// `applyNpcStormDamage` so weather hits the company evenly. The #280c
+// wheel-break event already fires on top.
+
+/** Per-tick condition decay for an NPC wagon. Travel days only — call
+ *  with `traveled=true`. The same pace × terrain × tar-mult formula as
+ *  the player's `tickWagon`. */
+export function applyNpcWagonDecay(
+  wagon: NpcWagonState,
+  ctx: { traveled: boolean; pace: Pace; terrain: Terrain }
+): NpcWagonState {
+  if (!ctx.traveled) return wagon;
+  const base = PACE_DECAY[ctx.pace];
+  const terrain = TERRAIN_MULTIPLIER[ctx.terrain];
+  const tarMult = (wagon.inventory.tar_bucket ?? 0) > 0 ? TAR_BUCKET_DECAY_MULT : 1;
+  const decay = base * terrain * tarMult;
+  const condition = Math.max(0, Math.round((wagon.wagon.condition - decay) * 10) / 10);
+  return { ...wagon, wagon: { ...wagon.wagon, condition } };
+}
+
+/** NPC mirror of `applyAxleGrease`. Counter lives on `wagon.greaseMiles`
+ *  (NPCs don't have a flags blob). When the counter rolls past
+ *  GREASE_CYCLE_MI and the wagon has a bucket, one tar_bucket is
+ *  consumed. Returns the updated wagon plus an optional player-log
+ *  string when the last bucket runs dry — matches the player's
+ *  end-of-bucket announcement. */
+export function applyNpcAxleGrease(
+  wagon: NpcWagonState,
+  miles: number
+): { wagon: NpcWagonState; playerLog?: string } {
+  if (miles <= 0) return { wagon };
+  const prevCounter = wagon.greaseMiles ?? 0;
+  const prevBuckets = wagon.inventory.tar_bucket ?? 0;
+  let bucketsLeft = prevBuckets;
+  let remaining = prevCounter + miles;
+  while (remaining >= GREASE_CYCLE_MI && bucketsLeft > 0) {
+    bucketsLeft -= 1;
+    remaining -= GREASE_CYCLE_MI;
+  }
+  if (remaining > GREASE_CYCLE_MI) remaining = GREASE_CYCLE_MI;
+  const next: NpcWagonState = {
+    ...wagon,
+    inventory: { ...wagon.inventory, tar_bucket: bucketsLeft },
+    greaseMiles: remaining
+  };
+  if (prevBuckets > 0 && bucketsLeft === 0) {
+    return {
+      wagon: next,
+      playerLog: `The ${wagon.name} ran out of tar — their hubs go unsmeared.`
+    };
+  }
+  return { wagon: next };
+}
+
+/** Storm-day wagon damage for NPCs. Mirrors the player's
+ *  `weather.ts` storm branch (1-3 condition damage per storm day).
+ *  Returns the updated wagon plus an optional player-log string. */
+export function applyNpcStormDamage(
+  wagon: NpcWagonState,
+  weather: Weather,
+  rng: Rng
+): { wagon: NpcWagonState; playerLog?: string } {
+  if (weather !== 'storm') return { wagon };
+  const dmg = rng.int(1, 3);
+  const condition = Math.max(0, wagon.wagon.condition - dmg);
+  return {
+    wagon: { ...wagon, wagon: { ...wagon.wagon, condition } },
+    playerLog: `Thunderstorm hit the ${wagon.name} — wagon -${dmg}.`
+  };
 }

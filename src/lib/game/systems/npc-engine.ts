@@ -42,6 +42,7 @@ import {
   applyNpcDirtyWaterRisk
 } from './npc-water';
 import { rollNpcTheft } from './item-loss';
+import { applyNpcWagonDecay, applyNpcAxleGrease, applyNpcStormDamage } from './wagon';
 
 /** Inputs the NPC tick needs from the train's shared environment. */
 export interface NpcTickContext {
@@ -59,6 +60,10 @@ export interface NpcTickContext {
    *  Required so callers can't silently no-op heat-sensitive systems
    *  by forgetting to pass it. */
   weather: Weather;
+  /** Today's miles travelled — drives axle-grease consumption
+   *  cycle (#300). Defaults to 0 on rest / event / non-travel days,
+   *  so non-travel callers can omit this field. */
+  traveledMiles?: number;
 }
 
 // Per-rations daily food draw (lb/eater/day). Matches the player's
@@ -404,7 +409,22 @@ export function tickNpcWagon(
   // 5. Ox tick — fatigue on travel, recovery on rest.
   next = ctx.traveled ? tickOxenTravel(next, ctx) : tickOxenRest(next, ctx);
 
-  // 5. NPC event roll (#280c). May damage wagon, sicken a member,
+  // 5b. #300 — NPC wagon condition decay (parity with player tickWagon).
+  // Travel days only; pace × terrain × tar-bucket-mult formula. The
+  // axle-grease cycle consumes one tar_bucket per 500 mi (mirrors
+  // player's applyAxleGrease). Storm-day weather adds 1-3 wagon damage
+  // on top — same shape as the player's weather.ts storm branch.
+  next = applyNpcWagonDecay(next, ctx);
+  if (ctx.traveled && (ctx.traveledMiles ?? 0) > 0) {
+    const greaseResult = applyNpcAxleGrease(next, ctx.traveledMiles ?? 0);
+    next = greaseResult.wagon;
+    if (greaseResult.playerLog) playerLogs.push(greaseResult.playerLog);
+  }
+  const stormResult = applyNpcStormDamage(next, ctx.weather, rng);
+  next = stormResult.wagon;
+  if (stormResult.playerLog) playerLogs.push(stormResult.playerLog);
+
+  // 5c. NPC event roll (#280c). May damage wagon, sicken a member,
   // kill an ox, etc. Result bubbles up as a player news entry.
   const eventResult = rollNpcEvent(next, ctx, rng);
   if (eventResult) {

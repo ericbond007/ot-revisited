@@ -167,7 +167,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // Snapshot which landmark we'd already passed before today's travel —
   // used below to detect a fresh arrival.
   const prevLandmarkBefore = s.location.previousLandmarkId;
+  // #300 — capture miles before travel so advanceTrain can drive the
+  // NPC axle-grease consumption cycle off the same daily delta.
+  const milesBeforeTravel = s.location.milesTraveled;
   s = applyTravel(s, rng);
+  const milesTraveledToday = s.location.milesTraveled - milesBeforeTravel;
 
   const arrivedAtLandmark = s.location.atLandmarkId !== null && s.location.atLandmarkId !== undefined;
 
@@ -244,7 +248,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // Travel day, so `traveled=true`. Each companion runs its own
   // attrition. May return a pendingEvent if a companion just hit
   // a starvation crisis — surface it before advancing the day.
-  const trainResult = advanceTrain(s, true);
+  const trainResult = advanceTrain(s, true, milesTraveledToday);
   s = trainResult.state;
   if (trainResult.pendingEvent) {
     return { state: s, pendingEvent: trainResult.pendingEvent };
@@ -278,6 +282,9 @@ export function applyPendingChoice(
   // for them. NPC starvation crisis events that arise here are NOT
   // re-surfaced (would chain modals on the same tick); they queue
   // for tomorrow's tickDayPausable.
+  // #300 — NPC axle-grease cycle skips a small slice on event-paused
+  // days (we don't thread the miles delta through the early-return).
+  // ~3% asymmetry per event vs travel-day; the 500-mi cycle absorbs it.
   const trainResult = advanceTrain(s, true);
   s = trainResult.state;
 
