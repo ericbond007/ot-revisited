@@ -14,3 +14,14 @@ export {
   getPersona,
   makeBotRng
 } from './personas';
+export type { BuyOrder, ShoppingInput } from './shopping';
+export {
+  pickWarmthRestock,
+  pickEquipmentRestock,
+  pickFoodRestock,
+  pickHunterRestock,
+  pickRepairRestock,
+  pickMedicineRestock,
+  composeShoppingList,
+  missingSurvivalGear
+} from './shopping';

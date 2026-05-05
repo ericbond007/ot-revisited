@@ -23,12 +23,17 @@ import { ford, type FordMethod, type RiverState } from '../../game/actions/ford'
 import { stayAtInn, repairWagon } from '../../game/systems/town-services';
 import { joinTrain } from '../../game/systems/wagon-train';
 import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-purity';
-import { hasLiveHunter, hasLiveBlacksmith } from '../../game/professions/predicates';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
 import type { GameState, ProfessionId } from '../../game/types';
 import type { Rng } from '../../game/rng';
-import { getPersona, makeBotRng, type Persona } from '../../game/ai';
+import {
+  getPersona,
+  makeBotRng,
+  type Persona,
+  composeShoppingList,
+  type BuyOrder
+} from '../../game/ai';
 import { computeFunScore } from './scoring';
 import type { BotRunOpts, BotRunReport } from './types';
 
@@ -159,174 +164,16 @@ function restWithWaterChain(state: GameState, stats: RunningStats): GameState {
   }
 }
 
-/** Build a buy list the bot wants when trading at a post. Filters to
- *  items the post actually stocks. Three layers, in priority order:
- *  (1) **survival gear** — coats / blankets / tents for cold-camp
- *  protection (the #1 cause of "Exposure" deaths in v2 smoke runs);
- *  (2) **food staples** — top up flour / bacon / beans when below
- *  threshold; (3) **utility** — shovel / cookware / water_skin if
- *  missing. Quantities tuned for a 3-person party. */
-function buildBotShoppingList(
-  state: GameState,
-  here: Landmark
-): Array<{ item: string; qty: number }> {
+/** Build a buy list the bot wants when trading at a post. Six tiers
+ *  composed in priority order via #303a's `composeShoppingList`:
+ *  warmth → equipment → food → hunter → repair → medicine. The slice
+ *  functions live in `game/ai/shopping.ts` so the same brain can drive
+ *  NPC restocks (#299) and future encountered-train wagons. Player-bot
+ *  here passes its full GameState shape (which structurally satisfies
+ *  WagonStateLike) directly. */
+function buildBotShoppingList(state: GameState, here: Landmark): BuyOrder[] {
   const stock = new Set(here.stock ?? []);
-  const inv = state.inventory;
-  const aliveCount = state.party.filter((m) => !m.dead).length || 1;
-  const buys: Array<{ item: string; qty: number }> = [];
-
-  // Survival gear — coat + blanket per person, one tent for the party.
-  // Period reality: emigrants who left Independence without warm gear
-  // either bought at Kearny / Laramie or froze on the high plains.
-  if (stock.has('coat')) {
-    const need = Math.max(0, aliveCount - (inv.coat ?? 0));
-    if (need > 0) buys.push({ item: 'coat', qty: need });
-  }
-  if (stock.has('blanket')) {
-    const need = Math.max(0, aliveCount - (inv.blanket ?? 0));
-    if (need > 0) buys.push({ item: 'blanket', qty: need });
-  }
-  if (stock.has('tent') && (inv.tent ?? 0) < 1) {
-    buys.push({ item: 'tent', qty: 1 });
-  }
-  if (stock.has('boots')) {
-    const need = Math.max(0, aliveCount - (inv.boots ?? 0));
-    if (need > 0) buys.push({ item: 'boots', qty: need });
-  }
-
-  // Utility — shovel, cookware, water_skins.
-  if (stock.has('shovel') && (inv.shovel ?? 0) < 1) {
-    buys.push({ item: 'shovel', qty: 1 });
-  }
-  if (stock.has('cookware') && (inv.cookware ?? 0) < 1) {
-    buys.push({ item: 'cookware', qty: 1 });
-  }
-  if (stock.has('water_skin') && (inv.water_skin ?? 0) < 2) {
-    buys.push({ item: 'water_skin', qty: 1 });
-  }
-  if (stock.has('rope') && (inv.rope ?? 0) < 1) {
-    buys.push({ item: 'rope', qty: 1 });
-  }
-
-  // Food staples — top off generously. v8 trace showed runs were
-  // surviving the team-fatigue trap, then starving on the
-  // Laramie→Bridger stretch (200+ mi between posts) because flour
-  // was at ~80 lb leaving Laramie. A 3-person party burns ~5 lb/day
-  // staples; 200 lb flour + 60 lb meat + 40 lb beans = ~50 days of
-  // food, comfortable for any inter-post leg. Quantities scale with
-  // party size to keep the math working with the children expansion.
-  const partyMul = Math.max(1, aliveCount);
-  // Flour cap pushed to 300 in v8 — Fort Bridger→Hall is ~220 mi at
-  // ~10 mi/day in mountains/plateau = 22 days = ~330 lb staples for
-  // a 3-person party. Bot was leaving Bridger at 200 lb and starving
-  // before Boise.
-  if (stock.has('flour') && (inv.flour ?? 0) < 300) {
-    buys.push({ item: 'flour', qty: 200 - (inv.flour ?? 0) });
-  }
-  if (stock.has('bacon') && (inv.bacon ?? 0) < 80) {
-    buys.push({ item: 'bacon', qty: 60 - (inv.bacon ?? 0) });
-  }
-  if (stock.has('beans') && (inv.beans ?? 0) < 50) {
-    buys.push({ item: 'beans', qty: 40 - (inv.beans ?? 0) });
-  }
-  if (stock.has('jerky') && (inv.jerky ?? 0) < 30) {
-    buys.push({ item: 'jerky', qty: 20 - (inv.jerky ?? 0) });
-  }
-  // Grain for oxen/mules — without it, oxen draw fatigue penalty on
-  // poor-grazing terrain. 20 lb covers ~5 days of poor grazing for a
-  // 4-team. Stockpiling small qty rather than a full barrel.
-  if (stock.has('grain') && (inv.grain ?? 0) < 30 * partyMul) {
-    buys.push({ item: 'grain', qty: 30 });
-  }
-
-  // Hunter on the party → hunt is the primary food source on long
-  // legs, so ammo capacity is a load-bearing input. Stock more
-  // gunpowder + lead + caps so the bot doesn't run dry mid-stretch.
-  if (hasLiveHunter(state)) {
-    if (stock.has('gunpowder') && (inv.gunpowder ?? 0) < 30) {
-      buys.push({ item: 'gunpowder', qty: 30 - (inv.gunpowder ?? 0) });
-    }
-    if (stock.has('lead_balls') && (inv.lead_balls ?? 0) < 30) {
-      buys.push({ item: 'lead_balls', qty: 30 - (inv.lead_balls ?? 0) });
-    }
-    if (stock.has('percussion_caps') && (inv.percussion_caps ?? 0) < 30) {
-      buys.push({ item: 'percussion_caps', qty: 30 - (inv.percussion_caps ?? 0) });
-    }
-    if (stock.has('salt') && (inv.salt ?? 0) < 10) {
-      // Salt preserves fresh game meat (#122) — without it, meat spoils
-      // and the hunt's haul rots before the next post.
-      buys.push({ item: 'salt', qty: 10 - (inv.salt ?? 0) });
-    }
-  }
-
-  // Blacksmith on the party → smithy repair is half-price (engine
-  // #154), so the bot buys more spare wagon parts to leverage that
-  // and keep the wagon high-condition. Period: blacksmith was the
-  // emigrant's value-multiplier at every fort along the trail.
-  if (hasLiveBlacksmith(state)) {
-    if (stock.has('axle') && (inv.axle ?? 0) < 1) {
-      buys.push({ item: 'axle', qty: 1 });
-    }
-    if (stock.has('wheel') && (inv.wheel ?? 0) < 1) {
-      buys.push({ item: 'wheel', qty: 1 });
-    }
-    if (stock.has('tongue') && (inv.tongue ?? 0) < 1) {
-      buys.push({ item: 'tongue', qty: 1 });
-    }
-    if (stock.has('tar_bucket') && (inv.tar_bucket ?? 0) < 1) {
-      buys.push({ item: 'tar_bucket', qty: 1 });
-    }
-  }
-
-  // Medicine — without these, cholera / typhoid / dysentery deal full
-  // daily damage and the bot grinds to a rest-cycle halt. Period
-  // reality: emigrants who could afford it stocked quinine, bandages,
-  // laudanum at every major post. Modest quantities — these are
-  // priced like luxuries. Treatment items are consumed one per day per
-  // condition, so 3-5 doses per drug usually covers a 3-person party
-  // through the next disease cluster.
-  if (stock.has('quinine') && (inv.quinine ?? 0) < 4) {
-    buys.push({ item: 'quinine', qty: 4 - (inv.quinine ?? 0) });
-  }
-  if (stock.has('bandages') && (inv.bandages ?? 0) < 4) {
-    buys.push({ item: 'bandages', qty: 4 - (inv.bandages ?? 0) });
-  }
-  if (stock.has('laudanum') && (inv.laudanum ?? 0) < 3) {
-    buys.push({ item: 'laudanum', qty: 3 - (inv.laudanum ?? 0) });
-  }
-  if (stock.has('dovers_powder') && (inv.dovers_powder ?? 0) < 3) {
-    buys.push({ item: 'dovers_powder', qty: 3 - (inv.dovers_powder ?? 0) });
-  }
-  // Dysentery treatments — stocked separately because dysentery is the
-  // most persistent "background" condition (-3/day, no auto-clear). v8
-  // trace: bot stalled at mi 1343 because dysentery ticked for 90 days
-  // unmedicated, morale collapsed, party gave up.
-  if (stock.has('calomel') && (inv.calomel ?? 0) < 3) {
-    buys.push({ item: 'calomel', qty: 3 - (inv.calomel ?? 0) });
-  }
-  if (stock.has('paregoric') && (inv.paregoric ?? 0) < 3) {
-    buys.push({ item: 'paregoric', qty: 3 - (inv.paregoric ?? 0) });
-  }
-  if (stock.has('epsom_salts') && (inv.epsom_salts ?? 0) < 3) {
-    buys.push({ item: 'epsom_salts', qty: 3 - (inv.epsom_salts ?? 0) });
-  }
-  // Dried fruit is the scurvy auto-cure — stockpile a small supply.
-  if (stock.has('dried_fruit') && (inv.dried_fruit ?? 0) < 5) {
-    buys.push({ item: 'dried_fruit', qty: 5 - (inv.dried_fruit ?? 0) });
-  }
-
-  return buys;
-}
-
-/** Has the party got the basic survival gear? Used by the persona's
- *  shouldTradeAtPost trigger so the bot stops at posts that stock
- *  warmth gear even when food is fine. */
-function missingSurvivalGear(state: GameState): boolean {
-  const inv = state.inventory;
-  const aliveCount = state.party.filter((m) => !m.dead).length || 1;
-  return (inv.coat ?? 0) < aliveCount
-    || (inv.blanket ?? 0) < aliveCount
-    || (inv.tent ?? 0) < 1;
+  return composeShoppingList({ wagon: state, stock });
 }
 
 /** Try to handle the landmark we're parked at. Returns the new state
