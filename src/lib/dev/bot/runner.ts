@@ -440,6 +440,21 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         } catch (err) {
           stats.errors.push(`pan: ${(err as Error).message}`);
         }
+      } else if (persona.shouldRaid(state, botRng)) {
+        // #316 — raid the native camp. Camp action gates on rifle +
+        // ammo + raidable tribe nearby + year ≥ 1845; the persona
+        // surface decides the *want*. All default personas refuse;
+        // chaos rolls a small chance to fuzz the path. Outcome is
+        // 30/70 inside the action; revenge ambush event fires
+        // 5-15 days later via _raidRevengeDay flag.
+        actionType = 'rest';
+        try {
+          state = rest(state, 1, { campActions: ['raid_natives'] });
+          stats.decisionsMade += 1;
+          firedEventToday = true;
+        } catch (err) {
+          stats.errors.push(`raid: ${(err as Error).message}`);
+        }
       } else if (persona.shouldHunt(state, botRng)) {
         actionType = 'hunt';
         state = doBotHunt(state, stats);

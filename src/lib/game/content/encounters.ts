@@ -1055,6 +1055,188 @@ const native_salmon_trade: GameEvent = {
   ]
 };
 
+// #316 — Revenge ambush. Fires after the party raids a native camp.
+// The raid_natives camp action sets `_raidRevengeDay` 5-15 days out;
+// once that day passes AND the party is still in tribal territory,
+// the ambush event surfaces. Once fired (any choice), the flags
+// clear so it doesn't repeat.
+//
+// Period anchor: every emigrant-on-tribe raid in the diaries
+// (Whitman 1847 most famously) was followed by a retaliatory strike.
+// Ambushes hit at dawn or in narrow defiles — not at the camp the
+// party had picked. This event represents that delayed retaliation.
+const RAID_REVENGE_HP_MIN = 12;
+const RAID_REVENGE_HP_MAX = 30;
+const RAID_REVENGE_OX_KILL_CHANCE = 0.4;
+
+function clearRaidFlags(s: GameState): GameState {
+  const flags = { ...s.flags };
+  delete (flags as Record<string, unknown>)._recentRaidDay;
+  delete (flags as Record<string, unknown>)._raidRevengeDay;
+  return { ...s, flags };
+}
+
+const raid_revenge: GameEvent = {
+  id: 'encounter_raid_revenge',
+  category: 'encounter',
+  title: 'War cries from the ridge',
+  body: "Riders break from cover at first light — paint, lances, hard riding. They came looking for the wagon that hit their camp. There is no parley to be had.",
+  weight: 99, // crank weight so it dominates the roll on its day window
+  gate: (s) => {
+    const day = (s.flags._raidRevengeDay as number | undefined);
+    if (typeof day !== 'number') return false;
+    if (s.day < day) return false;
+    // Must still be inside tribal range — past the last region (~mile
+    // 2020), the ambush window expires harmlessly.
+    const here = tribesAtMile(s.location.milesTraveled);
+    return here.length > 0;
+  },
+  choices: [
+    {
+      id: 'fight',
+      icon: '🔫',
+      label: 'Fight them off (rifle + 10 ammo)',
+      isDefault: true,
+      silentLog: true,
+      requires: { itemId: 'rifle', icon: '🔫', reason: 'Need a rifle' },
+      apply: (s, rng) => {
+        const hasAmmo = (s.inventory.gunpowder ?? 0) >= 10
+          && (s.inventory.lead_balls ?? 0) >= 10
+          && (s.inventory.percussion_caps ?? 0) >= 10;
+        const inventory: Record<string, number> = { ...s.inventory };
+        if (hasAmmo) {
+          inventory.gunpowder = (inventory.gunpowder ?? 0) - 10;
+          inventory.lead_balls = (inventory.lead_balls ?? 0) - 10;
+          inventory.percussion_caps = (inventory.percussion_caps ?? 0) - 10;
+        }
+        // With ammo: 1-2 wounded, 6-15 HP each. Without: 2-4 wounded,
+        // 12-25 HP each — the unarmed brawl ends much worse.
+        const aliveAdults = s.party.filter((m) => !m.dead && m.kind === 'adult');
+        const victimCount = hasAmmo
+          ? Math.min(aliveAdults.length, rng.int(1, 2))
+          : Math.min(aliveAdults.length, rng.int(2, 4));
+        const dmgMin = hasAmmo ? 6 : 12;
+        const dmgMax = hasAmmo ? 15 : 25;
+        const shuffled = [...aliveAdults].sort(() => rng.next() - 0.5);
+        const victimIds = new Set(shuffled.slice(0, victimCount).map((m) => m.id));
+        const party = s.party.map((m) => {
+          if (!victimIds.has(m.id)) return m;
+          const dmg = rng.int(dmgMin, dmgMax);
+          return { ...m, health: Math.max(0, m.health - dmg) };
+        });
+        let next: GameState = { ...s, inventory, party };
+        next = clearRaidFlags(next);
+        const victimNames = s.party
+          .filter((m) => victimIds.has(m.id))
+          .map((m) => m.name)
+          .join(', ');
+        const flavor = hasAmmo
+          ? `Drove them off after a hard fight — ${victimNames} took wounds. 10 ammo spent.`
+          : `Without proper ammo it was a brawl in the brush — ${victimNames} took bad wounds.`;
+        return logLine(next, flavor);
+      }
+    },
+    {
+      id: 'flee',
+      icon: '🐂',
+      label: 'Cut the lead ox loose and run',
+      silentLog: true,
+      apply: (s, rng) => {
+        // Sacrifice an ox to break contact. 40% chance the lead ox is
+        // killed in the chase; other 60% they break off when the loose
+        // ox slows them. Wagon takes 8-15 damage either way (rough run).
+        const oxen = [...s.oxen];
+        const aliveIdx = oxen.findIndex((o) => o.health > 0);
+        const killOx = aliveIdx >= 0 && rng.chance(RAID_REVENGE_OX_KILL_CHANCE);
+        if (killOx) {
+          oxen[aliveIdx] = { ...oxen[aliveIdx], health: 0 };
+        }
+        const dmg = rng.int(8, 15);
+        const wagon = { ...s.wagon, condition: Math.max(0, s.wagon.condition - dmg) };
+        let next: GameState = {
+          ...s,
+          oxen,
+          wagon,
+          morale: Math.max(0, s.morale - 5)
+        };
+        next = clearRaidFlags(next);
+        const flavor = killOx
+          ? `Cut the lead ox loose and ran — they pulled it down a quarter-mile back. Wagon -${dmg}, morale -5.`
+          : `Whipped the team into a hard run. Lost them in the breaks. Wagon -${dmg}, morale -5.`;
+        return logLine(next, flavor);
+      }
+    },
+    {
+      id: 'parley',
+      icon: '🕊️',
+      label: 'Surrender goods (50 lb food + 5 trade)',
+      silentLog: true,
+      apply: (s, rng) => {
+        // Pay tribute — works only if you actually have it. Tribute
+        // composition: 50 lb of food (drawn from heaviest piles), plus
+        // 5 of any trade good (tobacco/beads/whiskey). On payment, all
+        // nearby tribes lift +5 (still hostile, but the ledger closes).
+        const inventory: Record<string, number> = { ...s.inventory };
+        const foodOrder = ['flour', 'beans', 'bacon', 'hardtack', 'jerky', 'pemmican', 'dried_fruit'];
+        let foodNeeded = 50;
+        let foodPaid = 0;
+        for (const id of foodOrder) {
+          if (foodNeeded <= 0) break;
+          const have = inventory[id] ?? 0;
+          const take = Math.min(have, foodNeeded);
+          if (take > 0) {
+            inventory[id] = have - take;
+            foodNeeded -= take;
+            foodPaid += take;
+          }
+        }
+        const tradeOrder: Array<{ id: string; qty: number }> = [
+          { id: 'tobacco', qty: 5 },
+          { id: 'beads', qty: 5 },
+          { id: 'whiskey', qty: 1 }
+        ];
+        let tradePaid: { id: string; qty: number } | null = null;
+        for (const t of tradeOrder) {
+          if ((inventory[t.id] ?? 0) >= t.qty) {
+            inventory[t.id] = (inventory[t.id] ?? 0) - t.qty;
+            tradePaid = t;
+            break;
+          }
+        }
+        if (foodPaid < 50 || tradePaid === null) {
+          // Tribute fell short — they took what was offered and shot
+          // the rest out. Heavy hit, like fight without ammo.
+          const aliveAdults = s.party.filter((m) => !m.dead && m.kind === 'adult');
+          const victimCount = Math.min(aliveAdults.length, rng.int(2, 3));
+          const shuffled = [...aliveAdults].sort(() => rng.next() - 0.5);
+          const victimIds = new Set(shuffled.slice(0, victimCount).map((m) => m.id));
+          const party = s.party.map((m) => {
+            if (!victimIds.has(m.id)) return m;
+            const dmg = rng.int(RAID_REVENGE_HP_MIN, RAID_REVENGE_HP_MAX);
+            return { ...m, health: Math.max(0, m.health - dmg) };
+          });
+          let next: GameState = { ...s, inventory, party };
+          next = clearRaidFlags(next);
+          return logLine(
+            next,
+            'Offered tribute, but the wagon was already too light — they took what was there and fought through the rest. Heavy wounds.'
+          );
+        }
+        const here = tribesAtMile(s.location.milesTraveled);
+        let next: GameState = { ...s, inventory };
+        for (const t of here) {
+          next = adjustTribeAttitude(next, t.id, 5);
+        }
+        next = clearRaidFlags(next);
+        return logLine(
+          next,
+          `Surrendered ${foodPaid} lb of food and ${tradePaid.qty} ${tradePaid.id.replace(/_/g, ' ')}. They took it and rode off — the score is settled. Tribes +5 (still wary).`
+        );
+      }
+    }
+  ]
+};
+
 /** All trail-encounter events. events.ts spreads these into its
  *  EVENTS registry on module load. */
 export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
@@ -1069,5 +1251,6 @@ export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
   native_guide_offer,
   native_hunters_sharing,
   native_hide_trade,
-  native_salmon_trade
+  native_salmon_trade,
+  raid_revenge
 ];

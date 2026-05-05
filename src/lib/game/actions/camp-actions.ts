@@ -5,6 +5,8 @@ import { canBoilWater } from '../systems/water-purity';
 import { fuelFlavorFor } from '../systems/fire';
 import { washAll } from '../systems/cleanliness';
 import { deathMoralePenalty } from '../professions/bonuses';
+import { tribesAtMile, getTribe } from '../content/tribes';
+import { getTribeAttitude, adjustTribeAttitude } from '../systems/tribe-relations';
 
 // Camp actions are one-shot activities the party can do during a rest
 // day (applied on day 1 of the rest, same as shovel actions). Each has
@@ -57,7 +59,8 @@ export type CampActionId =
   | 'press_cheese'
   | 'make_soap'
   | 'cannibalism_straws'
-  | 'pan_for_gold';
+  | 'pan_for_gold'
+  | 'raid_natives';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -1127,6 +1130,180 @@ const panForGold: CampAction = {
   }
 };
 
+// --- #316 Raid the natives (moral-grey) ---
+// Period anchor: Edwin Bryant 1846 (vol. companies that "ran off Pawnee
+// stock" along the Platte), Rufus Sage 1846 (Mountain-man journals on
+// reciprocal raids in the Green River country), Whitman 1847 (the
+// Cayuse retaliations that gave the trail its bloodiest year). Raids
+// against tribal camps did happen — almost always punished.
+//
+// Mechanic: 30% successful theft of tribe-relevant goods, 70% counter-
+// attack — party HP loss, ALL nearby tribes crash to hostile, and a
+// `_recentRaidDay` flag schedules a revenge-ambush event 5-15 days
+// out (encounters.ts gates on the flag).
+//
+// Persona surface: `Persona.shouldRaid` exists for the bot to express
+// this decision. Default for cautious/balanced/aggressive is false —
+// even the aggressive bot sees the math (70% bad, ALL tribes hostile).
+// Chaos rolls a small chance to exercise the path.
+const RAID_SUCCESS_CHANCE = 0.30;
+const RAID_PARTY_HP_MIN = 8;
+const RAID_PARTY_HP_MAX = 22;
+const RAID_REVENGE_DAYS_MIN = 5;
+const RAID_REVENGE_DAYS_MAX = 15;
+
+/** Tribe-relevant loot for a successful raid. Plains tribes carried
+ *  buffalo robes and pemmican; mountain Shoshone/Bannock kept hides +
+ *  pemmican; Plateau peoples ran salmon racks. */
+function raidLootFor(tribeId: string, rng: Rng): { items: Record<string, number>; flavor: string } {
+  const plains = ['pawnee', 'sioux', 'cheyenne'];
+  const mountain = ['shoshone', 'bannock'];
+  // Default = plateau (nez_perce / cayuse / walla_walla / umatilla).
+  if (plains.includes(tribeId)) {
+    return {
+      items: {
+        buffalo_robe: rng.int(1, 2),
+        raw_hide: rng.int(2, 4),
+        pemmican: rng.int(8, 16)
+      },
+      flavor: 'robes, hides, and a pack of pemmican'
+    };
+  }
+  if (mountain.includes(tribeId)) {
+    return {
+      items: {
+        raw_hide: rng.int(2, 5),
+        pemmican: rng.int(10, 20),
+        moccasins: rng.int(1, 3)
+      },
+      flavor: 'hides, pemmican, and stitched moccasins'
+    };
+  }
+  return {
+    items: {
+      game_meat: rng.int(20, 40),
+      buffalo_robe: rng.int(0, 1),
+      beads: rng.int(2, 6)
+    },
+    flavor: 'salmon from the racks and a few trade goods'
+  };
+}
+
+/** Find a raidable tribe at the current mile — one that's wary or
+ *  hostile (attitude < 41, the neutral threshold). Friendly+ tribes
+ *  weren't raided per the diaries. */
+function pickRaidTarget(state: GameState, rng: Rng): string | null {
+  const here = tribesAtMile(state.location.milesTraveled);
+  const candidates = here.filter((t) => getTribeAttitude(state, t.id) < 41);
+  if (candidates.length === 0) return null;
+  return candidates[rng.int(0, candidates.length - 1)].id;
+}
+
+const raidNatives: CampAction = {
+  id: 'raid_natives',
+  label: 'Raid the native camp',
+  sub: '6 hr · rifle + ammo · 30% theft · 70% counter-attack, all tribes hostile',
+  icon: '🏹',
+  hourCost: 6,
+  availability: (s) => {
+    if (s.date.year < 1845) {
+      return { available: false, reason: 'Trail tensions before 1845 didn\'t run this hot' };
+    }
+    if ((s.inventory.rifle ?? 0) < 1) {
+      return { available: false, reason: 'Need a rifle' };
+    }
+    if ((s.inventory.gunpowder ?? 0) < 5) {
+      return { available: false, reason: 'Need at least 5 gunpowder' };
+    }
+    if ((s.inventory.lead_balls ?? 0) < 5) {
+      return { available: false, reason: 'Need at least 5 lead balls' };
+    }
+    if ((s.inventory.percussion_caps ?? 0) < 5) {
+      return { available: false, reason: 'Need at least 5 percussion caps' };
+    }
+    const here = tribesAtMile(s.location.milesTraveled);
+    if (here.length === 0) {
+      return { available: false, reason: 'No tribal band nearby' };
+    }
+    const raidable = here.some((t) => getTribeAttitude(s, t.id) < 41);
+    if (!raidable) {
+      return { available: false, reason: 'No wary or hostile band to raid — only friendly tribes nearby' };
+    }
+    return { available: true };
+  },
+  apply: (s, rng) => {
+    const targetId = pickRaidTarget(s, rng);
+    if (!targetId) return s; // defensive — availability gates this
+    const target = getTribe(targetId);
+    const here = tribesAtMile(s.location.milesTraveled);
+
+    // Burn 5 gunpowder / 5 lead balls / 5 percussion caps regardless
+    // of outcome — the shots got fired either way.
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      gunpowder: (s.inventory.gunpowder ?? 0) - 5,
+      lead_balls: (s.inventory.lead_balls ?? 0) - 5,
+      percussion_caps: (s.inventory.percussion_caps ?? 0) - 5
+    };
+
+    if (rng.chance(RAID_SUCCESS_CHANCE)) {
+      // Success — bag the loot, but every tribe at this mile sours
+      // (-25 each). Word travels. No revenge-ambush flag on success;
+      // they didn't see who hit them clearly enough to retaliate.
+      const loot = raidLootFor(targetId, rng);
+      for (const [item, qty] of Object.entries(loot.items)) {
+        inventory[item] = (inventory[item] ?? 0) + qty;
+      }
+      let next: GameState = { ...s, inventory, morale: Math.max(0, s.morale - 4) };
+      for (const t of here) {
+        next = adjustTribeAttitude(next, t.id, -25);
+      }
+      return logLine(
+        next,
+        `Hit the ${target.name} camp at first light — took ${loot.flavor}. Got out clean. Morale -4 (the company is uneasy). All nearby tribes -25 attitude.`
+      );
+    }
+
+    // 70% — counter-attack. Pick 1-3 alive adults, dock 8-22 HP each.
+    // ALL nearby tribes crash to hostile (≤20). Set revenge flag.
+    const aliveAdults = s.party.filter((m) => !m.dead && m.kind === 'adult');
+    const victimCount = Math.min(aliveAdults.length, rng.int(1, 3));
+    const shuffled = [...aliveAdults].sort(() => rng.next() - 0.5);
+    const victimIds = new Set(shuffled.slice(0, victimCount).map((m) => m.id));
+
+    const party = s.party.map((m) => {
+      if (!victimIds.has(m.id)) return m;
+      const dmg = rng.int(RAID_PARTY_HP_MIN, RAID_PARTY_HP_MAX);
+      return { ...m, health: Math.max(0, m.health - dmg) };
+    });
+
+    let next: GameState = {
+      ...s,
+      inventory,
+      party,
+      morale: Math.max(0, s.morale - 8),
+      flags: {
+        ...s.flags,
+        _recentRaidDay: s.day,
+        _raidRevengeDay: s.day + rng.int(RAID_REVENGE_DAYS_MIN, RAID_REVENGE_DAYS_MAX)
+      }
+    };
+    for (const t of here) {
+      const current = getTribeAttitude(next, t.id);
+      const target20 = Math.min(current, 20);
+      next = adjustTribeAttitude(next, t.id, target20 - current);
+    }
+    const victimNames = s.party
+      .filter((m) => victimIds.has(m.id))
+      .map((m) => m.name)
+      .join(', ');
+    return logLine(
+      next,
+      `The ${target.name} were waiting. ${victimNames} took wounds in the fighting. Morale -8. Every band in this country is hostile now — they will be looking for the wagon.`
+    );
+  }
+};
+
 /** Registry — order controls UI render order in CampStage. */
 export const CAMP_ACTIONS: readonly CampAction[] = [
   // Morale / comfort
@@ -1159,6 +1336,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   digOut,
   // #313 Gold Rush trail-side activity — 1849+ at western rivers
   panForGold,
+  // #316 Moral-grey — 30/70, only ever a real choice for the desperate
+  raidNatives,
   // Desperation — hidden until starvation
   cannibalism_straws
 ];
@@ -1186,6 +1365,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   dig_well: digWell,
   dig_out: digOut,
   pan_for_gold: panForGold,
+  raid_natives: raidNatives,
   cannibalism_straws
 };
 

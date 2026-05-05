@@ -284,6 +284,12 @@ export const cautiousPersona: Persona = {
     // Cautious skips panning — period: didn't dawdle on speculative
     // money when the calendar was tight. Survival > opportunism.
     return false;
+  },
+  shouldRaid() {
+    // Cautious never raids. Period: emigrant captains who shot first
+    // got their entire company killed (Whitman 1847). The math is
+    // 70% bad even before the revenge ambush.
+    return false;
   }
 };
 
@@ -352,6 +358,12 @@ export const balancedPersona: Persona = {
     // typical emigrant who'd give it an evening at a known creek.
     // Cooldown in canPanForGold prevents weekly spamming.
     return canPanForGold(state);
+  },
+  shouldRaid() {
+    // Balanced never raids — same math as cautious. The bad outcome
+    // is severe (party HP loss + every band hostile + revenge
+    // ambush). No reasonable bot picks this fight.
+    return false;
   }
 };
 
@@ -393,6 +405,13 @@ export const aggressivePersona: Persona = {
     // Period: the desperate-prospector personality, which most often
     // ended up broke or dead.
     return canPanForGold(state);
+  },
+  shouldRaid() {
+    // Even aggressive refuses. The fight isn't aggressive vs.
+    // cautious — it's "do you want every band west of Laramie
+    // hunting you for the next 800 miles?" The 30/70 math is
+    // worse than fording the Snake without a cable.
+    return false;
   }
 };
 
@@ -456,6 +475,12 @@ export const chaosPersona: Persona = {
     if (state.location.terrain !== 'river') return false;
     if (state.location.milesTraveled < 700) return false;
     return rng.chance(0.30);
+  },
+  shouldRaid(_state, rng) {
+    // Chaos rolls 5% — exercises the path so the camp action and
+    // revenge-ambush event get fuzz-tested. The camp action's own
+    // availability gates still cover rifle/ammo/tribe-nearby/year.
+    return rng.chance(0.05);
   }
 };
 

@@ -58,4 +58,11 @@ export interface Persona {
    *  whether to actually do it given those conditions. Cautious skips
    *  (period: didn't dawdle); aggressive always tries; chaos rolls. */
   shouldPan(state: GameState, rng: Rng): boolean;
+  /** Should the party raid a nearby native camp (#316)? Period: a
+   *  rare and ugly choice — every default persona refuses. Surface
+   *  exists for chaos to roll on it occasionally and for future
+   *  named-profile overrides (#287). All gameplay gates (rifle,
+   *  ammo, raidable tribe nearby, year ≥ 1845) live in the camp
+   *  action availability check; persona only gates the *want*. */
+  shouldRaid(state: GameState, rng: Rng): boolean;
 }
