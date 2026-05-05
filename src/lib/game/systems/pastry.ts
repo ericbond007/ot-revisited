@@ -19,6 +19,7 @@
 // 5 lb saleratus for a year-long trip.
 
 import type { GameState } from '../types';
+import type { Rng } from '../rng';
 
 /** Per-pound of flour/cornmeal: how much saleratus a properly leavened
  *  biscuit consumes. Tuned so 1 unit (0.5 lb) lasts a 3-person family
@@ -39,17 +40,29 @@ export interface PastryQualityResult {
   outcome: 'no-pastry' | 'normal' | 'no-saleratus' | 'no-cookware';
 }
 
+/** Probability of "improvised on a hot rock today" bypass when cookware
+ *  is missing. Period: many emigrant diaries record cooking on flat
+ *  rocks, in tin pans, or by burying dough in the embers when proper
+ *  cookware was unavailable. Prevents the no-cookware path from being
+ *  a guaranteed 100% −2 every day — adds variance per Dave's #306
+ *  randomness pattern. */
+export const NO_COOKWARE_IMPROVISE_CHANCE = 0.1;
+
 /** Run once per tick after `applyDailyConsumption`. Reads
  *  `flags._pastryDrawnLb` (set by consumption when flour or cornmeal
  *  was drawn), checks cookware + saleratus, applies the right modifier.
  *  Idempotent: clears the flag at the end so re-runs (mid-tick refactor
  *  safety) don't double-charge.
  *
+ *  When `rng` is provided, no-cookware days roll a small chance to
+ *  improvise (no morale debit). When omitted (legacy callers / tests),
+ *  the deterministic full-debit path runs.
+ *
  *  Out of scope: a "wet firewood / no fire" gate (#143) — if the
  *  party can't light a fire at all, baking is impossible. Folds in
  *  when #143 ships and exposes a "had-fire-tonight" flag the pastry
  *  pass can read. */
-export function applyPastryQuality(state: GameState): PastryQualityResult {
+export function applyPastryQuality(state: GameState, rng?: Rng): PastryQualityResult {
   const drawnLb = (state.flags._pastryDrawnLb as number | undefined) ?? 0;
   if (drawnLb <= 0) {
     // Clear the flag even on no-op so a stale value doesn't carry
@@ -69,9 +82,23 @@ export function applyPastryQuality(state: GameState): PastryQualityResult {
   const flags = { ...state.flags };
   delete (flags as Record<string, unknown>)._pastryDrawnLb;
 
-  // No cookware — can't bake at all. Saleratus is moot. Period: "ate
-  // paste again" — flour-and-water dough fried on a rock or eaten raw.
+  // No cookware — can't bake at all most days. 10% chance to improvise
+  // (period: hot-rock baking, tin pans, ember-buried dough). On miss
+  // path the day is "ate paste again."
   if (!hasCookware) {
+    if (rng && rng.chance(NO_COOKWARE_IMPROVISE_CHANCE)) {
+      return {
+        state: {
+          ...state,
+          flags,
+          eventLog: [
+            ...state.eventLog,
+            { day: state.day, text: 'Improvised cooking on a hot rock — biscuits passable.' }
+          ]
+        },
+        outcome: 'normal'
+      };
+    }
     return {
       state: {
         ...state,

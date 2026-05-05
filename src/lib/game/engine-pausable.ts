@@ -4,6 +4,7 @@ import type { Rng } from './rng';
 import { upgradeState } from './upgrade';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { applyPastryQuality } from './systems/pastry';
+import { rollDailyTheft } from './systems/item-loss';
 import { applyStarvation } from './systems/starvation';
 import { tickWeather } from './systems/weather';
 import { progressConditions } from './systems/conditions';
@@ -150,7 +151,12 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // applyDailyConsumption; consumes saleratus + applies morale modifier
   // when flour/cornmeal eaten. Order: after diet+hot-drinks so daily
   // morale state is settled before the pastry check.
-  s = applyPastryQuality(s).state;
+  s = applyPastryQuality(s, rng).state;
+  // #306 phase 2 — daily theft / pilferage. Bryant 1846 + Hancock
+  // 1852: overnight theft was a small but real worry. Train share-
+  // watch (Bryant 1846 explicit) halves the rate — built into the
+  // helper itself (reads `state.wagonTrain`).
+  s = rollDailyTheft(s, rng).state;
   s = applyDirtyWaterRisk(s, rng);
   s = applyStarvation(s);
   s = tickOxen(s, rng);
