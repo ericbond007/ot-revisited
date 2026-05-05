@@ -388,3 +388,36 @@ export function rollDailyTheft(
     lossLine: text
   };
 }
+
+/** NPC theft mirror — Bryant 1846 documents night-camp theft hitting
+ *  whole companies, not just one wagon. NPC wagons are always in a
+ *  train (this fn only fires from `tickNpcWagon` which only runs in
+ *  the player's train), so the train share-watch halving (0.0025/day)
+ *  always applies. Returns updated wagon + a player-visible log entry
+ *  for bubble-up news ("the Sager family lost coffee overnight"). */
+export function rollNpcTheft(
+  wagon: NpcWagonState,
+  rng: Rng,
+  day: number
+): { wagon: NpcWagonState; playerLog: string | null } {
+  if (wagon.outcome !== 'in-progress') return { wagon, playerLog: null };
+  if (!rng.chance(0.0025)) return { wagon, playerLog: null };
+  const eligible = THEFT_VICTIMS.filter((id) => (wagon.inventory[id] ?? 0) > 0);
+  if (eligible.length === 0) return { wagon, playerLog: null };
+  const id = eligible[rng.int(0, eligible.length - 1)];
+  const have = wagon.inventory[id] ?? 0;
+  const qty = Math.min(have, rng.int(1, 3));
+  const itemLabel = id.replace(/_/g, ' ');
+  return {
+    wagon: {
+      ...wagon,
+      inventory: { ...wagon.inventory, [id]: have - qty },
+      morale: Math.max(0, wagon.morale - 1),
+      eventLog: [
+        ...wagon.eventLog,
+        { day, text: `${qty} ${itemLabel} taken overnight. Morale −1.` }
+      ]
+    },
+    playerLog: `${wagon.name} lost ${qty} ${itemLabel} to overnight theft.`
+  };
+}

@@ -40,6 +40,7 @@ import {
   applyNpcDehydration,
   applyNpcDirtyWaterRisk
 } from './npc-water';
+import { rollNpcTheft } from './item-loss';
 
 /** Inputs the NPC tick needs from the train's shared environment. */
 export interface NpcTickContext {
@@ -416,6 +417,14 @@ export function tickNpcWagon(
   const cannibalResult = maybeCannibalize(next, ctx.day);
   next = cannibalResult.wagon;
   if (cannibalResult.playerLog) playerLogs.push(cannibalResult.playerLog);
+
+  // 7b. Daily theft (#306 phase 2 NPC parity). Period: Bryant 1846
+  // documents overnight theft hitting whole companies. Same rate as
+  // player + train share-watch halving — already 0.0025/day baked in
+  // since NPCs are always in the player's train when ticking.
+  const theftResult = rollNpcTheft(next, rng, ctx.day);
+  next = theftResult.wagon;
+  if (theftResult.playerLog) playerLogs.push(theftResult.playerLog);
 
   // 8. Outcome.
   next = updateOutcome(next);
