@@ -279,6 +279,22 @@ export interface NpcWagonState extends WagonStateLike {
   rations: Rations;
   /** Optional companion dog — parity with the player. */
   dog?: Dog;
+  /** #303e — per-wagon clean water (gallons). Drains daily via
+   *  `applyNpcWaterDrain`, refills via train-water-pool on rest days
+   *  (#303e). Initialized to `waterCap` at generation; v2→v3 save
+   *  migration fills it on legacy saves. */
+  water: number;
+  /** Dirty water (gallons) — drinkable only after boiling. Drinking
+   *  unboiled rolls dysentery / cholera per `applyNpcDirtyWaterRisk`.
+   *  Capped at `waterCap` (shared with clean water). */
+  dirtyWater: number;
+  /** Total water capacity (gallons). Set from wagon model at generation;
+   *  matches the player's `state.resources.waterCap` baseline. */
+  waterCap: number;
+  /** Consecutive dry days — incremented when `water <= 0` at the end
+   *  of `applyNpcDehydration`, reset to 0 on the first wet day. Matches
+   *  the player's `flags._dehydrationDays` shape. */
+  dryDays: number;
 }
 
 export type GameStateFlag =

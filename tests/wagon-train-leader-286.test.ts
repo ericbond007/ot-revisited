@@ -57,7 +57,11 @@ function fakeCompanion(over: Partial<NpcWagonState> & { id: string; leaderProfes
     wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 1500, hasBranBarrel: false },
     eventLog: [],
     outcome: 'in-progress',
-    rations: 'normal'
+    rations: 'normal',
+    water: 30,
+    dirtyWater: 0,
+    waterCap: 30,
+    dryDays: 0
   };
   return { ...base, ...over };
 }

@@ -135,23 +135,33 @@ export interface AdvanceTrainResult {
  *  pause the player and surface a help-or-refuse modal (#288). */
 export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainResult {
   if (!state.wagonTrain) return { state };
+  // #303e — pool the train's clean + dirty water on rest days. Period
+  // reality: Helen Carpenter 1857 documents communal water-sharing at
+  // company camps. Rest day = the wagons cluster, kegs cross-pour.
+  // Travel days drain each wagon independently. Done before tick so
+  // a wagon that was about to dehydrate gets its share first.
+  let prepped: GameState = state;
+  if (!traveled && state.wagonTrain) {
+    prepped = applyTrainWaterPool(state);
+  }
   const ctx: NpcTickContext = {
-    day: state.day,
+    day: prepped.day,
     traveled,
-    pace: state.pace,
-    terrain: state.location.terrain
+    pace: prepped.pace,
+    terrain: prepped.location.terrain,
+    weather: prepped.weather
   };
   const companions: typeof state.wagonTrain.companions = [];
   const playerLogs: { day: number; text: string }[] = [];
   let pendingEvent: GameEvent | undefined;
   let pendingCrisisIdx = -1;
-  for (const c of state.wagonTrain.companions) {
+  for (const c of prepped.wagonTrain!.companions) {
     const wasFood = totalFood(c.inventory);
-    const rng = makeRng(`${c.seed}:${state.day}`);
+    const rng = makeRng(`${c.seed}:${prepped.day}`);
     const result = tickNpcWagon(c, ctx, rng);
     companions.push(result.wagon);
     for (const text of result.playerLogs) {
-      playerLogs.push({ day: state.day, text });
+      playerLogs.push({ day: prepped.day, text });
     }
     // Crisis detection: only fire if a wagon transitioned from
     // having food to having none today. Limit to one crisis per
@@ -180,7 +190,7 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
   // player isn't even asked.
   if (pendingCrisisIdx !== -1) {
     const targetWagon = companions[pendingCrisisIdx];
-    const contributionRng = makeRng(`${targetWagon.id}:${state.day}:contrib`);
+    const contributionRng = makeRng(`${targetWagon.id}:${prepped.day}:contrib`);
     let totalFlour = 0;
     let totalBacon = 0;
     const contributorLogs: string[] = [];
@@ -224,7 +234,7 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
         }
       };
       for (const text of contributorLogs) {
-        playerLogs.push({ day: state.day, text });
+        playerLogs.push({ day: prepped.day, text });
       }
       // Threshold for "the train solved it" — 30 lb of staples is
       // ~6 days for a small family. If the pooled contributions
@@ -233,7 +243,7 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
       const poolTotal = totalFlour + totalBacon;
       if (poolTotal >= 30) {
         playerLogs.push({
-          day: state.day,
+          day: prepped.day,
           text: `${updated[pendingCrisisIdx].name} carried on without your help — the train pooled what it could.`
         });
       } else {
@@ -250,11 +260,11 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
   }
 
   let next: GameState = {
-    ...state,
-    wagonTrain: { ...state.wagonTrain, companions },
+    ...prepped,
+    wagonTrain: { ...prepped.wagonTrain!, companions },
     eventLog: playerLogs.length === 0
-      ? state.eventLog
-      : [...state.eventLog, ...playerLogs]
+      ? prepped.eventLog
+      : [...prepped.eventLog, ...playerLogs]
   };
 
   // #290 — departures. Low-morale wagons roll to leave the train.
@@ -263,12 +273,77 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
   // we don't want a wagon leaving the same tick they bottom out
   // (the player should at least get the chance to react).
   if (!pendingEvent && next.wagonTrain) {
-    const departureRng = makeRng(`${state.seed}:${state.day}:departures`);
+    const departureRng = makeRng(`${prepped.seed}:${prepped.day}:departures`);
     const dep = processDepartures(next, departureRng);
     next = dep.state;
   }
 
   return pendingEvent ? { state: next, pendingEvent } : { state: next };
+}
+
+/** #303e — Pool the player's + companions' clean and dirty water across
+ *  the train, redistributing by alive-soul count. Period reality: Helen
+ *  Carpenter 1857 documents communal water-sharing at company camps —
+ *  wagons cluster, kegs cross-pour, no household lets a neighbor's
+ *  children go thirsty. Only fires on rest days; travel days each
+ *  wagon drains its own keg. Pool respects per-wagon `waterCap` so
+ *  surplus stays with the player keg if NPCs are full. Only counts
+ *  in-progress companions (wiped/arrived/stranded skipped). */
+export function applyTrainWaterPool(state: GameState): GameState {
+  if (!state.wagonTrain) return state;
+  const inProgress = state.wagonTrain.companions.filter(
+    (c) => c.outcome === 'in-progress'
+  );
+  const playerSouls = state.party.filter((m) => !m.dead).length;
+  const totalSouls = inProgress.reduce(
+    (sum, c) => sum + c.party.filter((m) => !m.dead).length,
+    playerSouls
+  );
+  if (totalSouls === 0) return state;
+  const totalClean = inProgress.reduce((s, c) => s + c.water, 0)
+    + state.resources.water;
+  const totalDirty = inProgress.reduce((s, c) => s + c.dirtyWater, 0)
+    + (state.resources.dirtyWater ?? 0);
+  if (totalClean === 0 && totalDirty === 0) return state;
+
+  // Two-pass redistribute: assign each entity its proportional share,
+  // capped at its waterCap. Any excess from cap-clipped entities flows
+  // back into a residual pool that gets spread across uncapped ones.
+  // Single-pass approximation is fine here — caps rarely bind on rest
+  // days at typical fill levels. If they do, residue stays with the
+  // player keg (which has the largest cap by default).
+  const playerShareRatio = playerSouls / totalSouls;
+  const newPlayerWater = Math.min(
+    state.resources.waterCap,
+    Math.round(totalClean * playerShareRatio)
+  );
+  const newPlayerDirty = Math.min(
+    state.resources.waterCap,
+    Math.round(totalDirty * playerShareRatio)
+  );
+  let cleanRemaining = totalClean - newPlayerWater;
+  let dirtyRemaining = totalDirty - newPlayerDirty;
+
+  const remainingSouls = totalSouls - playerSouls;
+  const newCompanions = state.wagonTrain.companions.map((c) => {
+    if (c.outcome !== 'in-progress') return c;
+    const wagonSouls = c.party.filter((m) => !m.dead).length;
+    if (wagonSouls === 0) return c;
+    const ratio = remainingSouls > 0 ? wagonSouls / remainingSouls : 0;
+    const cleanShare = Math.min(c.waterCap, Math.round(cleanRemaining * ratio));
+    const dirtyShare = Math.min(c.waterCap, Math.round(dirtyRemaining * ratio));
+    return { ...c, water: cleanShare, dirtyWater: dirtyShare };
+  });
+
+  return {
+    ...state,
+    resources: {
+      ...state.resources,
+      water: newPlayerWater,
+      dirtyWater: newPlayerDirty
+    },
+    wagonTrain: { ...state.wagonTrain, companions: newCompanions }
+  };
 }
 
 /** Split off from the wagon train — the party continues alone.
