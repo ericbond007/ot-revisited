@@ -14,6 +14,9 @@ import { makeRng } from '../rng';
 import type { GameEvent } from '../content/events';
 import { buildStarvationCrisisEvent } from './npc-crisis-events';
 import { processDepartures } from './npc-departures';
+import { pickFoodRestock } from '../ai/shopping';
+import { getLandmark } from '../content/landmarks';
+import { getPrice } from '../content/prices';
 
 /** True when the party is currently traveling with a wagon train. */
 export function isInTrain(state: GameState): boolean {
@@ -343,6 +346,85 @@ export function applyTrainWaterPool(state: GameState): GameState {
       dirtyWater: newPlayerDirty
     },
     wagonTrain: { ...state.wagonTrain, companions: newCompanions }
+  };
+}
+
+/** #299 — NPC food restock at trading posts. Period reality:
+ *  emigrant households resupplied at every post they could afford
+ *  (Marcy 1859: "the most usual articles purchased at intermediate
+ *  posts… bacon, flour, coffee, sugar, salt"). Without this companion
+ *  wagons starve on a fixed timeline determined only by their starting
+ *  kit + occasional gifts.
+ *
+ *  Per in-progress companion: skip if cash < $10, then call
+ *  `pickFoodRestock` with a 5-day floor / 10-day cap (period: NPC
+ *  households kept tighter buffers than the player can afford). Apply
+ *  the post's `priceMultiplier` symmetrically — Bridger gouges NPCs
+ *  the same way it gouges the player. Each wagon's spend is capped at
+ *  its cash on hand; if the buy list overflows the wallet, items are
+ *  dropped from the back of the priority order until it fits.
+ *
+ *  One per-(landmark, day) flag (`_npcRestockedAt_<id>`) prevents
+ *  re-fire when the player bounces through TownStage. Same pattern as
+ *  captain elections (#285) and crisis re-elections.
+ *
+ *  Logs a single summary line per restocking wagon ("the Sager family
+ *  bought 32 lb flour + 9 lb bacon + 3 lb sugar at Fort Laramie —
+ *  $12.40."). Total summary at the end if any wagon restocked. */
+export function applyNpcPostRestock(state: GameState): GameState {
+  if (!state.wagonTrain) return state;
+  const id = state.location.atLandmarkId;
+  if (!id) return state;
+  const flagKey = `_npcRestockedAt_${id}`;
+  if (state.flags[flagKey]) return state;
+  const here = getLandmark(id);
+  if (here.kind !== 'trading_post') return state;
+  const stock = new Set(here.stock ?? []);
+  if (stock.size === 0) return state;
+  const postMult = here.priceMultiplier ?? 1.0;
+
+  const playerLogs: { day: number; text: string }[] = [];
+  const updated = state.wagonTrain.companions.map((c) => {
+    if (c.outcome !== 'in-progress') return c;
+    if (c.cash < 10) return c;
+    let buys = pickFoodRestock(
+      { wagon: c, stock },
+      { daysFloor: 5, daysCap: 10 }
+    );
+    if (buys.length === 0) return c;
+    // Cash gate: drop tail-end (lowest priority) items until total fits.
+    let cost = buys.reduce(
+      (sum, b) => sum + getPrice(b.item).buy * b.qty * postMult,
+      0
+    );
+    while (cost > c.cash && buys.length > 0) {
+      const dropped = buys.pop()!;
+      cost -= getPrice(dropped.item).buy * dropped.qty * postMult;
+    }
+    if (buys.length === 0) return c;
+    const inv = { ...c.inventory };
+    for (const b of buys) {
+      inv[b.item] = (inv[b.item] ?? 0) + b.qty;
+    }
+    const summary = buys
+      .map((b) => `${b.qty} lb ${b.item.replace(/_/g, ' ')}`)
+      .join(' + ');
+    playerLogs.push({
+      day: state.day,
+      text: `${c.name} bought ${summary} at ${here.name} — $${cost.toFixed(2)}.`
+    });
+    return { ...c, inventory: inv, cash: Math.round(c.cash - cost) };
+  });
+
+  if (playerLogs.length === 0) {
+    // Mark the flag anyway so we don't re-evaluate every TownStage hit.
+    return { ...state, flags: { ...state.flags, [flagKey]: true } };
+  }
+  return {
+    ...state,
+    flags: { ...state.flags, [flagKey]: true },
+    wagonTrain: { ...state.wagonTrain, companions: updated },
+    eventLog: [...state.eventLog, ...playerLogs]
   };
 }
 

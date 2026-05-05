@@ -102,25 +102,62 @@ describe('#303a — pickEquipmentRestock', () => {
   });
 });
 
-describe('#303a — pickFoodRestock (NPC #299 consumer)', () => {
-  it('buys flour / bacon / beans / jerky when below thresholds', () => {
-    const buys = pickFoodRestock(input({}, ['flour', 'bacon', 'beans', 'jerky']));
-    expect(buys).toContainEqual({ item: 'flour', qty: 200 });
-    expect(buys).toContainEqual({ item: 'bacon', qty: 60 });
-    expect(buys).toContainEqual({ item: 'beans', qty: 40 });
-    expect(buys).toContainEqual({ item: 'jerky', qty: 20 });
+describe('#303a — pickFoodRestock (NPC #299 consumer, period-faithful basket)', () => {
+  it('buys the Marcy 5 + beans (period basket) at default 7-day floor / 60-day cap', () => {
+    // 1-adult party, default opts: cap = 60 days × rate × 1 eater
+    const buys = pickFoodRestock(
+      input({}, ['flour', 'bacon', 'sugar', 'beans', 'coffee', 'salt'])
+    );
+    // flour: 60 × 1.0 = 60 lb cap
+    expect(buys).toContainEqual({ item: 'flour', qty: 60 });
+    // bacon: 60 × 0.3 = 18 lb cap
+    expect(buys).toContainEqual({ item: 'bacon', qty: 18 });
+    // sugar: 60 × 0.1 = 6 lb cap
+    expect(buys).toContainEqual({ item: 'sugar', qty: 6 });
+    // beans: 60 × 0.15 = 9 lb cap
+    expect(buys).toContainEqual({ item: 'beans', qty: 9 });
+    // coffee: 60 × 0.05 = 3 lb cap
+    expect(buys).toContainEqual({ item: 'coffee', qty: 3 });
+    // salt: 60 × 0.02 ≈ 1 lb cap (rounded)
+    expect(buys).toContainEqual({ item: 'salt', qty: 1 });
   });
 
-  it('skips flour at or above 300 lb cap', () => {
-    expect(pickFoodRestock(input({ inventory: { flour: 300 } }, ['flour']))).toEqual([]);
-    expect(pickFoodRestock(input({ inventory: { flour: 350 } }, ['flour']))).toEqual([]);
+  it('respects custom days-floor / days-cap (NPC #299 uses 5/10)', () => {
+    // 5-day floor / 10-day cap, 1 eater. flour cap = 10 × 1.0 = 10 lb.
+    // floor = 5 × 1.0 = 5 lb. With have=0 (< 5), buy to cap.
+    const buys = pickFoodRestock(
+      input({}, ['flour']),
+      { daysFloor: 5, daysCap: 10 }
+    );
+    expect(buys).toEqual([{ item: 'flour', qty: 10 }]);
   });
 
-  it('does not include hunter ammo or grain (those are pickHunterRestock)', () => {
-    const buys = pickFoodRestock(input({}, ['flour', 'gunpowder', 'salt', 'grain']));
-    expect(buys.some((b) => b.item === 'gunpowder')).toBe(false);
-    expect(buys.some((b) => b.item === 'salt')).toBe(false);
-    expect(buys.some((b) => b.item === 'grain')).toBe(false);
+  it('scales by alive-eater count', () => {
+    const w = wagon({ party: [adult(), adult({ id: 'm2' }), adult({ id: 'm3' })] });
+    const buys = pickFoodRestock({ wagon: w, stock: new Set(['flour']) });
+    // 60 × 1.0 × 3 eaters = 180 lb
+    expect(buys).toEqual([{ item: 'flour', qty: 180 }]);
+  });
+
+  it('skips items already at or above floor', () => {
+    // flour at 8 lb (above 7-day default floor of 7) — skip
+    expect(pickFoodRestock(input({ inventory: { flour: 8 } }, ['flour']))).toEqual([]);
+    // flour at 6 lb (below floor 7) — buy to cap 60
+    expect(pickFoodRestock(input({ inventory: { flour: 6 } }, ['flour'])))
+      .toEqual([{ item: 'flour', qty: 54 }]);
+  });
+
+  it('drops jerky / hardtack / dried_fruit (period: not post-restock items)', () => {
+    const buys = pickFoodRestock(
+      input({}, ['jerky', 'hardtack', 'dried_fruit', 'cornmeal'])
+    );
+    expect(buys).toEqual([]);
+  });
+
+  it('includes salt (universal staple, not hunter-only)', () => {
+    const farmer: PartyMember = adult({ profession: 'farmer' });
+    const buys = pickFoodRestock(input({ party: [farmer] }, ['salt']));
+    expect(buys.some((b) => b.item === 'salt')).toBe(true);
   });
 });
 
@@ -135,15 +172,16 @@ describe('#303a — pickHunterRestock', () => {
     expect(buys).toEqual([]);
   });
 
-  it('buys ammo + salt with a live Hunter', () => {
+  it('buys ammo with a live Hunter (salt moved to pickFoodRestock #299)', () => {
     const hunter: PartyMember = adult({ id: 'h', profession: 'hunter' });
     const buys = pickHunterRestock(
-      input({ party: [hunter] }, ['gunpowder', 'lead_balls', 'percussion_caps', 'salt'])
+      input({ party: [hunter] }, ['gunpowder', 'lead_balls', 'percussion_caps'])
     );
     expect(buys).toContainEqual({ item: 'gunpowder', qty: 30 });
     expect(buys).toContainEqual({ item: 'lead_balls', qty: 30 });
     expect(buys).toContainEqual({ item: 'percussion_caps', qty: 30 });
-    expect(buys).toContainEqual({ item: 'salt', qty: 10 });
+    // salt no longer in hunter slice — universal cooking staple
+    expect(buys.some((b) => b.item === 'salt')).toBe(false);
   });
 
   it('skips ammo when Hunter is dead', () => {

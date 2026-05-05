@@ -22,7 +22,7 @@ import { hasLivePreacher } from './professions/predicates';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
-import { advanceTrain } from './systems/wagon-train';
+import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
 import { maybeElectCaptain, forceElection } from './systems/wagon-train-elections';
 import type { CrisisVoteReason } from './systems/wagon-train-elections';
 import type { GameEvent } from './content/events';
@@ -169,6 +169,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // the day's log.
   if (arrivedAtLandmark && s.wagonTrain) {
     s = maybeElectCaptain(s, rng).state;
+    // #299 — NPC food restock at trading posts. Per-(landmark, day)
+    // flag inside applyNpcPostRestock prevents re-fire when bouncing
+    // through TownStage; gates internally on landmark.kind ===
+    // 'trading_post'.
+    s = applyNpcPostRestock(s);
   }
 
   // Landmark arrival events fire when we cross a scenic landmark (one

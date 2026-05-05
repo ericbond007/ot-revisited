@@ -75,35 +75,74 @@ export function pickEquipmentRestock({ wagon, stock }: ShoppingInput): BuyOrder[
   return buys;
 }
 
-/** Food staples: flour, bacon, beans, jerky. v8 trace showed leaving
- *  Bridger at 200 lb flour and starving before Boise; cap pushed to
- *  300 to cover the long Bridger→Hall stretch. Quantities sized for
- *  a 3-person party — scale at the call site for unusually large
- *  parties. THIS is the slice #299 NPC post-restock will call. */
-export function pickFoodRestock({ wagon, stock }: ShoppingInput): BuyOrder[] {
+/** Daily consumption rates (lb / soul / day) used to size restock targets.
+ *  Sourced from `docs/historical-pass/08-post-restock.md` — Marcy 1859,
+ *  Bryant 1846, Carpenter 1857. Period basket = the "Marcy 5" plus
+ *  beans as a lower-priority addition. Jerky deliberately excluded —
+ *  emigrants made their own from hunts; no diary records jerky as a
+ *  post purchase. Hardtack / dried_fruit / cornmeal also excluded
+ *  (outfitter-only or regional). */
+const FOOD_RATES_LB_PER_DAY: Record<string, number> = {
+  flour:  1.0,
+  bacon:  0.3,
+  sugar:  0.1,
+  beans:  0.15,
+  coffee: 0.05,
+  salt:   0.02
+};
+
+/** Food restock priority order — matches Marcy 1859's enumeration
+ *  ("bacon, flour, coffee, sugar, salt") plus beans last as period-low
+ *  priority (most parties shipped beans from home, rarely restocked). */
+const FOOD_PRIORITY = ['flour', 'bacon', 'sugar', 'beans', 'coffee', 'salt'] as const;
+
+export interface FoodRestockOpts {
+  /** Days-per-soul "low" floor — only restock when current food (in
+   *  this category) is below this. Default 7 — period emigrants
+   *  considered a week's food the trigger to top off. */
+  daysFloor?: number;
+  /** Days-per-soul ceiling — buy up to this much, no further. Default 60.
+   *  Period emigrants like Carpenter 1857 aimed for 30-60 days at major
+   *  resupply, sized for the longest inter-post stretch (Bridger→Hall
+   *  is ~22 mountain days). Bot uses default; NPC #299 callers pass a
+   *  tighter 5/10 floor/cap reflecting period-realistic NPC household
+   *  cash constraints. */
+  daysCap?: number;
+}
+
+/** Food staples — the period-faithful "Marcy 5" basket: flour, bacon,
+ *  coffee, sugar, salt — plus beans (lower priority). All scaled by
+ *  alive-soul count × days. Trigger: any item below the floor.
+ *  Buy quantity: fill to the cap. THIS is the slice #299 NPC post-restock
+ *  calls (with `{ daysFloor: 5, daysCap: 10 }`). Player-bot uses defaults. */
+export function pickFoodRestock(
+  { wagon, stock }: ShoppingInput,
+  opts: FoodRestockOpts = {}
+): BuyOrder[] {
   const inv = wagon.inventory;
+  const eaters = aliveCount(wagon);
+  const daysFloor = opts.daysFloor ?? 7;
+  const daysCap = opts.daysCap ?? 60;
   const buys: BuyOrder[] = [];
-  if (stock.has('flour') && (inv.flour ?? 0) < 300) {
-    buys.push({ item: 'flour', qty: 200 - (inv.flour ?? 0) });
-  }
-  if (stock.has('bacon') && (inv.bacon ?? 0) < 80) {
-    buys.push({ item: 'bacon', qty: 60 - (inv.bacon ?? 0) });
-  }
-  if (stock.has('beans') && (inv.beans ?? 0) < 50) {
-    buys.push({ item: 'beans', qty: 40 - (inv.beans ?? 0) });
-  }
-  if (stock.has('jerky') && (inv.jerky ?? 0) < 30) {
-    buys.push({ item: 'jerky', qty: 20 - (inv.jerky ?? 0) });
+  for (const item of FOOD_PRIORITY) {
+    if (!stock.has(item)) continue;
+    const rate = FOOD_RATES_LB_PER_DAY[item];
+    const have = inv[item] ?? 0;
+    const floor = Math.max(1, Math.round(rate * eaters * daysFloor));
+    if (have >= floor) continue;
+    const cap = Math.max(floor, Math.round(rate * eaters * daysCap));
+    const qty = cap - have;
+    if (qty > 0) buys.push({ item, qty });
   }
   return buys;
 }
 
 /** Hunter-conditional restock: ammo (gunpowder / lead_balls /
- *  percussion_caps), salt for fresh-meat preservation (#122), and
- *  grain for ox-feed during poor grazing. Period: blacksmith was the
- *  emigrant's value-multiplier on long stretches; same shape with
- *  hunter and ammo. Only fires when a Hunter is alive on the wagon —
- *  non-hunter wagons skip these even when stocked. */
+ *  percussion_caps) and grain for ox-feed during poor grazing.
+ *  Salt was here pre-#299; moved to `pickFoodRestock` since period
+ *  reality is that every household carried it (cooking + occasional
+ *  meat curing), not just hunter-led wagons. Only fires when a Hunter
+ *  is alive — non-hunter wagons skip ammo even when stocked. */
 export function pickHunterRestock({ wagon, stock }: ShoppingInput): BuyOrder[] {
   const inv = wagon.inventory;
   const buys: BuyOrder[] = [];
@@ -119,9 +158,6 @@ export function pickHunterRestock({ wagon, stock }: ShoppingInput): BuyOrder[] {
   }
   if (stock.has('percussion_caps') && (inv.percussion_caps ?? 0) < 30) {
     buys.push({ item: 'percussion_caps', qty: 30 - (inv.percussion_caps ?? 0) });
-  }
-  if (stock.has('salt') && (inv.salt ?? 0) < 10) {
-    buys.push({ item: 'salt', qty: 10 - (inv.salt ?? 0) });
   }
   return buys;
 }
