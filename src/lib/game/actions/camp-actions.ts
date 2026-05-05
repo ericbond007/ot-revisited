@@ -56,7 +56,8 @@ export type CampActionId =
   | 'wash_clothes'
   | 'press_cheese'
   | 'make_soap'
-  | 'cannibalism_straws';
+  | 'cannibalism_straws'
+  | 'pan_for_gold';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -1070,6 +1071,62 @@ const cannibalism_straws: CampAction = {
   }
 };
 
+// --- #313 Panning for gold ---
+// Period anchor: Goldsborough Bruff 1849, James Wilkins 1849, John
+// Wood 1850. Emigrants on the trail panned **opportunistically** at
+// known-gold creeks (Sweetwater, Bear River, Snake corridor, Black
+// Hills along the Oregon Trail). Mostly unsuccessful — period yields
+// were specks/dust, occasional small flakes worth a few dollars.
+// The big finds happened at the California destination, not en route.
+//
+// Gate: river terrain + miles ≥ 700 (post-Independence Rock /
+// Sweetwater country onward — eastern Kansas/Nebraska creeks were
+// not gold-bearing) + year ≥ 1849 (post-discovery awareness; emigrants
+// pre-1849 didn't know to look). 3hr cost.
+//
+// Period yields: ~5% chance of any gold; 80% of those are dust ($1-3
+// — Bruff 1849: "a few flakes worth perhaps a dollar — the company
+// felt rich"); 20% small flake ($5-15).
+const panForGold: CampAction = {
+  id: 'pan_for_gold',
+  label: 'Pan for gold at the creek',
+  sub: '3 hr · river only · 1849+ · period yield is mostly nothing',
+  icon: '⚒️',
+  hourCost: 3,
+  availability: (s) => {
+    if (s.date.year < 1849) {
+      return { available: false, reason: 'Gold rush news hasn\'t reached the trail yet (1849+)' };
+    }
+    if (s.location.terrain !== 'river') {
+      return { available: false, reason: 'Need a creek or river to pan in' };
+    }
+    if (s.location.milesTraveled < 700) {
+      return { available: false, reason: 'Not gold country yet — try the western rivers' };
+    }
+    return { available: true };
+  },
+  apply: (s, rng) => {
+    if (!rng.chance(0.05)) {
+      return logLine(
+        s,
+        'Spent the afternoon panning at the creek — washed gravel for hours and got nothing.'
+      );
+    }
+    if (rng.chance(0.8)) {
+      const value = rng.int(1, 3);
+      return logLine(
+        { ...s, cash: s.cash + value },
+        `Panned a few specks of dust — about $${value}. The company felt rich for a moment.`
+      );
+    }
+    const value = rng.int(5, 15);
+    return logLine(
+      { ...s, cash: s.cash + value },
+      `Pulled a small flake from the gravel — worth perhaps $${value}.`
+    );
+  }
+};
+
 /** Registry — order controls UI render order in CampStage. */
 export const CAMP_ACTIONS: readonly CampAction[] = [
   // Morale / comfort
@@ -1100,6 +1157,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   // Shovel work (gated on having a shovel)
   digWell,
   digOut,
+  // #313 Gold Rush trail-side activity — 1849+ at western rivers
+  panForGold,
   // Desperation — hidden until starvation
   cannibalism_straws
 ];
@@ -1126,6 +1185,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   boil_water: boilWater,
   dig_well: digWell,
   dig_out: digOut,
+  pan_for_gold: panForGold,
   cannibalism_straws
 };
 

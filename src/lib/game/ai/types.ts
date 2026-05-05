@@ -53,4 +53,9 @@ export interface Persona {
    *  when the keg is heading toward empty AND off-desert AND we have
    *  the means to boil (doctor or post-1854). */
   shouldFindWater(state: GameState, rng: Rng): boolean;
+  /** Should the party spend a half-day panning for gold (#313)? Gates
+   *  on river terrain + miles ≥ 700 + year ≥ 1849; persona decides
+   *  whether to actually do it given those conditions. Cautious skips
+   *  (period: didn't dawdle); aggressive always tries; chaos rolls. */
+  shouldPan(state: GameState, rng: Rng): boolean;
 }
