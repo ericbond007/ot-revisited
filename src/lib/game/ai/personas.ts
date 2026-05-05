@@ -290,6 +290,12 @@ export const cautiousPersona: Persona = {
     // got their entire company killed (Whitman 1847). The math is
     // 70% bad even before the revenge ambush.
     return false;
+  },
+  shouldStealFromTrain() {
+    // Cautious never steals — the 50% caught outcome means
+    // banishment, which on the trail meant death. The trade is bad
+    // even at 100% reward.
+    return false;
   }
 };
 
@@ -364,6 +370,12 @@ export const balancedPersona: Persona = {
     // is severe (party HP loss + every band hostile + revenge
     // ambush). No reasonable bot picks this fight.
     return false;
+  },
+  shouldStealFromTrain() {
+    // Balanced never steals from the company — same expected-value
+    // math, and trains are a survival multiplier (#290 departures
+    // hurt). Burning the whole train for one whiskey isn't balanced.
+    return false;
   }
 };
 
@@ -411,6 +423,11 @@ export const aggressivePersona: Persona = {
     // cautious — it's "do you want every band west of Laramie
     // hunting you for the next 800 miles?" The 30/70 math is
     // worse than fording the Snake without a cable.
+    return false;
+  },
+  shouldStealFromTrain() {
+    // Aggressive doesn't burn the company down for a sack of
+    // sugar. Hoarding ≠ thieving from the people you travel with.
     return false;
   }
 };
@@ -481,6 +498,16 @@ export const chaosPersona: Persona = {
     // revenge-ambush event get fuzz-tested. The camp action's own
     // availability gates still cover rifle/ammo/tribe-nearby/year.
     return rng.chance(0.05);
+  },
+  shouldStealFromTrain(state, rng) {
+    // Chaos rolls 3% — fuzz-cover so the catch + departure cascade
+    // gets exercised in bot runs. Availability gate still requires
+    // an actual wagon train with live companions.
+    if (!state.wagonTrain) return false;
+    if (state.wagonTrain.companions.filter((c) => c.outcome === 'in-progress').length === 0) {
+      return false;
+    }
+    return rng.chance(0.03);
   }
 };
 

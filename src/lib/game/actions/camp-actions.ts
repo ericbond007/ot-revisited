@@ -60,7 +60,8 @@ export type CampActionId =
   | 'make_soap'
   | 'cannibalism_straws'
   | 'pan_for_gold'
-  | 'raid_natives';
+  | 'raid_natives'
+  | 'take_from_train';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -1304,6 +1305,132 @@ const raidNatives: CampAction = {
   }
 };
 
+// --- #314 Take from the train (moral-grey, banishment stakes) ---
+// Period anchor: Bryant 1846 (Russell Party banished a flour-thief),
+// Sage 1846 ("man caught taking from another's wagon was given his
+// horse, his rifle, and told to ride. Ten miles before the next camp,
+// he was found dead"), Frizzell 1852 (Hancock company expelled a
+// thief "with no provisions, no rifle"). Within a tight-knit emigrant
+// company, the social cost of getting caught was effectively a death
+// sentence.
+//
+// Mechanic: 50% caught — every companion's morale drops -20, which
+// the existing #290 departure pipeline reads (threshold 30) and
+// surfaces as departures over the next several days. Player morale
+// -15. Sets `_caughtStealingDay` flag.
+// 35% small grab — sugar/whiskey/tobacco off the wagon next door.
+// 15% bigger grab — cash $20-40 OR luxury item (silver tea service,
+// china tea set, fiddle, cookware).
+//
+// Persona surface: `Persona.shouldStealFromTrain` — every default
+// persona refuses (banishment was death). Chaos rolls 3% to fuzz the
+// path. Future named profiles (#287) like "drinker" / "gambler" can
+// override.
+const STEAL_CAUGHT_CHANCE = 0.50;
+const STEAL_SMALL_CHANCE = 0.35;   // 0.50 + 0.35 = 0.85; 0.15 remainder = bigger grab
+const STEAL_COMPANION_MORALE = -20;
+const STEAL_PLAYER_MORALE_CAUGHT = -15;
+const STEAL_PLAYER_MORALE_SUCCESS = -3; // small guilt morale debit even on a win
+
+const SMALL_GRAB_TABLE: Array<{ item: string; min: number; max: number; flavor: string }> = [
+  { item: 'sugar',   min: 3, max: 8, flavor: 'a sack of sugar' },
+  { item: 'whiskey', min: 1, max: 2, flavor: 'a bottle of whiskey' },
+  { item: 'tobacco', min: 2, max: 5, flavor: 'plugs of tobacco' },
+  { item: 'coffee',  min: 2, max: 5, flavor: 'a tin of coffee' },
+  { item: 'bacon',   min: 4, max: 8, flavor: 'a slab of bacon' }
+];
+
+const BIGGER_GRAB_TABLE: Array<
+  | { kind: 'cash'; min: number; max: number; flavor: string }
+  | { kind: 'item'; item: string; flavor: string }
+> = [
+  { kind: 'cash', min: 20, max: 40, flavor: 'a coin purse' },
+  { kind: 'item', item: 'silver_tea_service', flavor: "a wagon's silver tea service" },
+  { kind: 'item', item: 'china_tea_set',      flavor: 'a packed china tea set' },
+  { kind: 'item', item: 'fiddle',             flavor: 'a fiddle in its case' },
+  { kind: 'item', item: 'cookware',           flavor: 'a complete set of cookware' }
+];
+
+const takeFromTrain: CampAction = {
+  id: 'take_from_train',
+  label: 'Take from the train',
+  sub: '3 hr · wagon train only · 50% caught (banishment) · 35% small · 15% bigger',
+  icon: '🥷',
+  hourCost: 3,
+  hidden: (s) => !s.wagonTrain
+    || s.wagonTrain.companions.filter((c) => c.outcome === 'in-progress').length === 0,
+  availability: (s) => {
+    if (!s.wagonTrain) return { available: false, reason: 'Only with a wagon train' };
+    const live = s.wagonTrain.companions.filter((c) => c.outcome === 'in-progress');
+    if (live.length === 0) return { available: false, reason: 'No companions left to take from' };
+    return { available: true };
+  },
+  apply: (s, rng) => {
+    if (!s.wagonTrain) return s; // defensive — availability gates this
+    const live = s.wagonTrain.companions.filter((c) => c.outcome === 'in-progress');
+    if (live.length === 0) return s;
+    const targetIdx = rng.int(0, live.length - 1);
+    const target = live[targetIdx];
+
+    const roll = rng.next();
+    if (roll < STEAL_CAUGHT_CHANCE) {
+      // Caught — every companion drops -20 morale, player -15, flag set.
+      // Departure pipeline will pick this up over the next few days.
+      const updatedCompanions = s.wagonTrain.companions.map((c) =>
+        c.outcome === 'in-progress'
+          ? { ...c, morale: Math.max(0, c.morale + STEAL_COMPANION_MORALE) }
+          : c
+      );
+      const next: GameState = {
+        ...s,
+        wagonTrain: { ...s.wagonTrain, companions: updatedCompanions },
+        morale: Math.max(0, s.morale + STEAL_PLAYER_MORALE_CAUGHT),
+        flags: { ...s.flags, _caughtStealingDay: s.day }
+      };
+      return logLine(
+        next,
+        `Caught with your hand in the ${target.name} wagon — the captain raised the camp. Word will be at every fire by morning. Morale -15; the train turns cold.`
+      );
+    }
+
+    if (roll < STEAL_CAUGHT_CHANCE + STEAL_SMALL_CHANCE) {
+      // Small grab — pick a small-table item.
+      const tmpl = SMALL_GRAB_TABLE[rng.int(0, SMALL_GRAB_TABLE.length - 1)];
+      const qty = rng.int(tmpl.min, tmpl.max);
+      const inventory: Record<string, number> = {
+        ...s.inventory,
+        [tmpl.item]: (s.inventory[tmpl.item] ?? 0) + qty
+      };
+      return logLine(
+        { ...s, inventory, morale: Math.max(0, s.morale + STEAL_PLAYER_MORALE_SUCCESS) },
+        `Slipped ${tmpl.flavor} (${qty}) from the ${target.name} wagon under cover of dark. The company is none the wiser. Morale -3 (a quiet guilt).`
+      );
+    }
+
+    // Bigger grab — cash or luxury item.
+    const big = BIGGER_GRAB_TABLE[rng.int(0, BIGGER_GRAB_TABLE.length - 1)];
+    if (big.kind === 'cash') {
+      const amount = rng.int(big.min, big.max);
+      return logLine(
+        {
+          ...s,
+          cash: s.cash + amount,
+          morale: Math.max(0, s.morale + STEAL_PLAYER_MORALE_SUCCESS)
+        },
+        `Lifted ${big.flavor} from a coat slung over the ${target.name} wagonbox — $${amount}. The owner will think it slipped in the brush. Morale -3.`
+      );
+    }
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      [big.item]: (s.inventory[big.item] ?? 0) + 1
+    };
+    return logLine(
+      { ...s, inventory, morale: Math.max(0, s.morale + STEAL_PLAYER_MORALE_SUCCESS) },
+      `Took ${big.flavor} from the ${target.name} wagon. They'll notice in a day or two — by then the company has been on the move. Morale -3.`
+    );
+  }
+};
+
 /** Registry — order controls UI render order in CampStage. */
 export const CAMP_ACTIONS: readonly CampAction[] = [
   // Morale / comfort
@@ -1338,6 +1465,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   panForGold,
   // #316 Moral-grey — 30/70, only ever a real choice for the desperate
   raidNatives,
+  // #314 Theft from the company — hidden until you're in a train
+  takeFromTrain,
   // Desperation — hidden until starvation
   cannibalism_straws
 ];
@@ -1366,6 +1495,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   dig_out: digOut,
   pan_for_gold: panForGold,
   raid_natives: raidNatives,
+  take_from_train: takeFromTrain,
   cannibalism_straws
 };
 
