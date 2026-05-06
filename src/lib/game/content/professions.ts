@@ -59,10 +59,18 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     id: 'doctor',
     name: 'Doctor',
     bonusSummary: 'Conditions deal 30% less daily damage. Unlocks water boiling pre-1854.',
+    // #275 v10 — period-realistic doctor's chest, layered on top of the
+    // BASE_KIT family chest. Marcy 1859 spec for a working medical
+    // practitioner on the trail: roughly 2× the family allotment of
+    // each major drug. Total chest with BASE: 12 quinine, 8 calomel,
+    // 6 laudanum, 6 paregoric, 4 Dover's powder, 14 bandages.
     starterGear: [
-      { item: 'quinine', qty: 2 },
+      { item: 'quinine', qty: 8 },
+      { item: 'calomel', qty: 6 },
       { item: 'laudanum', qty: 4 },
-      { item: 'bandages', qty: 4 }
+      { item: 'paregoric', qty: 4 },
+      { item: 'dovers_powder', qty: 4 },
+      { item: 'bandages', qty: 6 }
     ],
     charisma: 3
   },

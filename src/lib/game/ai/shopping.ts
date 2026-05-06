@@ -195,16 +195,20 @@ export function pickRepairRestock({ wagon, stock }: ShoppingInput): BuyOrder[] {
  *  Period: emigrants who could afford it stocked at every major post
  *  — quinine for cholera/typhoid, bandages for injury, laudanum for
  *  pain, dover's powder for diarrhea, calomel/paregoric for dysentery,
- *  epsom salts for general purgative. */
+ *  epsom salts for general purgative.
+ *  #275 v10 — floors calibrated to Marcy 1859: a 5-person family on a
+ *  6-month journey carried 30-60 doses of each major drug. The pre-v10
+ *  floors of 3-4 were a fraction of period reality and the bot ran the
+ *  chest dry by month 3, trapping it in chronic-disease rest cycles. */
 export function pickMedicineRestock({ wagon, stock }: ShoppingInput): BuyOrder[] {
   const inv = wagon.inventory;
   const buys: BuyOrder[] = [];
-  if (stock.has('quinine') && (inv.quinine ?? 0) < 4) buys.push({ item: 'quinine', qty: 4 - (inv.quinine ?? 0) });
-  if (stock.has('bandages') && (inv.bandages ?? 0) < 4) buys.push({ item: 'bandages', qty: 4 - (inv.bandages ?? 0) });
-  if (stock.has('laudanum') && (inv.laudanum ?? 0) < 3) buys.push({ item: 'laudanum', qty: 3 - (inv.laudanum ?? 0) });
-  if (stock.has('dovers_powder') && (inv.dovers_powder ?? 0) < 3) buys.push({ item: 'dovers_powder', qty: 3 - (inv.dovers_powder ?? 0) });
-  if (stock.has('calomel') && (inv.calomel ?? 0) < 3) buys.push({ item: 'calomel', qty: 3 - (inv.calomel ?? 0) });
-  if (stock.has('paregoric') && (inv.paregoric ?? 0) < 3) buys.push({ item: 'paregoric', qty: 3 - (inv.paregoric ?? 0) });
+  if (stock.has('quinine') && (inv.quinine ?? 0) < 10) buys.push({ item: 'quinine', qty: 10 - (inv.quinine ?? 0) });
+  if (stock.has('bandages') && (inv.bandages ?? 0) < 8) buys.push({ item: 'bandages', qty: 8 - (inv.bandages ?? 0) });
+  if (stock.has('laudanum') && (inv.laudanum ?? 0) < 6) buys.push({ item: 'laudanum', qty: 6 - (inv.laudanum ?? 0) });
+  if (stock.has('dovers_powder') && (inv.dovers_powder ?? 0) < 4) buys.push({ item: 'dovers_powder', qty: 4 - (inv.dovers_powder ?? 0) });
+  if (stock.has('calomel') && (inv.calomel ?? 0) < 6) buys.push({ item: 'calomel', qty: 6 - (inv.calomel ?? 0) });
+  if (stock.has('paregoric') && (inv.paregoric ?? 0) < 5) buys.push({ item: 'paregoric', qty: 5 - (inv.paregoric ?? 0) });
   if (stock.has('epsom_salts') && (inv.epsom_salts ?? 0) < 3) buys.push({ item: 'epsom_salts', qty: 3 - (inv.epsom_salts ?? 0) });
   if (stock.has('dried_fruit') && (inv.dried_fruit ?? 0) < 5) buys.push({ item: 'dried_fruit', qty: 5 - (inv.dried_fruit ?? 0) });
   return buys;

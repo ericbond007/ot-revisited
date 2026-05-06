@@ -247,12 +247,13 @@ describe('#303a — pickMedicineRestock', () => {
         'calomel', 'paregoric', 'epsom_salts', 'dried_fruit'
       ])
     );
-    expect(buys).toContainEqual({ item: 'quinine', qty: 4 });
-    expect(buys).toContainEqual({ item: 'bandages', qty: 4 });
-    expect(buys).toContainEqual({ item: 'laudanum', qty: 3 });
-    expect(buys).toContainEqual({ item: 'dovers_powder', qty: 3 });
-    expect(buys).toContainEqual({ item: 'calomel', qty: 3 });
-    expect(buys).toContainEqual({ item: 'paregoric', qty: 3 });
+    // #275 v10 — Marcy 1859-calibrated floors (was 4/4/3/3/3/3/3/5).
+    expect(buys).toContainEqual({ item: 'quinine', qty: 10 });
+    expect(buys).toContainEqual({ item: 'bandages', qty: 8 });
+    expect(buys).toContainEqual({ item: 'laudanum', qty: 6 });
+    expect(buys).toContainEqual({ item: 'dovers_powder', qty: 4 });
+    expect(buys).toContainEqual({ item: 'calomel', qty: 6 });
+    expect(buys).toContainEqual({ item: 'paregoric', qty: 5 });
     expect(buys).toContainEqual({ item: 'epsom_salts', qty: 3 });
     expect(buys).toContainEqual({ item: 'dried_fruit', qty: 5 });
   });
@@ -260,7 +261,7 @@ describe('#303a — pickMedicineRestock', () => {
   it('not gated on profession — any wagon can buy meds', () => {
     const farmer: PartyMember = adult({ profession: 'farmer' });
     const buys = pickMedicineRestock(input({ party: [farmer] }, ['quinine']));
-    expect(buys).toEqual([{ item: 'quinine', qty: 4 }]);
+    expect(buys).toEqual([{ item: 'quinine', qty: 10 }]);
   });
 });
 
