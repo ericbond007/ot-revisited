@@ -54,7 +54,7 @@ export interface Landmark {
   // Town services available at this post (#152). Hubs (Laramie, Hall,
   // Dalles) carry the full menu; outposts and road ranches carry
   // subsets. Empty / omitted = post is trade-only.
-  services?: readonly ('blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide' | 'bath_house')[];
+  services?: readonly ('blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide' | 'bath_house' | 'ox_swap')[];
   // Per-post inn rate override (USD/person/night). Defaults to the
   // global INN_DOLLARS_PER_PERSON_PER_NIGHT — only set on luxury posts.
   innNightlyRate?: number;
@@ -258,7 +258,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // trail — and famously the highest prices.
     postKind: 'frontier',
     stockScale: 1.5,
-    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'bath_house'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'bath_house', 'ox_swap'],
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
       // Marcy 5 (period: Bryant 1846 + Carpenter 1857 record all five
@@ -363,7 +363,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // Period sources: Sage 1846, Frizzell 1852, Bryant 1848 all
     // remark on Bridger's exorbitant prices for what little he had.
     priceMultiplier: 1.5,
-    services: ['gossip', 'blacksmith'],
+    services: ['gossip', 'blacksmith', 'ox_swap'],
     blurb: "Jim Bridger's stockade is famously thin on stock. Moccasins, buffalo robes, and whatever the mountain men happened to bring in this week. Take what you can get.",
     stock: [
       // Marcy 5 (period: Carpenter 1857 explicit "50 lb flour, 20 lb
@@ -412,7 +412,7 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'hbc',
     abandonedAfterYear: 1856,
     stockScale: 1.1,
-    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide'],
+    services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'ox_swap'],
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
       // Marcy 5 + beans (period: HBC supply lines kept Hall the

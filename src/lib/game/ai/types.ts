@@ -71,4 +71,12 @@ export interface Persona {
    *  small chance to fuzz the path. Future named profiles like
    *  drinker / gambler (#287) can override. */
   shouldStealFromTrain(state: GameState, rng: Rng): boolean;
+  /** How many fresh oxen to acquire at the current trading post via
+   *  the #278 ox_swap service (0 = skip). Period: emigrants traded
+   *  worn animals for fresh at Laramie / Bridger / Hall as the
+   *  standard recovery tool — without this the bot's team thins past
+   *  `minTeam` and the wagon strands. Persona only fires when the
+   *  post offers `ox_swap`; the action itself handles surrender +
+   *  cost. */
+  pickOxSwapCount(state: GameState, here: Landmark, rng: Rng): number;
 }

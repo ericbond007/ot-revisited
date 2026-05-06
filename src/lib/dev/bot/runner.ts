@@ -20,7 +20,7 @@ import { rest } from '../../game/actions/rest';
 import { hunt, type HuntTarget, type AmmoBand } from '../../game/actions/hunt';
 import { trade } from '../../game/actions/trade';
 import { ford, type FordMethod, type RiverState } from '../../game/actions/ford';
-import { stayAtInn, repairWagon } from '../../game/systems/town-services';
+import { stayAtInn, repairWagon, swapOxen, swapOxenCost } from '../../game/systems/town-services';
 import { joinTrain } from '../../game/systems/wagon-train';
 import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-purity';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
@@ -268,6 +268,49 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           stats.decisionsMade += 1;
         } catch {
           // Inn failed (cash etc.) — skip.
+        }
+      }
+
+      // #278 — Trading-post oxen swap. Persona returns the count of
+      // fresh oxen to acquire; the runner picks barter (worst-2-per-1)
+      // when the team has enough surrender candidates, else falls
+      // back to cash-only mode at the higher per-head rate. The
+      // load-bearing fix for the post-Bridger ox-attrition wall.
+      if ((here.services ?? []).includes('ox_swap')) {
+        const want = persona.pickOxSwapCount(s, here, rng);
+        if (want > 0) {
+          // Sort alive oxen by combined attrition (low health + high
+          // fatigue first) and try barter when we have ≥2*want of
+          // them. Otherwise cash-only fallback.
+          const sorted = [...s.oxen]
+            .filter((o) => o.health > 0)
+            .sort((a, b) => (a.health - a.fatigue) - (b.health - b.fatigue));
+          const barterNeed = 2 * want;
+          let swapped = false;
+          if (sorted.length >= barterNeed) {
+            const surrenderIds = sorted.slice(0, barterNeed).map((o) => o.id);
+            const { cost } = swapOxenCost(s, want, {});
+            if (s.cash >= cost) {
+              try {
+                s = swapOxen(s, surrenderIds, want, {}).state;
+                stats.decisionsMade += 1;
+                swapped = true;
+              } catch {
+                // Barter failed — try cash-only fallback below.
+              }
+            }
+          }
+          if (!swapped) {
+            const { cost: cashCost } = swapOxenCost(s, want, { cashOnly: true });
+            if (s.cash >= cashCost) {
+              try {
+                s = swapOxen(s, [], want, { cashOnly: true }).state;
+                stats.decisionsMade += 1;
+              } catch {
+                // Cash-only failed — skip.
+              }
+            }
+          }
         }
       }
 
