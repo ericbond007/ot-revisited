@@ -305,6 +305,12 @@ export interface NpcWagonState extends WagonStateLike {
    *  set, and `applyNpcSpoilage` is a no-op for them until the engine
    *  next adds a perishable. */
   spoilDays?: Record<string, number>;
+  /** #300 — miles since the last axle-grease dose. NPC mirror of the
+   *  player's `flags._greaseSinceLastDose`. Saturates at the
+   *  cycle threshold (500 mi) when the wagon runs out of tar. Optional —
+   *  pre-#300 saves treat missing as 0 (a fresh dose is one travel
+   *  day away). */
+  greaseMiles?: number;
 }
 
 export type GameStateFlag =

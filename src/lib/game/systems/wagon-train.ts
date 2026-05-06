@@ -136,7 +136,11 @@ export interface AdvanceTrainResult {
  *  Starvation crisis detection: if any wagon's food just went from
  *  >0 to =0 today, returns a pendingEvent so `tickDayPausable` can
  *  pause the player and surface a help-or-refuse modal (#288). */
-export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainResult {
+export function advanceTrain(
+  state: GameState,
+  traveled: boolean,
+  traveledMiles: number = 0
+): AdvanceTrainResult {
   if (!state.wagonTrain) return { state };
   // #303e — pool the train's clean + dirty water on rest days. Period
   // reality: Helen Carpenter 1857 documents communal water-sharing at
@@ -152,7 +156,8 @@ export function advanceTrain(state: GameState, traveled: boolean): AdvanceTrainR
     traveled,
     pace: prepped.pace,
     terrain: prepped.location.terrain,
-    weather: prepped.weather ?? 'clear'
+    weather: prepped.weather ?? 'clear',
+    traveledMiles
   };
   const companions: typeof state.wagonTrain.companions = [];
   const playerLogs: { day: number; text: string }[] = [];
