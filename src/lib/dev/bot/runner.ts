@@ -209,7 +209,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
       // gets +1 morale/day, possibly half-price smithy, and pace-clamp
       // safety — all positive-EV unless the player is committing to a
       // grueling-pace push (the bot doesn't, so this is pure upside).
-      if (!s.wagonTrain) {
+      if (!s.wagonTrain && persona.shouldJoinTrain(s, here, rng)) {
         try {
           s = joinTrain(s, rng).state;
           stats.decisionsMade += 1;
