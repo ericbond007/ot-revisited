@@ -44,11 +44,12 @@
       "Read(//tmp/**)",
       "Bash(curl -s -b /tmp/cookies.txt -X POST -d \"scenario=at_kansas_river\" -L -o /tmp/ford.html -w \"loadScenario at_kansas_river → %{http_code} → %{url_effective}\\\\n\" 'http://localhost:5173/?/loadScenario')",
       "Bash(claude mcp *)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Read(//home/eric/hoosierTrail-wagon-bg/**)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "playwright"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

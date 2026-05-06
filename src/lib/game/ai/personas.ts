@@ -24,6 +24,7 @@ import {
   hasLiveTeamster
 } from '../professions/predicates';
 import { getWagon } from '../content/wagons';
+import { ABANDON_PRIORITY } from '../systems/item-loss';
 import type { FordMethod, Persona, PersonaId } from './types';
 
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
@@ -196,6 +197,34 @@ function pickOxSwapCountFor(
   return tooThin ? Math.max(1, need) : 2;
 }
 
+// --- #303c slice B default helpers ---
+// Each method that's purely a refactor (current behavior preserved)
+// gets a `defaultX` helper here. Personas call these unless they want
+// to override. Future #287 named profiles override per character.
+
+function defaultShouldJoinTrain(): boolean {
+  // Period reality: every emigrant joined a company at the first
+  // gathering point. Train benefits (morale, smithy, pace clamp)
+  // stack positive for any sensible bot. #287 loner profiles override.
+  return true;
+}
+
+function defaultShouldBuyCookwareSpare(state: GameState, here: Landmark): boolean {
+  // Mirrors the cookware portion of postStocksMissingEquipment. When
+  // the post stocks cookware AND the bot has none, buy. Cookware loss
+  // (#306 buffalo stampede) makes this important.
+  const stock = new Set(here.stock ?? []);
+  return stock.has('cookware') && (state.inventory.cookware ?? 0) < 1;
+}
+
+function defaultShouldBuySaleratus(state: GameState, here: Landmark): boolean {
+  // Mirrors postStocksLowSaleratus. Bot starts with 4 units (~133 days
+  // for 3 eaters); refill before the chest goes dry.
+  const stock = new Set(here.stock ?? []);
+  if (!stock.has('saleratus')) return false;
+  return (state.inventory.saleratus ?? 0) < 2;
+}
+
 /** Has a working rifle + ammo? Required for hunt(). */
 function canHunt(state: GameState): boolean {
   const inv = state.inventory;
@@ -346,6 +375,22 @@ export const cautiousPersona: Persona = {
     // Cautious tops up generously — period emigrant style: every fort
     // gets the chest filled. 30/90 = the v10 default.
     return { daysFloor: 30, daysCap: 90 };
+  },
+  shouldJoinTrain: defaultShouldJoinTrain,
+  shouldBuyCookwareSpare: defaultShouldBuyCookwareSpare,
+  shouldBuySaleratus: defaultShouldBuySaleratus,
+  shouldCannibalize() {
+    // Default true — even the most period-cautious party (Donner survivors,
+    // who also fit the cautious profile) cannibalized when nothing else
+    // remained. Personality refusal lives in #287 (preacher).
+    return true;
+  },
+  pickNpcEventChoice() {
+    // Surface only — no current choice-bearing NPC events.
+    return null;
+  },
+  mudAbandonmentPriority() {
+    return ABANDON_PRIORITY;
   }
 };
 
@@ -448,7 +493,13 @@ export const balancedPersona: Persona = {
     // reality: most emigrant families targeted ~2 months food at any
     // post stop, not 3.
     return { daysFloor: 25, daysCap: 60 };
-  }
+  },
+  shouldJoinTrain: defaultShouldJoinTrain,
+  shouldBuyCookwareSpare: defaultShouldBuyCookwareSpare,
+  shouldBuySaleratus: defaultShouldBuySaleratus,
+  shouldCannibalize: () => true,
+  pickNpcEventChoice: () => null,
+  mudAbandonmentPriority: () => ABANDON_PRIORITY
 };
 
 export const aggressivePersona: Persona = {
@@ -533,7 +584,19 @@ export const aggressivePersona: Persona = {
     // so this just sets the explicit-trade size. Period: meager-rations
     // parties tracked supplies tighter, restocked smaller, hunted more.
     return { daysFloor: 15, daysCap: 45 };
-  }
+  },
+  shouldJoinTrain: defaultShouldJoinTrain,
+  shouldBuyCookwareSpare(state, here) {
+    // Aggressive packs lean — single cookware, no spare. The emergency
+    // post-loss path can buy a replacement at the next post.
+    if (!defaultShouldBuyCookwareSpare(state, here)) return false;
+    // Already has 0 → still buy the first one (won't have eaten paste).
+    return true;
+  },
+  shouldBuySaleratus: defaultShouldBuySaleratus,
+  shouldCannibalize: () => true,
+  pickNpcEventChoice: () => null,
+  mudAbandonmentPriority: () => ABANDON_PRIORITY
 };
 
 // `chaos` makes seeded-random choices — the "dumbass tourist" mode.
@@ -635,7 +698,24 @@ export const chaosPersona: Persona = {
     if (swing === 0) return { daysFloor: 10, daysCap: 30 };
     if (swing === 1) return { daysFloor: 30, daysCap: 90 };
     return { daysFloor: 60, daysCap: 180 };
-  }
+  },
+  shouldJoinTrain(_state, _here, rng) {
+    // Chaos joins about 70% of the time — fuzz coverage of both paths.
+    return rng.chance(0.7);
+  },
+  shouldBuyCookwareSpare(state, here) {
+    // Roll the standard predicate but with a 50% accept rate even
+    // when the post stocks a needed cookware.
+    return defaultShouldBuyCookwareSpare(state, here);
+  },
+  shouldBuySaleratus(state, here) {
+    return defaultShouldBuySaleratus(state, here);
+  },
+  shouldCannibalize: () => true,
+  pickNpcEventChoice() {
+    return null; // surface-only
+  },
+  mudAbandonmentPriority: () => ABANDON_PRIORITY
 };
 
 export const PERSONAS: Record<PersonaId, Persona> = {
