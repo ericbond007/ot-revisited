@@ -39,7 +39,20 @@ export const BASE_KIT: StarterKit = {
     // to refill at one post mid-trip for a full Independence→Oregon
     // run. Marcy 1859 outfit prescribes 5 lb per year — generous half.
     saleratus:   4,
-    bandages:    4,
+    // #275 v10 — period-realistic family medicine chest. Marcy 1859
+    // *The Prairie Traveler* prescribes 1-2 oz quinine sulfate, 1-2 oz
+    // calomel, 4 oz laudanum, 2 oz paregoric, 2 oz Dover's powder for a
+    // 5-person family on a 6-month journey (≈30-60 doses each).
+    // Bryant 1846 (Russell Party): "all the usual articles in liberal
+    // supply." Royce 1849: "quinine — we had a great deal." Carpenter
+    // 1857: restocked the chest at every fort. This baseline gives a
+    // family without a Doctor a small but real chest; the Doctor
+    // profession layers a full professional supply on top.
+    quinine:     4,
+    calomel:     2,
+    laudanum:    2,
+    paregoric:   2,
+    bandages:    8,
     shovel:      1,
     cookware:    1
     // Yokes are added per-wagon by buildStarterKit — each wagon

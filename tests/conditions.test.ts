@@ -8,12 +8,27 @@ function newGame(): GameState {
   // No doctor — doctor relief (#154) would dampen the daily damage
   // and confuse these condition-system tests. Doctor-specific
   // behavior is covered separately at the bottom of this file.
-  return createInitialState({
+  // #275 v10 — also strip the BASE_KIT medicine chest so the
+  // engine's #275 v7 treatment-halves-damage logic doesn't kick in.
+  // These tests cover raw condition decay, not treatment math.
+  const s = createInitialState({
     seed: 't',
     leader: { name: 'A', profession: 'farmer' },
     companions: [{ name: 'B', profession: 'carpenter' }],
     startDate: { year: 1848, month: 4, day: 15 }
   });
+  return {
+    ...s,
+    inventory: {
+      ...s.inventory,
+      quinine: 0,
+      calomel: 0,
+      laudanum: 0,
+      paregoric: 0,
+      dovers_powder: 0,
+      bandages: 0
+    }
+  };
 }
 
 describe('progressConditions', () => {

@@ -111,15 +111,20 @@ function postStocksLowSaleratus(state: GameState, here: Landmark): boolean {
 /** Medicine restock trigger: bot is light on any of the front-line
  *  drugs that cover the most condition damage. Without this, the bot
  *  only stops at the first warmth-gear post and never resupplies
- *  medicine — chronic cholera/typhoid/dysentery cycles trap the run. */
+ *  medicine — chronic cholera/typhoid/dysentery cycles trap the run.
+ *  #275 v10 — thresholds calibrated to Marcy 1859: a 5-person family
+ *  on a 6-month journey carried 30-60 doses of each major drug. The
+ *  pre-v10 thresholds of <3/<2 were a fraction of period reality and
+ *  trapped the bot in chronic-disease rest cycles past Bridger. */
 function postStocksMissingMedicine(state: GameState, here: Landmark): boolean {
   const stock = new Set(here.stock ?? []);
   const inv = state.inventory;
-  if (stock.has('quinine') && (inv.quinine ?? 0) < 3) return true;
-  if (stock.has('bandages') && (inv.bandages ?? 0) < 3) return true;
-  if (stock.has('laudanum') && (inv.laudanum ?? 0) < 2) return true;
-  if (stock.has('calomel') && (inv.calomel ?? 0) < 2) return true;
-  if (stock.has('paregoric') && (inv.paregoric ?? 0) < 2) return true;
+  if (stock.has('quinine') && (inv.quinine ?? 0) < 8) return true;
+  if (stock.has('bandages') && (inv.bandages ?? 0) < 6) return true;
+  if (stock.has('laudanum') && (inv.laudanum ?? 0) < 4) return true;
+  if (stock.has('calomel') && (inv.calomel ?? 0) < 5) return true;
+  if (stock.has('paregoric') && (inv.paregoric ?? 0) < 4) return true;
+  if (stock.has('dovers_powder') && (inv.dovers_powder ?? 0) < 3) return true;
   return false;
 }
 
