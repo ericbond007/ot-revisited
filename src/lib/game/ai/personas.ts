@@ -432,6 +432,13 @@ export const aggressivePersona: Persona = {
   },
   pickPace(state) {
     if (minPartyHealth(state) < 30) return 'moderate';
+    // #275 v10b — back off pace when oxen are stressed. Period reality:
+    // even hard-driving emigrants (the parties that "pushed" per the
+    // diaries) read the team — a smart driver knew grueling pace on a
+    // worn ox team killed the wagon. Aggressive without this tweak ran
+    // grueling at 70+ fatigue, lost oxen between non-swap posts, and
+    // wiped before Laramie.
+    if (oxenWornOut(state)) return 'moderate';
     return 'grueling';
   },
   pickRations() {

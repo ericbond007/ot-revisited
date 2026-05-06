@@ -260,6 +260,77 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
             }
           }
         }
+      } else {
+        // #275 v10b — Emergency overrides. Bypass the persona gate
+        // when the bot is dying. Period reality: even hard-pushing
+        // emigrants stopped for food/medicine when the company was
+        // out. Aggressive's hardcoded shouldTradeAtPost=false was
+        // leaving it without flour and quinine alike → starvation +
+        // cumulative-disease wipes around mile 450.
+        const inv = s.inventory;
+        const stockSet = new Set(here.stock ?? []);
+        const allBuys = buildBotShoppingList(s, here);
+
+        // Emergency MEDICINE — chest critically empty.
+        const medCritEmpty =
+          (stockSet.has('quinine') && (inv.quinine ?? 0) < 2)
+          || (stockSet.has('calomel') && (inv.calomel ?? 0) < 1)
+          || (stockSet.has('bandages') && (inv.bandages ?? 0) < 2);
+        if (medCritEmpty && s.cash >= 5) {
+          const medsOnly = allBuys.filter((b) =>
+            b.item === 'quinine' || b.item === 'bandages' || b.item === 'laudanum'
+            || b.item === 'calomel' || b.item === 'paregoric' || b.item === 'dovers_powder'
+            || b.item === 'epsom_salts'
+          );
+          if (medsOnly.length > 0) {
+            try {
+              s = trade(s, { buys: medsOnly });
+              stats.decisionsMade += 1;
+            } catch {
+              const essentials = medsOnly.filter((b) =>
+                b.item === 'quinine' || b.item === 'calomel'
+              );
+              if (essentials.length > 0) {
+                try { s = trade(s, { buys: essentials }); stats.decisionsMade += 1; } catch { /* skip */ }
+              }
+            }
+          }
+        }
+
+        // Emergency FOOD — staples low. Aggressive's grueling-pace +
+        // meager-rations diet burns ~3 lb/day per eater = 9 lb/day for
+        // a 3-person party. Fort-to-fort gaps run 100-150 miles =
+        // 7-12 days = 60-100 lb consumed between posts. Threshold of
+        // 200 lb gives ~22 days of buffer at the post visit, enough
+        // to span the longest gap (Robidoux→Laramie 130 mi). Period
+        // reality: every emigrant diary records restocking at every
+        // fort regardless of pace philosophy — Marcy 1859 explicit.
+        const aliveCount = s.party.filter((m) => !m.dead).length;
+        const totalFood = (inv.flour ?? 0) + (inv.beans ?? 0) + (inv.bacon ?? 0)
+          + (inv.salt_pork ?? 0) + (inv.hardtack ?? 0) + (inv.jerky ?? 0)
+          + (inv.pemmican ?? 0) + (inv.cornmeal ?? 0);
+        const foodCritLow = aliveCount > 0 && totalFood < 200;
+        if (foodCritLow && s.cash >= 10) {
+          const foodOnly = allBuys.filter((b) =>
+            b.item === 'flour' || b.item === 'bacon' || b.item === 'beans'
+            || b.item === 'jerky' || b.item === 'cornmeal' || b.item === 'salt_pork'
+            || b.item === 'hardtack' || b.item === 'pemmican'
+          );
+          if (foodOnly.length > 0) {
+            try {
+              s = trade(s, { buys: foodOnly });
+              stats.decisionsMade += 1;
+            } catch {
+              // Cash short on the full list — drop to flour + bacon only.
+              const essentials = foodOnly.filter((b) =>
+                b.item === 'flour' || b.item === 'bacon'
+              );
+              if (essentials.length > 0) {
+                try { s = trade(s, { buys: essentials }); stats.decisionsMade += 1; } catch { /* skip */ }
+              }
+            }
+          }
+        }
       }
 
       if (persona.shouldStayAtInn(s, here, rng)) {
