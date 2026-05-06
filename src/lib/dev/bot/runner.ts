@@ -171,9 +171,12 @@ function restWithWaterChain(state: GameState, stats: RunningStats): GameState {
  *  NPC restocks (#299) and future encountered-train wagons. Player-bot
  *  here passes its full GameState shape (which structurally satisfies
  *  WagonStateLike) directly. */
-function buildBotShoppingList(state: GameState, here: Landmark): BuyOrder[] {
+function buildBotShoppingList(state: GameState, here: Landmark, persona: Persona): BuyOrder[] {
   const stock = new Set(here.stock ?? []);
-  return composeShoppingList({ wagon: state, stock });
+  // #303c — thread persona-tunable food opts so balanced restocks
+  // smaller (60d cap) than cautious (90d). Frees cash for medicine /
+  // repair, addressing the v10 cash-pressure regression.
+  return composeShoppingList({ wagon: state, stock }, { food: persona.pickFoodRestockOpts(state) });
 }
 
 /** Try to handle the landmark we're parked at. Returns the new state
@@ -217,22 +220,22 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
 
       // Order at a post: smithy repair → trade for goods → inn stay → leave.
       // Repair first because hauling broken-wagon damage further is the
-      // worst outcome; cash spent on repair stops the bleed.
+      // worst outcome; cash spent on repair stops the bleed. #303c —
+      // budget is now persona-tunable (cautious bigger, balanced
+      // thriftier, aggressive only-when-failing).
       const services = new Set(here.services ?? []);
-      if (services.has('blacksmith') && s.wagon.condition < 70 && s.cash >= 20) {
+      const repairBudget = persona.pickRepairBudget(s, here);
+      if (repairBudget > 0) {
         try {
-          const want = Math.min(40, s.cash, Math.round(100 - s.wagon.condition));
-          if (want > 0) {
-            s = repairWagon(s, want).state;
-            stats.decisionsMade += 1;
-          }
+          s = repairWagon(s, repairBudget).state;
+          stats.decisionsMade += 1;
         } catch {
           // Repair failed — skip.
         }
       }
 
       if (persona.shouldTradeAtPost(s, here, rng)) {
-        const buys = buildBotShoppingList(s, here);
+        const buys = buildBotShoppingList(s, here, persona);
         // Conservative cash check — assume average $1.50/unit; trade()
         // will refuse if the actual total exceeds cash. v8 lowered
         // the gate from 0.5 to 0.25 because the buy list grew (food
@@ -269,7 +272,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
         // cumulative-disease wipes around mile 450.
         const inv = s.inventory;
         const stockSet = new Set(here.stock ?? []);
-        const allBuys = buildBotShoppingList(s, here);
+        const allBuys = buildBotShoppingList(s, here, persona);
 
         // Emergency MEDICINE — chest critically empty.
         const medCritEmpty =
