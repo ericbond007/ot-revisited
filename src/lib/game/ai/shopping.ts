@@ -214,15 +214,23 @@ export function pickMedicineRestock({ wagon, stock }: ShoppingInput): BuyOrder[]
   return buys;
 }
 
+export interface ComposeOpts {
+  /** Forwarded to `pickFoodRestock` — persona-tunable since #303c. */
+  food?: FoodRestockOpts;
+}
+
 /** Compose all 6 slices in the same order the pre-#303a
  *  `buildBotShoppingList` did: warmth → equipment → food → hunter →
  *  repair → medicine. Used by the player-bot driver; NPC drivers can
  *  call individual slices instead. */
-export function composeShoppingList(input: ShoppingInput): BuyOrder[] {
+export function composeShoppingList(
+  input: ShoppingInput,
+  opts: ComposeOpts = {}
+): BuyOrder[] {
   return [
     ...pickWarmthRestock(input),
     ...pickEquipmentRestock(input),
-    ...pickFoodRestock(input),
+    ...pickFoodRestock(input, opts.food),
     ...pickHunterRestock(input),
     ...pickRepairRestock(input),
     ...pickMedicineRestock(input)

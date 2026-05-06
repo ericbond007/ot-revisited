@@ -333,6 +333,19 @@ export const cautiousPersona: Persona = {
     // Cautious wants a generous buffer (2 above minTeam) and refreshes
     // worn teams aggressively (health <70). Survival-first.
     return pickOxSwapCountFor(state, 2, 70);
+  },
+  pickRepairBudget(state, here) {
+    // Cautious repairs early, spends generously. Period: emigrant
+    // captains who treated the wagon as the load-bearing asset.
+    if (!(here.services ?? []).includes('blacksmith')) return 0;
+    if (state.wagon.condition >= 75) return 0;
+    if (state.cash < 20) return 0;
+    return Math.min(40, state.cash, Math.round(100 - state.wagon.condition));
+  },
+  pickFoodRestockOpts() {
+    // Cautious tops up generously — period emigrant style: every fort
+    // gets the chest filled. 30/90 = the v10 default.
+    return { daysFloor: 30, daysCap: 90 };
   }
 };
 
@@ -420,6 +433,21 @@ export const balancedPersona: Persona = {
     // little longer on worn refresh (health <55). Costs less cash up
     // front, leaves more room for medicine/food shopping.
     return pickOxSwapCountFor(state, 1, 55);
+  },
+  pickRepairBudget(state, here) {
+    // Balanced is thriftier than cautious — repairs at <60 (vs 75)
+    // and caps spend at $30 (vs 40). Frees ~$10/post for medicine
+    // and food, addressing the v10 cash-pressure regression.
+    if (!(here.services ?? []).includes('blacksmith')) return 0;
+    if (state.wagon.condition >= 60) return 0;
+    if (state.cash < 15) return 0;
+    return Math.min(30, state.cash, Math.round(100 - state.wagon.condition));
+  },
+  pickFoodRestockOpts() {
+    // Balanced: 60-day cap (was 90) leaves cash for medicine. Period
+    // reality: most emigrant families targeted ~2 months food at any
+    // post stop, not 3.
+    return { daysFloor: 25, daysCap: 60 };
   }
 };
 
@@ -488,6 +516,23 @@ export const aggressivePersona: Persona = {
     // hot and broke down at Sublette.
     if (!(here.services ?? []).includes('ox_swap')) return 0;
     return pickOxSwapCountFor(state, 0, 30);
+  },
+  pickRepairBudget(state, here) {
+    // Aggressive only repairs when the wagon is genuinely failing
+    // (<40) and caps spend at $20. Per the persona — push hard, fix
+    // only what's about to break the journey. Period: the parties
+    // that limped into Oregon City with cracked frames.
+    if (!(here.services ?? []).includes('blacksmith')) return 0;
+    if (state.wagon.condition >= 40) return 0;
+    if (state.cash < 10) return 0;
+    return Math.min(20, state.cash, Math.round(100 - state.wagon.condition));
+  },
+  pickFoodRestockOpts() {
+    // Aggressive: 45-day cap, 15-day floor. Trims to the bone — the
+    // emergency-food override (#275 v10b) catches actual starvation,
+    // so this just sets the explicit-trade size. Period: meager-rations
+    // parties tracked supplies tighter, restocked smaller, hunted more.
+    return { daysFloor: 15, daysCap: 45 };
   }
 };
 
@@ -573,6 +618,23 @@ export const chaosPersona: Persona = {
     // Chaos randomly buys 0-3 fresh oxen each visit. Doesn't care if
     // the team is fresh — fuzz coverage of the swap action.
     return rng.int(0, 3);
+  },
+  pickRepairBudget(state, here) {
+    // Chaos: random budget 0-50 regardless of condition.
+    if (!(here.services ?? []).includes('blacksmith')) return 0;
+    // No rng available here on the helper signature (Persona.pickRepairBudget
+    // doesn't take rng) — derive a pseudo-random from state.day so chaos
+    // is still deterministic per seed. Modulo 7 for a [0..50] range with
+    // 0 representing "skip this stop."
+    const cap = (state.day * 17) % 7 * 8;
+    return Math.min(cap, state.cash);
+  },
+  pickFoodRestockOpts(state) {
+    // Chaos: wide swings — small or huge restock, deterministic on day.
+    const swing = state.day % 3;
+    if (swing === 0) return { daysFloor: 10, daysCap: 30 };
+    if (swing === 1) return { daysFloor: 30, daysCap: 90 };
+    return { daysFloor: 60, daysCap: 180 };
   }
 };
 

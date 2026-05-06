@@ -19,6 +19,7 @@ import type { Rng } from '../rng';
 // source of truth instead of a parallel string union.
 export type { FordMethod } from '../actions/ford';
 import type { FordMethod } from '../actions/ford';
+import type { FoodRestockOpts } from './shopping';
 
 export type PersonaId = 'cautious' | 'balanced' | 'aggressive' | 'chaos';
 
@@ -79,4 +80,18 @@ export interface Persona {
    *  post offers `ox_swap`; the action itself handles surrender +
    *  cost. */
   pickOxSwapCount(state: GameState, here: Landmark, rng: Rng): number;
+  /** Cash to spend on smithy repair at this post. Returns 0 to skip
+   *  (e.g. condition is fine, or persona is hoarding cash for food).
+   *  #303c slice A — was hardcoded to `condition < 70 && cash >= 20
+   *  → min(40, cash, 100-condition)` in the runner. Personas tune
+   *  the threshold + cap: cautious repairs sooner + bigger; balanced
+   *  thriftier; aggressive only-when-desperate. */
+  pickRepairBudget(state: GameState, here: Landmark): number;
+  /** Per-persona opts for `pickFoodRestock`. Returns the daysFloor /
+   *  daysCap thresholds the persona wants applied. #303c slice A —
+   *  the v10 medicine cost bump squeezed balanced's cash; lower food
+   *  cap leaves room for medicine + repair. NPC drivers pass their
+   *  own tighter opts directly (#299), so this only affects the
+   *  player-bot composeShoppingList call. */
+  pickFoodRestockOpts(state: GameState): FoodRestockOpts;
 }
