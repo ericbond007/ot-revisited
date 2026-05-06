@@ -23,6 +23,7 @@ import {
   hasLiveHunter,
   hasLiveTeamster
 } from '../professions/predicates';
+import { getWagon } from '../content/wagons';
 import type { FordMethod, Persona, PersonaId } from './types';
 
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
@@ -165,6 +166,31 @@ function oxenWornOut(state: GameState): boolean {
   return avgOxFatigue(state) > fatigueLimit;
 }
 
+/** Decide how many fresh oxen the bot should acquire at this post.
+ *  Returns 0 unless the team is genuinely thin or worn — emigrants
+ *  didn't blow cash at Laramie if the team was holding. Reads the
+ *  wagon's minTeam from state.wagon.model — that's the floor where
+ *  movement stops, so we want a buffer of at least 2 above it. */
+function pickOxSwapCountFor(
+  state: GameState,
+  thinThreshold: number,
+  healthFloor: number
+): number {
+  const minTeam = getWagon(state.wagon.model).minTeam;
+  const alive = state.oxen.filter((o) => o.health > 0);
+  const aliveCount = alive.length;
+  if (aliveCount === 0) return Math.max(2, minTeam + 1);
+  const avgHealth = alive.reduce((a, o) => a + o.health, 0) / aliveCount;
+  // Two trigger conditions: thin team OR worn-down team.
+  const tooThin = aliveCount < minTeam + thinThreshold;
+  const tooWorn = avgHealth < healthFloor;
+  if (!tooThin && !tooWorn) return 0;
+  // Target = minTeam + thinThreshold (a comfortable buffer) - aliveCount.
+  // For worn-team trigger, swap 2 to refresh the average.
+  const need = Math.max(0, (minTeam + thinThreshold) - aliveCount);
+  return tooThin ? Math.max(1, need) : 2;
+}
+
 /** Has a working rifle + ammo? Required for hunt(). */
 function canHunt(state: GameState): boolean {
   const inv = state.inventory;
@@ -296,6 +322,12 @@ export const cautiousPersona: Persona = {
     // banishment, which on the trail meant death. The trade is bad
     // even at 100% reward.
     return false;
+  },
+  pickOxSwapCount(state, here) {
+    if (!(here.services ?? []).includes('ox_swap')) return 0;
+    // Cautious wants a generous buffer (2 above minTeam) and refreshes
+    // worn teams aggressively (health <70). Survival-first.
+    return pickOxSwapCountFor(state, 2, 70);
   }
 };
 
@@ -376,6 +408,13 @@ export const balancedPersona: Persona = {
     // math, and trains are a survival multiplier (#290 departures
     // hurt). Burning the whole train for one whiskey isn't balanced.
     return false;
+  },
+  pickOxSwapCount(state, here) {
+    if (!(here.services ?? []).includes('ox_swap')) return 0;
+    // Balanced takes a smaller buffer (1 above minTeam) and waits a
+    // little longer on worn refresh (health <55). Costs less cash up
+    // front, leaves more room for medicine/food shopping.
+    return pickOxSwapCountFor(state, 1, 55);
   }
 };
 
@@ -429,6 +468,14 @@ export const aggressivePersona: Persona = {
     // Aggressive doesn't burn the company down for a sack of
     // sugar. Hoarding ≠ thieving from the people you travel with.
     return false;
+  },
+  pickOxSwapCount(state, here) {
+    // Aggressive only swaps when the team is below minTeam — i.e.
+    // when not swapping means a stuck wagon. Otherwise burns calendar
+    // pushing the team to extinction. Period: the parties that ran
+    // hot and broke down at Sublette.
+    if (!(here.services ?? []).includes('ox_swap')) return 0;
+    return pickOxSwapCountFor(state, 0, 30);
   }
 };
 
@@ -508,6 +555,12 @@ export const chaosPersona: Persona = {
       return false;
     }
     return rng.chance(0.03);
+  },
+  pickOxSwapCount(_state, here, rng) {
+    if (!(here.services ?? []).includes('ox_swap')) return 0;
+    // Chaos randomly buys 0-3 fresh oxen each visit. Doesn't care if
+    // the team is fresh — fuzz coverage of the swap action.
+    return rng.int(0, 3);
   }
 };
 

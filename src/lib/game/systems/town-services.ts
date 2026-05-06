@@ -3,6 +3,7 @@ import type { Rng } from '../rng';
 import { BLACKSMITH_TOWN_REPAIR_DISCOUNT } from '../professions/bonuses';
 import { washAll } from './cleanliness';
 import { hasBlacksmithSupport } from './wagon-train';
+import { getLandmark as getLandmarkOrThrow } from '../content/landmarks';
 
 // Town services available at the bigger trading posts: blacksmith
 // repairs, an inn for proper rest, and gambling. Each is opt-in per
@@ -13,7 +14,7 @@ import { hasBlacksmithSupport } from './wagon-train';
 // All three are pure functions that return a new GameState. The play
 // route's server actions wrap them in form-handler shells.
 
-export type TownServiceKind = 'blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide' | 'bath_house';
+export type TownServiceKind = 'blacksmith' | 'inn' | 'gambling' | 'brothel' | 'gossip' | 'guide' | 'bath_house' | 'ox_swap';
 
 // --- Blacksmith ---
 
@@ -353,6 +354,162 @@ export function useBathHouse(state: GameState): BathHouseResult {
     ]
   };
   return { state: next, cost, bathed: alive.length };
+}
+
+// --- #278 Trading-post oxen swap (barter-first) ---
+// Period reality (Parkman 1846, Palmer 1845 guidebook, Helen Carpenter
+// 1857): Laramie / Bridger / Hall ran a swap economy — 2 trail-worn
+// oxen for 1 fresh + a small cash boot was the standard 1840s deal.
+// Cash-only purchases were available but steep: $40-60/yoke jumping-off,
+// $80-100/yoke at Laramie in normal years. The 1849-50 Gold Rush spike
+// (Mattes, Unruh) doubled cash prices to $75-100/head at Laramie and
+// $200/yoke at Bridger — emigrants frequently abandoned wagons rather
+// than pay.
+//
+// Why this is gameplay-load-bearing: emigrant teams thinned via
+// fatigue, lameness, and ox death over the journey, and swap economy
+// at the forts was the standard recovery tool. Without it, wagons that
+// fall under their `minTeam` are permanently stranded — which is
+// exactly where bots stall today (post-Bridger, eastern Oregon).
+//
+// Mechanic: barter mode requires 2 surrendered oxen per fresh, plus
+// the boot. Cash-only mode pays full price per head with no surrenders.
+// Available only at posts with the `ox_swap` service flag (Laramie,
+// Bridger, Hall — NOT Boise; period: HBC kept light on oxen, more
+// horses + salmon).
+
+/** Cash boot per fresh ox in barter mode (default 1840s rate). */
+export const OX_SWAP_BARTER_BOOT_USD = 40;
+/** Cash-only price per fresh ox (no surrenders). Period: $80-100/yoke
+ *  at Laramie = $40-50/head + the trader's margin. */
+export const OX_SWAP_CASH_ONLY_USD = 75;
+/** Gold Rush years where cash multipliers double. */
+export const OX_SWAP_GOLD_RUSH_YEARS = new Set([1849, 1850]);
+/** Gold Rush price multiplier — period diaries record 2× the normal
+ *  rate. Mattes / Unruh document $200/yoke at Bridger in 1849-50. */
+export const OX_SWAP_GOLD_RUSH_MULT = 2;
+
+export interface SwapOxenOpts {
+  /** Cash-only purchase: no oxen surrendered, pay the full per-head
+   *  price. Skips the surrenderIds requirement entirely. */
+  cashOnly?: boolean;
+}
+
+export interface SwapOxenResult {
+  state: GameState;
+  surrenderedCount: number;
+  freshCount: number;
+  cost: number;
+  /** True if 1849-50 Gold Rush pricing applied. */
+  goldRush: boolean;
+}
+
+/** Compute the cost in dollars to acquire `freshCount` fresh oxen
+ *  given the current year + mode. Doesn't validate availability or
+ *  party state — used by both the engine and UI to preview. */
+export function swapOxenCost(
+  state: GameState,
+  freshCount: number,
+  opts: SwapOxenOpts = {}
+): { cost: number; goldRush: boolean } {
+  const goldRush = OX_SWAP_GOLD_RUSH_YEARS.has(state.date.year);
+  const mult = goldRush ? OX_SWAP_GOLD_RUSH_MULT : 1;
+  const perHead = opts.cashOnly
+    ? OX_SWAP_CASH_ONLY_USD * mult
+    : OX_SWAP_BARTER_BOOT_USD * mult;
+  return { cost: Math.max(0, freshCount) * perHead, goldRush };
+}
+
+/** Acquire `freshCount` fresh oxen at the current post. Barter mode
+ *  (default) requires `surrenderIds.length === 2 * freshCount` —
+ *  surrendered oxen are removed from the team. Cash-only mode skips
+ *  the surrenders and pays the higher per-head rate.
+ *
+ *  Throws on: not at a post / post lacks `ox_swap` service / wrong
+ *  surrender count for barter / surrender ids not found / cash short. */
+export function swapOxen(
+  state: GameState,
+  surrenderIds: string[],
+  freshCount: number,
+  opts: SwapOxenOpts = {}
+): SwapOxenResult {
+  const fresh = Math.max(0, Math.floor(freshCount));
+  if (fresh <= 0) {
+    return { state, surrenderedCount: 0, freshCount: 0, cost: 0, goldRush: false };
+  }
+
+  const landmarkId = state.location.atLandmarkId;
+  if (!landmarkId) {
+    throw new Error('swapOxen: not at a landmark');
+  }
+  // Lazy import to avoid a circular dep on landmarks → systems.
+  const here = getLandmarkOrThrow(landmarkId);
+  if (!(here.services ?? []).includes('ox_swap')) {
+    throw new Error(`swapOxen: ${landmarkId} does not run an ox swap`);
+  }
+
+  const cashOnly = !!opts.cashOnly;
+  if (!cashOnly && surrenderIds.length !== 2 * fresh) {
+    throw new Error(
+      `swapOxen: barter requires 2 surrendered per fresh (need ${2 * fresh}, got ${surrenderIds.length})`
+    );
+  }
+
+  // Validate every surrender id exists in the current team. Doesn't
+  // require them to be alive — period: dead oxen still had hide value
+  // in trade. But typical caller surrenders the lowest-health alive
+  // oxen via the persona helper.
+  const idSet = new Set(surrenderIds);
+  if (!cashOnly) {
+    for (const id of surrenderIds) {
+      if (!state.oxen.some((o) => o.id === id)) {
+        throw new Error(`swapOxen: ox ${id} not in team`);
+      }
+    }
+  }
+
+  const { cost, goldRush } = swapOxenCost(state, fresh, opts);
+  if (state.cash < cost) {
+    throw new Error(`swapOxen: not enough cash ($${state.cash} < $${cost})`);
+  }
+
+  const remainingTeam = cashOnly
+    ? state.oxen
+    : state.oxen.filter((o) => !idSet.has(o.id));
+
+  // Generate fresh ox ids that don't collide with the remaining team.
+  const usedIds = new Set(remainingTeam.map((o) => o.id));
+  const freshOxen = [];
+  let nextN = 0;
+  for (let i = 0; i < fresh; i++) {
+    let id = `ox-fresh-${state.day}-${nextN}`;
+    while (usedIds.has(id)) {
+      nextN += 1;
+      id = `ox-fresh-${state.day}-${nextN}`;
+    }
+    usedIds.add(id);
+    freshOxen.push({ id, health: 100, fatigue: 0, shod: true });
+    nextN += 1;
+  }
+
+  const flavor = cashOnly
+    ? `Bought ${fresh} fresh ox${fresh === 1 ? '' : 'en'} at ${here.name} for $${cost}${goldRush ? ' (Gold Rush prices)' : ''}.`
+    : `Swapped ${surrenderIds.length} trail-worn ox${surrenderIds.length === 1 ? '' : 'en'} for ${fresh} fresh at ${here.name} — $${cost} boot${goldRush ? ' (Gold Rush prices)' : ''}.`;
+
+  const next: GameState = {
+    ...state,
+    cash: state.cash - cost,
+    oxen: [...remainingTeam, ...freshOxen],
+    eventLog: [...state.eventLog, { day: state.day, text: flavor }]
+  };
+
+  return {
+    state: next,
+    surrenderedCount: cashOnly ? 0 : surrenderIds.length,
+    freshCount: fresh,
+    cost,
+    goldRush
+  };
 }
 
 // --- Helpers ---
