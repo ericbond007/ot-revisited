@@ -1,6 +1,6 @@
 import type { GameState } from '../types';
 import { makeRng } from '../rng';
-import { hasLiveFarmer, hasLiveTeamster, hasLivePreacher } from '../professions/predicates';
+import { hasLiveFarmer, hasLiveTeamster, hasLivePreacher, hasLiveBlacksmith } from '../professions/predicates';
 import { TEAMSTER_RECOVERY_MULT, consumeOxenFeed } from '../systems/oxen';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption, applyDirtyWaterRisk } from '../systems/consumption';
@@ -137,9 +137,14 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     // unfed team on poor grass barely heals).
     const restFeed = consumeOxenFeed(s);
     s = restFeed.state;
+    // #317b — blacksmith ox-shoeing recovery bonus. Period reality:
+    // shod oxen recovered noticeably faster from a hard day's pull.
+    // +10% on top of the teamster bonus when both are in party.
+    const blacksmithMult = hasLiveBlacksmith(s) ? 1.10 : 1;
     const oxRecovery = Math.round(
       OX_FATIGUE_RECOVERY_PER_REST_DAY
         * (hasLiveTeamster(s) ? TEAMSTER_RECOVERY_MULT : 1)
+        * blacksmithMult
         * restFeed.effectiveGrazing
     );
     s = { ...s, oxen: recoverOxenFatigue(s.oxen, oxRecovery) };

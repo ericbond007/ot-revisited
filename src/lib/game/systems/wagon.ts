@@ -1,5 +1,14 @@
 import type { GameState, NpcWagonState, Pace, Terrain, Weather } from '../types';
 import type { Rng } from '../rng';
+import { hasLiveCarpenter } from '../professions/predicates';
+
+/** #317b — carpenter daily-maintenance bonus. Tightens spokes,
+ *  re-pegs joints, refits iron tires. Period reality: a carpenter
+ *  in the party kept the wagon alive a noticeable fraction longer
+ *  on the same trail. -15% decay rate per travel tick. Stacks with
+ *  the existing tar-bucket reduction (the carpenter does the
+ *  greasing properly too). */
+const CARPENTER_DECAY_MULT = 0.85;
 
 const PACE_DECAY: Record<Pace, number> = {
   slow: 0.3,
@@ -32,7 +41,8 @@ export function tickWagon(state: GameState, _rng: Rng): GameState {
   const base = PACE_DECAY[state.pace];
   const terrain = TERRAIN_MULTIPLIER[state.location.terrain];
   const tarMult = (state.inventory.tar_bucket ?? 0) > 0 ? TAR_BUCKET_DECAY_MULT : 1;
-  const decay = base * terrain * tarMult;
+  const carpenterMult = hasLiveCarpenter(state) ? CARPENTER_DECAY_MULT : 1;
+  const decay = base * terrain * tarMult * carpenterMult;
   // Round to one decimal so successive float subtractions don't drift
   // into 95.80000000000004-style noise across many ticks. The condition
   // is still effectively a 0-100 integer for display purposes — call

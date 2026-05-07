@@ -1,6 +1,6 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
-import { hasLivePreacher, hasLiveWhore, hasLiveGunsmith } from '../professions/predicates';
+import { hasLivePreacher, hasLiveWhore, hasLiveGunsmith, hasLiveHunter } from '../professions/predicates';
 import { canBoilWater } from '../systems/water-purity';
 import { fuelFlavorFor } from '../systems/fire';
 import { washAll } from '../systems/cleanliness';
@@ -61,7 +61,8 @@ export type CampActionId =
   | 'cannibalism_straws'
   | 'pan_for_gold'
   | 'raid_natives'
-  | 'take_from_train';
+  | 'take_from_train'
+  | 'set_traps';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -529,6 +530,40 @@ const fish: CampAction = {
     return logLine(
       { ...s, inventory, flags },
       `Caught ${lbs} lb of ${catchName}. Eat fresh or cure it before it spoils.`
+    );
+  }
+};
+
+// --- Trapping (#317b — hunter second effect) ---
+// Period reality: the hunter's quiet companion to rifle hunts. Snares,
+// deadfalls, and steel traps were standard plains-emigrant gear.
+// Yields rabbit / squirrel / muskrat-grade small game without consuming
+// powder or caps — the under-utilized way to keep meat in the pot when
+// game is wary or ammunition is precious. Hunter-only because it
+// requires the trail-craft to read tracks, set anchor points, and walk
+// a line without educating local game.
+const SET_TRAPS_HOURS = 4;
+
+const setTraps: CampAction = {
+  id: 'set_traps',
+  label: 'Set a trap line',
+  sub: `${SET_TRAPS_HOURS} hr · 2-4 lb small game · no ammo`,
+  icon: '🪤',
+  hourCost: SET_TRAPS_HOURS,
+  availability: (s) =>
+    hasLiveHunter(s)
+      ? { available: true }
+      : { available: false, reason: 'Need a hunter to walk a trap line' },
+  apply: (s, rng) => {
+    const lbs = rng.int(2, 4);
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      game_meat: (s.inventory.game_meat ?? 0) + lbs
+    };
+    const flags = { ...s.flags, _gameMeatSpoilDay: s.day + 3 };
+    return logLine(
+      { ...s, inventory, flags },
+      `Walked the trap line — ${lbs} lb of small game (rabbit, squirrel, hare). Cure it or eat it fresh.`
     );
   }
 };
@@ -1456,6 +1491,7 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   castBalls,
   // Foraging — passive yield without ammo
   fish,
+  setTraps,
   // Wagon repair (#196 + #201)
   patchWagon,
   replaceCanvas,
@@ -1491,6 +1527,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   cure_meat: cureMeat,
   cast_balls: castBalls,
   fish,
+  set_traps: setTraps,
   patch_wagon: patchWagon,
   replace_canvas: replaceCanvas,
   replace_planks: replacePlanks,
