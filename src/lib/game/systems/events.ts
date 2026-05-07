@@ -38,11 +38,11 @@ function effectiveWeight(ev: GameEvent, state: GameState): number {
 const BASE_FIRE_CHANCE = 0.30;
 
 export interface RollOptions {
-  pool?: GameEvent[];   // default: global EVENTS
+  pool?: readonly GameEvent[];   // default: global EVENTS
   fireChance?: number;  // default: BASE_FIRE_CHANCE
 }
 
-export function eligibleEvents(state: GameState, pool: GameEvent[] = EVENTS): GameEvent[] {
+export function eligibleEvents(state: GameState, pool: readonly GameEvent[] = EVENTS): GameEvent[] {
   return pool.filter((e) => !e.gate || e.gate(state));
 }
 
