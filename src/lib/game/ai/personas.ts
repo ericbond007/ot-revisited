@@ -25,6 +25,7 @@ import {
 } from '../professions/predicates';
 import { getWagon } from '../content/wagons';
 import { ABANDON_PRIORITY } from '../systems/item-loss';
+import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaId } from './types';
 
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
@@ -249,7 +250,7 @@ function defaultChoice(state: GameState, event: GameEvent): string {
 
 /** Find a choice id by substring match on its label, case-insensitive.
  *  Returns null if nothing matches. */
-function choiceMatching(state: GameState, event: GameEvent, ...patterns: RegExp[]): string | null {
+export function choiceMatching(state: GameState, event: GameEvent, ...patterns: RegExp[]): string | null {
   for (const c of event.choices) {
     if (c.hidden && c.hidden(state)) continue;
     if (c.requires && (state.inventory[c.requires.itemId] ?? 0) <= 0) continue;
@@ -718,11 +719,151 @@ export const chaosPersona: Persona = {
   mudAbandonmentPriority: () => ABANDON_PRIORITY
 };
 
+// === #287b — named-profile variants ===
+//
+// Each variant inherits balanced behavior via spread, then overrides
+// the methods that express its signature trait. Period anchors live
+// on the bot-profiles dossier (docs/handoff/bot-profiles-dossier.md).
+
+/** sunday_rester — lays by every Sunday. Period: Whitman missionaries,
+ *  Sager family under Whitman protection. The Sabbath was non-negotiable.
+ *  Other days: balanced behavior. */
+export const sundayResterPersona: Persona = {
+  ...balancedPersona,
+  id: 'sunday_rester',
+  shouldRest(state, rng) {
+    if (isSunday(state.date)) return true;
+    return balancedPersona.shouldRest(state, rng);
+  }
+};
+
+/** pace_pusher — grueling when healthy. Period: James Reed pushed for
+ *  the Hastings Cutoff to save time; Lansford Hastings promoted his
+ *  unproven shortcut on speed grounds. Pushes pace, skimps on rest
+ *  unless the team is genuinely failing. */
+export const pacePusherPersona: Persona = {
+  ...balancedPersona,
+  id: 'pace_pusher',
+  pickPace(state) {
+    if (minPartyHealth(state) >= 70 && !oxenWornOut(state)) return 'grueling';
+    if (minPartyHealth(state) >= 50) return 'fast';
+    return 'moderate';
+  },
+  shouldRest(state) {
+    // Only rest when the team is actually failing — not on the cautious
+    // 45/25 trigger. Period: Reed pushed past prudent rest limits.
+    return minPartyHealth(state) < 30 || oxenWornOut(state);
+  }
+};
+
+/** hoarder — keeps the chest tight, refuses to top off generously.
+ *  Period: late-summer parties cutting deals. Won't deplete cash on
+ *  speculative restocks; never trades fresh oxen for worn ones (sticks
+ *  with what they have rather than swap). */
+export const hoarderPersona: Persona = {
+  ...balancedPersona,
+  id: 'hoarder',
+  pickFoodRestockOpts() {
+    // Tight floor + tight cap — hoarder buys only what's strictly needed
+    // for the next leg. 15/30 vs balanced's 25/60.
+    return { daysFloor: 15, daysCap: 30 };
+  },
+  pickOxSwapCount() {
+    // Never swap. Hoarder keeps the team they have, even when the post
+    // offers fresh stock.
+    return 0;
+  },
+  pickRepairBudget(state, here) {
+    // Half balanced's repair budget — hoarder defers maintenance.
+    if (!(here.services ?? []).includes('blacksmith')) return 0;
+    if (state.wagon.condition >= 60) return 0;
+    if (state.cash < 10) return 0;
+    return Math.min(15, state.cash);
+  }
+};
+
+/** generous — invests in the team and the wagon. Period: George Donner,
+ *  captain by acclamation, distributed food freely; Tamzene continued
+ *  even as their own stores ran low. High pickOxSwapCount (always wants
+ *  a fresh, healthy team) + generous repair budget. */
+export const generousPersona: Persona = {
+  ...balancedPersona,
+  id: 'generous',
+  pickOxSwapCount(state, here) {
+    if (!(here.services ?? []).includes('ox_swap')) return 0;
+    // Generous mirrors cautious — wants 2 above minTeam, refreshes
+    // worn at <70 health. They'd rather over-spend on the team than
+    // strand the company.
+    return pickOxSwapCountFor(state, 2, 70);
+  },
+  pickRepairBudget(state, here) {
+    // 1.5× balanced — generous spends to keep the wagon running.
+    if (!(here.services ?? []).includes('blacksmith')) return 0;
+    if (state.wagon.condition >= 75) return 0;
+    if (state.cash < 20) return 0;
+    return Math.min(45, state.cash, Math.round((100 - state.wagon.condition) * 1.5));
+  },
+  shouldJoinTrain() {
+    // Always joins — generous is a team player.
+    return true;
+  }
+};
+
+/** faithful — Sundays off (like sunday_rester) AND prefers prayer-flavored
+ *  event choices. Period: Sager family under Whitman protection; Catherine
+ *  Sager's memoir records constant prayer + community dependence. */
+export const faithfulPersona: Persona = {
+  ...balancedPersona,
+  id: 'faithful',
+  shouldRest(state, rng) {
+    if (isSunday(state.date)) return true;
+    return balancedPersona.shouldRest(state, rng);
+  },
+  pickEventChoice(state, event, rng) {
+    // Prefer scripture / prayer / preacher choices when offered.
+    const devout = choiceMatching(
+      state, event,
+      /pray/i, /scripture/i, /preach/i, /service/i, /faith/i, /bless/i, /funeral/i
+    );
+    if (devout) return devout;
+    return balancedPersona.pickEventChoice(state, event, rng);
+  }
+};
+
+/** drinker — prefers whiskey-flavored choices, lingers at posts with inns.
+ *  Period: Joe Meek archetype — the ex-mountain-man for whom morale
+ *  centered on the bottle. */
+export const drinkerPersona: Persona = {
+  ...balancedPersona,
+  id: 'drinker',
+  pickEventChoice(state, event, rng) {
+    const drink = choiceMatching(
+      state, event,
+      /whiskey/i, /drink/i, /toast/i, /celebrate/i, /pass the bottle/i
+    );
+    if (drink) return drink;
+    return balancedPersona.pickEventChoice(state, event, rng);
+  },
+  shouldStayAtInn(state, here) {
+    // Lower the morale threshold — drinker stops at any inn for a drink
+    // even when the party doesn't strictly need rest.
+    return (here.services ?? []).includes('inn')
+      && state.cash >= 5
+      && (state.morale < 70 || minPartyHealth(state) < 80);
+  }
+};
+
 export const PERSONAS: Record<PersonaId, Persona> = {
   cautious: cautiousPersona,
   balanced: balancedPersona,
   aggressive: aggressivePersona,
-  chaos: chaosPersona
+  chaos: chaosPersona,
+  sunday_rester: sundayResterPersona,
+  pace_pusher: pacePusherPersona,
+  hoarder: hoarderPersona,
+  generous: generousPersona,
+  faithful: faithfulPersona,
+  drinker: drinkerPersona
 };
 
 export function getPersona(id: PersonaId): Persona {

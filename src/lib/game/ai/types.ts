@@ -21,7 +21,20 @@ export type { FordMethod } from '../actions/ford';
 import type { FordMethod } from '../actions/ford';
 import type { FoodRestockOpts } from './shopping';
 
-export type PersonaId = 'cautious' | 'balanced' | 'aggressive' | 'chaos';
+export type PersonaId =
+  | 'cautious'
+  | 'balanced'
+  | 'aggressive'
+  | 'chaos'
+  // #287b — named-profile variants. Each derives from `balanced` and
+  // overrides 1-2 methods that express the variant's signature trait
+  // (Sundays off, grueling pace, hoarding, generosity, devotion, drink).
+  | 'sunday_rester'
+  | 'pace_pusher'
+  | 'hoarder'
+  | 'generous'
+  | 'faithful'
+  | 'drinker';
 
 // All persona methods receive an Rng. Deterministic personas
 // (cautious/balanced/aggressive) ignore it and produce the same
