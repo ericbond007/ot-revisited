@@ -28,7 +28,10 @@ vite.config.ts.timestamp-*
 dev.db
 dev.db-*
 *.log
-drizzle/meta
+# drizzle/meta — this directory IS source code (migration metadata),
+# not generated noise. CI fails without _journal.json + the snapshot.
+# Migrations regenerate the meta dir when schema changes via `npm run
+# db:generate` — commit those alongside the .sql output.
 
 # Playwright MCP scratch — accessibility snapshots dropped here during
 # UI audits. Per-session noise, never source.
