@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { foodItemIds } from '../content/items';
-import { hasLiveWhore } from '../professions/predicates';
+import { hasLiveWhore, hasLiveTeacher } from '../professions/predicates';
 
 // Whore keeps morale from cratering — +15% floor while she's alive in the party.
 export const WHORE_MORALE_FLOOR = 15;
@@ -49,6 +49,16 @@ export function adjustMorale(state: GameState, _rng: Rng): GameState {
   // biggest morale lift outside of arrival itself. Steady +1/day
   // while in a train.
   if (state.wagonTrain) delta += 1;
+
+  // #317a — teacher + primer (McGuffey's Reader). The schoolmarm
+  // reading aloud at camp was a documented morale lift in mixed-age
+  // emigrant trains; Tabitha Brown founded Pacific University from
+  // exactly this dynamic. Requires both the teacher AND the primer —
+  // the teacher without a book has nothing to read; the book without
+  // a teacher just collects dust.
+  if (hasLiveTeacher(state) && (state.inventory.primer ?? 0) > 0) {
+    delta += 1;
+  }
 
   const floor = moraleFloorFor(state);
   const morale = Math.max(floor, Math.min(100, state.morale + delta));

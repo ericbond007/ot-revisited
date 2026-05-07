@@ -33,7 +33,9 @@ export type ProfessionId =
   | 'scout'
   | 'preacher'
   | 'indian_trader'
-  | 'gunsmith';
+  | 'gunsmith'
+  | 'teacher'
+  | 'lawyer';
 
 export type ConditionId =
   | 'cholera'

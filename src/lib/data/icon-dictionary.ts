@@ -142,7 +142,9 @@ export const ICON = {
     scout:         '🧭',
     preacher:      '✝️',
     indian_trader: '🪶',
-    gunsmith:      '🔫'
+    gunsmith:      '🔫',
+    teacher:       '📖',
+    lawyer:        '⚖️'
   },
   // Service icons in TownStage's service-card grid (round 1 + round 2).
   town_services: {

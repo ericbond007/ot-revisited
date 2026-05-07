@@ -25,3 +25,5 @@ export const hasLiveScout = (s: GameState) => hasLive(s, 'scout');
 export const hasLivePreacher = (s: GameState) => hasLive(s, 'preacher');
 export const hasLiveIndianTrader = (s: GameState) => hasLive(s, 'indian_trader');
 export const hasLiveGunsmith = (s: GameState) => hasLive(s, 'gunsmith');
+export const hasLiveTeacher = (s: GameState) => hasLive(s, 'teacher');
+export const hasLiveLawyer = (s: GameState) => hasLive(s, 'lawyer');

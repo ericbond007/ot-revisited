@@ -56,4 +56,6 @@ export type ProfessionIconKind =
   | 'scout'
   | 'preacher'
   | 'indian_trader'
-  | 'gunsmith';
+  | 'gunsmith'
+  | 'teacher'
+  | 'lawyer';

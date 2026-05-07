@@ -1,6 +1,6 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
-import { hasLivePreacher, hasLiveWhore } from '../professions/predicates';
+import { hasLivePreacher, hasLiveWhore, hasLiveGunsmith } from '../professions/predicates';
 import { canBoilWater } from '../systems/water-purity';
 import { fuelFlavorFor } from '../systems/fire';
 import { washAll } from '../systems/cleanliness';
@@ -414,35 +414,45 @@ const cureMeat: CampAction = {
 // is the steady yield emigrants reported (the rest is sprue + spillage,
 // reabsorbed in the next melt). Without a mold, the player must buy
 // pre-cast balls at posts.
+//
+// #317a — Gunsmith bonus: a working gunsmith doesn't need the mold
+// (they hand-shape from memory) and casts at ~50 balls/pig (less waste,
+// reusing sprues; period accounts of professional casters report ~60%
+// better yield than amateurs). Both effects bundled — gunsmith is the
+// mold AND the better caster.
 const BALLS_PER_PIG = 30;
+const BALLS_PER_PIG_GUNSMITH = 50;
 
 const castBalls: CampAction = {
   id: 'cast_balls',
   label: 'Cast balls from a lead pig',
-  sub: `Mold + 1 lead pig · 2 hr · +${BALLS_PER_PIG} lead balls`,
+  sub: `Mold + 1 lead pig · 2 hr · +${BALLS_PER_PIG} lead balls (or +${BALLS_PER_PIG_GUNSMITH} with a gunsmith, no mold needed)`,
   icon: '🔫',
   hourCost: 2,
   availability: (s) => {
-    if ((s.inventory.bullet_mold ?? 0) === 0) {
-      return { available: false, reason: 'Need a bullet mold' };
-    }
     if ((s.inventory.lead_pig ?? 0) === 0) {
       return { available: false, reason: 'Need a pig of lead' };
+    }
+    if ((s.inventory.bullet_mold ?? 0) === 0 && !hasLiveGunsmith(s)) {
+      return { available: false, reason: 'Need a bullet mold (or a gunsmith)' };
     }
     return { available: true };
   },
   apply: (s) => {
     const pigs = s.inventory.lead_pig ?? 0;
-    if (pigs <= 0 || (s.inventory.bullet_mold ?? 0) === 0) return s;
+    const gunsmith = hasLiveGunsmith(s);
+    if (pigs <= 0) return s;
+    if ((s.inventory.bullet_mold ?? 0) === 0 && !gunsmith) return s;
+    const balls = gunsmith ? BALLS_PER_PIG_GUNSMITH : BALLS_PER_PIG;
     const inventory: Record<string, number> = {
       ...s.inventory,
       lead_pig: pigs - 1,
-      lead_balls: (s.inventory.lead_balls ?? 0) + BALLS_PER_PIG
+      lead_balls: (s.inventory.lead_balls ?? 0) + balls
     };
-    return logLine(
-      { ...s, inventory },
-      `Cast ${BALLS_PER_PIG} lead balls from a 5-lb pig.`
-    );
+    const note = gunsmith
+      ? `The gunsmith cast ${balls} lead balls from a 5-lb pig (less waste, no mold needed).`
+      : `Cast ${balls} lead balls from a 5-lb pig.`;
+    return logLine({ ...s, inventory }, note);
   }
 };
 

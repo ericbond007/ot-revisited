@@ -5,11 +5,13 @@ import type { ProfessionId } from '../src/lib/game/types';
 
 const EXPECTED: ProfessionId[] = [
   'banker', 'farmer', 'carpenter', 'doctor', 'blacksmith', 'hunter',
-  'teamster', 'merchant', 'whore', 'scout', 'preacher', 'indian_trader', 'gunsmith'
+  'teamster', 'merchant', 'whore', 'scout', 'preacher', 'indian_trader', 'gunsmith',
+  // #317a — added teacher + lawyer.
+  'teacher', 'lawyer'
 ];
 
 describe('profession catalog', () => {
-  it('has all 13 professions', () => {
+  it('has all 15 professions', () => {
     const ids = Object.keys(PROFESSIONS).sort();
     expect(ids).toEqual([...EXPECTED].sort());
   });

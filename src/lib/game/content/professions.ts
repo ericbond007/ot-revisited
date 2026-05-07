@@ -166,16 +166,56 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
   gunsmith: {
     id: 'gunsmith',
     name: 'Gunsmith',
-    bonusSummary: "+20% on hunt yield (stacks with Hunter).",
+    // #317 — period-correct rework. Old "+20% hunt yield" was placeholder
+    // hunter-overlap. Gunsmith now: better lead-casting (50 balls/pig vs
+    // amateur 30, no bullet_mold needed — the gunsmith IS the mold) +
+    // a second starter rifle (parallel hunters from day 1, since a
+    // working gunsmith naturally had spare arms).
+    bonusSummary: "Casts 50 balls per lead pig (vs 30); no bullet mold needed. Starts with 2 rifles.",
     starterGear: [
       { item: 'rifle_cleaning_kit', qty: 1 },
       { item: 'bullet_mold', qty: 1 },
       { item: 'gunpowder', qty: 15 },
       { item: 'lead_balls', qty: 15 },
       { item: 'percussion_caps', qty: 15 },
-      { item: 'rifle', qty: 1 }
+      { item: 'rifle', qty: 2 }
     ],
     charisma: 2
+  },
+  teacher: {
+    id: 'teacher',
+    name: 'Teacher',
+    // #317 — period-correct schoolteacher. Tabitha Brown founded
+    // Pacific University out of an 1846 trail wagon at age 66; John
+    // Bidwell was a Missouri schoolteacher before the 1841 crossing.
+    // Mechanic: a primer (McGuffey's Reader was THE 1840s schoolbook)
+    // in inventory restores +1 morale/day from the teacher reading
+    // aloud at camp; camp action "Teach the kids" gives a party-wide
+    // morale bump when children are present.
+    bonusSummary: 'Primer in inventory restores +1 morale/day. Adds "Teach the kids" camp action (+5 party morale).',
+    starterGear: [
+      { item: 'primer', qty: 1 },
+      { item: 'bible', qty: 1 }
+    ],
+    charisma: 3
+  },
+  lawyer: {
+    id: 'lawyer',
+    name: 'Lawyer',
+    // #317 — period-correct frontier attorney. Lansford Hastings was
+    // an Ohio lawyer + land speculator who promoted the Hastings Cutoff
+    // (and indirectly killed the Donner Party); James Reed was a
+    // wealthy Springfield businessman + land speculator with similar
+    // litigious instincts. Mechanic: tied-charisma elections favor
+    // the lawyer (#285), and tolls / ferry fees drop 20% (the lawyer
+    // argues the receipt down). Land claim arrival bonus represents
+    // the legal infrastructure to file a Donation Land Claim.
+    bonusSummary: 'Wins tied charisma votes; reduces party-conflict events. −20% post tolls + ferry fees. +$200 arrival bonus.',
+    starterGear: [
+      { item: 'cash', qty: 200 },
+      { item: 'bible', qty: 1 }
+    ],
+    charisma: 4
   }
 };
 

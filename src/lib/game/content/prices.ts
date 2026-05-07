@@ -146,6 +146,8 @@ export const PRICES: Record<string, PriceEntry> = {
   fiddle:    { buy: 12.00, sell: 6.00 },
   // #276 American Bible Society pocket edition $1–2 period; was $5.
   bible:     { buy: 2.00, sell: 1.00 },
+  // #317a McGuffey Reader retailed $0.30–0.50 period; cheap and common.
+  primer:    { buy: 0.50, sell: 0.25 },
   // #276 follow-up — period $25–50 for a real grandfather clock.
   // This is a buy-only-at-Independence prestige item for end-game
   // scoring (#148). Dropped from $50 to historical low end so the
