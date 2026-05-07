@@ -1,6 +1,6 @@
 import type { GameState, NpcWagonState } from '../types';
 import { makeRng } from '../rng';
-import { hasLiveHunter, hasLiveGunsmith } from '../professions/predicates';
+import { hasLiveHunter } from '../professions/predicates';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
@@ -139,7 +139,9 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
 
   let yieldMultiplier = 1;
   if (hasLiveHunter(s)) yieldMultiplier += 0.2;
-  if (hasLiveGunsmith(s)) yieldMultiplier += 0.2;
+  // #317a — gunsmith's old +20% yield was placeholder hunter-overlap.
+  // Gunsmith now bonuses casting yield + brings a 2nd starter rifle;
+  // hunt-yield is hunter's territory.
   // A dog retrieves, flushes, tracks — documented emigrant-party boost.
   // Small so it stacks under profession bonuses without dwarfing them.
   if (s.dog) yieldMultiplier += 0.15;

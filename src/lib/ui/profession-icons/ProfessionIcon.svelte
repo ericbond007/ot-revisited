@@ -23,9 +23,11 @@
   import Gunsmith     from './gunsmith.svelte';
   import Hunter       from './hunter.svelte';
   import IndianTrader from './indian_trader.svelte';
+  import Lawyer       from './lawyer.svelte';
   import Merchant     from './merchant.svelte';
   import Preacher     from './preacher.svelte';
   import Scout        from './scout.svelte';
+  import Teacher      from './teacher.svelte';
   import Teamster     from './teamster.svelte';
   import Whore        from './whore.svelte';
 
@@ -38,9 +40,11 @@
     gunsmith:      Gunsmith,
     hunter:        Hunter,
     indian_trader: IndianTrader,
+    lawyer:        Lawyer,
     merchant:      Merchant,
     preacher:      Preacher,
     scout:         Scout,
+    teacher:       Teacher,
     teamster:      Teamster,
     whore:         Whore
   };
@@ -100,9 +104,11 @@
     'gunsmith',
     'hunter',
     'indian_trader',
+    'lawyer',
     'merchant',
     'preacher',
     'scout',
+    'teacher',
     'teamster',
     'whore'
   ]);

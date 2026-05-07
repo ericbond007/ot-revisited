@@ -7,7 +7,7 @@ import { loadSpeedMult } from './load';
 import { gatherFirewoodOnTravel } from './fire';
 import { applyAxleGrease } from './wagon';
 import { rollStrayMorning } from './strays';
-import { hasLiveScout } from '../professions/predicates';
+import { hasLiveScout, hasLiveLawyer } from '../professions/predicates';
 import { weatherTravelMult } from './weather';
 
 // Base mileage per pace, before terrain / oxen / weather modifiers.
@@ -223,6 +223,25 @@ export function applyTravel(state: GameState, rng: Rng): GameState {
       completed: after === null ? true : next.completed,
       outcome: after === null ? 'arrived' : next.outcome
     };
+
+    // #317a — lawyer's land-claim arrival bonus. The lawyer files
+    // your Donation Land Claim and squares the paperwork at the
+    // territorial office; period reality, the paperwork-savvy
+    // emigrant arrived with a lump-sum advantage. Fires once on
+    // final arrival, only when a lawyer is alive.
+    if (after === null && hasLiveLawyer(next)) {
+      next = {
+        ...next,
+        cash: next.cash + 200,
+        eventLog: [
+          ...next.eventLog,
+          {
+            day: next.day,
+            text: 'Your lawyer files the Donation Land Claim cleanly. +$200 settlement bonus.'
+          }
+        ]
+      };
+    }
   }
 
   return next;

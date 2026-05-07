@@ -42,6 +42,14 @@ const ELECTION_LANDMARKS = new Set<string>([
 
 const INCUMBENT_BONUS = 1.0;
 const CHARISMA_WEIGHT = 0.5;
+/** #317a — Lawyer's charisma-tiebreaker bonus. Set larger than the
+ *  rng nudge max (0.3) but smaller than one charisma step (0.5), so
+ *  a lawyer reliably beats other charisma-4 candidates (banker, scout)
+ *  but still loses to charisma-5 preachers most of the time. Period
+ *  anchor: emigrant-train captain elections often favored the lawyer
+ *  in the company because he could draft camp regulations and
+ *  arbitrate disputes mid-trail. */
+const LAWYER_TIEBREAK_BONUS = 0.35;
 /** Average train morale below which a vote is called. Period anchor:
  *  diaries record petitions when the company was clearly grumbling —
  *  not when they were merely tired. 55 sits in the middle of the
@@ -54,6 +62,8 @@ interface Candidate {
   name: string;
   charisma: number;
   isIncumbent: boolean;
+  /** #317a — for the lawyer tiebreaker bump. */
+  profession: ProfessionId | null;
 }
 
 function playerLeaderProfession(state: GameState): ProfessionId | null {
@@ -87,7 +97,8 @@ function buildCandidates(state: GameState): Candidate[] {
       id: 'player',
       name: state.party.find((m) => m.isLeader)?.name ?? 'Captain',
       charisma: professionCharisma(playerProf),
-      isIncumbent: incumbent === 'player'
+      isIncumbent: incumbent === 'player',
+      profession: playerProf
     });
   }
   // Companion slots — eligible while in-progress with at least one
@@ -99,7 +110,8 @@ function buildCandidates(state: GameState): Candidate[] {
       id: c.id,
       name: c.name,
       charisma: professionCharisma(c.leaderProfession),
-      isIncumbent: incumbent === c.id
+      isIncumbent: incumbent === c.id,
+      profession: c.leaderProfession
     });
   }
   return candidates;
@@ -111,7 +123,9 @@ function weightFor(c: Candidate, rng: Rng): number {
   const base = 1 + c.charisma * CHARISMA_WEIGHT;
   const nudge = rng.next() * 0.3;
   const incumbent = c.isIncumbent ? INCUMBENT_BONUS : 0;
-  return base + nudge + incumbent;
+  // #317a — lawyer wins ties at the same charisma tier.
+  const lawyerBump = c.profession === 'lawyer' ? LAWYER_TIEBREAK_BONUS : 0;
+  return base + nudge + incumbent + lawyerBump;
 }
 
 export interface ElectionResult {

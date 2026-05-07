@@ -238,6 +238,11 @@ export const ITEMS: Record<string, ItemMeta> = {
   harmonica: { id: 'harmonica', name: 'Harmonica', category: 'comfort', weightLbPerUnit: 0.2, description: 'Unlocks the Entertain camp action — boosts morale.' },
   fiddle: { id: 'fiddle', name: 'Fiddle', category: 'comfort', weightLbPerUnit: 3, description: 'Larger morale bump than a harmonica. Keeps spirits up on long nights.' },
   bible: { id: 'bible', name: 'Bible', category: 'comfort', weightLbPerUnit: 2, description: '+2 passive morale while owned. Enables Preacher\'s camp service.' },
+  // #317a — McGuffey's Eclectic Reader (1836-1879) was THE 1840s
+  // schoolbook; ~$0.30 in period dollars, common emigrant load. Drives
+  // the Teacher's daily morale bonus (the schoolmarm reading aloud at
+  // camp) + the future Teach-the-kids camp action (#317c).
+  primer: { id: 'primer', name: "McGuffey's Reader", category: 'comfort', weightLbPerUnit: 0.5, description: 'Schoolbook of letters and morals. With a Teacher in the party, restores +1 morale/day from camp lessons.' },
   // The grandfather clock is a luxury haul — useless on the trail, but
   // delivering it to Oregon City is a major prestige score bonus (#148).
   // 100 lb of solid walnut + brass eats real wagon capacity, so taking
