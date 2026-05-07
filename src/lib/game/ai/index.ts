@@ -11,6 +11,14 @@ export {
   balancedPersona,
   aggressivePersona,
   chaosPersona,
+  // #287b — named-profile variants
+  sundayResterPersona,
+  pacePusherPersona,
+  hoarderPersona,
+  generousPersona,
+  faithfulPersona,
+  drinkerPersona,
+  choiceMatching,
   getPersona,
   makeBotRng
 } from './personas';
