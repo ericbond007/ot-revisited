@@ -224,6 +224,31 @@ export function applyTravel(state: GameState, rng: Rng): GameState {
       outcome: after === null ? 'arrived' : next.outcome
     };
 
+    // #317b — scout previews. When a scout is in the party, every
+    // landmark crossing yields a one-line report about the next leg:
+    // miles, terrain, and notable danger (river ford, no-water stretch,
+    // mountain pass). Period anchor: Joe Meek + Kit Carson routinely
+    // rode 20-30 mi ahead and reported back at evening camp.
+    if (after && hasLiveScout(next)) {
+      const milesAhead = (after.milesFromPrevious ?? 0);
+      const dangerNote = (() => {
+        if (after.kind === 'river') return ' — a river ford ahead';
+        if (after.terrain === 'mountains') return ' — mountain country, slow going';
+        if (after.terrain === 'desert') return ' — desert, watch the water casks';
+        return '';
+      })();
+      next = {
+        ...next,
+        eventLog: [
+          ...next.eventLog,
+          {
+            day: next.day,
+            text: `Scout reports: ${after.name} is ~${milesAhead} mi ahead${dangerNote}.`
+          }
+        ]
+      };
+    }
+
     // #317a — lawyer's land-claim arrival bonus. The lawyer files
     // your Donation Land Claim and squares the paperwork at the
     // territorial office; period reality, the paperwork-savvy
