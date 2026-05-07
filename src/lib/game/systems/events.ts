@@ -3,6 +3,18 @@ import type { Rng } from '../rng';
 import { EVENTS } from '../content/events';
 import type { GameEvent } from '../content/events';
 import { wagonHazardMult } from './load';
+import { hasLiveLawyer } from '../professions/predicates';
+
+/** #317c — conflict-flavored party events that the lawyer can mediate.
+ *  When a lawyer is alive in the party, these fire ~50% less often
+ *  (the attorney smooths things over before they escalate). Period
+ *  reality: emigrant-party diaries note attorneys arbitrating disputes
+ *  before they became open quarrels. */
+const LAWYER_CONFLICT_DAMPEN_IDS = new Set<string>([
+  'party_food_hoarding',
+  'party_fistfight'
+]);
+const LAWYER_CONFLICT_WEIGHT_MULT = 0.5;
 
 // Wagon-category events fire more often when the wagon is overloaded —
 // structural stress translates to higher breakdown odds. All other
@@ -15,6 +27,10 @@ function effectiveWeight(ev: GameEvent, state: GameState): number {
   if (ev.id === 'cholera_scare') {
     const until = (state.flags._choleraHintedUntilDay as number | undefined) ?? 0;
     if (until > state.day) w *= 1.5;
+  }
+  // #317c — lawyer in party dampens conflict events.
+  if (LAWYER_CONFLICT_DAMPEN_IDS.has(ev.id) && hasLiveLawyer(state)) {
+    w *= LAWYER_CONFLICT_WEIGHT_MULT;
   }
   return w;
 }

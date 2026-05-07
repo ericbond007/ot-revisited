@@ -11,6 +11,14 @@ import { applyEggLay } from '../systems/eggs';
 import { rollFordLoss } from '../systems/item-loss';
 import { exposureMult } from '../systems/warmth';
 import { adjustTribeAttitude, getTribeAttitude } from '../systems/tribe-relations';
+import { hasLiveLawyer } from '../professions/predicates';
+
+/** #317c — lawyer's fee discount on ferries / tolls. The lawyer
+ *  argues the receipt down (or just looks like he could litigate
+ *  the operator into next week). Period reality: emigrant diaries
+ *  consistently show educated party members negotiating ferry
+ *  fees ~20% lower than the posted rate. */
+export const LAWYER_FEE_DISCOUNT = 0.80;
 
 export interface RiverState {
   depthFt: number;
@@ -180,11 +188,17 @@ export function ford(state: GameState, opts: FordOptions): GameState {
 
   switch (opts.method) {
     case 'ferry': {
-      if (s.cash < opts.river.ferryPrice) {
-        throw new Error(`ford: not enough cash for ferry ($${s.cash} < $${opts.river.ferryPrice})`);
+      const lawyerDiscount = hasLiveLawyer(s);
+      const fee = lawyerDiscount
+        ? Math.round(opts.river.ferryPrice * LAWYER_FEE_DISCOUNT)
+        : opts.river.ferryPrice;
+      if (s.cash < fee) {
+        throw new Error(`ford: not enough cash for ferry ($${s.cash} < $${fee})`);
       }
-      s = { ...s, cash: s.cash - opts.river.ferryPrice };
-      const line = `Paid $${opts.river.ferryPrice} for ferry across the river.`;
+      s = { ...s, cash: s.cash - fee };
+      const line = lawyerDiscount
+        ? `Paid $${fee} for ferry across the river. The lawyer argued it down from $${opts.river.ferryPrice}.`
+        : `Paid $${fee} for ferry across the river.`;
       events.push(line);
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };
       s = clearAtLandmark(passiveDay(s, 'ferry'));

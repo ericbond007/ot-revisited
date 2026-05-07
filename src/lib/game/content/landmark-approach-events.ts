@@ -1,6 +1,8 @@
 import type { GameState } from '../types';
 import type { GameEvent } from './events';
 import { runningMilesTo } from '../systems/travel';
+import { hasLiveLawyer } from '../professions/predicates';
+import { LAWYER_FEE_DISCOUNT } from '../actions/ford';
 
 // Approach events fire BEFORE the party reaches a landmark — when a
 // distant feature first becomes visible on the horizon. Period reality
@@ -100,12 +102,17 @@ const barlowOrColumbia: GameEvent = {
       hidden: (s) => s.date.year < 1846,
       apply: (s) => {
         const aliveHeads = s.party.filter((m) => !m.dead).length;
-        const toll = 5 + Math.ceil(aliveHeads * 0.1 * 10) / 10; // dime per head, kept to 2dp
+        const baseToll = 5 + Math.ceil(aliveHeads * 0.1 * 10) / 10; // dime per head, kept to 2dp
+        // #317c — lawyer's fee discount applies to road tolls too.
+        const lawyerDiscount = hasLiveLawyer(s);
+        const toll = lawyerDiscount
+          ? Math.round(baseToll * LAWYER_FEE_DISCOUNT * 100) / 100
+          : baseToll;
         const cash = Math.max(0, s.cash - toll);
-        return logLine(
-          { ...s, cash },
-          `Paid Sam Barlow's toll: $${toll.toFixed(2)} for the wagon and ${aliveHeads} heads. Laurel Hill ahead.`
-        );
+        const line = lawyerDiscount
+          ? `Paid Sam Barlow's toll: $${toll.toFixed(2)} (lawyer argued it down from $${baseToll.toFixed(2)}). Laurel Hill ahead.`
+          : `Paid Sam Barlow's toll: $${toll.toFixed(2)} for the wagon and ${aliveHeads} heads. Laurel Hill ahead.`;
+        return logLine({ ...s, cash }, line);
       }
     },
     {

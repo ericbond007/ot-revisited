@@ -1,6 +1,6 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
-import { hasLivePreacher, hasLiveWhore, hasLiveGunsmith, hasLiveHunter } from '../professions/predicates';
+import { hasLivePreacher, hasLiveWhore, hasLiveGunsmith, hasLiveHunter, hasLiveTeacher } from '../professions/predicates';
 import { canBoilWater } from '../systems/water-purity';
 import { fuelFlavorFor } from '../systems/fire';
 import { washAll } from '../systems/cleanliness';
@@ -62,7 +62,8 @@ export type CampActionId =
   | 'pan_for_gold'
   | 'raid_natives'
   | 'take_from_train'
-  | 'set_traps';
+  | 'set_traps'
+  | 'teach_kids';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -564,6 +565,44 @@ const setTraps: CampAction = {
     return logLine(
       { ...s, inventory, flags },
       `Walked the trap line — ${lbs} lb of small game (rabbit, squirrel, hare). Cure it or eat it fresh.`
+    );
+  }
+};
+
+// --- Teach the kids (#317c — teacher second effect) ---
+// The schoolmarm pulls out the McGuffey Reader and runs an evening
+// lesson. Period reality: Tabitha Brown's Pacific University grew
+// from exactly this — a wagon-camp school that became a school-
+// house. Requires both a teacher in the party AND at least one
+// child to teach AND a primer to teach from. Yields a meaningful
+// party-wide morale lift; hour-cost is real (3 hr — a full evening
+// session).
+const TEACH_KIDS_HOURS = 3;
+const TEACH_KIDS_MORALE_GAIN = 5;
+
+const teachKids: CampAction = {
+  id: 'teach_kids',
+  label: 'Teach the kids a lesson',
+  sub: `Primer + child + teacher · ${TEACH_KIDS_HOURS} hr · +${TEACH_KIDS_MORALE_GAIN} morale party-wide`,
+  icon: '📖',
+  hourCost: TEACH_KIDS_HOURS,
+  availability: (s) => {
+    if (!hasLiveTeacher(s)) {
+      return { available: false, reason: 'Need a teacher to lead the lesson' };
+    }
+    if ((s.inventory.primer ?? 0) === 0) {
+      return { available: false, reason: 'Need a primer to teach from' };
+    }
+    const hasChild = s.party.some((m) => !m.dead && m.kind === 'child');
+    if (!hasChild) {
+      return { available: false, reason: 'No children in the party to teach' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    return logLine(
+      { ...s, morale: Math.max(0, Math.min(100, s.morale + TEACH_KIDS_MORALE_GAIN)) },
+      "Schoolmarm ran the kids through their letters by lantern. Whole camp listened in — morale +" + TEACH_KIDS_MORALE_GAIN + "."
     );
   }
 };
@@ -1492,6 +1531,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   // Foraging — passive yield without ammo
   fish,
   setTraps,
+  // Teacher — schoolmarm camp lesson
+  teachKids,
   // Wagon repair (#196 + #201)
   patchWagon,
   replaceCanvas,
@@ -1528,6 +1569,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   cast_balls: castBalls,
   fish,
   set_traps: setTraps,
+  teach_kids: teachKids,
   patch_wagon: patchWagon,
   replace_canvas: replaceCanvas,
   replace_planks: replacePlanks,
