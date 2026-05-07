@@ -94,8 +94,19 @@ describe('event-specific gates', () => {
 
   it('fiddle night only fires when someone has a fiddle', () => {
     const fiddleEvent = TRAIN_EVENTS.find((e) => e.id === 'train_fiddle_night')!;
-    const s = trainState();
-    // Default party has no fiddle.
+    // Strip any fiddles a named bot profile (#287c — Sagers, etc.) may
+    // have shipped in by default, so the no-fiddle baseline is real.
+    const raw = trainState();
+    const s = {
+      ...raw,
+      inventory: { ...raw.inventory, fiddle: 0 },
+      wagonTrain: raw.wagonTrain && {
+        ...raw.wagonTrain,
+        companions: raw.wagonTrain.companions.map((c) => ({
+          ...c, inventory: { ...c.inventory, fiddle: 0 }
+        }))
+      }
+    };
     expect(fiddleEvent.gate!(s)).toBe(false);
     // Add a fiddle to the player's inventory.
     const withFiddle = { ...s, inventory: { ...s.inventory, fiddle: 1 } };

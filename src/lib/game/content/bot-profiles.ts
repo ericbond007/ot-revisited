@@ -75,6 +75,13 @@ export interface BotProfile {
   trait: string;
   /** Source citation — primary Wikipedia URL from the dossier. */
   source: string;
+  /** #287c — signature kit overrides. Items here REPLACE the random
+   *  qty in the base inventory roll (other items still vary by seed).
+   *  Keep these to items that are mechanically distinctive — large-
+   *  family flour bumps, trapper kits, missionary bibles, settler
+   *  luxury hauls — not random tweaks. The dossier's "trait" field
+   *  drives which items appear here. */
+  kitOverrides?: Record<string, number>;
 }
 
 /** The 10 launch profiles. Source: docs/handoff/bot-profiles-dossier.md.
@@ -102,7 +109,10 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     personaVariantHint: 'faithful',
     year: 1844,
     trait: 'Both parents died on the trail; the seven children completed the journey under the care of fellow emigrants.',
-    source: 'https://en.wikipedia.org/wiki/Sager_children'
+    source: 'https://en.wikipedia.org/wiki/Sager_children',
+    // 9 souls (2 + 7 kids) need 2× the average wagon's flour load.
+    // Bible + fiddle for the family-evening ritual that defines them.
+    kitOverrides: { flour: 250, bible: 1, fiddle: 1 }
   },
   {
     id: 'donner-family',
@@ -122,7 +132,12 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     personaVariantHint: 'generous',
     year: 1846,
     trait: 'Captain by acclamation. Tamzene distributed food to others as their own stores ran low in the Sierra.',
-    source: 'https://en.wikipedia.org/wiki/Donner_Party'
+    source: 'https://en.wikipedia.org/wiki/Donner_Party',
+    // Settlers leaving Springfield, IL in comfort. Tamzene packed china
+    // (it survived the Sierra winter). Anvil for George's planned smithy
+    // in California — period: settlers brought heavy iron to set up
+    // shop on arrival.
+    kitOverrides: { flour: 200, china_tea_set: 1, anvil: 1 }
   },
   {
     id: 'reed-family',
@@ -146,7 +161,11 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     personaVariantHint: 'pace_pusher',
     year: 1846,
     trait: 'Famously impatient; built the heavy "Pioneer Palace Car"; banished after killing teamster John Snyder in a whip-fight.',
-    source: 'https://en.wikipedia.org/wiki/James_Reed_(pioneer)'
+    source: 'https://en.wikipedia.org/wiki/James_Reed_(pioneer)',
+    // The "Pioneer Palace Car" — feather mattress, china, family bible,
+    // wealthy starting cash. Period reality: every detail in Virginia
+    // Reed Murphy's memoir reads like luxury overload.
+    kitOverrides: { feather_mattress: 1, china_tea_set: 1, family_bible: 1, cash: 600 }
   },
   {
     id: 'joe-meek',
@@ -160,7 +179,10 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     personaVariantHint: 'chaos',
     year: 1840,
     trait: 'Mountain man whose beaver-trade collapse drove him to Oregon. Later first U.S. Marshal of Oregon Territory.',
-    source: 'https://en.wikipedia.org/wiki/Joe_Meek'
+    source: 'https://en.wikipedia.org/wiki/Joe_Meek',
+    // Trapper kit. Less flour (he ate game), more powder + lead, jerky
+    // already cured. Mountain men were rifle-first, flour-last.
+    kitOverrides: { flour: 30, gunpowder: 40, lead_balls: 30, lead_pig: 2, jerky: 20, whiskey: 4 }
   },
   {
     id: 'whitman-mission',
@@ -175,7 +197,11 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     personaVariantHint: 'sunday_rester',
     year: 1836,
     trait: 'First wagons west; Narcissa among the first white women over the Rockies. Killed in the 1847 Whitman Massacre.',
-    source: 'https://en.wikipedia.org/wiki/Marcus_Whitman'
+    source: 'https://en.wikipedia.org/wiki/Marcus_Whitman',
+    // Mission kit: doctor's books + bibles for the Sunday observance
+    // that defined them. Doctor profession already grants the medical
+    // chest; this layer adds the literacy props.
+    kitOverrides: { medical_books: 1, bible: 2, primer: 1 }
   },
   {
     id: 'tabitha-brown',

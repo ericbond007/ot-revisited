@@ -398,6 +398,17 @@ function generateNpcWagon(
   const wagonModel = getWagon(DEFAULT_WAGON_MODEL);
   const hasChildren = party.some((p) => p.kind === 'child');
   const inventory = generateNpcInventory(leaderProf, party.length, rng);
+  // #287c — apply per-profile signature kit overrides. These REPLACE
+  // the random qty for items in the override (other items still vary
+  // by seed). Same profile + same seed → same signature loadout.
+  // `cash` is a top-level field, not inventory — extracted separately.
+  let cashOverride: number | undefined;
+  if (profile?.kitOverrides) {
+    for (const [key, qty] of Object.entries(profile.kitOverrides)) {
+      if (key === 'cash') cashOverride = qty;
+      else inventory[key] = qty;
+    }
+  }
   // #303e — water tracking. Cap from wagon model + any starter water_skin
   // (none today, but kept symmetric with the player's computeWaterCap so
   // when NPCs gain trade access the cap follows). Fresh joins start at
@@ -414,7 +425,7 @@ function generateNpcWagon(
     inventory,
     oxen: generateNpcOxen(wagonId, oxenCount, fresh, rng),
     morale: fresh ? 80 : rng.int(60, 90),
-    cash: rng.int(40, 300),
+    cash: cashOverride ?? rng.int(40, 300),
     wagon: {
       model: DEFAULT_WAGON_MODEL,
       condition: fresh ? 100 : rng.int(70, 100),
