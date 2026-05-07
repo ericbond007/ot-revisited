@@ -406,6 +406,22 @@ export function applyNpcPostRestock(state: GameState): GameState {
       const dropped = buys.pop()!;
       cost -= getPrice(dropped.item).buy * dropped.qty * postMult;
     }
+    // #287a — if every buy got dropped (low cash + high prices, e.g.
+    // a 7-soul family at a 1.5× post with $15), shrink qty on the
+    // highest-priority item (flour) to whatever cash will buy. Beats
+    // "skip the restock entirely" — the Donner family still buys SOME
+    // flour rather than starving.
+    if (buys.length === 0) {
+      const head = pickFoodRestock({ wagon: c, stock }, { daysFloor: 5, daysCap: 10 })[0];
+      if (head) {
+        const unit = getPrice(head.item).buy * postMult;
+        const qty = Math.floor(c.cash / unit);
+        if (qty > 0) {
+          buys = [{ item: head.item, qty }];
+          cost = unit * qty;
+        }
+      }
+    }
     if (buys.length === 0) return c;
     const inv = { ...c.inventory };
     for (const b of buys) {
