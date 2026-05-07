@@ -1,5 +1,27 @@
 # hoosierTrail — Claude Code project notes
 
+## Pre-commit gate: `npm run verify`
+
+`npm run verify` = `npm run check` (svelte-check / tsc) + `npm test` (vitest). Run it before opening any PR. CI runs the same gate on push + PR via `.github/workflows/verify.yml`. Pinned action SHAs — bump fresh when upgrading.
+
+If `verify` fails, fix it before adding more code. Never `// @ts-ignore` / `as any` past a real type error — type errors are bugs (per global CLAUDE.md "Type errors are bugs" rule).
+
+## Dependency hygiene (post-Shai-Hulud, 2025)
+
+September 2025's `@ctrl/tinycolor` worm (Shai Hulud) showed that "install latest" is no longer safe by default. Policy for this repo:
+
+- **Stay current with minor/patch.** `npm outdated` should show empty most weeks. `npm update` for minor/patch bumps; major bumps in their own PRs with full `verify` runs.
+- **Wait 48–72 hours after a release** before bumping a major version of a popular package. Most supply-chain worms get caught within a day; the wait dodges the worst window.
+- **Pin GitHub Actions to commit SHA, not tag.** Tags can be moved; SHAs cannot. Format: `actions/checkout@<sha> # v6.0.2`. Resolve SHAs via `curl -sS https://api.github.com/repos/<owner>/<action>/git/ref/tags/<tag> | jq -r .object.sha`.
+- **Scan before adding new packages.** Use socket.dev or `npm audit` on a fresh tree before `npm install <new-pkg>`. Reject AI-suggested obscure packages without verifying maintainer / publication history.
+- **Never blindly accept regenerated lockfiles.** If `package-lock.json` regenerates with unexpected diff size, inspect — supply-chain attacks commonly land via lockfile poisoning.
+
+### Known transitive vulns (accepted, tracked)
+
+- `drizzle-kit@0.31.x` pulls in deprecated `@esbuild-kit/*` chain → 7 esbuild vulns (3 low, 4 moderate). Drizzle is refactoring out @esbuild-kit upstream; no fixed version yet (even 1.0.0-beta still affected). drizzle-kit is devDependency-only (used by `db:push`/`db:studio`/`db:generate`) — not in runtime bundle, scoped impact. Re-check on each drizzle-kit minor bump.
+
+
+
 ## Version control: jj (Jujutsu) colocated with git
 
 This project uses **jj** for branch management, colocated with git (`.git/` and `.jj/` coexist). Both tools work; `jj` is the preferred interface because it lets you switch between branches in the same folder without stash/worktree juggling.
