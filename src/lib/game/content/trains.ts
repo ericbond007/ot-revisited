@@ -18,6 +18,14 @@ import type {
 } from '../types';
 import { DEFAULT_WAGON_MODEL, getWagon } from './wagons';
 import { computeWaterCap } from '../systems/water-cap';
+import type { BotProfile } from './bot-profiles';
+import { LAUNCH_PROFILES, pickProfilesForRoster } from './bot-profiles';
+
+// #287a — surnames reserved for named profiles. Random fillers must
+// never pick these (would produce a duplicate "the Sager family"
+// wagon alongside the historical one). Computed from LAUNCH_PROFILES
+// so adding new profiles auto-extends the reservation.
+const RESERVED_SURNAMES = new Set(LAUNCH_PROFILES.map((p) => p.surname));
 
 // Period captain surnames — used for "Captain X's Company" naming.
 const CAPTAIN_NAMES = [
@@ -134,15 +142,21 @@ function pickComposition(rng: Rng, fresh: boolean): WagonComposition {
  *  prospecting or freighting together; solo (10%) was the rare
  *  Joe-Meek-style trapper-turned-emigrant. The optional `fresh` flag
  *  gives every member 100 HP — used at Independence-start joins where
- *  no trail wear has accumulated. */
+ *  no trail wear has accumulated.
+ *
+ *  #287a — When `profile` is supplied, the random party generation is
+ *  skipped and the profile's verbatim member list is used instead.
+ *  Named profiles ship the same family every game on the same seed. */
 function generateNpcParty(
   wagonId: string,
   surname: string,
   leaderProf: ProfessionId,
   composition: WagonComposition,
   fresh: boolean,
-  rng: Rng
+  rng: Rng,
+  profile?: BotProfile
 ): PartyMember[] {
+  if (profile) return generatePartyFromProfile(wagonId, profile, fresh, rng);
   const party: PartyMember[] = [];
   const leaderSex: 'male' | 'female' = rng.chance(0.85) ? 'male' : 'female';
   const adultHp = (): number => fresh ? 100 : rng.int(70, 100);
@@ -230,6 +244,36 @@ function generateNpcParty(
   }
 
   return party;
+}
+
+/** #287a — Build the party verbatim from a named profile. The profile
+ *  records exact members (sex, age, given name, role) — ages drift by
+ *  ±1 year from the dossier base so the same family doesn't appear
+ *  identical across seeds, but composition + names are stable. */
+function generatePartyFromProfile(
+  wagonId: string,
+  profile: BotProfile,
+  fresh: boolean,
+  rng: Rng
+): PartyMember[] {
+  const adultHp = (): number => fresh ? 100 : rng.int(70, 100);
+  const childHp = (): number => fresh ? 100 : rng.int(75, 100);
+  return profile.party.map((m, i) => {
+    const memberSurname = m.surname ?? profile.surname;
+    return {
+      id: `${wagonId}-${m.role[0]}${i}`,
+      name: `${m.given} ${memberSurname}`,
+      sex: m.sex,
+      kind: m.role === 'child' ? 'child' : 'adult',
+      isLeader: m.role === 'leader',
+      profession: m.role === 'leader' ? profile.leaderProfession : undefined,
+      age: Math.max(0, m.age + rng.int(-1, 1)),
+      health: m.role === 'child' ? childHp() : adultHp(),
+      cleanliness: 100,
+      conditions: [],
+      dead: false
+    };
+  });
 }
 
 /** Lightweight inventory generator for an NPC wagon. Period-believable
@@ -326,9 +370,17 @@ export interface GenerateNpcWagonOpts {
    *  pristine wagon condition. `false` for mid-trail joins → light
    *  trail wear (the train has been moving). */
   fresh?: boolean;
+  /** #287a — supply a named profile to override random surname /
+   *  profession / composition / party. Same profile + same seed
+   *  always produces the same family. */
+  profile?: BotProfile;
 }
 
-/** Generate one NPC wagon — the full state, not a flat record. */
+/** Generate one NPC wagon — the full state, not a flat record.
+ *  #287a — when `opts.profile` is supplied the wagon ships with a
+ *  named profile (Sagers, Donners, Reeds, Joe Meek, etc.); the
+ *  profile's surname / leader profession / composition / party
+ *  override the random rolls. */
 function generateNpcWagon(
   trainSeed: string,
   index: number,
@@ -340,7 +392,8 @@ function generateNpcWagon(
 ): NpcWagonState {
   const wagonId = `wagon-${index}`;
   const fresh = opts.fresh === true;
-  const party = generateNpcParty(wagonId, surname, leaderProf, composition, fresh, rng);
+  const profile = opts.profile;
+  const party = generateNpcParty(wagonId, surname, leaderProf, composition, fresh, rng, profile);
   const oxenCount = rng.int(2, 6);
   const wagonModel = getWagon(DEFAULT_WAGON_MODEL);
   const hasChildren = party.some((p) => p.kind === 'child');
@@ -353,7 +406,7 @@ function generateNpcWagon(
   const water = fresh ? waterCap : Math.round(waterCap * (0.6 + rng.int(0, 40) / 100));
   return {
     id: wagonId,
-    name: wagonLabel(surname, composition, party),
+    name: profile ? profile.displayName : wagonLabel(surname, composition, party),
     leaderProfession: leaderProf,
     hasChildren,
     seed: `${trainSeed}-${wagonId}`,
@@ -407,11 +460,38 @@ export function generateTrain(
   const companions: NpcWagonState[] = [];
   const trainSeed = `${seed}-d${joinDay}`;
 
+  // #287a — half the slots fill from named profiles (Sagers, Donners,
+  // Reeds, Joe Meek, etc.), the other half are random fillers per the
+  // pre-#287a behavior. Named profiles bypass random surname /
+  // profession / composition picks.
+  const profilePicks = pickProfilesForRoster(rng, memberCount, {
+    freshBias: opts.fresh === true
+  });
+  // Reserve named-profile surnames up front so random fillers can't
+  // accidentally pick the same surname (which would produce a
+  // duplicate "the Sager family" wagon alongside the historical one).
+  for (const p of profilePicks) {
+    if (p) usedNames.add(p.surname);
+  }
+
   for (let i = 0; i < memberCount; i++) {
+    const profile = profilePicks[i];
+    if (profile) {
+      companions.push(generateNpcWagon(
+        trainSeed,
+        i,
+        profile.surname,
+        profile.leaderProfession,
+        profile.composition,
+        rng,
+        { fresh: opts.fresh, profile }
+      ));
+      continue;
+    }
     let nameIdx = rng.int(0, FAMILY_NAMES.length - 1);
     let surname = FAMILY_NAMES[nameIdx];
     let attempts = 0;
-    while (usedNames.has(surname) && attempts < 8) {
+    while ((usedNames.has(surname) || RESERVED_SURNAMES.has(surname)) && attempts < FAMILY_NAMES.length) {
       nameIdx = (nameIdx + 1) % FAMILY_NAMES.length;
       surname = FAMILY_NAMES[nameIdx];
       attempts += 1;
