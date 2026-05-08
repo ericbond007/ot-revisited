@@ -25,6 +25,7 @@
 
 import type { Rng } from '../rng';
 import type {
+  GameState,
   NpcWagonState,
   Outcome,
   Pace,
@@ -32,6 +33,7 @@ import type {
   Terrain,
   Weather
 } from '../types';
+import { getPersona } from '../ai/personas';
 import { getCondition } from '../content/conditions';
 import { applyNpcSpoilage, applyNpcHeatSpoilage } from './spoilage';
 import { hasLive } from '../professions/predicates';
@@ -383,6 +385,15 @@ export function tickNpcWagon(
   const heatSpoil = applyNpcHeatSpoilage(next, ctx.weather);
   next = heatSpoil.wagon;
   if (heatSpoil.log) playerLogs.push(heatSpoil.log);
+
+  // 1c. #895 — persona-driven rations decision. Each NPC wagon carries
+  // a `personaId` (set at gen from `profile.personaVariantHint`, or
+  // 'balanced' for fillers). Persona reads only `state.inventory` for
+  // pickRations today, so the shim below is sufficient — widen it if a
+  // future override touches other state.
+  const persona = getPersona(next.personaId ?? 'balanced');
+  const fauxState = { inventory: next.inventory } as unknown as GameState;
+  next = { ...next, rations: persona.pickRations(fauxState, rng) };
 
   // 2. Food consumption.
   const eaters = next.party.filter((m) => !m.dead).length;
