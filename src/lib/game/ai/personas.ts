@@ -827,6 +827,14 @@ export const faithfulPersona: Persona = {
     );
     if (devout) return devout;
     return balancedPersona.pickEventChoice(state, event, rng);
+  },
+  shouldCannibalize() {
+    // #907 — period reality: the Whitman missionaries and Sager
+    // family under their care refused to eat their dead even at the
+    // worst of the 1846-47 winter. Catherine Sager's memoir records
+    // funerals over corpses no one would touch. Faithful wagons take
+    // the starvation deaths over the moral break.
+    return false;
   }
 };
 
