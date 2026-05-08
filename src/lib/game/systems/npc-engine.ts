@@ -303,6 +303,11 @@ function maybeCannibalize(
   if (food > 0) return { wagon };
   const corpses = wagon.party.filter((m) => isCannibalEligible(m, day));
   if (corpses.length === 0) return { wagon };
+  // #907 — persona-driven moral gate. Default true (Donner reality);
+  // faithful overrides to refuse. shouldCannibalize reads no state on
+  // any current impl; widen the shim if a future override needs it.
+  const persona = getPersona(wagon.personaId ?? 'balanced');
+  if (!persona.shouldCannibalize({} as GameState)) return { wagon };
   const corpse = [...corpses].sort(
     (a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0)
   )[0];
