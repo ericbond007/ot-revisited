@@ -450,6 +450,10 @@ function generateNpcWagon(
     eventLog: [],
     outcome: 'in-progress',
     rations: 'normal',
+    // #895 — persona variant driving this wagon's tick decisions. Named
+    // profiles ship a personaVariantHint; random fillers default to
+    // 'balanced'. tickNpcWagon falls back to 'balanced' if missing.
+    personaId: profile?.personaVariantHint ?? 'balanced',
     water,
     dirtyWater: 0,
     waterCap,

@@ -1,6 +1,8 @@
 // Core types for the OT: Oregon Trail Revisited game state.
 // See spec §3.2 for the full data model.
 
+import type { PersonaId } from './ai/types';
+
 export type Pace = 'slow' | 'moderate' | 'fast' | 'grueling';
 export type Rations = 'meager' | 'normal' | 'filling';
 
@@ -277,8 +279,14 @@ export interface NpcWagonState extends WagonStateLike {
   outcome: Outcome;
   /** #280b — per-wagon rations setting. Bot AI (or #285 leader call)
    *  may flip this when the wagon's food runs low. Defaults to
-   *  'normal' on generation. */
+   *  'normal' on generation. Per-tick override via `persona.pickRations`
+   *  in #895. */
   rations: Rations;
+  /** #895 — persona variant driving this wagon's daily decisions.
+   *  Set from `profile.personaVariantHint` at gen for named profiles;
+   *  defaults to 'balanced' for random fillers. Optional for legacy
+   *  saves — `tickNpcWagon` falls back to 'balanced' when missing. */
+  personaId?: PersonaId;
   /** Optional companion dog — parity with the player. */
   dog?: Dog;
   /** #303e — per-wagon clean water (gallons). Drains daily via
