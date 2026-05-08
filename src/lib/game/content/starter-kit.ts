@@ -74,28 +74,57 @@ export const BASE_KIT: StarterKit = {
   }
 };
 
+export interface BuildStarterKitOpts {
+  /** #888b — when false, skip the BASE_KIT layer entirely. Player
+   *  veterans who want to provision themselves at the outfitter pick
+   *  this. Default true (the wizard checkbox defaults ON). When false,
+   *  the player gets +$250 cash (BASE_KIT outfitter-replacement value)
+   *  on top of the $400 baseline so they can re-buy what they need.
+   *  Total: $650 cash, no flour, no medicine, no rifle, no clothing,
+   *  no tent. Player provisions from scratch at the Independence
+   *  outfitter. */
+  includeStarterKit?: boolean;
+}
+
+/** #888b — outfitter-equivalent cash refund when player skips the
+ *  starter kit. Calibrated against the cost of buying the BASE_KIT
+ *  contents (food + medicine + rifle + ammo + tent + rope + per-soul
+ *  clothing) at Independence prices for a 4-soul reference family
+ *  (~$213). $250 covers the buy-back plus a small buffer for the
+ *  veteran's choice — period reality says wealthy emigrants who
+ *  outfitted at Independence (rather than home) came with extra cash
+ *  to spend on regional specialties. */
+const STARTER_KIT_REFUND = 250;
+
 export function buildStarterKit(
   professions: ProfessionId[],
-  wagonModel: WagonModelId = DEFAULT_WAGON_MODEL
+  wagonModel: WagonModelId = DEFAULT_WAGON_MODEL,
+  opts: BuildStarterKitOpts = {}
 ): StarterKit {
-  const inventory: Record<string, number> = { ...BASE_KIT.inventory };
-  let cash = BASE_KIT.cash;
+  const includeStarterKit = opts.includeStarterKit ?? true;
+  const inventory: Record<string, number> = includeStarterKit
+    ? { ...BASE_KIT.inventory }
+    : {};
+  let cash = BASE_KIT.cash + (includeStarterKit ? 0 : STARTER_KIT_REFUND);
   let oxen = BASE_KIT.oxen;
 
-  // Wagon model adds enough yokes to hitch the full team. Spare
-  // parts are no longer auto-bundled — players buy what they want
-  // at the outfitter so the per-wagon weight budget is honest.
+  // Wagon yokes — required to hitch the full team. Always added,
+  // regardless of `includeStarterKit`: without yokes the wagon
+  // literally can't move. Spare parts (wheels / axles / planks) are
+  // not auto-bundled; player buys at the outfitter.
   const wagon = getWagon(wagonModel);
   inventory.yoke = (inventory.yoke ?? 0) + wagon.requiredYokes;
 
   // #888c — per-soul outfitter pass. Coats, blankets, and boots
-  // scale with partySize (proxied via professions.length, since the
-  // wizard always emits one profession per adult). Marcy 1859 lists
-  // each of these as essential per-emigrant items.
-  const partySize = Math.max(1, professions.length);
-  inventory.coat    = (inventory.coat    ?? 0) + partySize;
-  inventory.blanket = (inventory.blanket ?? 0) + partySize;
-  inventory.boots   = (inventory.boots   ?? 0) + partySize;
+  // scale with partySize. Toggles with `includeStarterKit` (#888b) —
+  // veteran players who skip the kit buy these themselves at the
+  // outfitter.
+  if (includeStarterKit) {
+    const partySize = Math.max(1, professions.length);
+    inventory.coat    = (inventory.coat    ?? 0) + partySize;
+    inventory.blanket = (inventory.blanket ?? 0) + partySize;
+    inventory.boots   = (inventory.boots   ?? 0) + partySize;
+  }
 
   for (const id of professions) {
     const prof = getProfession(id);
