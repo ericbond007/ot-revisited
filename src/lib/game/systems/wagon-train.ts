@@ -5,7 +5,7 @@
 // All side-effects route through `joinTrain` / `leaveTrain` actions —
 // callers should never mutate the train state directly.
 
-import type { GameState, Pace, WagonTrain } from '../types';
+import type { GameState, NpcWagonState, Ox, Pace, WagonTrain } from '../types';
 import type { Rng } from '../rng';
 import { generateTrain, trainHasProfession } from '../content/trains';
 import { hasLiveBlacksmith } from '../professions/predicates';
@@ -18,6 +18,12 @@ import { pickFoodRestock } from '../ai/shopping';
 import { getPersona } from '../ai/personas';
 import { getLandmark } from '../content/landmarks';
 import { getPrice } from '../content/prices';
+import {
+  OX_SWAP_BARTER_BOOT_USD,
+  OX_SWAP_CASH_ONLY_USD,
+  OX_SWAP_GOLD_RUSH_YEARS,
+  OX_SWAP_GOLD_RUSH_MULT
+} from './town-services';
 
 /** True when the party is currently traveling with a wagon train. */
 export function isInTrain(state: GameState): boolean {
@@ -377,6 +383,73 @@ export function applyTrainWaterPool(state: GameState): GameState {
  *  Logs a single summary line per restocking wagon ("the Sager family
  *  bought 32 lb flour + 9 lb bacon + 3 lb sugar at Fort Laramie —
  *  $12.40."). Total summary at the end if any wagon restocked. */
+/** #902 — apply a persona-driven ox swap on an NPC wagon at a post.
+ *  Mirrors player swapOxen (town-services.ts) at the wagon level:
+ *  prefers barter (2 worst-attrition oxen surrendered per fresh) when
+ *  the team has enough surrender candidates, else falls back to
+ *  cash-only at the higher per-head rate. Does nothing (returns
+ *  unchanged) if the wagon can't afford either path. */
+function applyNpcOxSwap(
+  wagon: NpcWagonState,
+  want: number,
+  year: number,
+  postName: string,
+  day: number,
+  playerLogs: { day: number; text: string }[]
+): NpcWagonState {
+  const fresh = Math.max(0, Math.floor(want));
+  if (fresh <= 0) return wagon;
+  const goldRush = OX_SWAP_GOLD_RUSH_YEARS.has(year);
+  const mult = goldRush ? OX_SWAP_GOLD_RUSH_MULT : 1;
+
+  const sorted = [...wagon.oxen]
+    .filter((o) => o.health > 0)
+    .sort((a, b) => (a.health - a.fatigue) - (b.health - b.fatigue));
+  const barterNeed = 2 * fresh;
+  const barterCost = fresh * OX_SWAP_BARTER_BOOT_USD * mult;
+  const cashOnlyCost = fresh * OX_SWAP_CASH_ONLY_USD * mult;
+
+  let surrenderIds: string[] = [];
+  let cost = 0;
+  let cashOnly = false;
+  if (sorted.length >= barterNeed && wagon.cash >= barterCost) {
+    surrenderIds = sorted.slice(0, barterNeed).map((o) => o.id);
+    cost = barterCost;
+  } else if (wagon.cash >= cashOnlyCost) {
+    cashOnly = true;
+    cost = cashOnlyCost;
+  } else {
+    return wagon; // can't afford either path
+  }
+
+  const idSet = new Set(surrenderIds);
+  const remainingTeam = cashOnly ? wagon.oxen : wagon.oxen.filter((o) => !idSet.has(o.id));
+  const usedIds = new Set(remainingTeam.map((o) => o.id));
+  const freshOxen: Ox[] = [];
+  let nextN = 0;
+  for (let i = 0; i < fresh; i++) {
+    let id = `ox-fresh-${wagon.id}-${day}-${nextN}`;
+    while (usedIds.has(id)) {
+      nextN += 1;
+      id = `ox-fresh-${wagon.id}-${day}-${nextN}`;
+    }
+    usedIds.add(id);
+    freshOxen.push({ id, health: 100, fatigue: 0, shod: true });
+    nextN += 1;
+  }
+
+  const flavor = cashOnly
+    ? `${wagon.name} bought ${fresh} fresh ox${fresh === 1 ? '' : 'en'} at ${postName} for $${cost}${goldRush ? ' (Gold Rush prices)' : ''}.`
+    : `${wagon.name} swapped ${surrenderIds.length} trail-worn ox${surrenderIds.length === 1 ? '' : 'en'} for ${fresh} fresh at ${postName} — $${cost} boot${goldRush ? ' (Gold Rush prices)' : ''}.`;
+  playerLogs.push({ day, text: flavor });
+
+  return {
+    ...wagon,
+    cash: wagon.cash - cost,
+    oxen: [...remainingTeam, ...freshOxen]
+  };
+}
+
 export function applyNpcPostRestock(state: GameState): GameState {
   if (!state.wagonTrain) return state;
   const id = state.location.atLandmarkId;
@@ -390,58 +463,84 @@ export function applyNpcPostRestock(state: GameState): GameState {
   const postMult = here.priceMultiplier ?? 1.0;
 
   const playerLogs: { day: number; text: string }[] = [];
+  const offersOxSwap = (here.services ?? []).includes('ox_swap');
   const updated = state.wagonTrain.companions.map((c) => {
     if (c.outcome !== 'in-progress') return c;
     if (c.cash < 10) return c;
-    // #899 — persona-driven restock sizing. Each wagon's personaId
-    // (set at gen from profile.personaVariantHint per #895) tunes
-    // floor + cap days. hoarder = 15/30, balanced = 25/60, cautious
-    // = 30/90, chaos swings deterministically on state.day. Shim
-    // exposes only the fields any current pickFoodRestockOpts impl
-    // reads (`day`); widen if a future override touches more.
     const persona = getPersona(c.personaId ?? 'balanced');
-    const fauxState = { day: state.day } as unknown as GameState;
-    const opts = persona.pickFoodRestockOpts(fauxState);
-    let buys = pickFoodRestock({ wagon: c, stock }, opts);
-    if (buys.length === 0) return c;
-    // Cash gate: drop tail-end (lowest priority) items until total fits.
-    let cost = buys.reduce(
-      (sum, b) => sum + getPrice(b.item).buy * b.qty * postMult,
-      0
-    );
-    while (cost > c.cash && buys.length > 0) {
-      const dropped = buys.pop()!;
-      cost -= getPrice(dropped.item).buy * dropped.qty * postMult;
-    }
-    // #287a — if every buy got dropped (low cash + high prices, e.g.
-    // a 7-soul family at a 1.5× post with $15), shrink qty on the
-    // highest-priority item (flour) to whatever cash will buy. Beats
-    // "skip the restock entirely" — the Donner family still buys SOME
-    // flour rather than starving.
-    if (buys.length === 0) {
-      const head = pickFoodRestock({ wagon: c, stock }, opts)[0];
-      if (head) {
-        const unit = getPrice(head.item).buy * postMult;
-        const qty = Math.floor(c.cash / unit);
-        if (qty > 0) {
-          buys = [{ item: head.item, qty }];
-          cost = unit * qty;
+    let next: NpcWagonState = c;
+
+    // --- Food restock ---
+    // #899 — persona-driven sizing via persona.pickFoodRestockOpts.
+    // hoarder = 15/30, balanced = 25/60, cautious = 30/90, chaos
+    // swings deterministically on state.day. Shim exposes only the
+    // fields any current impl reads (`day`); widen if future
+    // overrides touch more.
+    const foodFauxState = { day: state.day } as unknown as GameState;
+    const opts = persona.pickFoodRestockOpts(foodFauxState);
+    let buys = pickFoodRestock({ wagon: next, stock }, opts);
+    if (buys.length > 0) {
+      // Cash gate: drop tail-end (lowest priority) items until total fits.
+      let cost = buys.reduce(
+        (sum, b) => sum + getPrice(b.item).buy * b.qty * postMult,
+        0
+      );
+      while (cost > next.cash && buys.length > 0) {
+        const dropped = buys.pop()!;
+        cost -= getPrice(dropped.item).buy * dropped.qty * postMult;
+      }
+      // #287a — if every buy got dropped (low cash + high prices, e.g.
+      // a 7-soul family at a 1.5× post with $15), shrink qty on the
+      // highest-priority item (flour) to whatever cash will buy. Beats
+      // "skip the restock entirely" — the Donner family still buys SOME
+      // flour rather than starving.
+      if (buys.length === 0) {
+        const head = pickFoodRestock({ wagon: next, stock }, opts)[0];
+        if (head) {
+          const unit = getPrice(head.item).buy * postMult;
+          const qty = Math.floor(next.cash / unit);
+          if (qty > 0) {
+            buys = [{ item: head.item, qty }];
+            cost = unit * qty;
+          }
         }
       }
+      if (buys.length > 0) {
+        const inv = { ...next.inventory };
+        for (const b of buys) {
+          inv[b.item] = (inv[b.item] ?? 0) + b.qty;
+        }
+        const summary = buys
+          .map((b) => `${b.qty} lb ${b.item.replace(/_/g, ' ')}`)
+          .join(' + ');
+        playerLogs.push({
+          day: state.day,
+          text: `${c.name} bought ${summary} at ${here.name} — $${cost.toFixed(2)}.`
+        });
+        next = { ...next, inventory: inv, cash: Math.round(next.cash - cost) };
+      }
     }
-    if (buys.length === 0) return c;
-    const inv = { ...c.inventory };
-    for (const b of buys) {
-      inv[b.item] = (inv[b.item] ?? 0) + b.qty;
+
+    // --- Ox swap ---
+    // #902 — persona-driven worn-team refresh. Mirrors player
+    // swapOxen (town-services.ts) at the wagon level. generous /
+    // cautious want 2 above minTeam + refresh on <70 health; hoarder
+    // never swaps; chaos rolls 0–3 deterministically. The shim
+    // exposes wagon.model (for minTeam) and oxen — the only fields
+    // any current pickOxSwapCount impl reads.
+    if (offersOxSwap && next.cash >= OX_SWAP_BARTER_BOOT_USD) {
+      const oxFauxState = { wagon: next.wagon, oxen: next.oxen } as unknown as GameState;
+      // Per-wagon RNG keyed off the wagon seed + day so chaos picks
+      // are deterministic per (wagon, day, post) but diverge across
+      // wagons. Same pattern as the bot runner.
+      const oxRng = makeRng(`${next.seed}:ox-swap:${state.day}:${id}`);
+      const want = persona.pickOxSwapCount(oxFauxState, here, oxRng);
+      if (want > 0) {
+        next = applyNpcOxSwap(next, want, state.date.year, here.name, state.day, playerLogs);
+      }
     }
-    const summary = buys
-      .map((b) => `${b.qty} lb ${b.item.replace(/_/g, ' ')}`)
-      .join(' + ');
-    playerLogs.push({
-      day: state.day,
-      text: `${c.name} bought ${summary} at ${here.name} — $${cost.toFixed(2)}.`
-    });
-    return { ...c, inventory: inv, cash: Math.round(c.cash - cost) };
+
+    return next;
   });
 
   if (playerLogs.length === 0) {
