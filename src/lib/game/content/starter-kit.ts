@@ -8,23 +8,25 @@ export interface StarterKit {
   inventory: Record<string, number>;
 }
 
-// Audited starter kit (#102 follow-up):
-//   - Variety in BASE so the varied-diet bonus (#110) is reachable
-//     without buying anything: 300 flour + 50 beans + 30 bacon spans
-//     the starch + meat groups.
-//   - Cookware, salt, bandages, coffee in BASE so the brew-water,
-//     cure-meat, and triage-injury paths all work day 1 regardless
-//     of party composition.
-//   - Bullets removed from BASE: useless without a rifle, so leaving
-//     them in the kit wasted weight when the party had no Hunter or
-//     Gunsmith. Either of those professions brings their own bullets.
-//   - Water skins removed from BASE: each wagon model already
-//     declares its own baseWaterCapGal (15 / 20 / 25) representing
-//     the wagon's built-in keg. Water skins are an outfitter upgrade
-//     for dry stretches, not a baseline assumption.
-//   - Wagon spare-parts no longer pre-loaded — players who want
-//     wheels / axles / planks buy them at the outfitter, on their
-//     own weight budget.
+// Audited starter kit (#102 → #888c):
+//
+// Pre-#888c, bullets / clothing / rifle were OUTFITTER-bought items.
+// Professions like Hunter / Gunsmith brought ammo as starterGear,
+// which was the gear-discount #888 set out to remove.
+//
+// Post-#888c, BASE_KIT eats the period-emigrant outfitter package:
+// rifle, gunpowder + lead_balls + percussion_caps, tent, rope, and
+// per-soul coat / blanket / boots (added in buildStarterKit since
+// BASE doesn't know partySize). Marcy 1859 prescribes ALL of these
+// as the floor — they aren't optional. Profession choice is now
+// purely flavor + mechanical bonus, no save-a-buck. Profession.
+// starterGear cleanup happens in #890.
+//
+// Still NOT in BASE:
+//  - Water skins — each wagon model declares its own baseWaterCapGal
+//    via the built-in keg. Water skins are an outfitter upgrade.
+//  - Wagon spare-parts — players buy at outfitter on their own weight
+//    budget (#107 honesty).
 export const BASE_KIT: StarterKit = {
   cash: 400,
   oxen: 4,
@@ -47,16 +49,28 @@ export const BASE_KIT: StarterKit = {
     // supply." Royce 1849: "quinine — we had a great deal." Carpenter
     // 1857: restocked the chest at every fort. This baseline gives a
     // family without a Doctor a small but real chest; the Doctor
-    // profession layers a full professional supply on top.
+    // profession layers a full professional supply on top (#890 audit
+    // may rebalance the duplicate coverage).
     quinine:     4,
     calomel:     2,
     laudanum:    2,
     paregoric:   2,
     bandages:    8,
     shovel:      1,
-    cookware:    1
-    // Yokes are added per-wagon by buildStarterKit — each wagon
-    // model needs a different count to hitch its full team (#107).
+    cookware:    1,
+    // #888c — period outfitter package. Marcy 1859 lists these as the
+    // floor for any wagon leaving Independence. Pre-#888c making them
+    // outfitter-only purchases was a game-mechanic artifact, not period.
+    rifle:           1,
+    gunpowder:      30,
+    lead_balls:     30,
+    percussion_caps: 30,
+    tent:            1,
+    rope:            1
+    // Yokes added per-wagon by buildStarterKit — each wagon model
+    // needs a different count to hitch its full team (#107).
+    // Per-soul gear (coat / blanket / boots) added by buildStarterKit
+    // since BASE doesn't know partySize.
   }
 };
 
@@ -73,6 +87,15 @@ export function buildStarterKit(
   // at the outfitter so the per-wagon weight budget is honest.
   const wagon = getWagon(wagonModel);
   inventory.yoke = (inventory.yoke ?? 0) + wagon.requiredYokes;
+
+  // #888c — per-soul outfitter pass. Coats, blankets, and boots
+  // scale with partySize (proxied via professions.length, since the
+  // wizard always emits one profession per adult). Marcy 1859 lists
+  // each of these as essential per-emigrant items.
+  const partySize = Math.max(1, professions.length);
+  inventory.coat    = (inventory.coat    ?? 0) + partySize;
+  inventory.blanket = (inventory.blanket ?? 0) + partySize;
+  inventory.boots   = (inventory.boots   ?? 0) + partySize;
 
   for (const id of professions) {
     const prof = getProfession(id);

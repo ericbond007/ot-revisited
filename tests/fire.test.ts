@@ -56,10 +56,15 @@ describe('attemptFire', () => {
   });
 
   it('warm terrain without fire spares health but still hits morale', () => {
+    const base = newGame();
     const s = {
-      ...newGame(),
-      resources: { ...newGame().resources, firewood: 0 },
-      location: { ...newGame().location, terrain: 'prairie' as const },
+      ...base,
+      // #888c — BASE_KIT now ships a tent which halves the no-fire
+      // morale hit. Strip it so this test measures the bare-camp
+      // baseline.
+      inventory: { ...base.inventory, tent: 0 },
+      resources: { ...base.resources, firewood: 0 },
+      location: { ...base.location, terrain: 'prairie' as const },
       date: { year: 1848, month: 7, day: 1 }, // July — warm
       morale: 60
     };
