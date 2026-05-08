@@ -45,12 +45,17 @@ export const actions: Actions = {
     const month = parseInt(fd.get('month')?.toString() ?? '4', 10);
     const day = parseInt(fd.get('day')?.toString() ?? '15', 10);
 
+    // #888b — checkbox value. Browsers send the field only when
+    // checked (`on`). Missing → unchecked → skip BASE_KIT.
+    const includeStarterKit = fd.get('include_starter_kit') !== null;
+
     const seed = `${locals.deviceId}-${Date.now()}`;
     const state = createInitialState({
       seed,
       leader: members[0],
       companions: members.slice(1),
-      startDate: { year, month, day }
+      startDate: { year, month, day },
+      includeStarterKit
     });
 
     const slotName = `Journey ${new Date().toLocaleDateString()}`;

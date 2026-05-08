@@ -42,6 +42,30 @@ describe('starter kit', () => {
     expect(BASE_KIT.inventory.boots ?? 0).toBe(0);
   });
 
+  it('includeStarterKit=false skips BASE_KIT entirely + refunds $250 (#888b)', () => {
+    const kit = buildStarterKit(['blacksmith'], 'prairie_schooner', { includeStarterKit: false });
+    // BASE staples NOT present
+    expect(kit.inventory.flour ?? 0).toBe(0);
+    expect(kit.inventory.bacon ?? 0).toBe(0);
+    expect(kit.inventory.rifle ?? 0).toBe(0);
+    expect(kit.inventory.tent ?? 0).toBe(0);
+    expect(kit.inventory.coat ?? 0).toBe(0);
+    // Cash baseline + refund
+    expect(kit.cash).toBe(BASE_KIT.cash + 250);
+    // Profession.starterGear still applied (blacksmith identity)
+    expect(kit.inventory.iron_toolkit).toBe(1);
+    expect(kit.inventory.ox_shoes).toBe(10);
+    // Yokes still added (wagon needs them to move)
+    expect(kit.inventory.yoke).toBe(2);
+  });
+
+  it('includeStarterKit defaults to true when not specified', () => {
+    const a = buildStarterKit(['farmer']);
+    const b = buildStarterKit(['farmer'], undefined, { includeStarterKit: true });
+    expect(a.cash).toBe(b.cash);
+    expect(a.inventory.flour).toBe(b.inventory.flour);
+  });
+
   it('per-soul outfitter pass scales coat/blanket/boots with partySize (#888c)', () => {
     // 1 profession → 1 adult → 1 of each
     const solo = buildStarterKit(['scout']);

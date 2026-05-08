@@ -198,6 +198,21 @@
       </div>
     </div>
 
+    <!-- #888b — starter-kit toggle. Default ON. Veterans who want to
+         provision themselves at the outfitter uncheck and get +$250
+         cash refund. -->
+    <label class="kit-toggle">
+      <input type="checkbox" name="include_starter_kit" checked />
+      <span class="kit-toggle-text">
+        <strong>Include starter kit</strong>
+        <small>
+          Food, medicine, rifle, tent, and clothing for the party.
+          Uncheck to start with $250 extra cash and provision yourself
+          at the outfitter.
+        </small>
+      </span>
+    </label>
+
     </div><!-- /.scroll-area -->
 
     <div class="action-bar panel">
@@ -211,6 +226,32 @@
 
 <style>
   .add-companion { margin-bottom: 1.5em; }
+  /* #888b — starter-kit toggle. Compact period-styled checkbox row. */
+  .kit-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6em;
+    margin: 1em 0 0.5em;
+    padding: 0.7em 0.9em;
+    border: 1px solid var(--c-wood-soft, rgba(120,80,40,0.25));
+    border-radius: 4px;
+    background: var(--c-paper, rgba(255,250,240,0.4));
+    cursor: pointer;
+  }
+  .kit-toggle input[type="checkbox"] {
+    margin-top: 0.2em;
+    flex-shrink: 0;
+  }
+  .kit-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+  }
+  .kit-toggle-text small {
+    color: var(--c-wood, #6a4a28);
+    font-size: 0.85em;
+    line-height: 1.3;
+  }
   /* Full-viewport layout with a tips + profession-ref sidebar. Matches the
      outfit screen's grid. Falls back to stacked flow below 900px. */
   .new-wrap {

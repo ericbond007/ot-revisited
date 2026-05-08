@@ -36,6 +36,11 @@ export interface NewGameOptions {
   // Optional wagon choice. Defaults to prairie schooner (matches pre-#103
   // behavior, so legacy callers get the same result).
   wagonModel?: WagonModelId;
+  /** #888b — when false, skip BASE_KIT (food / medicine / rifle /
+   *  ammo / tent / rope / per-soul clothing). Default true: new
+   *  players get the helper kit. Veterans who toggle off get +$250
+   *  refund cash and provision themselves at the outfitter. */
+  includeStarterKit?: boolean;
 }
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -99,7 +104,9 @@ export function createInitialState(opts: NewGameOptions): GameState {
   // wizard is an adult with a profession set.
   const professions = party.flatMap((m) => (m.profession ? [m.profession] : []));
   const wagonModelId = opts.wagonModel ?? DEFAULT_WAGON_MODEL;
-  const kit = buildStarterKit(professions, wagonModelId);
+  const kit = buildStarterKit(professions, wagonModelId, {
+    includeStarterKit: opts.includeStarterKit ?? true
+  });
   const oxen = Array.from({ length: kit.oxen }, (_, i) => ({
     id: `ox-${i}`,
     health: 100,
