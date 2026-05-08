@@ -15,6 +15,7 @@ import type { GameEvent } from '../content/events';
 import { buildStarvationCrisisEvent } from './npc-crisis-events';
 import { processDepartures } from './npc-departures';
 import { pickFoodRestock } from '../ai/shopping';
+import { getPersona } from '../ai/personas';
 import { getLandmark } from '../content/landmarks';
 import { getPrice } from '../content/prices';
 
@@ -392,10 +393,16 @@ export function applyNpcPostRestock(state: GameState): GameState {
   const updated = state.wagonTrain.companions.map((c) => {
     if (c.outcome !== 'in-progress') return c;
     if (c.cash < 10) return c;
-    let buys = pickFoodRestock(
-      { wagon: c, stock },
-      { daysFloor: 5, daysCap: 10 }
-    );
+    // #899 — persona-driven restock sizing. Each wagon's personaId
+    // (set at gen from profile.personaVariantHint per #895) tunes
+    // floor + cap days. hoarder = 15/30, balanced = 25/60, cautious
+    // = 30/90, chaos swings deterministically on state.day. Shim
+    // exposes only the fields any current pickFoodRestockOpts impl
+    // reads (`day`); widen if a future override touches more.
+    const persona = getPersona(c.personaId ?? 'balanced');
+    const fauxState = { day: state.day } as unknown as GameState;
+    const opts = persona.pickFoodRestockOpts(fauxState);
+    let buys = pickFoodRestock({ wagon: c, stock }, opts);
     if (buys.length === 0) return c;
     // Cash gate: drop tail-end (lowest priority) items until total fits.
     let cost = buys.reduce(
@@ -412,7 +419,7 @@ export function applyNpcPostRestock(state: GameState): GameState {
     // "skip the restock entirely" — the Donner family still buys SOME
     // flour rather than starving.
     if (buys.length === 0) {
-      const head = pickFoodRestock({ wagon: c, stock }, { daysFloor: 5, daysCap: 10 })[0];
+      const head = pickFoodRestock({ wagon: c, stock }, opts)[0];
       if (head) {
         const unit = getPrice(head.item).buy * postMult;
         const qty = Math.floor(c.cash / unit);
