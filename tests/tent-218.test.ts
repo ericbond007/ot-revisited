@@ -74,7 +74,14 @@ describe('#218 tent — post stocking', () => {
 
 describe('#218 tent — cold-camp morale mitigation', () => {
   it('halves the morale hit on a no-fire night', () => {
-    const baseline: GameState = { ...newGame(), morale: 50 };
+    // #888c — BASE_KIT now ships a tent. Strip it from the baseline
+    // so the with-vs-without comparison is real.
+    const fresh = newGame();
+    const baseline: GameState = {
+      ...fresh,
+      inventory: { ...fresh.inventory, tent: 0 },
+      morale: 50
+    };
     const without = attemptFire(baseline, makeRng('cold-no-tent'));
 
     const withTent: GameState = {

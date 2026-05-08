@@ -33,7 +33,11 @@ describe('full-trail smoke', () => {
       s = rest(s, 1);
       s = rest(s, 1);
     }
-    expect(s.location.milesTraveled).toBeGreaterThan(500);
+    // #888c — BASE_KIT now ships ~100 lb of period-correct outfitter
+    // gear (rifle + ammo + tent + rope + per-soul clothing). A loaded
+    // wagon moves slightly slower; threshold drops from 500 → 450.
+    // Test still proves survival + meaningful progress.
+    expect(s.location.milesTraveled).toBeGreaterThan(450);
     expect(s.party.some((m) => !m.dead)).toBe(true);
   });
 

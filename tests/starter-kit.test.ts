@@ -27,6 +27,37 @@ describe('starter kit', () => {
     // a flat constant on BASE_KIT.
   });
 
+  it('BASE_KIT ships the period outfitter package (#888c)', () => {
+    // Marcy 1859 floor: rifle + ~30 of each ammo, tent, rope.
+    expect(BASE_KIT.inventory.rifle).toBe(1);
+    expect(BASE_KIT.inventory.gunpowder).toBe(30);
+    expect(BASE_KIT.inventory.lead_balls).toBe(30);
+    expect(BASE_KIT.inventory.percussion_caps).toBe(30);
+    expect(BASE_KIT.inventory.tent).toBe(1);
+    expect(BASE_KIT.inventory.rope).toBe(1);
+    // Per-soul gear (coat / blanket / boots) NOT on BASE — added in
+    // buildStarterKit when partySize is in scope.
+    expect(BASE_KIT.inventory.coat ?? 0).toBe(0);
+    expect(BASE_KIT.inventory.blanket ?? 0).toBe(0);
+    expect(BASE_KIT.inventory.boots ?? 0).toBe(0);
+  });
+
+  it('per-soul outfitter pass scales coat/blanket/boots with partySize (#888c)', () => {
+    // 1 profession → 1 adult → 1 of each
+    const solo = buildStarterKit(['scout']);
+    expect(solo.inventory.coat).toBe(1);
+    expect(solo.inventory.blanket).toBe(1);
+    expect(solo.inventory.boots).toBe(1);
+    // 4 professions → 4 adults → 4 of each
+    const family = buildStarterKit(['farmer', 'doctor', 'carpenter', 'preacher']);
+    expect(family.inventory.coat).toBe(4);
+    expect(family.inventory.blanket).toBe(4);
+    expect(family.inventory.boots).toBe(4);
+    // Edge case: empty professions → still 1 (Math.max guard)
+    const noone = buildStarterKit([]);
+    expect(noone.inventory.coat).toBe(1);
+  });
+
   it('builds yokes per wagon model', () => {
     const light = buildStarterKit([], 'light');
     const prairie = buildStarterKit([], 'prairie_schooner');
