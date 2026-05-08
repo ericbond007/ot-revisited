@@ -507,14 +507,26 @@ export function applyNpcPostRestock(state: GameState): GameState {
     let next: NpcWagonState = c;
 
     // --- Food restock ---
+    // #906 — persona-driven post-trade gate. shouldTradeAtPost reads
+    // inventory + party + cash + here.stock. aggressive returns false
+    // outright (skips every post); cautious / balanced gate on
+    // foodOnHand + post-stocks-missing-{warmth,medicine,equipment,
+    // saleratus}. chaos rolls 50% if cash >= $5. Shim widens
+    // accordingly.
     // #899 — persona-driven sizing via persona.pickFoodRestockOpts.
     // hoarder = 15/30, balanced = 25/60, cautious = 30/90, chaos
-    // swings deterministically on state.day. Shim exposes only the
-    // fields any current impl reads (`day`); widen if future
-    // overrides touch more.
-    const foodFauxState = { day: state.day } as unknown as GameState;
-    const opts = persona.pickFoodRestockOpts(foodFauxState);
-    let buys = pickFoodRestock({ wagon: next, stock }, opts);
+    // swings deterministically on state.day.
+    const tradeFauxState = {
+      inventory: next.inventory,
+      party: next.party,
+      cash: next.cash,
+      day: state.day
+    } as unknown as GameState;
+    const tradeRng = makeRng(`${next.seed}:trade:${state.day}:${id}`);
+    const opts = persona.pickFoodRestockOpts(tradeFauxState);
+    let buys = persona.shouldTradeAtPost(tradeFauxState, here, tradeRng)
+      ? pickFoodRestock({ wagon: next, stock }, opts)
+      : [];
     if (buys.length > 0) {
       // Cash gate: drop tail-end (lowest priority) items until total fits.
       let cost = buys.reduce(
