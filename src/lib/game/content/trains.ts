@@ -20,6 +20,7 @@ import { DEFAULT_WAGON_MODEL, getWagon } from './wagons';
 import { computeWaterCap } from '../systems/water-cap';
 import type { BotProfile } from './bot-profiles';
 import { LAUNCH_PROFILES, pickProfilesForRoster } from './bot-profiles';
+import { getProfession } from './professions';
 
 // #287a — surnames reserved for named profiles. Random fillers must
 // never pick these (would produce a duplicate "the Sager family"
@@ -397,17 +398,30 @@ function generateNpcWagon(
   const oxenCount = rng.int(2, 6);
   const wagonModel = getWagon(DEFAULT_WAGON_MODEL);
   const hasChildren = party.some((p) => p.kind === 'child');
-  const inventory = generateNpcInventory(leaderProf, party.length, rng);
-  // #287c — apply per-profile signature kit overrides. These REPLACE
-  // the random qty for items in the override (other items still vary
-  // by seed). Same profile + same seed → same signature loadout.
-  // `cash` is a top-level field, not inventory — extracted separately.
+  // #888a — profile owns Layer 0 of the kit. When `profile.kit` is
+  // set, it's the COMPLETE family inventory (no random base). When
+  // unset, fall through to the random `generateNpcInventory` for
+  // anonymous / random-filler wagons. Profession.starterGear layers
+  // additively on top either way (kept DRY for now per #890 audit).
+  // `cash` is a top-level field, extracted separately.
+  let inventory: Record<string, number>;
   let cashOverride: number | undefined;
-  if (profile?.kitOverrides) {
-    for (const [key, qty] of Object.entries(profile.kitOverrides)) {
+  if (profile?.kit) {
+    inventory = {};
+    for (const [key, qty] of Object.entries(profile.kit)) {
       if (key === 'cash') cashOverride = qty;
       else inventory[key] = qty;
     }
+  } else {
+    inventory = generateNpcInventory(leaderProf, party.length, rng);
+  }
+  // Profession starterGear additive layer (DRY — same for player +
+  // NPC paths). hunter brings bullet_mold + lead_pig regardless of
+  // which hunter profile is in play.
+  for (const entry of getProfession(leaderProf).starterGear) {
+    if (entry.item === 'cash') cashOverride = (cashOverride ?? 0) + entry.qty;
+    else if (entry.item === 'ox') {} // ox count handled separately
+    else inventory[entry.item] = (inventory[entry.item] ?? 0) + entry.qty;
   }
   // #303e — water tracking. Cap from wagon model + any starter water_skin
   // (none today, but kept symmetric with the player's computeWaterCap so

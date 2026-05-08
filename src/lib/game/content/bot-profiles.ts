@@ -75,13 +75,20 @@ export interface BotProfile {
   trait: string;
   /** Source citation — primary Wikipedia URL from the dossier. */
   source: string;
-  /** #287c — signature kit overrides. Items here REPLACE the random
-   *  qty in the base inventory roll (other items still vary by seed).
-   *  Keep these to items that are mechanically distinctive — large-
-   *  family flour bumps, trapper kits, missionary bibles, settler
-   *  luxury hauls — not random tweaks. The dossier's "trait" field
-   *  drives which items appear here. */
-  kitOverrides?: Record<string, number>;
+  /** #888a — complete starting inventory for this profile. When set,
+   *  this is the FULL Layer-0 inventory for the NPC wagon (no random
+   *  base layer, no BASE_KIT — profile owns its own kit per Dave's
+   *  pivot). Profession.starterGear still layers ADDITIVELY on top
+   *  (e.g. hunter brings bullet_mold + lead_pig regardless of which
+   *  hunter-led profile is in play). Profiles that DON'T set `kit`
+   *  fall through to `generateNpcInventory` for a random kit.
+   *
+   *  Special key: `cash` lands on wagon-level cash field, not
+   *  inventory dict. Used for wealthy profiles (Reed family).
+   *
+   *  Pre-#888a this was `kitOverrides` — partial overrides on a
+   *  random base. Renamed + semantics shifted: now COMPLETE. */
+  kit?: Record<string, number>;
 }
 
 /** The 10 launch profiles. Source: docs/handoff/bot-profiles-dossier.md.
@@ -110,9 +117,24 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     year: 1844,
     trait: 'Both parents died on the trail; the seven children completed the journey under the care of fellow emigrants.',
     source: 'https://en.wikipedia.org/wiki/Sager_children',
-    // 9 souls (2 + 7 kids) need 2× the average wagon's flour load.
-    // Bible + fiddle for the family-evening ritual that defines them.
-    kitOverrides: { flour: 250, bible: 1, fiddle: 1 }
+    // 9 souls (2 + 7 kids) — methodical Ohio farmer outfit with the
+    // family-evening props that defined Sager camp life. Farmer
+    // profession adds nothing (pure mechanic post-#890).
+    kit: {
+      // Food — scaled for 9 mouths
+      flour: 350, beans: 60, bacon: 45, coffee: 3, salt: 3, saleratus: 5,
+      // Family medicine chest (BASE-equivalent)
+      quinine: 4, calomel: 2, laudanum: 2, paregoric: 2, bandages: 8,
+      // Tools
+      shovel: 1, cookware: 1,
+      // Outfitter package
+      rifle: 1, gunpowder: 25, lead_balls: 25, percussion_caps: 25,
+      tent: 1, rope: 1,
+      // Per-soul gear
+      coat: 9, blanket: 9, boots: 9,
+      // Sager signature
+      bible: 1, fiddle: 1
+    }
   },
   {
     id: 'donner-family',
@@ -133,11 +155,24 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     year: 1846,
     trait: 'Captain by acclamation. Tamzene distributed food to others as their own stores ran low in the Sierra.',
     source: 'https://en.wikipedia.org/wiki/Donner_Party',
-    // Settlers leaving Springfield, IL in comfort. Tamzene packed china
-    // (it survived the Sierra winter). Anvil for George's planned smithy
-    // in California — period: settlers brought heavy iron to set up
-    // shop on arrival.
-    kitOverrides: { flour: 200, china_tea_set: 1, anvil: 1 }
+    // 7 souls — settlers leaving Springfield, IL in comfort. Tamzene's
+    // china survived the Sierra winter; George's anvil for the California
+    // smithy he planned to start. Farmer profession adds nothing post-#890.
+    kit: {
+      // Food — scaled for 7
+      flour: 280, beans: 50, bacon: 40, coffee: 4, salt: 3, saleratus: 4,
+      // Medicine
+      quinine: 4, calomel: 2, laudanum: 2, paregoric: 2, bandages: 8,
+      // Tools
+      shovel: 1, cookware: 1,
+      // Outfitter package
+      rifle: 1, gunpowder: 25, lead_balls: 25, percussion_caps: 25,
+      tent: 1, rope: 1,
+      // Per-soul gear
+      coat: 7, blanket: 7, boots: 7,
+      // Donner signature — settlers' luxury haul
+      china_tea_set: 1, anvil: 1
+    }
   },
   {
     id: 'reed-family',
@@ -162,10 +197,28 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     year: 1846,
     trait: 'Famously impatient; built the heavy "Pioneer Palace Car"; banished after killing teamster John Snyder in a whip-fight.',
     source: 'https://en.wikipedia.org/wiki/James_Reed_(pioneer)',
-    // The "Pioneer Palace Car" — feather mattress, china, family bible,
-    // wealthy starting cash. Period reality: every detail in Virginia
-    // Reed Murphy's memoir reads like luxury overload.
-    kitOverrides: { feather_mattress: 1, china_tea_set: 1, family_bible: 1, cash: 600 }
+    // 7 souls + Sarah Keyes — the "Pioneer Palace Car." Wealthy
+    // Springfield household; Virginia Reed Murphy's memoir is a
+    // catalog of luxury overload. Banker profession adds $1000 cash
+    // on top of the $600 here = $1600 total starting wealth.
+    kit: {
+      // Food — wealthy stock, more variety
+      flour: 250, beans: 45, bacon: 50, coffee: 6, salt: 3, saleratus: 4,
+      sugar: 5,
+      // Medicine — well-supplied
+      quinine: 4, calomel: 2, laudanum: 2, paregoric: 2, bandages: 10,
+      // Tools — duplicated for redundancy (wealth)
+      shovel: 1, cookware: 2, rope: 2,
+      // Outfitter package
+      rifle: 1, gunpowder: 30, lead_balls: 30, percussion_caps: 30,
+      tent: 1,
+      // Per-soul gear
+      coat: 7, blanket: 7, boots: 7,
+      // Reed signature — Pioneer Palace Car
+      feather_mattress: 1, china_tea_set: 1, family_bible: 1,
+      // Wealth on top of banker's $1000
+      cash: 600
+    }
   },
   {
     id: 'joe-meek',
@@ -180,9 +233,24 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     year: 1840,
     trait: 'Mountain man whose beaver-trade collapse drove him to Oregon. Later first U.S. Marshal of Oregon Territory.',
     source: 'https://en.wikipedia.org/wiki/Joe_Meek',
-    // Trapper kit. Less flour (he ate game), more powder + lead, jerky
-    // already cured. Mountain men were rifle-first, flour-last.
-    kitOverrides: { flour: 30, gunpowder: 40, lead_balls: 30, lead_pig: 2, jerky: 20, whiskey: 4 }
+    // Solo mountain-man kit. Lean food (he ate game), heavy ammo,
+    // pre-cured jerky, whiskey for the long nights. Hunter profession
+    // adds bullet_mold + 2 lead_pig on top — Joe Meek's casting bench.
+    kit: {
+      // Food — minimal (lived off the rifle)
+      flour: 30, beans: 5, bacon: 10, coffee: 3, salt: 1, saleratus: 1,
+      // Medicine — basic
+      quinine: 1, bandages: 4,
+      // Tools
+      cookware: 1,
+      // Outfitter — heavy on shooting consumables
+      rifle: 1, gunpowder: 40, lead_balls: 30, percussion_caps: 25,
+      tent: 1, rope: 1,
+      // Per-soul (solo)
+      coat: 1, blanket: 1, boots: 1,
+      // Joe Meek signature
+      jerky: 20, whiskey: 4
+    }
   },
   {
     id: 'whitman-mission',
@@ -198,10 +266,25 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     year: 1836,
     trait: 'First wagons west; Narcissa among the first white women over the Rockies. Killed in the 1847 Whitman Massacre.',
     source: 'https://en.wikipedia.org/wiki/Marcus_Whitman',
-    // Mission kit: doctor's books + bibles for the Sunday observance
-    // that defined them. Doctor profession already grants the medical
-    // chest; this layer adds the literacy props.
-    kitOverrides: { medical_books: 1, bible: 2, primer: 1 }
+    // 2 souls — the 1836 Whitman / Spalding mission party. Doctor
+    // profession adds medical_books + dovers_powder; Whitman's kit
+    // doubles down on bibles + a primer for the Sunday observance
+    // that defined the mission.
+    kit: {
+      // Food — small party
+      flour: 80, beans: 20, bacon: 20, coffee: 3, salt: 2, saleratus: 2,
+      // Medicine (doctor adds more)
+      quinine: 4, calomel: 2, laudanum: 2, paregoric: 2, bandages: 8,
+      // Tools
+      shovel: 1, cookware: 1,
+      // Outfitter package
+      rifle: 1, gunpowder: 30, lead_balls: 30, percussion_caps: 30,
+      tent: 1, rope: 1,
+      // Per-soul gear
+      coat: 2, blanket: 2, boots: 2,
+      // Whitman signature — mission literacy props
+      bible: 2, primer: 1
+    }
   },
   {
     id: 'tabitha-brown',
