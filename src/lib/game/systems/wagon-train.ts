@@ -22,7 +22,8 @@ import {
   OX_SWAP_BARTER_BOOT_USD,
   OX_SWAP_CASH_ONLY_USD,
   OX_SWAP_GOLD_RUSH_YEARS,
-  OX_SWAP_GOLD_RUSH_MULT
+  OX_SWAP_GOLD_RUSH_MULT,
+  REPAIR_DOLLARS_PER_POINT
 } from './town-services';
 
 /** True when the party is currently traveling with a wagon train. */
@@ -450,6 +451,40 @@ function applyNpcOxSwap(
   };
 }
 
+/** #905 — apply a persona-driven smithy repair on an NPC wagon at a
+ *  post that offers `blacksmith`. Mirrors player repairWagon
+ *  (town-services.ts) at the wagon level: dollars buy points at the
+ *  REPAIR_DOLLARS_PER_POINT rate. No blacksmith discount for NPCs in
+ *  this slice — the in-train discount is a #176 player-specific
+ *  reward. Cap spend at wagon cash and 100-condition room. */
+function applyNpcRepair(
+  wagon: NpcWagonState,
+  budget: number,
+  postName: string,
+  day: number,
+  playerLogs: { day: number; text: string }[]
+): NpcWagonState {
+  const want = Math.max(0, Math.floor(budget));
+  if (want <= 0) return wagon;
+  const room = Math.max(0, 100 - wagon.wagon.condition);
+  if (room <= 0) return wagon;
+  const spend = Math.min(want, wagon.cash);
+  if (spend <= 0) return wagon;
+  const desiredPoints = Math.floor(spend / REPAIR_DOLLARS_PER_POINT);
+  const points = Math.min(room, desiredPoints);
+  if (points <= 0) return wagon;
+  const cost = Math.ceil(points * REPAIR_DOLLARS_PER_POINT);
+  playerLogs.push({
+    day,
+    text: `The smith patched ${wagon.name}'s wagon. +${points} condition for $${cost} at ${postName}.`
+  });
+  return {
+    ...wagon,
+    cash: wagon.cash - cost,
+    wagon: { ...wagon.wagon, condition: wagon.wagon.condition + points }
+  };
+}
+
 export function applyNpcPostRestock(state: GameState): GameState {
   if (!state.wagonTrain) return state;
   const id = state.location.atLandmarkId;
@@ -464,6 +499,7 @@ export function applyNpcPostRestock(state: GameState): GameState {
 
   const playerLogs: { day: number; text: string }[] = [];
   const offersOxSwap = (here.services ?? []).includes('ox_swap');
+  const offersBlacksmith = (here.services ?? []).includes('blacksmith');
   const updated = state.wagonTrain.companions.map((c) => {
     if (c.outcome !== 'in-progress') return c;
     if (c.cash < 10) return c;
@@ -518,6 +554,24 @@ export function applyNpcPostRestock(state: GameState): GameState {
           text: `${c.name} bought ${summary} at ${here.name} — $${cost.toFixed(2)}.`
         });
         next = { ...next, inventory: inv, cash: Math.round(next.cash - cost) };
+      }
+    }
+
+    // --- Smithy repair ---
+    // #905 — persona-driven wagon repair budget. Mirrors player
+    // repairWagon (town-services.ts) at the wagon level. generous
+    // (1.5× balanced) and hoarder (½) diverge most. Shim exposes
+    // wagon (for condition) and cash + day (chaos pseudo-rng); widen
+    // if a future override touches more.
+    if (offersBlacksmith) {
+      const repairFauxState = {
+        wagon: next.wagon,
+        cash: next.cash,
+        day: state.day
+      } as unknown as GameState;
+      const budget = persona.pickRepairBudget(repairFauxState, here);
+      if (budget > 0) {
+        next = applyNpcRepair(next, budget, here.name, state.day, playerLogs);
       }
     }
 
