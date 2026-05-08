@@ -17,6 +17,7 @@ import { createInitialState } from '../src/lib/game/engine';
 import { CAMP_ACTIONS_BY_ID } from '../src/lib/game/actions/camp-actions';
 import { hasLiveTeacher, hasLiveLawyer } from '../src/lib/game/professions/predicates';
 import { getProfession } from '../src/lib/game/content/professions';
+import { buildStarterKit } from '../src/lib/game/content/starter-kit';
 import type { GameState } from '../src/lib/game/types';
 
 function makeGame(overrides: Partial<GameState> = {}): GameState {
@@ -130,10 +131,12 @@ describe('#317a — gunsmith cast_balls camp action', () => {
 });
 
 describe('#317a — gunsmith starter gear has 2 rifles', () => {
-  it('the gunsmith profession record carries 2 rifles in starterGear', () => {
-    const g = getProfession('gunsmith');
-    const rifle = g.starterGear.find((s) => s.item === 'rifle');
-    expect(rifle?.qty).toBe(2);
+  it('a gunsmith party builds with 2 rifles total (BASE 1 + gunsmith +1)', () => {
+    // #890 rebalance: gunsmith.starterGear now lists rifle×1 (additive).
+    // BASE_KIT ships rifle×1. A gunsmith-led party gets 2 total —
+    // matches the "starts with 2 rifles" intent of #317a.
+    const kit = buildStarterKit(['gunsmith']);
+    expect(kit.inventory.rifle).toBe(2);
   });
 });
 

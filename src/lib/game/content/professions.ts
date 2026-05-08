@@ -42,7 +42,10 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     id: 'farmer',
     name: 'Farmer',
     bonusSummary: '−10% food consumed/day. Forages 4 lb berries per rest day Apr–Sep.',
-    starterGear: [{ item: 'flour', qty: 100 }],
+    // #890 — flour 100 dropped (BASE_KIT 300 covers it post-#888c).
+    // Farmer's value is now the −10% consumption + foraging bonus, not
+    // a starter flour stack.
+    starterGear: [],
     charisma: 1
   },
   carpenter: {
@@ -59,18 +62,17 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     id: 'doctor',
     name: 'Doctor',
     bonusSummary: 'Conditions deal 30% less daily damage. Unlocks water boiling pre-1854.',
-    // #275 v10 — period-realistic doctor's chest, layered on top of the
-    // BASE_KIT family chest. Marcy 1859 spec for a working medical
-    // practitioner on the trail: roughly 2× the family allotment of
-    // each major drug. Total chest with BASE: 12 quinine, 8 calomel,
-    // 6 laudanum, 6 paregoric, 4 Dover's powder, 14 bandages.
+    // #890 — generic medicine items dropped (BASE_KIT now ships
+    // 4q + 2c + 2l + 2p + 8 bandages per #275 v10). Doctor's identity
+    // shifts to two iconic period items the BASE doesn't carry:
+    // medical_books (Gunn's Domestic Medicine etc. — the frontier
+    // doctor's library) and dovers_powder (a doctor-specific
+    // diaphoretic, not a family-kit staple). Doctor's mechanical
+    // bonuses (-30% condition damage, water boiling pre-1854) carry
+    // the rest of the value.
     starterGear: [
-      { item: 'quinine', qty: 8 },
-      { item: 'calomel', qty: 6 },
-      { item: 'laudanum', qty: 4 },
-      { item: 'paregoric', qty: 4 },
-      { item: 'dovers_powder', qty: 4 },
-      { item: 'bandages', qty: 6 }
+      { item: 'medical_books', qty: 1 },
+      { item: 'dovers_powder', qty: 4 }
     ],
     charisma: 3
   },
@@ -88,13 +90,13 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     id: 'hunter',
     name: 'Hunter',
     bonusSummary: '+20% meat per hunt.',
+    // #890 — rifle + ammo dropped (BASE_KIT now ships rifle + 30 of
+    // each ammo per #888c). Hunter's identity items: bullet_mold (the
+    // tool of the trade) and lead_pig×2 (raw casting input — period
+    // hunters always carried extra to keep the bench stocked).
     starterGear: [
-      { item: 'rifle', qty: 1 },
       { item: 'bullet_mold', qty: 1 },
-      { item: 'gunpowder', qty: 30 },
-      { item: 'lead_balls', qty: 30 },
-      { item: 'percussion_caps', qty: 30 },
-      { item: 'lead_pig', qty: 1 }
+      { item: 'lead_pig', qty: 2 }
     ],
     charisma: 2
   },
@@ -172,13 +174,13 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     // a second starter rifle (parallel hunters from day 1, since a
     // working gunsmith naturally had spare arms).
     bonusSummary: "Casts 50 balls per lead pig (vs 30); no bullet mold needed. Starts with 2 rifles.",
+    // #890 — ammo dropped (BASE_KIT covers it post-#888c); rifle
+    // count 2→1 since BASE provides one already (BASE 1 + gunsmith 1
+    // = 2 total per #317a "starts with 2 rifles").
     starterGear: [
       { item: 'rifle_cleaning_kit', qty: 1 },
       { item: 'bullet_mold', qty: 1 },
-      { item: 'gunpowder', qty: 15 },
-      { item: 'lead_balls', qty: 15 },
-      { item: 'percussion_caps', qty: 15 },
-      { item: 'rifle', qty: 2 }
+      { item: 'rifle', qty: 1 }
     ],
     charisma: 2
   },
