@@ -75,8 +75,12 @@ describe('starter kit', () => {
   });
 
   it('buildStarterKit stacks profession gear onto base', () => {
-    const kit = buildStarterKit(['farmer']);
-    expect(kit.inventory.flour).toBe((BASE_KIT.inventory.flour ?? 0) + 100);
+    // #890 — farmer no longer ships flour (BASE has 300, no duplicate).
+    // Use blacksmith (still has identity gear: iron_toolkit + ox_shoes)
+    // to verify the stacking logic.
+    const kit = buildStarterKit(['blacksmith']);
+    expect(kit.inventory.iron_toolkit).toBe(1);
+    expect(kit.inventory.ox_shoes).toBe(10);
     expect(kit.cash).toBe(BASE_KIT.cash);
   });
 
@@ -88,9 +92,12 @@ describe('starter kit', () => {
   });
 
   it('stacks duplicate professions', () => {
-    const single = buildStarterKit(['farmer']);
-    const double = buildStarterKit(['farmer', 'farmer']);
-    expect(double.inventory.flour).toBe(single.inventory.flour + 100);
+    // #890 — farmer no longer ships flour. Use blacksmith — two
+    // blacksmiths in the party should double the iron_toolkit + ox_shoes.
+    const single = buildStarterKit(['blacksmith']);
+    const double = buildStarterKit(['blacksmith', 'blacksmith']);
+    expect(double.inventory.iron_toolkit).toBe(single.inventory.iron_toolkit + 1);
+    expect(double.inventory.ox_shoes).toBe(single.inventory.ox_shoes + 10);
   });
 
   it('teamster adds an ox and a yoke', () => {
