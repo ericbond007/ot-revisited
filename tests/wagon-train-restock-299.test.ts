@@ -182,6 +182,9 @@ describe('#299 — applyNpcPostRestock', () => {
         companions: s.wagonTrain!.companions.map((c, i) =>
           i === 0 ? {
             ...c,
+            // Force cautious so #906's shouldTradeAtPost gate passes
+            // (cautious gates on cash < 10; balanced gates on < 20).
+            personaId: 'cautious' as const,
             inventory: { ...c.inventory, flour: 0, bacon: 0, sugar: 0 },
             cash: 15 // tight budget — won't cover full basket at 1.5×
           } : c
