@@ -108,15 +108,19 @@ describe('#303c — Persona.pickRepairBudget', () => {
 });
 
 describe('#303c — Persona.pickFoodRestockOpts', () => {
-  it('cautious: 30 floor / 90 cap (preserves v10 default)', () => {
-    expect(cautiousPersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 30, daysCap: 90 });
+  it('cautious: 30 floor / 90 cap (preserves v10 default) + saleratus overstock per #909', () => {
+    expect(cautiousPersona.pickFoodRestockOpts(game())).toEqual({
+      daysFloor: 30,
+      daysCap: 90,
+      saleratusOverstock: true
+    });
   });
 
-  it('balanced: 25 floor / 60 cap (smaller restock leaves cash for medicine)', () => {
+  it('balanced: 25 floor / 60 cap (smaller restock leaves cash for medicine), no saleratus overstock', () => {
     expect(balancedPersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 25, daysCap: 60 });
   });
 
-  it('aggressive: 15 floor / 45 cap (meager-ration sizing)', () => {
+  it('aggressive: 15 floor / 45 cap (meager-ration sizing), no saleratus overstock', () => {
     expect(aggressivePersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 15, daysCap: 45 });
   });
 

@@ -63,13 +63,29 @@ export function pickWarmthRestock({ wagon, stock }: ShoppingInput): BuyOrder[] {
   return buys;
 }
 
+export interface EquipmentRestockOpts {
+  /** #909 — when true, persona wants a spare cookware (qty 2 total)
+   *  beyond the default first-replacement buy. Cautious is currently
+   *  the only stock persona that opts in. */
+  cookwareSpare?: boolean;
+}
+
 /** One-time utility kit: shovel, cookware, water_skin, rope. Gear the
- *  party functions without — buy on first stop that stocks it. */
-export function pickEquipmentRestock({ wagon, stock }: ShoppingInput): BuyOrder[] {
+ *  party functions without — buy on first stop that stocks it.
+ *  Persona-tunable since #909 — `cookwareSpare` adds a second cookware
+ *  for prudent personas (Tabitha Brown / cautious). */
+export function pickEquipmentRestock(
+  { wagon, stock }: ShoppingInput,
+  opts: EquipmentRestockOpts = {}
+): BuyOrder[] {
   const inv = wagon.inventory;
   const buys: BuyOrder[] = [];
   if (stock.has('shovel') && (inv.shovel ?? 0) < 1) buys.push({ item: 'shovel', qty: 1 });
-  if (stock.has('cookware') && (inv.cookware ?? 0) < 1) buys.push({ item: 'cookware', qty: 1 });
+  if (stock.has('cookware')) {
+    const cookwareTarget = opts.cookwareSpare ? 2 : 1;
+    const need = Math.max(0, cookwareTarget - (inv.cookware ?? 0));
+    if (need > 0) buys.push({ item: 'cookware', qty: need });
+  }
   if (stock.has('water_skin') && (inv.water_skin ?? 0) < 2) buys.push({ item: 'water_skin', qty: 1 });
   if (stock.has('rope') && (inv.rope ?? 0) < 1) buys.push({ item: 'rope', qty: 1 });
   return buys;
@@ -120,6 +136,12 @@ export interface FoodRestockOpts {
    *  at major resupply for the longest legs. NPC callers pass a
    *  tighter 10-day cap. */
   daysCap?: number;
+  /** #909 — persona-driven saleratus overstock. Default false: the
+   *  daysFloor / daysCap pair governs saleratus the same as flour.
+   *  When true, saleratus uses its own (higher) target — cautious
+   *  (Tabitha Brown) tops the chest aggressively because period
+   *  Methodist cooking burned saleratus for every flour-day. */
+  saleratusOverstock?: boolean;
 }
 
 /** Food staples — the period-faithful "Marcy 5" basket: flour, bacon,
@@ -140,7 +162,12 @@ export function pickFoodRestock(
     if (!stock.has(item)) continue;
     const rate = FOOD_RATES_LB_PER_DAY[item];
     const have = inv[item] ?? 0;
-    const floor = Math.max(1, Math.round(rate * eaters * daysFloor));
+    // #909 — saleratus overstock: persona (cautious) tops past the
+    // daysFloor toward the daysCap. Lifts the trigger threshold to
+    // the cap so any below-cap level fires a top-up.
+    const isOverstock = item === 'saleratus' && opts.saleratusOverstock;
+    const triggerDays = isOverstock ? daysCap : daysFloor;
+    const floor = Math.max(1, Math.round(rate * eaters * triggerDays));
     if (have >= floor) continue;
     const cap = Math.max(floor, Math.round(rate * eaters * daysCap));
     const qty = cap - have;
@@ -215,8 +242,12 @@ export function pickMedicineRestock({ wagon, stock }: ShoppingInput): BuyOrder[]
 }
 
 export interface ComposeOpts {
-  /** Forwarded to `pickFoodRestock` — persona-tunable since #303c. */
+  /** Forwarded to `pickFoodRestock` — persona-tunable since #303c.
+   *  Saleratus overstock added in #909. */
   food?: FoodRestockOpts;
+  /** Forwarded to `pickEquipmentRestock` — added in #909 for the
+   *  cookware-spare wire. */
+  equipment?: EquipmentRestockOpts;
 }
 
 /** Compose all 6 slices in the same order the pre-#303a
@@ -229,7 +260,7 @@ export function composeShoppingList(
 ): BuyOrder[] {
   return [
     ...pickWarmthRestock(input),
-    ...pickEquipmentRestock(input),
+    ...pickEquipmentRestock(input, opts.equipment),
     ...pickFoodRestock(input, opts.food),
     ...pickHunterRestock(input),
     ...pickRepairRestock(input),

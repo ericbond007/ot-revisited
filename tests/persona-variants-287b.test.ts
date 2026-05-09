@@ -92,8 +92,15 @@ describe('#287b — pace_pusher', () => {
 });
 
 describe('#287b — hoarder', () => {
-  it('food restock opts use tight floor + cap (15/30)', () => {
-    expect(hoarderPersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 15, daysCap: 30 });
+  it('food restock opts use tight floor + cap (15/30) — saleratus overstock per #909', () => {
+    // #909 — hoarder repurposed as supply-stockpiler so saleratus
+    // overstocks even while flour days stay tight. Broader food-cap
+    // redefinition lives in #912.
+    expect(hoarderPersona.pickFoodRestockOpts(game())).toEqual({
+      daysFloor: 15,
+      daysCap: 30,
+      saleratusOverstock: true
+    });
   });
 
   it('never picks ox swap, even at posts that offer it', () => {

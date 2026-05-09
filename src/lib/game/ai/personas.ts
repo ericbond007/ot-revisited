@@ -374,8 +374,17 @@ export const cautiousPersona: Persona = {
   },
   pickFoodRestockOpts() {
     // Cautious tops up generously — period emigrant style: every fort
-    // gets the chest filled. 30/90 = the v10 default.
-    return { daysFloor: 30, daysCap: 90 };
+    // gets the chest filled. 30/90 = the v10 default. #909 —
+    // saleratusOverstock true: Tabitha Brown's Methodist-staple
+    // cooking burned saleratus every flour-day; Brown was known for
+    // deep stores.
+    return { daysFloor: 30, daysCap: 90, saleratusOverstock: true };
+  },
+  pickEquipmentRestockOpts() {
+    // #909 — Tabitha Brown carried backups of load-bearing kit.
+    // Cautious is the only stock persona that carries a spare
+    // cookware against #306 buffalo-stampede loss.
+    return { cookwareSpare: true };
   },
   shouldJoinTrain: defaultShouldJoinTrain,
   shouldBuyCookwareSpare: defaultShouldBuyCookwareSpare,
@@ -492,8 +501,15 @@ export const balancedPersona: Persona = {
   pickFoodRestockOpts() {
     // Balanced: 60-day cap (was 90) leaves cash for medicine. Period
     // reality: most emigrant families targeted ~2 months food at any
-    // post stop, not 3.
+    // post stop, not 3. #909 — no saleratus overstock; balanced runs
+    // the daysFloor like every other staple.
     return { daysFloor: 25, daysCap: 60 };
+  },
+  pickEquipmentRestockOpts() {
+    // #909 — no spare cookware by default. Inheritor personas
+    // (sunday_rester / pace_pusher / hoarder / generous / faithful /
+    // drinker) pick this up via `...balancedPersona`.
+    return {};
   },
   shouldJoinTrain: defaultShouldJoinTrain,
   shouldBuyCookwareSpare: defaultShouldBuyCookwareSpare,
@@ -585,6 +601,10 @@ export const aggressivePersona: Persona = {
     // so this just sets the explicit-trade size. Period: meager-rations
     // parties tracked supplies tighter, restocked smaller, hunted more.
     return { daysFloor: 15, daysCap: 45 };
+  },
+  pickEquipmentRestockOpts() {
+    // #909 — Bidwell-1841 lean: no spare cookware.
+    return {};
   },
   shouldJoinTrain: defaultShouldJoinTrain,
   shouldBuyCookwareSpare(state, here) {
@@ -695,10 +715,18 @@ export const chaosPersona: Persona = {
   },
   pickFoodRestockOpts(state) {
     // Chaos: wide swings — small or huge restock, deterministic on day.
+    // #909 — saleratusOverstock cycles every 5 days for fuzz coverage
+    // independent of the food-cap swing.
     const swing = state.day % 3;
-    if (swing === 0) return { daysFloor: 10, daysCap: 30 };
-    if (swing === 1) return { daysFloor: 30, daysCap: 90 };
-    return { daysFloor: 60, daysCap: 180 };
+    const saleratusOverstock = state.day % 5 === 0;
+    if (swing === 0) return { daysFloor: 10, daysCap: 30, saleratusOverstock };
+    if (swing === 1) return { daysFloor: 30, daysCap: 90, saleratusOverstock };
+    return { daysFloor: 60, daysCap: 180, saleratusOverstock };
+  },
+  pickEquipmentRestockOpts(state) {
+    // #909 — chaos cookware-spare cycles every 3 days. Deterministic
+    // by day for fuzz reproducibility.
+    return { cookwareSpare: state.day % 3 === 0 };
   },
   shouldJoinTrain(_state, _here, rng) {
     // Chaos joins about 70% of the time — fuzz coverage of both paths.
@@ -756,17 +784,31 @@ export const pacePusherPersona: Persona = {
   }
 };
 
-/** hoarder — keeps the chest tight, refuses to top off generously.
- *  Period: late-summer parties cutting deals. Won't deplete cash on
- *  speculative restocks; never trades fresh oxen for worn ones (sticks
- *  with what they have rather than swap). */
+/** hoarder — supply-stockpiler. Deep saleratus reserves, spare
+ *  cookware, never trades the team for fresh oxen ("don't give up
+ *  what's mine"). Period archetype: the prepper-style emigrant who
+ *  filled the wagon at outfit and topped off at every fort.
+ *
+ *  NOTE: pickFoodRestockOpts and pickRepairBudget are inherited from
+ *  pre-#909 behavior (tight food cap, low repair) which read more
+ *  "cash-frugal" than "supply-stockpiler." The full redefinition
+ *  lives in VK #912 (introducing a separate `sparing` persona for
+ *  the cash-frugal archetype + bumping hoarder's food cap). #909
+ *  only flips the saleratus + cookware dispositions. */
 export const hoarderPersona: Persona = {
   ...balancedPersona,
   id: 'hoarder',
   pickFoodRestockOpts() {
-    // Tight floor + tight cap — hoarder buys only what's strictly needed
-    // for the next leg. 15/30 vs balanced's 25/60.
-    return { daysFloor: 15, daysCap: 30 };
+    // Tight floor + tight cap (pre-#909 behavior, kept until #912
+    // bumps the cap to match a stockpiler's deeper stash). #909 —
+    // saleratusOverstock true: hoarder packs the saleratus tin
+    // generously even while keeping flour days light.
+    return { daysFloor: 15, daysCap: 30, saleratusOverstock: true };
+  },
+  pickEquipmentRestockOpts() {
+    // #909 — stockpiler carries spare cookware against #306
+    // buffalo-stampede loss.
+    return { cookwareSpare: true };
   },
   pickOxSwapCount() {
     // Never swap. Hoarder keeps the team they have, even when the post
