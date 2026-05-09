@@ -65,10 +65,14 @@ describe('#906 — applyNpcPostRestock food block gates on shouldTradeAtPost', (
     expect(after.inventory.flour ?? 0).toBeGreaterThan(0);
   });
 
-  it('hoarder skips when cash < $20 (inherits balanced cash floor)', () => {
+  it('hoarder skips food restock when cash < $20 (inherits balanced cash floor)', () => {
+    // #906 — shouldTradeAtPost gates the FOOD block. Non-food
+    // shopping (#911 medicine / warmth / etc.) runs independently
+    // with its own cash gating. So we assert no flour bought, but
+    // don't pin total cash since non-food slices may have spent.
     const after = tradeOutcome('hoarder', 15);
     expect(after.inventory.flour ?? 0).toBe(0);
-    expect(after.cash).toBe(15);
+    expect(after.cash).toBeLessThanOrEqual(15);
   });
 
   it('aggressive STILL allows the smithy block to fire (separate decision)', () => {
