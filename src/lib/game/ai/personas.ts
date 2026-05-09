@@ -553,7 +553,18 @@ export const aggressivePersona: Persona = {
   pickFordMethod() {
     return 'ford';
   },
-  shouldTradeAtPost: () => false,
+  shouldTradeAtPost(state, here) {
+    // #916 — recalibrated. Period reality: Bidwell 1841 / Reed 1846
+    // didn't skip forts — they bought lean. The "small purchases"
+    // disposition is already encoded in pickFoodRestockOpts {15, 45}.
+    // shouldTradeAtPost gates on REAL need (food critical, missing
+    // gear) — tighter than balanced's "moderate need" thresholds.
+    if (state.cash < 10) return false;
+    return foodOnHand(state) < 40
+      || postStocksMissingWarmthGear(state, here)
+      || postStocksMissingMedicine(state, here)
+      || postStocksMissingEquipment(state, here);
+  },
   shouldStayAtInn: () => false,
   shouldFindWater(state) {
     // Only when nearly out of water — aggressive doesn't waste time on stops.

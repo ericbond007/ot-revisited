@@ -133,9 +133,16 @@ function buildCtx(day: number): NpcTickContext {
   };
 }
 
+/** #916 — shared seed across all personas. The original harness used
+ *  per-persona seeds which drew different profiles per row (cautious
+ *  → Donner 9 souls, chaos → Meek 2 souls, etc.). That confounded
+ *  party size with persona, making lifespans unfair to compare. With
+ *  a shared seed, every row runs against the same profile (Bidwell-
+ *  Bartleson, 4 souls, $122 cash) and only persona varies. */
+const SHARED_BASELINE_SEED = 'npc-baseline-shared';
+
 function runPersona(persona: PersonaId, days: number, year: number): PersonaResult {
-  const seed = `npc-baseline-${persona}`;
-  const train = generateTrain(seed, 1, 'independence_mo', makeRng(seed), { fresh: true });
+  const train = generateTrain(SHARED_BASELINE_SEED, 1, 'independence_mo', makeRng(SHARED_BASELINE_SEED), { fresh: true });
   let wagon: NpcWagonState = { ...train.companions[0], personaId: persona };
   const startingPartySize = wagon.party.length;
   const rationsHistogram: Record<NpcWagonState['rations'], number> = {
@@ -143,7 +150,10 @@ function runPersona(persona: PersonaId, days: number, year: number): PersonaResu
     normal: 0,
     filling: 0
   };
-  const tickRng = makeRng(`${seed}-tick`);
+  // Per-persona tick RNG so chaos remains seed-deterministic AND the
+  // tick stream diverges across rows (otherwise every row would draw
+  // identical event rolls).
+  const tickRng = makeRng(`${SHARED_BASELINE_SEED}-tick-${persona}`);
   let lastDay = 1;
   let postsVisited = 0;
   let cashSpentAtPosts = 0;
