@@ -14,7 +14,15 @@ import { makeRng } from '../rng';
 import type { GameEvent } from '../content/events';
 import { buildStarvationCrisisEvent } from './npc-crisis-events';
 import { processDepartures } from './npc-departures';
-import { pickFoodRestock } from '../ai/shopping';
+import {
+  pickFoodRestock,
+  pickWarmthRestock,
+  pickEquipmentRestock,
+  pickHunterRestock,
+  pickRepairRestock,
+  pickMedicineRestock,
+  type BuyOrder
+} from '../ai/shopping';
 import { getPersona } from '../ai/personas';
 import { getLandmark } from '../content/landmarks';
 import { getPrice } from '../content/prices';
@@ -485,6 +493,45 @@ function applyNpcRepair(
   };
 }
 
+/** #911 — apply a non-food shopping list to an NPC wagon. Pattern:
+ *  cull tail items until cost fits cash, then apply. Used for the
+ *  combined warmth + equipment + hunter + repair + medicine basket.
+ *  No fallback path (if a wagon is broke, it skips the basket — only
+ *  food has the #287a Donner-style "buy SOMETHING" flour fallback). */
+function applyNpcShoppingBuys(
+  wagon: NpcWagonState,
+  rawBuys: BuyOrder[],
+  label: string,
+  postMult: number,
+  postName: string,
+  day: number,
+  playerLogs: { day: number; text: string }[]
+): NpcWagonState {
+  if (rawBuys.length === 0) return wagon;
+  let buys = [...rawBuys];
+  let cost = buys.reduce(
+    (sum, b) => sum + getPrice(b.item).buy * b.qty * postMult,
+    0
+  );
+  while (cost > wagon.cash && buys.length > 0) {
+    const dropped = buys.pop()!;
+    cost -= getPrice(dropped.item).buy * dropped.qty * postMult;
+  }
+  if (buys.length === 0) return wagon;
+  const inv = { ...wagon.inventory };
+  for (const b of buys) {
+    inv[b.item] = (inv[b.item] ?? 0) + b.qty;
+  }
+  const summary = buys
+    .map((b) => `${b.qty} ${b.item.replace(/_/g, ' ')}`)
+    .join(' + ');
+  playerLogs.push({
+    day,
+    text: `${wagon.name} bought ${summary} (${label}) at ${postName} — $${cost.toFixed(2)}.`
+  });
+  return { ...wagon, inventory: inv, cash: Math.round(wagon.cash - cost) };
+}
+
 export function applyNpcPostRestock(state: GameState): GameState {
   if (!state.wagonTrain) return state;
   const id = state.location.atLandmarkId;
@@ -605,6 +652,41 @@ export function applyNpcPostRestock(state: GameState): GameState {
         next = applyNpcOxSwap(next, want, state.date.year, here.name, state.day, playerLogs);
       }
     }
+
+    // --- Non-food shopping basket ---
+    // #911 — bring NPC shopping to player parity. Pre-#911, NPCs only
+    // ran pickFoodRestock — they never replaced lost cookware (#306
+    // buffalo stampede), bought coats for the high plains, refilled
+    // medicine after disease cycles, restocked ammo for hunters, or
+    // grabbed spare wagon parts. Period reality: companion wagons
+    // absolutely topped these at every fort that stocked them.
+    //
+    // Each shopping slice is self-gating: pickWarmthRestock fires when
+    // any soul is missing gear; pickHunterRestock requires a live
+    // Hunter; pickRepairRestock requires a live Blacksmith;
+    // pickMedicineRestock fires whenever stock is low. Cookware spare
+    // honors persona.pickEquipmentRestockOpts (#909). All slices flow
+    // through one cull-from-tail loop so medicine (last priority)
+    // gets dropped first when cash is tight — same shape the player
+    // composeShoppingList uses.
+    const equipFauxState = { day: state.day } as unknown as GameState;
+    const equipOpts = persona.pickEquipmentRestockOpts(equipFauxState);
+    const nonFoodBuys: BuyOrder[] = [
+      ...pickWarmthRestock({ wagon: next, stock }),
+      ...pickEquipmentRestock({ wagon: next, stock }, equipOpts),
+      ...pickHunterRestock({ wagon: next, stock }),
+      ...pickRepairRestock({ wagon: next, stock }),
+      ...pickMedicineRestock({ wagon: next, stock })
+    ];
+    next = applyNpcShoppingBuys(
+      next,
+      nonFoodBuys,
+      'supplies',
+      postMult,
+      here.name,
+      state.day,
+      playerLogs
+    );
 
     return next;
   });
