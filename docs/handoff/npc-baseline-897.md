@@ -1,6 +1,7 @@
-# NPC persona baseline — VK #897
+# NPC persona baseline — VK #897 / #914
 
-**Date:** 2026-05-07. **Branch:** `feat/npc-persona-baseline-897`. **Sequence:** slice 3 of 3 (1: wire #895 ✅ → 4: audit #896 ✅ → **2: baseline #897 ← here**).
+**First snapshot:** 2026-05-07 (#897, tick-only).
+**Extended:** 2026-05-08 (#914, added synthetic post visits — captures the landmark-time wires from #899/#902/#905/#906/#909/#911).
 
 ## Question being answered
 
@@ -21,32 +22,52 @@ After #895 wired `personaId` and `pickRations` is the only persona-driven NPC de
 
 The harness does **not** run landmark visits, ferries, restocks, captain elections, or events that fire only via the wagon-train shared schedule. Those layers will be added as more persona surface is wired.
 
-## Result — 180-day run
+## Result — 180-day run, 1849 (Gold Rush year), with synthetic posts (#914)
 
-| Persona | Outcome | Days | Alive | Food (lb) | Morale | Oxen | M/N/F rations |
-|---|---|---|---|---|---|---|---|
-| cautious | wiped | 25 | 0/9 | 15 | 0 | 2 | 0/14/11 |
-| balanced | wiped | 52 | 0/3 | 50 | 0 | 5 | 0/52/0 |
-| aggressive | wiped | 72 | 0/4 | 50 | 0 | 5 | 72/0/0 |
-| chaos | wiped | 48 | 0/2 | 50 | 0 | 2 | 12/18/18 |
-| sunday_rester | wiped | 49 | 0/4 | 50 | 0 | 3 | 0/49/0 |
-| pace_pusher | wiped | 44 | 0/4 | 50 | 0 | 3 | 0/44/0 |
-| hoarder | wiped | 71 | 0/3 | 50 | 0 | 5 | 0/71/0 |
-| generous | wiped | 64 | 0/5 | 25 | 0 | 3 | 0/64/0 |
-| faithful | wiped | 55 | 0/3 | 50 | 0 | 3 | 0/55/0 |
-| drinker | wiped | 74 | 0/3 | 50 | 0 | 5 | 0/74/0 |
+Posts: ft_kearny @ d30, ft_laramie @ d60, ft_bridger @ d90, ft_hall @ d120, ft_boise @ d150.
 
-The 365-day run produces identical numbers — every persona wipes well before day 180, so the cap doesn't bind.
+| Persona | Outcome | Days | Alive | Food (lb) | Cash | Morale | Oxen | Posts | $ at posts | M/N/F rations |
+|---|---|---|---|---|---|---|---|---|---|---|
+| cautious | wiped | 25 | 0/9 | 15 | $291 | 0 | 2 | 0 | $0 | 0/14/11 |
+| balanced | wiped | 139 | 0/3 | 50 | $0 | 0 | 3 | 4 | $263 | 0/139/0 |
+| aggressive | wiped | 72 | 0/4 | 50 | $55 | 0 | 5 | 2 | $104 | 72/0/0 |
+| chaos | wiped | 77 | 0/2 | 50 | $56 | 0 | 2 | 2 | $147 | 17/28/32 |
+| sunday_rester | wiped | 125 | 0/4 | 12.5 | $0 | 0 | 0 | 4 | $131 | 0/125/0 |
+| pace_pusher | wiped | 109 | 0/4 | 50 | $2 | 0 | 1 | 3 | $202 | 0/109/0 |
+| hoarder | wiped | 79 | 0/3 | 50 | $1 | 0 | 4 | 2 | $99 | 0/79/0 |
+| generous | wiped | 115 | 0/5 | 25 | $2 | 0 | 2 | 3 | $129 | 0/115/0 |
+| faithful | wiped | 114 | 0/3 | 0 | $4 | 5 | 3 | 3 | $262 | 0/114/0 |
+| drinker | wiped | 146 | 0/3 | 50 | $12 | 0 | 0 | 4 | $262 | 0/146/0 |
+
+## Diff against original tick-only baseline (#897)
+
+| Persona | Tick-only days | With-posts days | Δ |
+|---|---|---|---|
+| cautious | 25 | 25 | 0 (Donners wipe before d30 first post) |
+| balanced | 52 | **139** | **+87** |
+| aggressive | 72 | 72 | 0 (shouldTradeAtPost gates skip posts) |
+| chaos | 48 | 77 | +29 |
+| sunday_rester | 49 | **125** | **+76** |
+| pace_pusher | 44 | **109** | **+65** |
+| hoarder | 71 | 79 | +8 |
+| generous | 64 | **115** | **+51** |
+| faithful | 55 | **114** | **+59** |
+| drinker | 74 | **146** | **+72** |
+
+Posts flipped this from a pure-attrition test into a **persona-driven survival measurement**. Every restocking persona roughly doubled lifespan; the personas that gate posts (aggressive `shouldTradeAtPost`) or get wiped early (cautious 9-soul Donners) didn't move.
 
 ### Reading the columns
 
 - **Days** — days survived before `outcome` flipped from `in-progress`.
 - **Alive** — survivors at wipe / X starting party. The starting party size is set by the named-profile assignment, so cautious has 9 (Donner family) and chaos has 2 (Joe Meek archetype). That's noise relative to the persona signal — confounded variable noted below.
 - **Food (lb)** — total food remaining at wipe (so 0 means starvation took them; non-zero means HP loss / dehydration / disease did).
-- **M/N/F rations** — count of meager / normal / filling daily picks. This is the direct expression of `pickRations` — the only persona-driven decision live in this baseline. Confirms wiring works:
+- **Cash** — wagon cash at wipe.
+- **Posts** — count of synthetic post visits the wagon survived to (out of 5 scheduled).
+- **$ at posts** — total cash spent on restocks across all visits.
+- **M/N/F rations** — count of meager / normal / filling daily picks. Direct expression of `pickRations`:
   - aggressive picks meager 100% (72/0/0) ✅
-  - cautious picks filling when flour > 50 lb, normal otherwise (0/14/11) ✅
-  - chaos rolls (12/18/18, ~uniform) ✅
+  - cautious picks filling when flour > 50 lb, normal otherwise ✅
+  - chaos rolls ~uniform ✅
   - everyone else inherits balanced → 100% normal ✅
 
 ## Reading the spread

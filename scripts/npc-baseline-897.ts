@@ -1,25 +1,27 @@
 // #897 — NPC persona baseline. For each PersonaId, generate a fresh
-// NPC wagon, override personaId, tick a deterministic schedule, and
-// report per-persona outcome stats. The output is the comparison
-// point that subsequent persona-wiring slices (the gap audit's
-// follow-up tickets) will be measured against.
+// NPC wagon, override personaId, tick a deterministic schedule
+// punctuated by synthetic trading-post visits, and report per-persona
+// outcome stats. The output is the comparison point that subsequent
+// persona-wiring slices (the gap audit's follow-up tickets) are
+// measured against.
 //
 // Schedule: 180 days. 6 travel days + 1 rest day per week (the
-// emigrant standard). Mixed terrain pulled from a small loop.
-// Weather mostly 'clear' with a few storms.
+// emigrant standard). Prairie terrain, mostly clear weather. Posts
+// every ~30 days hit the real trail order (Kearny → Laramie →
+// Bridger → Hall → Boise) and drive applyNpcPostRestock — which
+// since #911 runs the full six-slice shopping basket on each visit.
 //
-// Why direct tick instead of a full train run: #895 only wired
-// `pickRations`. The other persona surface is still inert on the
-// NPC path. A direct tick isolates the food-drain consequence of
-// pickRations across personas without train-level noise (events,
-// landmark interactions, captain decisions). Subsequent slices will
-// expand the harness as more persona surface goes live.
+// #914 — Extended with the post schedule so the landmark-time wires
+// (#899 / #902 / #905 / #906 / #909 / #911) actually move the table.
+// Pre-#914 the harness only ticked, missing every restock decision.
 
 import { tickNpcWagon } from '../src/lib/game/systems/npc-engine';
 import type { NpcTickContext } from '../src/lib/game/systems/npc-engine';
+import { applyNpcPostRestock } from '../src/lib/game/systems/wagon-train';
 import { generateTrain } from '../src/lib/game/content/trains';
+import { createInitialState } from '../src/lib/game/engine';
 import { makeRng } from '../src/lib/game/rng';
-import type { NpcWagonState } from '../src/lib/game/types';
+import type { GameState, NpcWagonState, WagonTrain } from '../src/lib/game/types';
 import type { PersonaId } from '../src/lib/game/ai/types';
 
 const PERSONAS: PersonaId[] = [
@@ -61,6 +63,58 @@ interface PersonaResult {
   finalMorale: number;
   oxAlive: number;
   rationsHistogram: Record<NpcWagonState['rations'], number>;
+  /** #914 — posts visited and total cash spent on restocks. */
+  postsVisited: number;
+  cashSpentAtPosts: number;
+}
+
+/** #914 — synthetic post schedule. Real trail order, ~30 days apart
+ *  at 14 mi/day. Each visit fires applyNpcPostRestock so the persona
+ *  spread actually expresses through the shopping basket. */
+const POST_SCHEDULE: { day: number; landmarkId: string }[] = [
+  { day: 30, landmarkId: 'ft_kearny' },
+  { day: 60, landmarkId: 'ft_laramie' },
+  { day: 90, landmarkId: 'ft_bridger' },
+  { day: 120, landmarkId: 'ft_hall' },
+  { day: 150, landmarkId: 'ft_boise' }
+];
+
+/** #914 — drive a single applyNpcPostRestock visit on the harness
+ *  wagon. Wraps it in a one-companion train inside a minimal
+ *  GameState, calls the production restock function, extracts the
+ *  updated wagon. Cash spent is the delta. */
+function applyPostVisit(
+  wagon: NpcWagonState,
+  day: number,
+  landmarkId: string,
+  year: number
+): { wagon: NpcWagonState; cashDelta: number } {
+  const seed = `${wagon.seed}:harness-post`;
+  const playerState = createInitialState({
+    seed,
+    leader: { name: 'Harness', profession: 'farmer' },
+    companions: [{ name: 'Wagonmate', profession: 'doctor' }],
+    startDate: { year, month: 4, day: 15 }
+  });
+  const train: WagonTrain = {
+    id: `harness-train-${day}`,
+    name: 'Harness Company',
+    joinedDay: 1,
+    joinedAtLandmarkId: 'independence_mo',
+    leaderId: 'player',
+    companions: [wagon]
+  };
+  const fauxState: GameState = {
+    ...playerState,
+    day,
+    location: { ...playerState.location, atLandmarkId: landmarkId },
+    flags: {},
+    wagonTrain: train
+  };
+  const before = wagon.cash;
+  const result = applyNpcPostRestock(fauxState);
+  const updated = result.wagonTrain!.companions[0];
+  return { wagon: updated, cashDelta: before - updated.cash };
 }
 
 function buildCtx(day: number): NpcTickContext {
@@ -79,7 +133,7 @@ function buildCtx(day: number): NpcTickContext {
   };
 }
 
-function runPersona(persona: PersonaId, days: number): PersonaResult {
+function runPersona(persona: PersonaId, days: number, year: number): PersonaResult {
   const seed = `npc-baseline-${persona}`;
   const train = generateTrain(seed, 1, 'independence_mo', makeRng(seed), { fresh: true });
   let wagon: NpcWagonState = { ...train.companions[0], personaId: persona };
@@ -91,6 +145,10 @@ function runPersona(persona: PersonaId, days: number): PersonaResult {
   };
   const tickRng = makeRng(`${seed}-tick`);
   let lastDay = 1;
+  let postsVisited = 0;
+  let cashSpentAtPosts = 0;
+  // Index into POST_SCHEDULE — advance as days pass.
+  let nextPostIdx = 0;
   for (let d = 1; d <= days; d++) {
     // Simulate landmark / river-cross water refills the synthetic
     // harness can't drive directly. Real wagons top up at every
@@ -99,6 +157,18 @@ function runPersona(persona: PersonaId, days: number): PersonaResult {
     // signal is drowned by water death.
     if (d % 5 === 0) {
       wagon = { ...wagon, water: wagon.waterCap, dryDays: 0 };
+    }
+    // #914 — synthetic post visit. Drives applyNpcPostRestock against
+    // a real trading_post landmark so the full shopping basket fires
+    // (food + warmth + equipment + ox swap + smithy + medicine etc.).
+    if (nextPostIdx < POST_SCHEDULE.length && d === POST_SCHEDULE[nextPostIdx].day) {
+      const visit = applyPostVisit(wagon, d, POST_SCHEDULE[nextPostIdx].landmarkId, year);
+      wagon = visit.wagon;
+      cashSpentAtPosts += visit.cashDelta;
+      postsVisited += 1;
+      nextPostIdx += 1;
+      // The visit doesn't itself advance the day — fall through to
+      // tickNpcWagon below for the regular daily attrition.
     }
     const ctx = buildCtx(d);
     const { wagon: next } = tickNpcWagon(wagon, ctx, tickRng);
@@ -117,26 +187,30 @@ function runPersona(persona: PersonaId, days: number): PersonaResult {
     finalCash: wagon.cash,
     finalMorale: wagon.morale,
     oxAlive: wagon.oxen.filter((o) => o.health > 0).length,
-    rationsHistogram
+    rationsHistogram,
+    postsVisited,
+    cashSpentAtPosts
   };
 }
 
 function table(rows: PersonaResult[]): string {
-  const head = '| Persona | Outcome | Days | Alive | Food (lb) | Morale | Oxen | M/N/F rations |';
-  const sep =  '|---|---|---|---|---|---|---|---|';
+  const head = '| Persona | Outcome | Days | Alive | Food (lb) | Cash | Morale | Oxen | Posts | $ at posts | M/N/F rations |';
+  const sep =  '|---|---|---|---|---|---|---|---|---|---|---|';
   const body = rows.map((r) => {
     const histo = `${r.rationsHistogram.meager}/${r.rationsHistogram.normal}/${r.rationsHistogram.filling}`;
-    return `| ${r.persona} | ${r.outcome} | ${r.daysSurvived} | ${r.alive}/${r.startingPartySize} | ${r.finalFood} | ${r.finalMorale} | ${r.oxAlive} | ${histo} |`;
+    return `| ${r.persona} | ${r.outcome} | ${r.daysSurvived} | ${r.alive}/${r.startingPartySize} | ${r.finalFood} | $${r.finalCash} | ${r.finalMorale} | ${r.oxAlive} | ${r.postsVisited} | $${r.cashSpentAtPosts.toFixed(0)} | ${histo} |`;
   }).join('\n');
   return [head, sep, body].join('\n');
 }
 
 function main() {
   const days = parseInt(process.argv[2] ?? '180', 10);
-  console.log(`# NPC persona baseline — ${days} days`);
-  console.log(`Schedule: 6 travel + 1 rest per week, mixed terrain, mostly clear weather.`);
+  const year = parseInt(process.argv[3] ?? '1849', 10);
+  console.log(`# NPC persona baseline — ${days} days (${year} run)`);
+  console.log(`Schedule: 6 travel + 1 rest per week, prairie terrain, mostly clear weather.`);
+  console.log(`Posts visited: ${POST_SCHEDULE.map((p) => `${p.landmarkId}@d${p.day}`).join(', ')}`);
   console.log();
-  const rows = PERSONAS.map((p) => runPersona(p, days));
+  const rows = PERSONAS.map((p) => runPersona(p, days, year));
   console.log(table(rows));
 }
 
