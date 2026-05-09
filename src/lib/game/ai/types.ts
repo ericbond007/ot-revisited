@@ -19,7 +19,7 @@ import type { Rng } from '../rng';
 // source of truth instead of a parallel string union.
 export type { FordMethod } from '../actions/ford';
 import type { FordMethod } from '../actions/ford';
-import type { FoodRestockOpts } from './shopping';
+import type { EquipmentRestockOpts, FoodRestockOpts } from './shopping';
 
 export type PersonaId =
   | 'cautious'
@@ -107,6 +107,13 @@ export interface Persona {
    *  own tighter opts directly (#299), so this only affects the
    *  player-bot composeShoppingList call. */
   pickFoodRestockOpts(state: GameState): FoodRestockOpts;
+  /** #909 — Per-persona opts for `pickEquipmentRestock`. Currently
+   *  expresses the cookware-spare disposition (cautious / Tabitha
+   *  Brown overrides true). Distinct from `shouldBuyCookwareSpare` —
+   *  that predicate gates "should I buy the FIRST cookware when
+   *  missing"; this opts struct gates "should I carry a SECOND as
+   *  insurance against #306 buffalo-stampede loss." */
+  pickEquipmentRestockOpts(state: GameState): EquipmentRestockOpts;
   /** Should the bot join a wagon train at this post (#176)? Default
    *  true — the train morale + smithy + pace-clamp benefits stack
    *  positive. Future #287 named profiles like Joe Meek (loner) or

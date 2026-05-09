@@ -176,7 +176,16 @@ function buildBotShoppingList(state: GameState, here: Landmark, persona: Persona
   // #303c — thread persona-tunable food opts so balanced restocks
   // smaller (60d cap) than cautious (90d). Frees cash for medicine /
   // repair, addressing the v10 cash-pressure regression.
-  return composeShoppingList({ wagon: state, stock }, { food: persona.pickFoodRestockOpts(state) });
+  // #909 — also thread the equipment opts (cookwareSpare). Cautious
+  // (Tabitha Brown) is the only stock persona that carries a spare
+  // cookware against #306 buffalo-stampede loss.
+  return composeShoppingList(
+    { wagon: state, stock },
+    {
+      food: persona.pickFoodRestockOpts(state),
+      equipment: persona.pickEquipmentRestockOpts(state)
+    }
+  );
 }
 
 /** Try to handle the landmark we're parked at. Returns the new state
