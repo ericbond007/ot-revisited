@@ -49,10 +49,25 @@ function tradeOutcome(persona: PersonaId, cash = 1000): NpcWagonState {
 }
 
 describe('#906 — applyNpcPostRestock food block gates on shouldTradeAtPost', () => {
-  it('aggressive skips the food restock entirely (shouldTradeAtPost = false)', () => {
+  it('aggressive trades when food is critically low (#916 recalibration)', () => {
+    // #916 — aggressive was () => false outright. Recalibrated to
+    // trade on real need: cash >= 10 AND (foodOnHand < 40 OR missing
+    // gear). tradeOutcome clears all food, so this fires.
     const after = tradeOutcome('aggressive');
-    // No food bought regardless of cash and need.
-    expect(after.inventory.flour ?? 0).toBe(0);
+    expect(after.inventory.flour ?? 0).toBeGreaterThan(0);
+  });
+
+  it('aggressive SKIPS when food is plentiful (#916 — only trades on real need)', () => {
+    // Same setup but DON'T clear food — foodOnHand stays well above
+    // aggressive's 40-lb threshold. Aggressive should skip.
+    let s = joinTrain(game(), makeRng('r')).state;
+    s = arriveAt(s, 'ft_kearny');
+    s = setCompanion0(s, { personaId: 'aggressive', cash: 1000 });
+    const before = s.wagonTrain!.companions[0];
+    const result = applyNpcPostRestock(s);
+    const after = result.wagonTrain!.companions[0];
+    // Food unchanged — aggressive declined the food restock.
+    expect(after.inventory.flour ?? 0).toBe(before.inventory.flour ?? 0);
   });
 
   it('balanced trades when food is low (foodOnHand < 60)', () => {

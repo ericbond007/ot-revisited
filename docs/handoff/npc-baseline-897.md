@@ -2,6 +2,7 @@
 
 **First snapshot:** 2026-05-07 (#897, tick-only).
 **Extended:** 2026-05-08 (#914, added synthetic post visits — captures the landmark-time wires from #899/#902/#905/#906/#909/#911).
+**Deconfounded:** 2026-05-08 (#916, shared seed across rows + recalibrated `aggressive.shouldTradeAtPost` — every row now tests pure persona on the same starter wagon).
 
 ## Question being answered
 
@@ -22,39 +23,56 @@ After #895 wired `personaId` and `pickRations` is the only persona-driven NPC de
 
 The harness does **not** run landmark visits, ferries, restocks, captain elections, or events that fire only via the wagon-train shared schedule. Those layers will be added as more persona surface is wired.
 
-## Result — 180-day run, 1849 (Gold Rush year), with synthetic posts (#914)
+## Current result — 180-day run, 1849, shared profile (#916, deconfounded)
 
 Posts: ft_kearny @ d30, ft_laramie @ d60, ft_bridger @ d90, ft_hall @ d120, ft_boise @ d150.
+All rows seeded with `npc-baseline-shared` — every persona runs the same 7-soul wagon profile, so lifespan delta is pure persona.
 
 | Persona | Outcome | Days | Alive | Food (lb) | Cash | Morale | Oxen | Posts | $ at posts | M/N/F rations |
 |---|---|---|---|---|---|---|---|---|---|---|
-| cautious | wiped | 25 | 0/9 | 15 | $291 | 0 | 2 | 0 | $0 | 0/14/11 |
-| balanced | wiped | 139 | 0/3 | 50 | $0 | 0 | 3 | 4 | $263 | 0/139/0 |
-| aggressive | wiped | 72 | 0/4 | 50 | $55 | 0 | 5 | 2 | $104 | 72/0/0 |
-| chaos | wiped | 77 | 0/2 | 50 | $56 | 0 | 2 | 2 | $147 | 17/28/32 |
-| sunday_rester | wiped | 125 | 0/4 | 12.5 | $0 | 0 | 0 | 4 | $131 | 0/125/0 |
-| pace_pusher | wiped | 109 | 0/4 | 50 | $2 | 0 | 1 | 3 | $202 | 0/109/0 |
-| hoarder | wiped | 79 | 0/3 | 50 | $1 | 0 | 4 | 2 | $99 | 0/79/0 |
-| generous | wiped | 115 | 0/5 | 25 | $2 | 0 | 2 | 3 | $129 | 0/115/0 |
-| faithful | wiped | 114 | 0/3 | 0 | $4 | 5 | 3 | 3 | $262 | 0/114/0 |
-| drinker | wiped | 146 | 0/3 | 50 | $12 | 0 | 0 | 4 | $262 | 0/146/0 |
+| **aggressive** | wiped | **107** | 0/7 | 25 | $1 | 0 | 2 | 3 | $114 | 107/0/0 |
+| cautious | wiped | 80 | 0/7 | 25 | $3 | 0 | 2 | 2 | $112 | 0/25/55 |
+| drinker | wiped | 80 | 0/7 | 25 | $0 | 0 | 3 | 2 | $115 | 0/80/0 |
+| generous | wiped | 64 | 0/7 | 25 | $3 | 0 | 3 | 2 | $112 | 0/64/0 |
+| balanced | wiped | 63 | 0/7 | 25 | $3 | 0 | 2 | 2 | $112 | 0/63/0 |
+| sunday_rester | wiped | 63 | 0/7 | 25 | $3 | 0 | 3 | 2 | $112 | 0/63/0 |
+| faithful | wiped | 63 | 0/7 | 0 | $3 | 0 | 3 | 2 | $112 | 0/63/0 |
+| pace_pusher | wiped | 62 | 0/7 | 25 | $3 | 0 | 3 | 2 | $112 | 0/62/0 |
+| hoarder | wiped | 55 | 0/7 | 25 | $2 | 0 | 3 | 1 | $113 | 0/55/0 |
+| chaos | wiped | 44 | 0/7 | 25 | $79 | 0 | 3 | 1 | $36 | 18/15/11 |
 
-## Diff against original tick-only baseline (#897)
+## Headline
 
-| Persona | Tick-only days | With-posts days | Δ |
-|---|---|---|---|
-| cautious | 25 | 25 | 0 (Donners wipe before d30 first post) |
-| balanced | 52 | **139** | **+87** |
-| aggressive | 72 | 72 | 0 (shouldTradeAtPost gates skip posts) |
-| chaos | 48 | 77 | +29 |
-| sunday_rester | 49 | **125** | **+76** |
-| pace_pusher | 44 | **109** | **+65** |
-| hoarder | 71 | 79 | +8 |
-| generous | 64 | **115** | **+51** |
-| faithful | 55 | **114** | **+59** |
-| drinker | 74 | **146** | **+72** |
+- **Aggressive is now longest at 107 days** (was 72 in #914). The recalibrated `shouldTradeAtPost` (gates on real need: cash≥10, food<40, missing gear) means aggressive shops smaller but more often — the lean disposition lands food into the wagon at every fort that genuinely matters.
+- **Cautious + drinker tie at 80 days.** Cautious's filling-rations feast burns food faster than balanced's normal; drinker's inn-stay disposition wastes time but doesn't otherwise differ from balanced's restocks.
+- **The 63-day cluster is balanced + 4 inheritors** (sunday_rester / pace_pusher / generous / faithful). All share balanced's pickFoodRestockOpts {25/60} and shouldTradeAtPost — they make the same shopping decisions and wipe within 2 days of each other. This is the *correct* outcome: their persona overrides express in event choice / rest day / morale flavor, not food economy.
+- **Hoarder at 55 days** — tighter food cap {15/30} and hoarder-supply-stockpiler stays at fewer posts (1 visited). The recalibrated saleratusOverstock + cookwareSpare per #909 don't compensate enough.
+- **Chaos at 44** — randomness costs them. Only 1 post visited (rolled skip on most), $36 spent total.
 
-Posts flipped this from a pure-attrition test into a **persona-driven survival measurement**. Every restocking persona roughly doubled lifespan; the personas that gate posts (aggressive `shouldTradeAtPost`) or get wiped early (cautious 9-soul Donners) didn't move.
+## Historical snapshots (kept for reference)
+
+### Tick-only (#897, original baseline) — different profile per row, no posts
+
+| Persona | Days | Profile drawn |
+|---|---|---|
+| cautious | 25 | Donner family (9 souls) |
+| balanced | 52 | Bidwell (4) |
+| aggressive | 72 | Bidwell (4) |
+| chaos | 48 | Joe Meek (2) |
+| sunday_rester | 49 | Whitman (4) |
+| pace_pusher | 44 | Reed (4) |
+| hoarder | 71 | (varies) |
+| generous | 64 | Donner (5) |
+| faithful | 55 | Sager (3) |
+| drinker | 74 | Joe Meek (3) |
+
+### #914 — added posts, still per-row profiles
+
+Same per-row-profile confounder as #897. Posts approximately doubled lifespan for restocking personas, but cross-row comparisons mixed party-size with persona. (Table preserved in PR #58 for posterity.)
+
+### Why we deconfounded (#916)
+
+Comparing "Donner-family-with-cautious-decisions" (9 souls eating filling rations at 31.5 lb/day → wipes d25 before first post) to "Joe-Meek-with-drinker-decisions" (2 souls at normal rations) was answering "which historical profile survives best on this trail" — not "which persona makes the best decisions." Shared seed gives clean per-persona signal.
 
 ### Reading the columns
 
