@@ -166,6 +166,15 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
       }
     }
 
+    // #922 — base rest morale lift. Period reality: a day off DID
+    // lift spirits — washing, mending, telling stories, sleeping in.
+    // Without this passive, low-morale parties were locked in a
+    // shouldRest → no recovery → repeat loop that burned the whole
+    // calendar (see #917 bot-stall investigation). +10/day per the
+    // morale-tuning audit (#918/#922); inn +15, brothel ~+20 stay
+    // above this so they remain the bigger lifts.
+    s = { ...s, morale: Math.min(100, s.morale + 10) };
+
     // Preacher +1 morale per rest night. (Whore's contribution is the
     // explicit `share_the_whore` camp action below, not a passive.)
     if (hasLivePreacher(s)) {

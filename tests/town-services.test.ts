@@ -67,7 +67,7 @@ describe('inn', () => {
     const r = stayAtInn(s0, 1);
     expect(r.cost).toBe(3 * INN_DOLLARS_PER_PERSON_PER_NIGHT); // 3 alive
     expect(r.state.cash).toBe(100 - r.cost);
-    expect(r.state.morale).toBe(55);
+    expect(r.state.morale).toBe(65); // #922 — inn 5/night → 15/night
     expect(r.state.day).toBe(s0.day + 1);
     expect(r.state.party.every((m) => m.health >= s0.party.find((p) => p.id === m.id)!.health)).toBe(true);
   });
@@ -113,7 +113,7 @@ describe('brothel', () => {
     const r = visitBrothel(s0, makeRng('br-1'));
     expect(r.men).toBe(2);
     expect(r.cost).toBe(2 * BROTHEL_DOLLARS_PER_MAN);
-    expect(r.state.morale).toBe(50 + 2 * 4);
+    expect(r.state.morale).toBe(50 + 2 * 7); // #922 — brothel 4/man → 7/man
     expect(r.state.cash).toBe(100 - r.cost);
   });
 

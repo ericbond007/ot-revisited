@@ -303,6 +303,10 @@ export const cautiousPersona: Persona = {
     // the team while the party was still at full HP, stranding the
     // wagon for the rest of the year. Resting at high ox fatigue lets
     // grain + grazing recover the team before damage compounds.
+    // #922 — Sabbath observance. Period: Tabitha Brown / Methodist
+    // emigrants kept the Sabbath strictly. The deliberate Sunday rest
+    // also feeds the +10/day morale lift introduced in #922.
+    if (isSunday(state.date)) return true;
     return minPartyHealth(state) < 45
       || state.morale < 25
       || oxenWornOut(state);
@@ -335,11 +339,13 @@ export const cautiousPersona: Persona = {
       && (state.morale < 50 || minPartyHealth(state) < 70);
   },
   shouldFindWater(state) {
-    // Cautious refills at 50% — smoke tuning showed this is the
-    // sweet spot. Going lower (<25%) lets the keg run dry on a hot
-    // day and triggers a dehydration cascade that costs more rest
-    // days than the proactive find_water would have.
-    return waterRatio(state) < 0.5 && state.location.terrain !== 'desert';
+    // #920 — recalibrated 0.5 → 0.30. The v8 50% threshold was tuned
+    // before #911 NPC shopping parity and the #922 rest-morale lift;
+    // post-tune it caused cautious to spend 52-59 days/run on water
+    // trips, capping the calendar before arrival. 30% still keeps
+    // keg above the dehydration-cascade floor on hot days while
+    // freeing 20-30 travel days.
+    return waterRatio(state) < 0.3 && state.location.terrain !== 'desert';
   },
   shouldPan() {
     // Cautious skips panning — period: didn't dawdle on speculative
@@ -423,6 +429,12 @@ export const balancedPersona: Persona = {
     // Profession-aware: a Doctor dampens condition damage 30% (engine
     // #154), so the bot can run a thinner HP margin without spiraling.
     // Hunter doesn't change rest — they help food, not health.
+    // #922 — Sabbath observance. Period: most emigrant companies
+    // (Bryant 1846, Carpenter 1857, Palmer 1845) kept Sunday rest
+    // by default. The pace-pusher / Reed archetype that PUSHED past
+    // Sundays was noted as deliberate and reckless, not standard.
+    // Aggressive overrides this; the balanced default holds Sunday.
+    if (isSunday(state.date)) return true;
     const hpFloor = hasLiveDoctor(state) ? 30 : 40;
     return minPartyHealth(state) < hpFloor
       || state.morale < 20
