@@ -505,10 +505,16 @@ export const balancedPersona: Persona = {
   },
   pickOxSwapCount(state, here) {
     if (!(here.services ?? []).includes('ox_swap')) return 0;
-    // Balanced takes a smaller buffer (1 above minTeam) and waits a
-    // little longer on worn refresh (health <55). Costs less cash up
-    // front, leaves more room for medicine/food shopping.
-    return pickOxSwapCountFor(state, 1, 55);
+    // #930 — bumped thinThreshold 1 → 2 to target optimalTeam (was
+    // targeting minTeam+1 = 3 for prairie schooner, but oxenSpeedFactor
+    // uses optimalTeam=4 as the denominator). A 3-ox team perpetually
+    // runs at 0.75 team-factor = -25% travel speed. Now targets 4 oxen
+    // (= prairie schooner optimal). Costs ~$40-75 per swap at major
+    // posts (Laramie, Bridger, Hall) but recovers the speed.
+    // Period: balanced emigrants restored teams to optimal at major
+    // resupply posts. The "thin team is fine" pattern was for cash-
+    // crisis parties — see #931 for the full optimal-baseline refactor.
+    return pickOxSwapCountFor(state, 2, 55);
   },
   pickRepairBudget(state, here) {
     // Balanced is thriftier than cautious — repairs at <60 (vs 75)
