@@ -67,9 +67,11 @@ describe('#238 native ferry crossing', () => {
       inventory: { ...newGame().inventory, beads: 10 }
     };
     const after = ford(s0, { method: 'native_ferry', river: greenRiver });
-    const last = after.eventLog[after.eventLog.length - 1].text;
-    expect(last).toMatch(/native ferry/i);
-    expect(last).toMatch(/beads/i);
+    // #926 — keg-refill line lands AFTER the crossing log; find the
+    // crossing entry directly instead of assuming it's last.
+    const ferryLine = after.eventLog.find((e) => /native ferry/i.test(e.text));
+    expect(ferryLine?.text).toMatch(/native ferry/i);
+    expect(ferryLine?.text).toMatch(/beads/i);
   });
 
   it('throws when the river has no nativeFerry config', () => {

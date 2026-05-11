@@ -343,13 +343,13 @@ export const cautiousPersona: Persona = {
       && (state.morale < 50 || minPartyHealth(state) < 70);
   },
   shouldFindWater(state) {
-    // #920 — recalibrated 0.5 → 0.30. The v8 50% threshold was tuned
-    // before #911 NPC shopping parity and the #922 rest-morale lift;
-    // post-tune it caused cautious to spend 52-59 days/run on water
-    // trips, capping the calendar before arrival. 30% still keeps
-    // keg above the dehydration-cascade floor on hot days while
-    // freeing 20-30 travel days.
-    return waterRatio(state) < 0.3 && state.location.terrain !== 'desert';
+    // #920 → 0.5 → 0.30. #926 → 0.30 → 0.15. With passive ambient
+    // refill on travel days (river / forest / prairie / mountain
+    // terrains) and full keg refill at every ford, the keg now stays
+    // topped through ordinary travel. The 0.15 trigger reserves
+    // findWater for genuinely dry stretches where ambient sources
+    // aren't enough.
+    return waterRatio(state) < 0.15 && state.location.terrain !== 'desert';
   },
   shouldPan() {
     // Cautious skips panning — period: didn't dawdle on speculative
@@ -481,7 +481,9 @@ export const balancedPersona: Persona = {
       && (state.morale < 30 || minPartyHealth(state) < 50);
   },
   shouldFindWater(state) {
-    return waterRatio(state) < 0.18 && state.location.terrain !== 'desert';
+    // #926 → 0.18 → 0.10. Same logic as cautious — passive ambient
+    // refill keeps the keg topped through ordinary travel.
+    return waterRatio(state) < 0.10 && state.location.terrain !== 'desert';
   },
   shouldPan(state) {
     // Balanced tries panning when the timing is right — period:

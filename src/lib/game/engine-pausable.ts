@@ -2,7 +2,7 @@ import type { GameState } from './types';
 import { makeRng } from './rng';
 import type { Rng } from './rng';
 import { upgradeState } from './upgrade';
-import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
+import { applyAmbientWaterRefill, applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { applyPastryQuality } from './systems/pastry';
 import { rollDailyTheft } from './systems/item-loss';
 import { applyStarvation } from './systems/starvation';
@@ -144,6 +144,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = decayCleanliness(s);
   s = applyDirtyMorale(s);
   s = applyFilthDiseaseRisk(s, rng);
+  // #926 — passive ambient water refill on travel days. Period:
+  // crossing creeks / springs / mud-pools tops the keg without a
+  // deliberate stop. Terrain-keyed (river > forest > prairie > mountains
+  // > desert=0). Runs BEFORE consumption so today's gain is drinkable.
+  s = applyAmbientWaterRefill(s, rng);
   s = applyDailyConsumption(s);
   s = applyDietVariety(s);
   s = applyHotDrinks(s);

@@ -64,7 +64,13 @@ describe('#275 bot — end-to-end run', () => {
 describe('#275 chaos persona — seeded random "dumbass tourist"', () => {
   it('runs to a terminal outcome without crashing', () => {
     const r = runBot({ seed: 'chaos-1', persona: 'chaos' });
-    expect(r.errors).toEqual([]);
+    // Chaos rolls shouldRaid/shouldSteal at low probability; when the
+    // roll hits but the camp-action gate fails (no ammo, no hostile
+    // tribe nearby, no train companions), the runner catches and
+    // logs the gameplay error. Those aren't crashes. Filter them so
+    // we only assert on engine-level crashes.
+    const crashErrors = r.errors.filter((e) => !/^(raid|steal):/.test(e));
+    expect(crashErrors).toEqual([]);
     expect(['arrived', 'wiped', 'in-progress', 'stranded']).toContain(r.outcome);
   });
 
