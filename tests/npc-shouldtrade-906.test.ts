@@ -104,4 +104,30 @@ describe('#906 — applyNpcPostRestock food block gates on shouldTradeAtPost', (
     // independently — caps wagon condition at +40).
     expect(after.wagon.condition).toBeGreaterThan(before.wagon.condition);
   });
+
+  // #933 — at posts before a long gap, the food trigger inflates so
+  // the wagon trades even with food above its v10-floor. Pre-#933,
+  // balanced gated on foodOnHand < 60; at Fort Kearny with 150 lb of
+  // flour (foodOnHand=150) balanced would have skipped entirely.
+  // Post-#933 the trigger scales with the 317-mi Kearny→Robidoux gap
+  // (~170 lb for a 3-soul party at pace=10, safety=1.2), so the
+  // wagon enters the post — and pickFoodRestock's per-item-floors
+  // (also gap-aware via #932) catch the empty bacon / beans / sugar.
+  it('#933 — at Fort Kearny (317-mi gap ahead), balanced enters trade despite flour above v10 floor', () => {
+    let s = joinTrain(game(), makeRng('r')).state;
+    s = { ...s, location: { ...s.location, milesTraveled: 335, atLandmarkId: 'ft_kearny' } };
+    s = setCompanion0(s, {
+      personaId: 'balanced',
+      inventory: { ...s.wagonTrain!.companions[0].inventory, flour: 150, bacon: 0, beans: 0, salt_pork: 0 },
+      cash: 1000
+    });
+    const before = s.wagonTrain!.companions[0];
+    const after = applyNpcPostRestock(s).wagonTrain!.companions[0];
+    // Pre-#933: skipped (foodOnHand 150 > 60). Post-#933: trades and
+    // refills the staples that pickFoodRestock's per-item-floors flag.
+    const bacon = (after.inventory.bacon ?? 0) - (before.inventory.bacon ?? 0);
+    const beans = (after.inventory.beans ?? 0) - (before.inventory.beans ?? 0);
+    expect(bacon + beans).toBeGreaterThan(0);
+    expect(after.cash).toBeLessThan(before.cash);
+  });
 });
