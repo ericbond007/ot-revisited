@@ -42,8 +42,26 @@ export type PersonaId =
 // seeded-random choices — still reproducible per run seed, but
 // exercises weird decision sequences a heuristic player would never
 // take.
+
+/** #934 — Persona-level foresight identity. Used by every gap-aware
+ *  decision method (pickFoodRestockOpts, shouldTradeAtPost food
+ *  trigger, pickOxSwapCount, future pickRepairBudget) to convert
+ *  miles-to-next-supply-post into a days / lb / health-floor budget.
+ *  Declared once per persona; spread automatically into inheritors
+ *  via `...balancedPersona`. */
+export interface PersonaForesight {
+  /** Expected travel speed in mi/day. Cautious 8 (rests Sundays,
+   *  hunts often), balanced 10, aggressive 12 (grueling pace). */
+  paceMiPerDay: number;
+  /** Multiplier on projected days-to-next-supply. Cautious 1.5
+   *  (deep buffer), balanced 1.2, aggressive 1.0 (lean). */
+  safetyFactor: number;
+}
+
 export interface Persona {
   id: PersonaId;
+  /** #934 — Foresight identity, see PersonaForesight. */
+  foresight: PersonaForesight;
   /** Pick a choice for an event. Returns the choice id. */
   pickEventChoice(state: GameState, event: GameEvent, rng: Rng): string;
   /** Daily pace setting. May change as the run progresses. */
