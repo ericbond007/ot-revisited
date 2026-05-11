@@ -1,4 +1,5 @@
-import type { GameState, Pace, Rations, Weather } from '../types';
+import type { GameState, Pace, Rations, Terrain, Weather } from '../types';
+import type { Rng } from '../rng';
 import { foodItemIds } from '../content/items';
 import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
 import { weatherWaterMult } from './weather';
@@ -98,6 +99,44 @@ export function waterConsumedToday(state: GameState): number {
   const base = adults * WATER_PER_ADULT_GAL + Math.ceil(children * WATER_PER_ADULT_GAL * CHILD_WATER_MULT);
   // Weather (#153) — heat doubles water needs, overcast/rain trims a bit.
   return Math.ceil(base * weatherWaterMult(state.weather));
+}
+
+/** #926 — passive ambient water refill on travel days. Period reality:
+ *  emigrants topped kegs at creek crossings, springs, runoff pools
+ *  without making a deliberate "find water" stop. The frequency
+ *  scales with terrain — river country had water everywhere, mountains
+ *  had it at switchbacks, deserts had none. Runs BEFORE
+ *  applyDailyConsumption so the gallon found today is drinkable today.
+ *
+ *  Probabilities + gain per terrain (caps at waterCap):
+ *  - river: deterministic +5 (you crossed a creek today, no roll)
+ *  - forest: +3 at 60% (creeks + springs are frequent)
+ *  - prairie: +2 at 30% (mud-pools / runoff after rain)
+ *  - mountain: +1 at 15% (snowmelt at switchbacks)
+ *  - desert: 0 (go to a post)
+ *
+ *  The refill doesn't apply on rest days — `rest()` handles its own
+ *  water mechanics via the find_water camp action. */
+export function applyAmbientWaterRefill(state: GameState, rng: Rng): GameState {
+  const terrain: Terrain = state.location.terrain;
+  // Each tuple: gain on a hit, hit probability (river is deterministic).
+  const params: Record<Terrain, { gain: number; chance: number }> = {
+    river: { gain: 5, chance: 1.0 },
+    forest: { gain: 3, chance: 0.60 },
+    prairie: { gain: 2, chance: 0.30 },
+    mountains: { gain: 1, chance: 0.15 },
+    desert: { gain: 0, chance: 0 }
+  };
+  const { gain, chance } = params[terrain];
+  if (gain <= 0) return state;
+  if (chance < 1 && !rng.chance(chance)) return state;
+  const room = Math.max(0, state.resources.waterCap - state.resources.water);
+  const added = Math.min(room, gain);
+  if (added <= 0) return state;
+  return {
+    ...state,
+    resources: { ...state.resources, water: state.resources.water + added }
+  };
 }
 
 export function applyDailyConsumption(state: GameState): GameState {

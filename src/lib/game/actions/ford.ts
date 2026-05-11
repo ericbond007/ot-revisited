@@ -351,6 +351,23 @@ export function ford(state: GameState, opts: FordOptions): GameState {
     }
   }
 
+  // #926 — full keg refill on any successful river crossing. Period:
+  // every ford / ferry / caulk topped the kegs from the river you just
+  // crossed. Even on a disaster-roll ford the wagon still meets water.
+  // Skipped on `wait` since the wagon never reached the bank.
+  if (crossed && s.resources.water < s.resources.waterCap) {
+    const refilled = s.resources.waterCap - s.resources.water;
+    s = {
+      ...s,
+      resources: { ...s.resources, water: s.resources.waterCap },
+      eventLog: [
+        ...s.eventLog,
+        { day: s.day, text: `Topped the kegs from the river — ${refilled} gal.` }
+      ]
+    };
+    events.push(`Kegs topped at the crossing (+${refilled} gal).`);
+  }
+
   // Build the reveal summary — diff the inventory snapshot, compute
   // elapsed days, record cash + wagon condition deltas. Stash on flags.
   const invIds = new Set<string>([
