@@ -27,6 +27,36 @@ import { getWagon } from '../content/wagons';
 import { ABANDON_PRIORITY } from '../systems/item-loss';
 import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaId } from './types';
+import type { FoodRestockOpts } from './shopping';
+import { gapBufferDays, nextSupplyDistance } from './foresight';
+
+/** #932 — Build gap-aware FoodRestockOpts. Floor is the maximum of the
+ *  persona's base floor and the days-of-food the next gap requires at
+ *  the persona's pace + safety factor. Cap is floor + persona buffer,
+ *  but no smaller than the persona's base cap (so short upcoming gaps
+ *  don't shrink the restock target below its v10 default). */
+function gapAwareFoodOpts(
+  state: GameState,
+  base: {
+    daysFloor: number;
+    daysCap: number;
+    paceMiPerDay: number;
+    safetyFactor: number;
+    saleratusOverstock?: boolean;
+  }
+): FoodRestockOpts {
+  const gapMiles = nextSupplyDistance(state);
+  const buffer = base.daysCap - base.daysFloor;
+  const daysFloor = gapBufferDays(gapMiles, {
+    paceMiPerDay: base.paceMiPerDay,
+    safetyFactor: base.safetyFactor,
+    minDays: base.daysFloor
+  });
+  const daysCap = Math.max(base.daysCap, daysFloor + buffer);
+  return base.saleratusOverstock
+    ? { daysFloor, daysCap, saleratusOverstock: true }
+    : { daysFloor, daysCap };
+}
 
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
 function minPartyHealth(state: GameState): number {
@@ -382,13 +412,22 @@ export const cautiousPersona: Persona = {
     if (state.cash < 20) return 0;
     return Math.min(40, state.cash, Math.round(100 - state.wagon.condition));
   },
-  pickFoodRestockOpts() {
+  pickFoodRestockOpts(state) {
     // Cautious tops up generously — period emigrant style: every fort
-    // gets the chest filled. 30/90 = the v10 default. #909 —
+    // gets the chest filled. 30/90 = the v10 default base. #909 —
     // saleratusOverstock true: Tabitha Brown's Methodist-staple
     // cooking burned saleratus every flour-day; Brown was known for
-    // deep stores.
-    return { daysFloor: 30, daysCap: 90, saleratusOverstock: true };
+    // deep stores. #932 — gap-aware: at posts before a long
+    // supply-less stretch (Kearny→Robidoux, Hall→Boise, Boise→Whitman)
+    // cautious inflates floor + cap to leave with enough food to
+    // cover the gap at 8 mi/day expected pace × 1.5 safety.
+    return gapAwareFoodOpts(state, {
+      daysFloor: 30,
+      daysCap: 90,
+      paceMiPerDay: 8,
+      safetyFactor: 1.5,
+      saleratusOverstock: true
+    });
   },
   pickEquipmentRestockOpts() {
     // #909 — Tabitha Brown carried backups of load-bearing kit.
@@ -525,12 +564,19 @@ export const balancedPersona: Persona = {
     if (state.cash < 15) return 0;
     return Math.min(30, state.cash, Math.round(100 - state.wagon.condition));
   },
-  pickFoodRestockOpts() {
+  pickFoodRestockOpts(state) {
     // Balanced: 60-day cap (was 90) leaves cash for medicine. Period
     // reality: most emigrant families targeted ~2 months food at any
     // post stop, not 3. #909 — no saleratus overstock; balanced runs
-    // the daysFloor like every other staple.
-    return { daysFloor: 25, daysCap: 60 };
+    // the daysFloor like every other staple. #932 — gap-aware: scale
+    // up at the big resupply-less stretches (10 mi/day expected pace
+    // × 1.2 safety).
+    return gapAwareFoodOpts(state, {
+      daysFloor: 25,
+      daysCap: 60,
+      paceMiPerDay: 10,
+      safetyFactor: 1.2
+    });
   },
   pickEquipmentRestockOpts() {
     // #909 — no spare cookware by default. Inheritor personas
@@ -633,12 +679,19 @@ export const aggressivePersona: Persona = {
     if (state.cash < 10) return 0;
     return Math.min(20, state.cash, Math.round(100 - state.wagon.condition));
   },
-  pickFoodRestockOpts() {
+  pickFoodRestockOpts(state) {
     // Aggressive: 45-day cap, 15-day floor. Trims to the bone — the
     // emergency-food override (#275 v10b) catches actual starvation,
     // so this just sets the explicit-trade size. Period: meager-rations
     // parties tracked supplies tighter, restocked smaller, hunted more.
-    return { daysFloor: 15, daysCap: 45 };
+    // #932 — gap-aware: even aggressive bumps floor when an explicit
+    // 300-mi resupply gap is ahead (12 mi/day × 1.0 safety = 25 days).
+    return gapAwareFoodOpts(state, {
+      daysFloor: 15,
+      daysCap: 45,
+      paceMiPerDay: 12,
+      safetyFactor: 1.0
+    });
   },
   pickEquipmentRestockOpts() {
     // #909 — Bidwell-1841 lean: no spare cookware.

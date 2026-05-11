@@ -563,11 +563,17 @@ export function applyNpcPostRestock(state: GameState): GameState {
     // #899 — persona-driven sizing via persona.pickFoodRestockOpts.
     // hoarder = 15/30, balanced = 25/60, cautious = 30/90, chaos
     // swings deterministically on state.day.
+    // #932 — include `location` so the persona's gap-aware
+    // pickFoodRestockOpts (which reads milesTraveled to size restocks
+    // against the next supply-less leg) flows through NPC restock
+    // too. NPCs are at the same landmark as the player, so sharing
+    // state.location is correct.
     const tradeFauxState = {
       inventory: next.inventory,
       party: next.party,
       cash: next.cash,
-      day: state.day
+      day: state.day,
+      location: state.location
     } as unknown as GameState;
     const tradeRng = makeRng(`${next.seed}:trade:${state.day}:${id}`);
     const opts = persona.pickFoodRestockOpts(tradeFauxState);
