@@ -58,6 +58,34 @@ function gapAwareFoodOpts(
     : { daysFloor, daysCap };
 }
 
+/** #933 — Period-real basket consumption: flour 1.0 + bacon 0.3 +
+ *  beans 0.15 + minor staples ~= 1.5 lb/eater/day. Used to convert a
+ *  gap-aware "days of food needed" into a pound threshold for the
+ *  shouldTradeAtPost food trigger. */
+const RAW_BASKET_LB_PER_DAY = 1.5;
+
+/** #933 — Gap-aware food trigger for shouldTradeAtPost. Returns the
+ *  pound threshold below which the persona wants to top up. Floored
+ *  at `base.minLb` so personas with short upcoming gaps still gate on
+ *  their base predicate (which preserves test pins and persona feel). */
+function gapAwareFoodTrigger(
+  state: GameState,
+  base: {
+    paceMiPerDay: number;
+    safetyFactor: number;
+    minLb: number;
+  }
+): number {
+  const eaters = state.party.filter((m) => !m.dead).length || 1;
+  const gapDays = gapBufferDays(nextSupplyDistance(state), {
+    paceMiPerDay: base.paceMiPerDay,
+    safetyFactor: base.safetyFactor,
+    minDays: 0
+  });
+  const gapLb = gapDays * eaters * RAW_BASKET_LB_PER_DAY;
+  return Math.max(base.minLb, gapLb);
+}
+
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
 function minPartyHealth(state: GameState): number {
   const alive = state.party.filter((m) => !m.dead);
@@ -361,7 +389,18 @@ export const cautiousPersona: Persona = {
   },
   shouldTradeAtPost(state, here) {
     if (state.cash < 10) return false;
-    return foodOnHand(state) < 100
+    // #933 — gap-aware food trigger: at posts before long supply-less
+    // legs (Kearny→Robidoux 317 mi, Cheyenne→Bridger 218, Hall→Boise
+    // 270, Boise→Whitman 300), inflate the trigger so cautious tops
+    // up even when above the v10 100-lb floor. Cautious's pace=8,
+    // safety=1.5 matches its pickFoodRestockOpts shape so both
+    // decisions reach the same conclusion about "is this enough."
+    const trigger = gapAwareFoodTrigger(state, {
+      paceMiPerDay: 8,
+      safetyFactor: 1.5,
+      minLb: 100
+    });
+    return foodOnHand(state) < trigger
       || postStocksMissingWarmthGear(state, here)
       || postStocksMissingMedicine(state, here)
       || postStocksMissingEquipment(state, here)
@@ -508,7 +547,14 @@ export const balancedPersona: Persona = {
   },
   shouldTradeAtPost(state, here) {
     if (state.cash < 20) return false;
-    return foodOnHand(state) < 60
+    // #933 — gap-aware food trigger. Balanced's pace=10, safety=1.2
+    // matches its pickFoodRestockOpts so both decisions agree.
+    const trigger = gapAwareFoodTrigger(state, {
+      paceMiPerDay: 10,
+      safetyFactor: 1.2,
+      minLb: 60
+    });
+    return foodOnHand(state) < trigger
       || postStocksMissingWarmthGear(state, here)
       || postStocksMissingMedicine(state, here)
       || postStocksMissingEquipment(state, here)
@@ -633,7 +679,15 @@ export const aggressivePersona: Persona = {
     // shouldTradeAtPost gates on REAL need (food critical, missing
     // gear) — tighter than balanced's "moderate need" thresholds.
     if (state.cash < 10) return false;
-    return foodOnHand(state) < 40
+    // #933 — gap-aware food trigger. Aggressive's pace=12, safety=1.0
+    // matches its lean pickFoodRestockOpts. At small gaps still gates
+    // on the 40-lb minimum (the recalibrated #916 "real need" floor).
+    const trigger = gapAwareFoodTrigger(state, {
+      paceMiPerDay: 12,
+      safetyFactor: 1.0,
+      minLb: 40
+    });
+    return foodOnHand(state) < trigger
       || postStocksMissingWarmthGear(state, here)
       || postStocksMissingMedicine(state, here)
       || postStocksMissingEquipment(state, here);
