@@ -306,9 +306,13 @@ export const cautiousPersona: Persona = {
     // #922 — Sabbath observance. Period: Tabitha Brown / Methodist
     // emigrants kept the Sabbath strictly. The deliberate Sunday rest
     // also feeds the +10/day morale lift introduced in #922.
+    // #924 — voluntary-rest triggers tightened (HP 45→30, morale
+    // 25→15). With Sunday-rest now default + #922 morale recovery,
+    // pre-tune triggers fired 4× period reality. Pushing through low
+    // HP with the #922 healingMultiplier softening is now viable.
     if (isSunday(state.date)) return true;
-    return minPartyHealth(state) < 45
-      || state.morale < 25
+    return minPartyHealth(state) < 30
+      || state.morale < 15
       || oxenWornOut(state);
   },
   shouldHunt(state) {
@@ -434,10 +438,13 @@ export const balancedPersona: Persona = {
     // by default. The pace-pusher / Reed archetype that PUSHED past
     // Sundays was noted as deliberate and reckless, not standard.
     // Aggressive overrides this; the balanced default holds Sunday.
+    // #924 — voluntary-rest triggers tightened (HP 40/30 → 25/15,
+    // morale 20→10). Sunday-rest covers the recovery cadence;
+    // voluntary rest now reserved for genuine crises.
     if (isSunday(state.date)) return true;
-    const hpFloor = hasLiveDoctor(state) ? 30 : 40;
+    const hpFloor = hasLiveDoctor(state) ? 15 : 25;
     return minPartyHealth(state) < hpFloor
-      || state.morale < 20
+      || state.morale < 10
       || oxenWornOut(state);
   },
   shouldHunt(state) {

@@ -37,10 +37,13 @@ import {
 import { computeFunScore } from './scoring';
 import type { BotRunOpts, BotRunReport } from './types';
 
-// Real emigrant journeys ran 4–6 months. 365 = ~1 year, comfortable
-// headroom for slow / interrupted runs without letting infinite-loop
-// bugs cook for hours.
-const DEFAULT_MAX_DAYS = 365;
+// Real emigrant journeys ran 4–6 months (120–180 days). 220 = ~7
+// months, a period-realistic ceiling — anything beyond is diagnostic-
+// only territory. Bots that can't arrive in 220 days are stuck on
+// a structural problem (rest-loop, event day-burn, disease cycle),
+// not a slow-but-valid run. Pre-#924 cap was 365 (~1 yr) which let
+// 73/75 bot runs cook in calendar-burn rest-loops past period reality.
+const DEFAULT_MAX_DAYS = 220;
 
 interface RunningStats {
   eventsFiredById: Record<string, number>;
