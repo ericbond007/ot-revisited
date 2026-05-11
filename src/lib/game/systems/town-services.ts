@@ -96,7 +96,10 @@ export function stayAtInn(
   if (state.cash < cost) {
     throw new Error(`stayAtInn: not enough cash ($${state.cash} < $${cost})`);
   }
-  const moraleGain = Math.min(100 - state.morale, n * 5);
+  // #922 — bumped 5 → 15/night. A paid bed + warm meal is meaningfully
+  // better than free rest (+10/day). Inn now sits above rest in the
+  // recovery menu; brothel above inn.
+  const moraleGain = Math.min(100 - state.morale, n * 15);
   const next: GameState = {
     ...state,
     cash: state.cash - cost,
@@ -162,7 +165,11 @@ export function gamble(state: GameState, rng: Rng, stake: number): GambleResult 
 // effects in this first cut. Disease risk can layer on later.
 
 export const BROTHEL_DOLLARS_PER_MAN = 5;
-export const BROTHEL_MORALE_PER_MAN = 4;
+// #922 — bumped 4 → 7/man. A typical 2-3 man brothel visit lifts
+// morale by +14-21, hitting the "~+20" target in the morale-tuning
+// audit. Brothel sits above inn (15/night) and rest (10/day) in the
+// recovery menu — biggest single-stop morale lift, but pox risk.
+export const BROTHEL_MORALE_PER_MAN = 7;
 export const BROTHEL_POX_CHANCE_PER_MAN = 0.08;
 
 export interface BrothelResult {

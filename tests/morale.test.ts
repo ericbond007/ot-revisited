@@ -31,9 +31,9 @@ describe('healingMultiplier (§5.2 table)', () => {
   it('0.90 for 20-39', () => {
     expect(healingMultiplier(30)).toBe(0.90);
   });
-  it('0.75 for 0-19', () => {
-    expect(healingMultiplier(5)).toBe(0.75);
-    expect(healingMultiplier(0)).toBe(0.75);
+  it('0.90 for 0-19 (#922 — softened from 0.75 to break the death-spiral lock)', () => {
+    expect(healingMultiplier(5)).toBe(0.90);
+    expect(healingMultiplier(0)).toBe(0.90);
   });
 });
 

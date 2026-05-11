@@ -15,7 +15,10 @@ export function healingMultiplier(morale: number): number {
   if (morale >= 60) return 1.10;
   if (morale >= 40) return 1.00;
   if (morale >= 20) return 0.90;
-  return 0.75;
+  // #922 — softened from 0.75 to 0.90 to break the death-spiral lock.
+  // The previous 0.75 floor compounded condition damage at low morale
+  // and trapped 73/75 bot runs in a calendar-burn rest-loop (see #917).
+  return 0.90;
 }
 
 function totalFood(state: GameState): number {
