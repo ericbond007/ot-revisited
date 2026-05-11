@@ -108,20 +108,50 @@ describe('#303c — Persona.pickRepairBudget', () => {
 });
 
 describe('#303c — Persona.pickFoodRestockOpts', () => {
-  it('cautious: 30 floor / 90 cap (preserves v10 default) + saleratus overstock per #909', () => {
+  // #932 — values are now gap-aware: floor scales with miles-to-next
+  // supply post at the persona's expected pace × safety factor. At
+  // Independence (mi 0) the next post is Hollenberg Ranch at mi 215.
+  // Cautious: ceil(215/8 × 1.5) = 40 days; balanced: 26; aggressive: 18.
+  it('cautious: gap-aware floor (40 at Independence) + saleratus overstock per #909', () => {
     expect(cautiousPersona.pickFoodRestockOpts(game())).toEqual({
-      daysFloor: 30,
-      daysCap: 90,
+      daysFloor: 40,
+      daysCap: 100,
       saleratusOverstock: true
     });
   });
 
-  it('balanced: 25 floor / 60 cap (smaller restock leaves cash for medicine), no saleratus overstock', () => {
-    expect(balancedPersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 25, daysCap: 60 });
+  it('balanced: gap-aware floor (26 at Independence), no saleratus overstock', () => {
+    expect(balancedPersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 26, daysCap: 61 });
   });
 
-  it('aggressive: 15 floor / 45 cap (meager-ration sizing), no saleratus overstock', () => {
-    expect(aggressivePersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 15, daysCap: 45 });
+  it('aggressive: gap-aware floor (18 at Independence), no saleratus overstock', () => {
+    expect(aggressivePersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 18, daysCap: 48 });
+  });
+
+  // #932 — exercise the big gap at Fort Kearny (mi 335). Next post
+  // is Robidoux at mi 652, a 317-mile leg with no resupply. This is
+  // exactly the failure mode #930's harness exposed.
+  it('#932 — at Fort Kearny (mi 335), all 3 personas inflate for the 317-mi gap to Robidoux', () => {
+    const atKearny = game({ location: { ...game().location, milesTraveled: 335 } });
+    const c = cautiousPersona.pickFoodRestockOpts(atKearny);
+    const b = balancedPersona.pickFoodRestockOpts(atKearny);
+    const a = aggressivePersona.pickFoodRestockOpts(atKearny);
+    // cautious: ceil(317/8 × 1.5) = 59; balanced: ceil(317/10 × 1.2) = 38;
+    // aggressive: ceil(317/12 × 1.0) = 26.
+    expect(c.daysFloor).toBeGreaterThanOrEqual(50);
+    expect(b.daysFloor).toBeGreaterThanOrEqual(35);
+    expect(a.daysFloor).toBeGreaterThanOrEqual(25);
+  });
+
+  // #932 — at the trail end (past Oregon City), the gap helper returns 0,
+  // so floor/cap should fall back to each persona's base.
+  it('#932 — past the last post, falls back to base floor / cap', () => {
+    const past = game({ location: { ...game().location, milesTraveled: 2300 } });
+    expect(cautiousPersona.pickFoodRestockOpts(past)).toEqual({
+      daysFloor: 30, daysCap: 90, saleratusOverstock: true
+    });
+    expect(balancedPersona.pickFoodRestockOpts(past)).toEqual({ daysFloor: 25, daysCap: 60 });
+    expect(aggressivePersona.pickFoodRestockOpts(past)).toEqual({ daysFloor: 15, daysCap: 45 });
   });
 
   it('chaos: rotates through three sizes deterministically by day', () => {
