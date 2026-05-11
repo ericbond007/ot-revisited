@@ -150,26 +150,47 @@ describe('#299 — applyNpcPostRestock', () => {
     let bridger = joinTrain(game(), makeRng('r')).state;
     kearny = arriveAt(kearny, 'ft_kearny');
     bridger = arriveAt(bridger, 'ft_bridger');
-    // Equalize companion state in both — same flour=0, cash=200
+    // #930 — total-spend comparison is fragile because the two posts
+    // stock different non-food items (Kearny stocks tent + quinine;
+    // Bridger doesn't). Compare the food-restock log line directly so
+    // we're isolating the price multiplier on identical buy lists.
+    // Park ox team at full so #930 ox swap doesn't fire.
+    const fullTeam = [
+      { id: 'o0', health: 100, fatigue: 0, shod: true },
+      { id: 'o1', health: 100, fatigue: 0, shod: true },
+      { id: 'o2', health: 100, fatigue: 0, shod: true },
+      { id: 'o3', health: 100, fatigue: 0, shod: true }
+    ];
     const seedCompanions = (s: GameState): GameState => ({
       ...s,
       wagonTrain: {
         ...s.wagonTrain!,
         companions: s.wagonTrain!.companions.map((c, i) =>
-          i === 0 ? { ...c, inventory: { ...c.inventory, flour: 0 }, cash: 200 } : c
+          i === 0 ? { ...c, inventory: { ...c.inventory, flour: 0 }, cash: 1000, oxen: fullTeam } : c
         )
       }
     });
     kearny = seedCompanions(kearny);
     bridger = seedCompanions(bridger);
-    const baseCash = 200;
     const kearnyAfter = applyNpcPostRestock(kearny);
     const bridgerAfter = applyNpcPostRestock(bridger);
-    const kearnySpent = baseCash - kearnyAfter.wagonTrain!.companions[0].cash;
-    const bridgerSpent = baseCash - bridgerAfter.wagonTrain!.companions[0].cash;
-    // Bridger gouges 1.5×, so spent more than Kearny on the same buys
-    // (assuming the same buys fit in $200 at both posts).
-    expect(bridgerSpent).toBeGreaterThan(kearnySpent);
+
+    // Pull the food line for companion 0 at each post.
+    const c0Name = kearnyAfter.wagonTrain!.companions[0].name;
+    const foodLog = (s: GameState) => s.eventLog
+      .map((e) => e.text)
+      .find((t) => t.startsWith(`${c0Name} bought`) && !t.includes('(supplies)'));
+    const priceFrom = (line: string | undefined): number => {
+      const m = line?.match(/\$([\d.]+)/);
+      return m ? parseFloat(m[1]) : NaN;
+    };
+    const kearnyFoodSpend = priceFrom(foodLog(kearnyAfter));
+    const bridgerFoodSpend = priceFrom(foodLog(bridgerAfter));
+    // Both wagons bought identical food (same persona / inventory /
+    // cash); Bridger's 1.5× gouge means proportionally higher spend.
+    expect(bridgerFoodSpend).toBeGreaterThan(kearnyFoodSpend);
+    // And specifically ~1.5× higher (within rounding noise).
+    expect(bridgerFoodSpend / kearnyFoodSpend).toBeGreaterThan(1.4);
   });
 
   it('caps spend at wagon cash on hand (drops tail items if buy list overflows)', () => {
