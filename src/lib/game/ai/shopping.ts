@@ -176,19 +176,27 @@ export function pickFoodRestock(
   return buys;
 }
 
-/** Hunter-conditional restock: ammo (gunpowder / lead_balls /
+/** Hunting + draft-team supply restock: ammo (gunpowder / lead_balls /
  *  percussion_caps) and grain for ox-feed during poor grazing.
  *  Salt was here pre-#299; moved to `pickFoodRestock` since period
  *  reality is that every household carried it (cooking + occasional
- *  meat curing), not just hunter-led wagons. Only fires when a Hunter
- *  is alive — non-hunter wagons skip ammo even when stocked. */
+ *  meat curing), not just hunter-led wagons.
+ *
+ *  #923 — ammo refill ungated from the hunter-profession check.
+ *  Period reality (Marcy 1859): every emigrant party carried ammo as
+ *  a daily staple; hunting was a backup option for ALL travelers.
+ *  Pre-#923 the bot only refilled ammo with a live Hunter; default-
+ *  farmer parties exhausted starter-kit ammo by Laramie and couldn't
+ *  fall back on hunting when food ran low (#917 starvation cascade).
+ *  Wagons that have lost their rifle (#306 stampede, etc.) skip ammo
+ *  — it's useless without a working rifle. */
 export function pickHunterRestock({ wagon, stock }: ShoppingInput): BuyOrder[] {
   const inv = wagon.inventory;
   const buys: BuyOrder[] = [];
   if (stock.has('grain') && (inv.grain ?? 0) < 30 * Math.max(1, aliveCount(wagon))) {
     buys.push({ item: 'grain', qty: 30 });
   }
-  if (!hasLive(wagon, 'hunter')) return buys;
+  if ((inv.rifle ?? 0) < 1) return buys;
   if (stock.has('gunpowder') && (inv.gunpowder ?? 0) < 30) {
     buys.push({ item: 'gunpowder', qty: 30 - (inv.gunpowder ?? 0) });
   }

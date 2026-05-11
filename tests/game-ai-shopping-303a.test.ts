@@ -189,26 +189,28 @@ describe('#303a — pickHunterRestock', () => {
     expect(buys).toContainEqual({ item: 'grain', qty: 30 });
   });
 
-  it('skips ammo + salt without a Hunter', () => {
+  it('skips ammo when wagon has no rifle (#923 — gate is rifle, not hunter)', () => {
     const buys = pickHunterRestock(input({}, ['gunpowder', 'lead_balls', 'percussion_caps', 'salt']));
     expect(buys).toEqual([]);
   });
 
-  it('buys ammo with a live Hunter (salt moved to pickFoodRestock #299)', () => {
-    const hunter: PartyMember = adult({ id: 'h', profession: 'hunter' });
+  it('#923 — buys ammo for any party with a rifle (period: every emigrant carried ammo)', () => {
+    // No hunter profession — just a default party with a rifle in
+    // the inventory. Marcy 1859 prescribed ammo as a daily staple
+    // for every party. Pre-#923 this returned [].
     const buys = pickHunterRestock(
-      input({ party: [hunter] }, ['gunpowder', 'lead_balls', 'percussion_caps'])
+      input({ inventory: { rifle: 1 } }, ['gunpowder', 'lead_balls', 'percussion_caps'])
     );
     expect(buys).toContainEqual({ item: 'gunpowder', qty: 30 });
     expect(buys).toContainEqual({ item: 'lead_balls', qty: 30 });
     expect(buys).toContainEqual({ item: 'percussion_caps', qty: 30 });
-    // salt no longer in hunter slice — universal cooking staple
-    expect(buys.some((b) => b.item === 'salt')).toBe(false);
   });
 
-  it('skips ammo when Hunter is dead', () => {
-    const dead: PartyMember = adult({ id: 'h', profession: 'hunter', dead: true });
-    const buys = pickHunterRestock(input({ party: [dead] }, ['gunpowder']));
+  it('still skips ammo when rifle was lost (#306 stampede etc.)', () => {
+    // Hunter is alive but lost the rifle — ammo is useless without
+    // a working rifle.
+    const hunter: PartyMember = adult({ id: 'h', profession: 'hunter' });
+    const buys = pickHunterRestock(input({ party: [hunter] }, ['gunpowder']));
     expect(buys).toEqual([]);
   });
 });
@@ -267,10 +269,13 @@ describe('#303a — pickMedicineRestock', () => {
 
 describe('#303a — composeShoppingList', () => {
   it('produces all 6 tiers in order: warmth → equipment → food → hunter → repair → medicine', () => {
+    // #923 — rifle in inventory unlocks the ammo block (was gated on
+    // live hunter pre-#923); default farmer party with a rifle now
+    // restocks ammo just like a hunter-led party.
     const hunter: PartyMember = adult({ id: 'h', profession: 'hunter' });
     const buys = composeShoppingList(
       input(
-        { party: [hunter] },
+        { party: [hunter], inventory: { rifle: 1 } },
         ['coat', 'shovel', 'flour', 'gunpowder', 'tar_bucket', 'quinine']
       )
     );
