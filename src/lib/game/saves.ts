@@ -10,6 +10,12 @@ import { DEFAULT_WAGON_MODEL } from './content/wagons';
 // v2 → v3 (#303e): NpcWagonState gained required `water`, `dirtyWater`,
 // `waterCap`, `dryDays` fields. v2 saves with a wagonTrain get the
 // fields filled in on load — full kegs, no dirty water, no dry days.
+//
+// #939 umbrella (unify NPC tick): added optional `spoilDays`,
+// `greaseMiles`, `starvationDays` on NpcWagonState. Optional ⇒ no
+// version bump: pre-#939 v3 saves load fine and engine systems treat
+// missing fields as "no state yet" (see wagon-synth bridges +
+// `tests/wagon-train-save-migration-939n`).
 const SAVE_VERSION = 3;
 
 const REQUIRED_KEYS: readonly (keyof GameState)[] = [
