@@ -39,13 +39,12 @@ import { getPersona } from '../ai/personas';
 import { getCondition } from '../content/conditions';
 import { applySpoilage, applyHeatSpoilage } from './spoilage';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
+import { applyDailyConsumption, applyDirtyWaterRisk } from './consumption';
+import { applyDietVariety, applyHotDrinks } from './diet';
+import { applyPastryQuality } from './pastry';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
-import {
-  applyNpcWaterDrain,
-  applyNpcDehydration,
-  applyNpcDirtyWaterRisk
-} from './npc-water';
+import { applyNpcDehydration } from './npc-water';
 import { rollNpcTheft } from './item-loss';
 import { applyNpcWagonDecay, applyNpcAxleGrease, applyNpcStormDamage } from './wagon';
 
@@ -107,15 +106,9 @@ function trainEnv(ctx: NpcTickContext): TrainEnv {
   };
 }
 
-// Per-rations daily food draw (lb/eater/day). Matches the player's
-// consumption math in `applyDailyConsumption` at a coarse level. Real
-// engine adds diet-variety, hunt-haul priority, etc.; #280b is the
-// minimum viable drain to cause attrition over time.
-const RATIONS_LB_PER_EATER: Record<NpcWagonState['rations'], number> = {
-  meager: 1.5,
-  normal: 2.5,
-  filling: 3.5
-};
+// #939c — RATIONS_LB_PER_EATER table removed. Consumption now flows
+// through engine `applyDailyConsumption` which has the real per-adult /
+// per-child / pace / weather / profession math (see consumption.ts:84).
 
 // Food draw priority — game meat first (spoils), then staples.
 const FOOD_DRAW_ORDER = [
@@ -149,62 +142,12 @@ const TREATMENT_CURE_CHANCE = 0.25;
 // after multiple days the cumulative drop kills the wagon.
 const STARVATION_HP_PER_DAY = 4;
 
-function consumeFood(
-  inventory: Record<string, number>,
-  drawLb: number
-): { inventory: Record<string, number>; ate: number; pastryDrawn: number } {
-  const next = { ...inventory };
-  let remaining = drawLb;
-  let pastryDrawn = 0;
-  for (const id of FOOD_DRAW_ORDER) {
-    if (remaining <= 0) break;
-    const have = next[id] ?? 0;
-    if (have <= 0) continue;
-    const take = Math.min(have, remaining);
-    next[id] = have - take;
-    remaining -= take;
-    if (id === 'flour' || id === 'cornmeal') pastryDrawn += take;
-  }
-  return { inventory: next, ate: drawLb - remaining, pastryDrawn };
-}
-
-/** #304 + #305 — NPC pastry quality. Mirrors player applyPastryQuality:
- *  no cookware → -2 morale "ate paste again"; no saleratus → -1
- *  morale "biscuits sat heavy"; both present → 0 modifier + small
- *  saleratus consumption. Period rates match the player path. */
-function applyNpcPastryQuality(
-  wagon: NpcWagonState,
-  pastryDrawn: number,
-  day: number
-): NpcWagonState {
-  if (pastryDrawn <= 0) return wagon;
-  const inv = wagon.inventory;
-  const hasCookware = (inv.cookware ?? 0) > 0;
-  const saleratusOnHand = inv.saleratus ?? 0;
-  if (!hasCookware) {
-    return {
-      ...wagon,
-      morale: Math.max(0, wagon.morale - 2),
-      eventLog: [
-        ...wagon.eventLog,
-        { day, text: `${wagon.name} has no cookware — ate paste again. Morale −2.` }
-      ]
-    };
-  }
-  if (saleratusOnHand <= 0) {
-    return {
-      ...wagon,
-      morale: Math.max(0, wagon.morale - 1),
-      eventLog: [
-        ...wagon.eventLog,
-        { day, text: `${wagon.name} ran out of saleratus — biscuits sat heavy. Morale −1.` }
-      ]
-    };
-  }
-  const consumed = Math.max(0.01, pastryDrawn * 0.005);
-  const remaining = Math.max(0, saleratusOnHand - consumed);
-  return { ...wagon, inventory: { ...inv, saleratus: remaining } };
-}
+// #939c — `consumeFood` + `applyNpcPastryQuality` parallel impls
+// removed. NPC consumption now flows through engine's
+// `applyDailyConsumption` + `applyDietVariety` + `applyHotDrinks` +
+// `applyPastryQuality` via wagon-synth (see the consumption block in
+// `tickNpcWagon`). NPCs gain the diet-variety + hot-drinks bonuses
+// that the parallel impl never had.
 
 function npcHasLiveDoctor(wagon: NpcWagonState): boolean {
   return hasLive(wagon, 'doctor');
@@ -468,24 +411,29 @@ export function tickNpcWagon(
     }
   }
 
-  // 2. Food consumption.
-  const eaters = next.party.filter((m) => !m.dead).length;
-  if (eaters > 0) {
-    const drawLb = eaters * RATIONS_LB_PER_EATER[next.rations];
-    const result = consumeFood(next.inventory, drawLb);
-    next = { ...next, inventory: result.inventory };
-    // 2b. Pastry quality (#304 + #305) — saleratus + cookware check
-    // when flour or cornmeal was drawn. Period: dense biscuits ate
-    // morale even when they were filling.
-    next = applyNpcPastryQuality(next, result.pastryDrawn, ctx.day);
+  // 2 + 3. #939c — Food + water + pastry + diet + hot-drinks + dirty-
+  // water risk all run through the engine pipeline on a synthesized
+  // GameState. Engine `applyDailyConsumption` drains BOTH food AND
+  // water (clean + dirty) and sets `_pastryDrawnLb` / `_lastFoodGroups`
+  // / `_lastDirtyWaterDrawn` flags for the downstream systems.
+  //
+  // Bonus: NPCs now gain `applyDietVariety` (+1 morale on multi-group
+  // days) and `applyHotDrinks` (coffee/tea bonus) that the parallel
+  // impl was missing.
+  const eatersAlive = next.party.filter((m) => !m.dead).length;
+  if (eatersAlive > 0) {
+    const env = trainEnv(ctx);
+    const synth = synthesizeWagonState(next, env);
+    let ticked = applyDailyConsumption(synth);
+    ticked = applyDietVariety(ticked);
+    ticked = applyHotDrinks(ticked);
+    ticked = applyPastryQuality(ticked, rng).state;
+    ticked = applyDirtyWaterRisk(ticked, rng);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
   }
-
-  // 3. Water consumption (#303e). Clean drained first, then dirty.
-  // Dirty draw triggers a per-adult dysentery / cholera roll —
-  // mirrors player applyDirtyWaterRisk, doctor halves the chance.
-  const waterResult = applyNpcWaterDrain(next, ctx.weather);
-  next = waterResult.wagon;
-  next = applyNpcDirtyWaterRisk(next, waterResult.dirtyDrawn, rng, ctx.day);
 
   // 4. Starvation if food=0.
   next = applyStarvation(next);

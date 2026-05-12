@@ -7,9 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { generateTrain } from '../src/lib/game/content/trains';
 import { tickNpcWagon, type NpcTickContext } from '../src/lib/game/systems/npc-engine';
 import {
-  applyNpcWaterDrain,
   applyNpcDehydration,
-  applyNpcDirtyWaterRisk,
   npcWaterConsumedToday
 } from '../src/lib/game/systems/npc-water';
 import { applyTrainWaterPool, joinTrain } from '../src/lib/game/systems/wagon-train';
@@ -87,25 +85,12 @@ describe('#303e — npcWaterConsumedToday', () => {
   });
 });
 
-describe('#303e — applyNpcWaterDrain', () => {
-  it('drains clean water first', () => {
-    const wagon = freshTrain().companions[0];
-    const draw = npcWaterConsumedToday(wagon, 'clear');
-    const result = applyNpcWaterDrain(wagon, 'clear');
-    expect(result.wagon.water).toBe(wagon.water - draw);
-    expect(result.dirtyDrawn).toBe(0);
-  });
-
-  it('falls back to dirty when clean is empty', () => {
-    const base = freshTrain().companions[0];
-    const wagon: NpcWagonState = { ...base, water: 0, dirtyWater: 10 };
-    const draw = npcWaterConsumedToday(wagon, 'clear');
-    const result = applyNpcWaterDrain(wagon, 'clear');
-    expect(result.wagon.water).toBe(0);
-    expect(result.wagon.dirtyWater).toBe(10 - draw);
-    expect(result.dirtyDrawn).toBe(draw);
-  });
-});
+// #939c — applyNpcWaterDrain + applyNpcDirtyWaterRisk parallel impls
+// removed. Water draw + dirty-water disease rolls now run through the
+// engine's `applyDailyConsumption` + `applyDirtyWaterRisk` via wagon-
+// synth. The end-to-end `tickNpcWagon water integration` describe
+// block below + the engine-side consumption test suite cover the same
+// behavior.
 
 describe('#303e — applyNpcDehydration', () => {
   it('no-op when water > 0', () => {
@@ -152,31 +137,6 @@ describe('#303e — applyNpcDehydration', () => {
     const wagon: NpcWagonState = { ...base, water: 5, dryDays: 3 };
     const result = applyNpcDehydration(wagon, 1.0, 1);
     expect(result.dryDays).toBe(0);
-  });
-});
-
-describe('#303e — applyNpcDirtyWaterRisk', () => {
-  it('no-op when no dirty drawn', () => {
-    const wagon = freshTrain().companions[0];
-    const result = applyNpcDirtyWaterRisk(wagon, 0, makeRng('r'), 1);
-    expect(result).toBe(wagon);
-  });
-
-  it('rolls dysentery / cholera over many trials', () => {
-    // Statistical: 5% base × 100 trials × 2 adults ≈ 10 infections.
-    // Fixed seed, same wagon — count infections that took.
-    const base = freshTrain().companions[0];
-    let hits = 0;
-    for (let i = 0; i < 100; i++) {
-      const wagon: NpcWagonState = {
-        ...base,
-        party: base.party.map((m) => ({ ...m, conditions: [] }))
-      };
-      const result = applyNpcDirtyWaterRisk(wagon, 5, makeRng(`r${i}`), 1);
-      if (result !== wagon) hits++;
-    }
-    expect(hits).toBeGreaterThan(2);
-    expect(hits).toBeLessThan(40);
   });
 });
 
