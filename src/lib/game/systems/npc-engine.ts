@@ -29,7 +29,6 @@ import type {
   GameState,
   Location,
   NpcWagonState,
-  Outcome,
   Pace,
   PartyMember,
   Terrain,
@@ -46,11 +45,14 @@ import { applyStarvation as applyEngineStarvation } from './starvation';
 import { tickOxen as tickEngineOxen, recoverOxenFatigue } from './oxen';
 import { tickWagon as tickEngineWagon, applyAxleGrease as applyEngineAxleGrease } from './wagon';
 import { applyDehydration as applyEngineDehydration } from './dehydration';
+import { reapDead as reapDeadEngine } from './death';
 import { rollDailyTheft } from './item-loss';
-import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
 // #939k — applyNpcDehydration + rollNpcTheft removed; engine versions
 // imported above (./dehydration + ./item-loss).
+// #939m — local reapDead + updateOutcome parallel impls removed; engine
+// `reapDead` (./death) sets deathCause from worst condition, hits child
+// morale, and folds the wipe-outcome update in.
 import { applyNpcStormDamage } from './wagon';
 
 /** Inputs the NPC tick needs from the train's shared environment. */
@@ -154,24 +156,11 @@ const FOOD_DRAW_ORDER = [
 // mule-grain / grazing); `recoverOxenFatigue` handles rest recovery
 // (terrain-aware amount inlined at the call site).
 
-function reapDead(wagon: NpcWagonState, day: number): NpcWagonState {
-  let logged: string[] = [];
-  const party = wagon.party.map((m) => {
-    if (m.dead) return m;
-    if (m.health > 0) return m;
-    logged.push(m.name);
-    return { ...m, dead: true, deathDay: day, deathCause: 'attrition' };
-  });
-  if (logged.length === 0) return wagon;
-  const log = logged.map(
-    (name) => ({ day, text: `${name} died — the trail took them.` })
-  );
-  return {
-    ...wagon,
-    party,
-    eventLog: [...wagon.eventLog, ...log]
-  };
-}
+// #939m — local `reapDead` parallel impl removed. NPCs now flow
+// through engine `reapDead` via wagon-synth (see reap block in
+// `tickNpcWagon`). Engine version pulls deathCause from worst
+// condition, hits child-death morale, and sets the outcome='wiped'
+// flag — which is why the local `updateOutcome` parallel could go too.
 
 // #288 — NPC auto-cannibalism. Period reality: Donner Party survivors
 // did this without consultation when food=0 and a fresh body was
@@ -196,7 +185,11 @@ function isCannibalEligible(m: PartyMember, day: number): boolean {
   // Adults: any death cause. Children: only starvation.
   if (m.kind === 'adult') return true;
   if (m.kind === 'child') {
-    return m.deathCause === 'starvation' || m.deathCause === 'attrition';
+    // Engine reapDead writes 'Starvation' (capital, condition name);
+    // legacy NPC reap wrote 'starvation' / 'attrition' and some tests
+    // inject those literals. Accept both shapes.
+    const cause = (m.deathCause ?? '').toLowerCase();
+    return cause === 'starvation' || cause === 'attrition';
   }
   return false;
 }
@@ -248,15 +241,6 @@ function maybeCannibalize(
   };
 }
 
-function updateOutcome(wagon: NpcWagonState): NpcWagonState {
-  // Per-wagon wipe condition: every party member dead.
-  const allDead = wagon.party.every((m) => m.dead);
-  if (allDead && wagon.outcome === 'in-progress') {
-    return { ...wagon, outcome: 'wiped' as Outcome };
-  }
-  return wagon;
-}
-
 /** Result of advancing one NPC wagon by one day — the new state plus
  *  any player-visible news entries from #280c events. */
 export interface NpcTickResult {
@@ -285,6 +269,10 @@ export function tickNpcWagon(
 
   let next = wagon;
   const playerLogs: string[] = [];
+  // #939m — `env` hoisted: every synth/project block in this tick uses
+  // the same TrainEnv (day/date/location/weather/pace). The rest-day
+  // switch below flips `traveled` only, which trainEnv doesn't read.
+  const env = trainEnv(ctx);
 
   // 1. Conditions tick + treatment.
   // #939d — engine `progressConditions` via synth/project. NPC parallel
@@ -292,7 +280,6 @@ export function tickNpcWagon(
   // dried_fruit) and `dailyMoraleDelta` (some conditions debit morale
   // daily). Engine version covers both.
   {
-    const env = trainEnv(ctx);
     const synth = synthesizeWagonState(next, env);
     const ticked = progressConditions(synth, rng);
     next = projectWagonDeltas(ticked, next);
@@ -312,13 +299,14 @@ export function tickNpcWagon(
   // those, then we project the deltas back. Engine eventLog entries
   // get name-suffixed and forwarded to player news so the player
   // still sees "(Sager family)" attribution.
-  const env = trainEnv(ctx);
-  const synth = synthesizeWagonState(next, env);
-  let tickedSpoil = applySpoilage(synth);
-  tickedSpoil = applyHeatSpoilage(tickedSpoil);
-  next = projectWagonDeltas(tickedSpoil, next);
-  for (const entry of tickedSpoil.eventLog) {
-    playerLogs.push(`${entry.text} (${next.name})`);
+  {
+    const synth = synthesizeWagonState(next, env);
+    let tickedSpoil = applySpoilage(synth);
+    tickedSpoil = applyHeatSpoilage(tickedSpoil);
+    next = projectWagonDeltas(tickedSpoil, next);
+    for (const entry of tickedSpoil.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
   }
 
   // 1c. #895 — persona-driven rations decision. Each NPC wagon carries
@@ -362,7 +350,6 @@ export function tickNpcWagon(
   // impl was missing.
   const eatersAlive = next.party.filter((m) => !m.dead).length;
   if (eatersAlive > 0) {
-    const env = trainEnv(ctx);
     const synth = synthesizeWagonState(next, env);
     let ticked = applyDailyConsumption(synth);
     ticked = applyDietVariety(ticked);
@@ -385,9 +372,7 @@ export function tickNpcWagon(
   // #939g — engine `tickOxen` for travel days (gets teamster / shoeless
   // / mule-grain / grazing math the NPC parallel never had);
   // `recoverOxenFatigue` for rest days (terrain-aware amount).
-  const effectiveCtx = traveled === ctx.traveled ? ctx : { ...ctx, traveled };
   if (traveled) {
-    const env = trainEnv(effectiveCtx);
     const synth = synthesizeWagonState(next, env);
     const ticked = tickEngineOxen(synth, rng);
     next = projectWagonDeltas(ticked, next);
@@ -406,8 +391,7 @@ export function tickNpcWagon(
   // Storm damage stays NPC-only (no player-engine equivalent — player
   // takes storm damage via the wagon-decay events, not a daily tick).
   if (traveled) {
-    const env = trainEnv(effectiveCtx);
-    let synth = synthesizeWagonState(next, env);
+    const synth = synthesizeWagonState(next, env);
     let ticked = tickEngineWagon(synth, rng);
     if ((ctx.traveledMiles ?? 0) > 0) {
       ticked = applyEngineAxleGrease(ticked, ctx.traveledMiles ?? 0);
@@ -431,7 +415,18 @@ export function tickNpcWagon(
 
   // 6. Death reaping (catches event-induced deaths too — e.g. an ox
   // kick to a child after `member_injury` fired earlier this tick).
-  next = reapDead(next, ctx.day);
+  // #939m — engine `reapDead` via synth/project. Sets deathCause from
+  // worst condition (or "Exposure" fallback), hits −8 morale per dead
+  // child immediately, and sets `outcome='wiped'` if every member is
+  // dead — folding what the local `updateOutcome` parallel impl did.
+  {
+    const synth = synthesizeWagonState(next, env);
+    const ticked = reapDeadEngine(synth, rng);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
 
   // 6b. Dehydration HP/morale damage when keg=0 at end of tick (#303e).
   // #939k — engine `applyDehydration` via synth/project. Terrain
@@ -440,7 +435,6 @@ export function tickNpcWagon(
   // `_dehydrationDays` from #941. Engine version has the same desert
   // 1.5× / forest 0.85× shape the parallel impl used.
   {
-    const env = trainEnv(ctx);
     const synth = synthesizeWagonState(next, env);
     const ticked = applyEngineDehydration(synth);
     next = projectWagonDeltas(ticked, next);
@@ -462,7 +456,6 @@ export function tickNpcWagon(
   // `state.wagonTrain` for share-watch halving (already 0.0025/day
   // when in a train — and the SYNTH_TRAIN_STUB always provides one).
   {
-    const env = trainEnv(ctx);
     const synth = synthesizeWagonState(next, env);
     const result = rollDailyTheft(synth, rng);
     next = projectWagonDeltas(result.state, next);
@@ -471,8 +464,9 @@ export function tickNpcWagon(
     }
   }
 
-  // 8. Outcome.
-  next = updateOutcome(next);
+  // #939m — `updateOutcome` removed: engine `reapDead` above sets
+  // `outcome='wiped'` whenever the last member dies, and projection
+  // copies `ticked.outcome` back onto the wagon.
 
   return { wagon: next, playerLogs };
 }
