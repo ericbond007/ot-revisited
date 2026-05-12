@@ -43,6 +43,7 @@ import { applyDietVariety, applyHotDrinks } from './diet';
 import { applyPastryQuality } from './pastry';
 import { progressConditions } from './conditions';
 import { applyStarvation as applyEngineStarvation } from './starvation';
+import { tickOxen as tickEngineOxen, recoverOxenFatigue } from './oxen';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
 import { applyNpcDehydration } from './npc-water';
@@ -119,14 +120,9 @@ const FOOD_DRAW_ORDER = [
   'dried_fruit', 'cheese', 'butter'
 ];
 
-// Fatigue accrual per pace. Same shape as engine's
-// FATIGUE_PER_DAY_BY_PACE in systems/oxen.ts.
-const NPC_FATIGUE_PER_DAY: Record<Pace, number> = {
-  slow: 2,
-  moderate: 4,
-  fast: 6,
-  grueling: 9
-};
+// #939g — NPC_FATIGUE_PER_DAY removed. NPC ox tick now flows through
+// engine `tickOxen` which has the real teamster / shoeless / mule-grain
+// / grazing math (see systems/oxen.ts).
 
 // #939f — `STARVATION_HP_PER_DAY` constant + `applyStarvation` parallel
 // removed. NPC starvation now chains off engine `applyStarvation` inside
@@ -150,29 +146,10 @@ const NPC_FATIGUE_PER_DAY: Record<Pace, number> = {
 // includes the `resolvedByItems` auto-clear + `dailyMoraleDelta`
 // behaviors the parallel impl was missing.
 
-function tickOxenTravel(wagon: NpcWagonState, ctx: NpcTickContext): NpcWagonState {
-  const fatigueAdd = NPC_FATIGUE_PER_DAY[ctx.pace];
-  const oxen = wagon.oxen.map((o) => {
-    if (o.health <= 0) return o;
-    const fatigue = Math.min(100, o.fatigue + fatigueAdd);
-    // Overwork: at 100 fatigue, lose ~3 HP/day. Compounds → death.
-    const healthDrain = fatigue >= 100 ? 3 : 0;
-    const health = Math.max(0, o.health - healthDrain);
-    return { ...o, fatigue, health };
-  });
-  return { ...wagon, oxen };
-}
-
-function tickOxenRest(wagon: NpcWagonState, ctx: NpcTickContext): NpcWagonState {
-  // Recovery on rest/camp days. Terrain modulates: prairie grazing
-  // recovers fast (15/day), mountains/desert slowly (5/day).
-  const recovery = ctx.terrain === 'desert' || ctx.terrain === 'mountains' ? 5 : 15;
-  const oxen = wagon.oxen.map((o) => {
-    if (o.health <= 0) return o;
-    return { ...o, fatigue: Math.max(0, o.fatigue - recovery) };
-  });
-  return { ...wagon, oxen };
-}
+// #939g — `tickOxenTravel` + `tickOxenRest` parallel impls removed.
+// Engine `tickOxen` handles travel fatigue (with teamster / shoeless /
+// mule-grain / grazing); `recoverOxenFatigue` handles rest recovery
+// (terrain-aware amount inlined at the call site).
 
 function reapDead(wagon: NpcWagonState, day: number): NpcWagonState {
   let logged: string[] = [];
@@ -402,8 +379,22 @@ export function tickNpcWagon(
 
   // 5. Ox tick — fatigue on travel, recovery on rest.
   // #937 — `traveled` may be flipped to false above by persona.shouldRest.
+  // #939g — engine `tickOxen` for travel days (gets teamster / shoeless
+  // / mule-grain / grazing math the NPC parallel never had);
+  // `recoverOxenFatigue` for rest days (terrain-aware amount).
   const effectiveCtx = traveled === ctx.traveled ? ctx : { ...ctx, traveled };
-  next = traveled ? tickOxenTravel(next, effectiveCtx) : tickOxenRest(next, effectiveCtx);
+  if (traveled) {
+    const env = trainEnv(effectiveCtx);
+    const synth = synthesizeWagonState(next, env);
+    const ticked = tickEngineOxen(synth, rng);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  } else {
+    const recovery = ctx.terrain === 'desert' || ctx.terrain === 'mountains' ? 5 : 15;
+    next = { ...next, oxen: recoverOxenFatigue(next.oxen, recovery) };
+  }
 
   // 5b. #300 — NPC wagon condition decay (parity with player tickWagon).
   // Travel days only; pace × terrain × tar-bucket-mult formula. The
