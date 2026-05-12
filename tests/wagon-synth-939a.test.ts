@@ -229,20 +229,35 @@ describe('#939a — projectWagonDeltas', () => {
     expect(projected.greaseMiles).toBe(120);
   });
 
-  it('#939a-2 — engine clears spoil flag → projection reflects empty entry in spoilDays', () => {
+  it('#939a-3 — engine clears the LAST spoil flag → projection drops the stale clock (was bug)', () => {
+    // Pre-#939a-3 the projection fell back to `original.spoilDays` when
+    // no spoil-flag entries remained in `ticked.flags`, leaking the
+    // stale clock on a spoiled-and-cleared pile. After the fix,
+    // projection reflects exactly what the engine wrote: empty.
     const w: NpcWagonState = {
       ...fixtureWagon(),
       spoilDays: { game_meat: 5 }
     };
     const ticked = synthesizeWagonState(w, ENV);
-    // Engine spoiled the pile and cleared the flag
     const cleared = { ...ticked.flags };
     delete (cleared as Record<string, unknown>)._gameMeatSpoilDay;
     const mutated = { ...ticked, flags: cleared };
     const projected = projectWagonDeltas(mutated, w);
-    // No active spoil rows → projection falls back to original.spoilDays
-    // (the synth helper does not invent fresh-empty objects mid-tick;
-    // a separate cleanup pass owns that). Documenting current behavior.
-    expect(projected.spoilDays?.game_meat).toBe(5);
+    expect(projected.spoilDays?.game_meat).toBeUndefined();
+    expect(projected.spoilDays).toEqual({});
+  });
+
+  it('#939a-3 — engine clears ONE of two spoil flags → only the cleared key drops', () => {
+    const w: NpcWagonState = {
+      ...fixtureWagon(),
+      spoilDays: { game_meat: 15, egg: 25 }
+    };
+    const ticked = synthesizeWagonState(w, ENV);
+    const cleared = { ...ticked.flags };
+    delete (cleared as Record<string, unknown>)._gameMeatSpoilDay;
+    const mutated = { ...ticked, flags: cleared };
+    const projected = projectWagonDeltas(mutated, w);
+    expect(projected.spoilDays?.game_meat).toBeUndefined();
+    expect(projected.spoilDays?.egg).toBe(25);
   });
 });
