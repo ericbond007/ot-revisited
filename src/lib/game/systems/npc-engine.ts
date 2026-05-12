@@ -42,6 +42,7 @@ import { applyDailyConsumption, applyDirtyWaterRisk } from './consumption';
 import { applyDietVariety, applyHotDrinks } from './diet';
 import { applyPastryQuality } from './pastry';
 import { progressConditions } from './conditions';
+import { applyStarvation as applyEngineStarvation } from './starvation';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
 import { applyNpcDehydration } from './npc-water';
@@ -127,10 +128,12 @@ const NPC_FATIGUE_PER_DAY: Record<Pace, number> = {
   grueling: 9
 };
 
-// Starvation drain — when food=0, every alive party member loses HP
-// at this rate per day. Modest at first (2 days you can sleep through);
-// after multiple days the cumulative drop kills the wagon.
-const STARVATION_HP_PER_DAY = 4;
+// #939f — `STARVATION_HP_PER_DAY` constant + `applyStarvation` parallel
+// removed. NPC starvation now chains off engine `applyStarvation` inside
+// the consumption synth block (so `_lastFoodShortfall` is fresh) and
+// the persistent `_starvationDays` counter round-trips via wagon-synth.
+// Engine version has accumulating-days HP/morale curve + tracks
+// starvation as a proper Condition (auto-cleared on a fed day).
 
 // #939c — `consumeFood` + `applyNpcPastryQuality` parallel impls
 // removed. NPC consumption now flows through engine's
@@ -169,25 +172,6 @@ function tickOxenRest(wagon: NpcWagonState, ctx: NpcTickContext): NpcWagonState 
     return { ...o, fatigue: Math.max(0, o.fatigue - recovery) };
   });
   return { ...wagon, oxen };
-}
-
-function applyStarvation(wagon: NpcWagonState): NpcWagonState {
-  // Counts every food item in FOOD_DRAW_ORDER + grain (ox feed
-  // doesn't count as people food, but if everything else is zero
-  // they're starving regardless).
-  const food = FOOD_DRAW_ORDER.reduce(
-    (sum, id) => sum + (wagon.inventory[id] ?? 0),
-    0
-  );
-  if (food > 0) return wagon;
-  const party = wagon.party.map((m) => {
-    if (m.dead) return m;
-    return { ...m, health: Math.max(0, m.health - STARVATION_HP_PER_DAY) };
-  });
-  // Starvation also crushes morale — the wagon's people stop
-  // believing the captain knows what he's doing. Drives the
-  // departure rolls in #290.
-  return { ...wagon, party, morale: Math.max(0, wagon.morale - 3) };
 }
 
 function reapDead(wagon: NpcWagonState, day: number): NpcWagonState {
@@ -405,14 +389,16 @@ export function tickNpcWagon(
     ticked = applyHotDrinks(ticked);
     ticked = applyPastryQuality(ticked, rng).state;
     ticked = applyDirtyWaterRisk(ticked, rng);
+    // #939f — engine starvation chained into the consumption synth so
+    // `_lastFoodShortfall` (set by applyDailyConsumption) is fresh.
+    // Accumulating `_starvationDays` counter bridges via wagon-synth
+    // (#941 + this slice's starvationDays addition).
+    ticked = applyEngineStarvation(ticked);
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);
     }
   }
-
-  // 4. Starvation if food=0.
-  next = applyStarvation(next);
 
   // 5. Ox tick — fatigue on travel, recovery on rest.
   // #937 — `traveled` may be flipped to false above by persona.shouldRest.
