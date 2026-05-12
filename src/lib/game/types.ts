@@ -315,6 +315,12 @@ export interface NpcWagonState extends WagonStateLike {
    *  set, and `applyNpcSpoilage` is a no-op for them until the engine
    *  next adds a perishable. */
   spoilDays?: Record<string, number>;
+  /** #939f — accumulating starvation-days counter. Mirrors player's
+   *  `flags._starvationDays`; increments on each food-shortfall day,
+   *  drops to 0 on a fed day. Engine `applyStarvation` reads/writes
+   *  this via the wagon-synth bridge. Optional — pre-#939f saves
+   *  default to 0 (no starvation history). */
+  starvationDays?: number;
   /** #300 — miles since the last axle-grease dose. NPC mirror of the
    *  player's `flags._greaseSinceLastDose`. Saturates at the
    *  cycle threshold (500 mi) when the wagon runs out of tar. Optional —

@@ -53,6 +53,11 @@ const FLAG_DEHYDRATION_DAYS = '_dehydrationDays';
  *  `wagon.greaseMiles`. */
 const FLAG_GREASE_SINCE_LAST_DOSE = '_greaseSinceLastDose';
 
+/** #939f — Engine flag key for the starvation day-counter — see
+ *  `systems/starvation.ts:applyStarvation`. NPC stores in
+ *  `wagon.starvationDays`. */
+const FLAG_STARVATION_DAYS = '_starvationDays';
+
 /** Build the engine-shaped `flags` blob for an NPC wagon: pack the
  *  typed counters (`spoilDays`, `dryDays`, `greaseMiles`) into the
  *  magic-string keys the engine systems read. */
@@ -69,6 +74,9 @@ function npcFlagsFromWagon(wagon: NpcWagonState): GameState['flags'] {
   }
   if (typeof wagon.greaseMiles === 'number') {
     flags[FLAG_GREASE_SINCE_LAST_DOSE] = wagon.greaseMiles;
+  }
+  if (typeof wagon.starvationDays === 'number' && wagon.starvationDays > 0) {
+    flags[FLAG_STARVATION_DAYS] = wagon.starvationDays;
   }
   return flags;
 }
@@ -94,7 +102,7 @@ function npcFlagsFromWagon(wagon: NpcWagonState): GameState['flags'] {
 function npcFieldsFromFlags(
   ticked: GameState,
   original: NpcWagonState
-): Pick<NpcWagonState, 'spoilDays' | 'dryDays' | 'greaseMiles'> {
+): Pick<NpcWagonState, 'spoilDays' | 'dryDays' | 'greaseMiles' | 'starvationDays'> {
   const spoilDays: Record<string, number> = {};
   for (const rule of SPOIL_RULES) {
     const v = ticked.flags[rule.flagKey];
@@ -104,10 +112,14 @@ function npcFieldsFromFlags(
   }
   const dry = ticked.flags[FLAG_DEHYDRATION_DAYS];
   const grease = ticked.flags[FLAG_GREASE_SINCE_LAST_DOSE];
+  const starv = ticked.flags[FLAG_STARVATION_DAYS];
   return {
     spoilDays,
     dryDays: typeof dry === 'number' ? dry : 0,
-    greaseMiles: typeof grease === 'number' ? grease : original.greaseMiles
+    greaseMiles: typeof grease === 'number' ? grease : original.greaseMiles,
+    // Engine deletes `_starvationDays` on a fed day — match by
+    // clearing wagon.starvationDays (undefined = none) when missing.
+    starvationDays: typeof starv === 'number' ? starv : 0
   };
 }
 
@@ -195,6 +207,7 @@ export function projectWagonDeltas(
     outcome: ticked.outcome,
     spoilDays: fromFlags.spoilDays,
     dryDays: fromFlags.dryDays,
-    greaseMiles: fromFlags.greaseMiles
+    greaseMiles: fromFlags.greaseMiles,
+    starvationDays: fromFlags.starvationDays
   };
 }
