@@ -28,9 +28,13 @@ function game(over: Partial<GameState> = {}): GameState {
 
 function atLaramie(over: Partial<GameState> = {}): GameState {
   const s = game(over);
+  // Position miles at Laramie's actual cumulative mile (702). The
+  // next supply post is Caspar at mi 810 — only a 108-mi gap, which
+  // is BELOW #934's bigGapMiles=150 threshold for cautious/balanced,
+  // so persona healthFloors test their base values (not gap-boosted).
   return {
     ...s,
-    location: { ...s.location, atLandmarkId: 'ft_laramie' }
+    location: { ...s.location, atLandmarkId: 'ft_laramie', milesTraveled: 702 }
   };
 }
 
@@ -217,6 +221,45 @@ describe('#278 — Persona.pickOxSwapCount', () => {
     const { aggressivePersona } = await import('../src/lib/game/ai');
     const s = atLaramie();
     expect(aggressivePersona.pickOxSwapCount(s, farLandmark(), makeRng('p'))).toBe(0);
+  });
+
+  it('#934 — at a big-gap post (Hall, 270 mi to Boise), balanced swaps a 60-health team', async () => {
+    // Pre-#934: balanced health floor = 55, so 60 health → skip.
+    // Post-#934: ≥150 mi gap bumps to 75 → 60 < 75 → swap.
+    const { balancedPersona } = await import('../src/lib/game/ai');
+    const s = game();
+    const atHall = {
+      ...s,
+      location: { ...s.location, atLandmarkId: 'ft_hall', milesTraveled: 1340 },
+      oxen: s.oxen.map((o) => ({ ...o, health: 60 }))
+    };
+    expect(balancedPersona.pickOxSwapCount(atHall, farLandmark(), makeRng('p'))).toBeGreaterThan(0);
+  });
+
+  it('#934 — at a big-gap post, aggressive swaps a 50-health team (was below its 30-floor)', async () => {
+    // Pre-#934: aggressive only swaps below minTeam — health 50 didn't fire.
+    // Post-#934: ≥200 mi gap bumps health floor 30 → 55 → 50 < 55 → swap.
+    const { aggressivePersona } = await import('../src/lib/game/ai');
+    const s = game();
+    const atHall = {
+      ...s,
+      location: { ...s.location, atLandmarkId: 'ft_hall', milesTraveled: 1340 },
+      oxen: s.oxen.map((o) => ({ ...o, health: 50 }))
+    };
+    expect(aggressivePersona.pickOxSwapCount(atHall, farLandmark(), makeRng('p'))).toBeGreaterThan(0);
+  });
+
+  it('#934 — at a small-gap post (Robidoux, 50 mi to Laramie), gap-aware boost does NOT fire', async () => {
+    // Robidoux→Laramie is 50 mi, below all three personas' bigGapMiles.
+    // So balanced at health 60 still skips (base floor 55).
+    const { balancedPersona } = await import('../src/lib/game/ai');
+    const s = game();
+    const atRobidoux = {
+      ...s,
+      location: { ...s.location, atLandmarkId: 'robidoux_post', milesTraveled: 652 },
+      oxen: s.oxen.map((o) => ({ ...o, health: 60 }))
+    };
+    expect(balancedPersona.pickOxSwapCount(atRobidoux, farLandmark(), makeRng('p'))).toBe(0);
   });
 
   it('chaos returns 0-3 oxen randomly', async () => {

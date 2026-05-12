@@ -648,7 +648,9 @@ export function applyNpcPostRestock(state: GameState): GameState {
     // exposes wagon.model (for minTeam) and oxen — the only fields
     // any current pickOxSwapCount impl reads.
     if (offersOxSwap && next.cash >= OX_SWAP_BARTER_BOOT_USD) {
-      const oxFauxState = { wagon: next.wagon, oxen: next.oxen } as unknown as GameState;
+      // #934 — include `location` so gap-aware pickOxSwapCount sees
+      // the upcoming supply gap.
+      const oxFauxState = { wagon: next.wagon, oxen: next.oxen, location: state.location } as unknown as GameState;
       // Per-wagon RNG keyed off the wagon seed + day so chaos picks
       // are deterministic per (wagon, day, post) but diverge across
       // wagons. Same pattern as the bot runner.

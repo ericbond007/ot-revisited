@@ -26,64 +26,70 @@ import {
 import { getWagon } from '../content/wagons';
 import { ABANDON_PRIORITY } from '../systems/item-loss';
 import { isSunday } from '../utils/calendar';
-import type { FordMethod, Persona, PersonaId } from './types';
+import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
 import { gapBufferDays, nextSupplyDistance } from './foresight';
 
-/** #932 — Build gap-aware FoodRestockOpts. Floor is the maximum of the
- *  persona's base floor and the days-of-food the next gap requires at
- *  the persona's pace + safety factor. Cap is floor + persona buffer,
- *  but no smaller than the persona's base cap (so short upcoming gaps
- *  don't shrink the restock target below its v10 default). */
+/** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
+ *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
+ *  to convert "days of food needed" into a pound threshold. */
+const RAW_BASKET_LB_PER_DAY = 1.5;
+
+/** #934 — Project the persona's expected days-to-next-supply-post.
+ *  The single primitive every gap-aware decision builds on. */
+function projectGapDays(state: GameState, fs: PersonaForesight): number {
+  return gapBufferDays(nextSupplyDistance(state), {
+    paceMiPerDay: fs.paceMiPerDay,
+    safetyFactor: fs.safetyFactor,
+    minDays: 0
+  });
+}
+
+/** #932 — Gap-aware FoodRestockOpts. Floor is the max of the persona's
+ *  base floor and the projected days-to-next-supply. Cap is floor +
+ *  persona buffer, never below the base cap (short upcoming gaps don't
+ *  shrink the restock target below the v10 default). */
 function gapAwareFoodOpts(
   state: GameState,
-  base: {
-    daysFloor: number;
-    daysCap: number;
-    paceMiPerDay: number;
-    safetyFactor: number;
-    saleratusOverstock?: boolean;
-  }
+  fs: PersonaForesight,
+  base: { daysFloor: number; daysCap: number; saleratusOverstock?: boolean }
 ): FoodRestockOpts {
-  const gapMiles = nextSupplyDistance(state);
   const buffer = base.daysCap - base.daysFloor;
-  const daysFloor = gapBufferDays(gapMiles, {
-    paceMiPerDay: base.paceMiPerDay,
-    safetyFactor: base.safetyFactor,
-    minDays: base.daysFloor
-  });
+  const daysFloor = Math.max(base.daysFloor, projectGapDays(state, fs));
   const daysCap = Math.max(base.daysCap, daysFloor + buffer);
   return base.saleratusOverstock
     ? { daysFloor, daysCap, saleratusOverstock: true }
     : { daysFloor, daysCap };
 }
 
-/** #933 — Period-real basket consumption: flour 1.0 + bacon 0.3 +
- *  beans 0.15 + minor staples ~= 1.5 lb/eater/day. Used to convert a
- *  gap-aware "days of food needed" into a pound threshold for the
- *  shouldTradeAtPost food trigger. */
-const RAW_BASKET_LB_PER_DAY = 1.5;
-
-/** #933 — Gap-aware food trigger for shouldTradeAtPost. Returns the
- *  pound threshold below which the persona wants to top up. Floored
- *  at `base.minLb` so personas with short upcoming gaps still gate on
- *  their base predicate (which preserves test pins and persona feel). */
+/** #933 — Gap-aware food trigger (lb) for shouldTradeAtPost. */
 function gapAwareFoodTrigger(
   state: GameState,
-  base: {
-    paceMiPerDay: number;
-    safetyFactor: number;
-    minLb: number;
-  }
+  fs: PersonaForesight,
+  baseMinLb: number
 ): number {
   const eaters = state.party.filter((m) => !m.dead).length || 1;
-  const gapDays = gapBufferDays(nextSupplyDistance(state), {
-    paceMiPerDay: base.paceMiPerDay,
-    safetyFactor: base.safetyFactor,
-    minDays: 0
-  });
-  const gapLb = gapDays * eaters * RAW_BASKET_LB_PER_DAY;
-  return Math.max(base.minLb, gapLb);
+  const gapLb = projectGapDays(state, fs) * eaters * RAW_BASKET_LB_PER_DAY;
+  return Math.max(baseMinLb, gapLb);
+}
+
+/** #934 — Gap-aware ox health floor for pickOxSwapCount. At posts
+ *  before a long supply-less leg, raise the "worn enough to swap"
+ *  threshold so the persona refreshes the team preemptively. The
+ *  thinThreshold (target team size) stays at the persona's base —
+ *  gap doesn't change "how big a team I run," it changes "how worn
+ *  is too worn to enter a 300-mile dead zone with."
+ *  Period: emigrants knew the long legs (Hall→Boise dry plains,
+ *  Boise→Whitman Blue Mountains) and traded for fresh teams at the
+ *  last resupply even when the current team was technically still
+ *  pulling. */
+function gapAwareOxHealthFloor(
+  state: GameState,
+  base: { healthFloor: number; bigGapMiles: number; bigGapHealthBoost: number }
+): number {
+  return nextSupplyDistance(state) >= base.bigGapMiles
+    ? base.healthFloor + base.bigGapHealthBoost
+    : base.healthFloor;
 }
 
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
@@ -337,6 +343,7 @@ function saferHealthChoice(state: GameState, event: GameEvent): string | null {
 
 export const cautiousPersona: Persona = {
   id: 'cautious',
+  foresight: { paceMiPerDay: 8, safetyFactor: 1.5 },
   pickEventChoice(state, event) {
     // Cautious avoids violence + chronic disease. Prefer safety on
     // health events first, then the cooperative-trade patterns, then
@@ -389,18 +396,7 @@ export const cautiousPersona: Persona = {
   },
   shouldTradeAtPost(state, here) {
     if (state.cash < 10) return false;
-    // #933 — gap-aware food trigger: at posts before long supply-less
-    // legs (Kearny→Robidoux 317 mi, Cheyenne→Bridger 218, Hall→Boise
-    // 270, Boise→Whitman 300), inflate the trigger so cautious tops
-    // up even when above the v10 100-lb floor. Cautious's pace=8,
-    // safety=1.5 matches its pickFoodRestockOpts shape so both
-    // decisions reach the same conclusion about "is this enough."
-    const trigger = gapAwareFoodTrigger(state, {
-      paceMiPerDay: 8,
-      safetyFactor: 1.5,
-      minLb: 100
-    });
-    return foodOnHand(state) < trigger
+    return foodOnHand(state) < gapAwareFoodTrigger(state, this.foresight, 100)
       || postStocksMissingWarmthGear(state, here)
       || postStocksMissingMedicine(state, here)
       || postStocksMissingEquipment(state, here)
@@ -440,8 +436,16 @@ export const cautiousPersona: Persona = {
   pickOxSwapCount(state, here) {
     if (!(here.services ?? []).includes('ox_swap')) return 0;
     // Cautious wants a generous buffer (2 above minTeam) and refreshes
-    // worn teams aggressively (health <70). Survival-first.
-    return pickOxSwapCountFor(state, 2, 70);
+    // worn teams aggressively (health <70). Survival-first. #934 —
+    // gap-aware: at posts before a long leg (≥150 mi), bump the
+    // worn-team threshold to 85 so cautious refreshes even a healthy-
+    // looking 70-health team before entering Kearny→Robidoux etc.
+    const healthFloor = gapAwareOxHealthFloor(state, {
+      healthFloor: 70,
+      bigGapMiles: 150,
+      bigGapHealthBoost: 15
+    });
+    return pickOxSwapCountFor(state, 2, healthFloor);
   },
   pickRepairBudget(state, here) {
     // Cautious repairs early, spends generously. Period: emigrant
@@ -452,19 +456,9 @@ export const cautiousPersona: Persona = {
     return Math.min(40, state.cash, Math.round(100 - state.wagon.condition));
   },
   pickFoodRestockOpts(state) {
-    // Cautious tops up generously — period emigrant style: every fort
-    // gets the chest filled. 30/90 = the v10 default base. #909 —
-    // saleratusOverstock true: Tabitha Brown's Methodist-staple
-    // cooking burned saleratus every flour-day; Brown was known for
-    // deep stores. #932 — gap-aware: at posts before a long
-    // supply-less stretch (Kearny→Robidoux, Hall→Boise, Boise→Whitman)
-    // cautious inflates floor + cap to leave with enough food to
-    // cover the gap at 8 mi/day expected pace × 1.5 safety.
-    return gapAwareFoodOpts(state, {
+    return gapAwareFoodOpts(state, this.foresight, {
       daysFloor: 30,
       daysCap: 90,
-      paceMiPerDay: 8,
-      safetyFactor: 1.5,
       saleratusOverstock: true
     });
   },
@@ -494,6 +488,7 @@ export const cautiousPersona: Persona = {
 
 export const balancedPersona: Persona = {
   id: 'balanced',
+  foresight: { paceMiPerDay: 10, safetyFactor: 1.2 },
   pickEventChoice(state, event) {
     // Balanced takes the marked default for most events but still
     // routes around the "risk-drink" health trap — period emigrants
@@ -547,14 +542,7 @@ export const balancedPersona: Persona = {
   },
   shouldTradeAtPost(state, here) {
     if (state.cash < 20) return false;
-    // #933 — gap-aware food trigger. Balanced's pace=10, safety=1.2
-    // matches its pickFoodRestockOpts so both decisions agree.
-    const trigger = gapAwareFoodTrigger(state, {
-      paceMiPerDay: 10,
-      safetyFactor: 1.2,
-      minLb: 60
-    });
-    return foodOnHand(state) < trigger
+    return foodOnHand(state) < gapAwareFoodTrigger(state, this.foresight, 60)
       || postStocksMissingWarmthGear(state, here)
       || postStocksMissingMedicine(state, here)
       || postStocksMissingEquipment(state, here)
@@ -590,16 +578,16 @@ export const balancedPersona: Persona = {
   },
   pickOxSwapCount(state, here) {
     if (!(here.services ?? []).includes('ox_swap')) return 0;
-    // #930 — bumped thinThreshold 1 → 2 to target optimalTeam (was
-    // targeting minTeam+1 = 3 for prairie schooner, but oxenSpeedFactor
-    // uses optimalTeam=4 as the denominator). A 3-ox team perpetually
-    // runs at 0.75 team-factor = -25% travel speed. Now targets 4 oxen
-    // (= prairie schooner optimal). Costs ~$40-75 per swap at major
-    // posts (Laramie, Bridger, Hall) but recovers the speed.
-    // Period: balanced emigrants restored teams to optimal at major
-    // resupply posts. The "thin team is fine" pattern was for cash-
-    // crisis parties — see #931 for the full optimal-baseline refactor.
-    return pickOxSwapCountFor(state, 2, 55);
+    // #930 — thinThreshold=2 targets optimalTeam (4 for prairie
+    // schooner) to recover the 25% travel-speed penalty of a 3-ox
+    // team. #934 — gap-aware: at ≥150 mi gaps, bump health floor
+    // 55 → 75 so balanced refreshes mid-life teams before long legs.
+    const healthFloor = gapAwareOxHealthFloor(state, {
+      healthFloor: 55,
+      bigGapMiles: 150,
+      bigGapHealthBoost: 20
+    });
+    return pickOxSwapCountFor(state, 2, healthFloor);
   },
   pickRepairBudget(state, here) {
     // Balanced is thriftier than cautious — repairs at <60 (vs 75)
@@ -611,18 +599,7 @@ export const balancedPersona: Persona = {
     return Math.min(30, state.cash, Math.round(100 - state.wagon.condition));
   },
   pickFoodRestockOpts(state) {
-    // Balanced: 60-day cap (was 90) leaves cash for medicine. Period
-    // reality: most emigrant families targeted ~2 months food at any
-    // post stop, not 3. #909 — no saleratus overstock; balanced runs
-    // the daysFloor like every other staple. #932 — gap-aware: scale
-    // up at the big resupply-less stretches (10 mi/day expected pace
-    // × 1.2 safety).
-    return gapAwareFoodOpts(state, {
-      daysFloor: 25,
-      daysCap: 60,
-      paceMiPerDay: 10,
-      safetyFactor: 1.2
-    });
+    return gapAwareFoodOpts(state, this.foresight, { daysFloor: 25, daysCap: 60 });
   },
   pickEquipmentRestockOpts() {
     // #909 — no spare cookware by default. Inheritor personas
@@ -640,6 +617,7 @@ export const balancedPersona: Persona = {
 
 export const aggressivePersona: Persona = {
   id: 'aggressive',
+  foresight: { paceMiPerDay: 12, safetyFactor: 1.0 },
   pickEventChoice(state, event) {
     // Aggressive refuses tolls, pushes through, hoards.
     return choiceMatching(state, event, /refuse/i, /push/i, /pass/i, /ignore/i, /wave/i)
@@ -679,15 +657,7 @@ export const aggressivePersona: Persona = {
     // shouldTradeAtPost gates on REAL need (food critical, missing
     // gear) — tighter than balanced's "moderate need" thresholds.
     if (state.cash < 10) return false;
-    // #933 — gap-aware food trigger. Aggressive's pace=12, safety=1.0
-    // matches its lean pickFoodRestockOpts. At small gaps still gates
-    // on the 40-lb minimum (the recalibrated #916 "real need" floor).
-    const trigger = gapAwareFoodTrigger(state, {
-      paceMiPerDay: 12,
-      safetyFactor: 1.0,
-      minLb: 40
-    });
-    return foodOnHand(state) < trigger
+    return foodOnHand(state) < gapAwareFoodTrigger(state, this.foresight, 40)
       || postStocksMissingWarmthGear(state, here)
       || postStocksMissingMedicine(state, here)
       || postStocksMissingEquipment(state, here);
@@ -716,12 +686,18 @@ export const aggressivePersona: Persona = {
     return false;
   },
   pickOxSwapCount(state, here) {
-    // Aggressive only swaps when the team is below minTeam — i.e.
-    // when not swapping means a stuck wagon. Otherwise burns calendar
-    // pushing the team to extinction. Period: the parties that ran
-    // hot and broke down at Sublette.
+    // Aggressive runs lean teams — only swaps below minTeam in
+    // normal conditions. #934 — gap-aware: at ≥200 mi gaps (Kearny→
+    // Robidoux, Hall→Boise, Boise→Whitman), even aggressive bumps
+    // the health floor 30 → 55 because slow-walking the dead zone
+    // costs more days than the swap costs cash.
     if (!(here.services ?? []).includes('ox_swap')) return 0;
-    return pickOxSwapCountFor(state, 0, 30);
+    const healthFloor = gapAwareOxHealthFloor(state, {
+      healthFloor: 30,
+      bigGapMiles: 200,
+      bigGapHealthBoost: 25
+    });
+    return pickOxSwapCountFor(state, 0, healthFloor);
   },
   pickRepairBudget(state, here) {
     // Aggressive only repairs when the wagon is genuinely failing
@@ -734,18 +710,7 @@ export const aggressivePersona: Persona = {
     return Math.min(20, state.cash, Math.round(100 - state.wagon.condition));
   },
   pickFoodRestockOpts(state) {
-    // Aggressive: 45-day cap, 15-day floor. Trims to the bone — the
-    // emergency-food override (#275 v10b) catches actual starvation,
-    // so this just sets the explicit-trade size. Period: meager-rations
-    // parties tracked supplies tighter, restocked smaller, hunted more.
-    // #932 — gap-aware: even aggressive bumps floor when an explicit
-    // 300-mi resupply gap is ahead (12 mi/day × 1.0 safety = 25 days).
-    return gapAwareFoodOpts(state, {
-      daysFloor: 15,
-      daysCap: 45,
-      paceMiPerDay: 12,
-      safetyFactor: 1.0
-    });
+    return gapAwareFoodOpts(state, this.foresight, { daysFloor: 15, daysCap: 45 });
   },
   pickEquipmentRestockOpts() {
     // #909 — Bidwell-1841 lean: no spare cookware.
@@ -774,7 +739,12 @@ export const aggressivePersona: Persona = {
 // All chaos methods accept the Rng arg and use it to roll choices
 // uniformly over the available options.
 export const chaosPersona: Persona = {
+  // Neutral foresight — chaos's behaviour is dominated by the rng
+  // rolls in its other decisions. The shared gap-aware helpers still
+  // need a valid identity (paceMi=10, safety=1.0) for any baseline
+  // call that doesn't get overridden.
   id: 'chaos',
+  foresight: { paceMiPerDay: 10, safetyFactor: 1.0 },
   pickEventChoice(state, event, rng) {
     const visible = event.choices.filter((c) => {
       if (c.hidden && c.hidden(state)) return false;
@@ -979,9 +949,14 @@ export const generousPersona: Persona = {
   pickOxSwapCount(state, here) {
     if (!(here.services ?? []).includes('ox_swap')) return 0;
     // Generous mirrors cautious — wants 2 above minTeam, refreshes
-    // worn at <70 health. They'd rather over-spend on the team than
-    // strand the company.
-    return pickOxSwapCountFor(state, 2, 70);
+    // worn at <70 health. #934 — gap-aware at the same bigGap shape
+    // as cautious (+15 at ≥150 mi).
+    const healthFloor = gapAwareOxHealthFloor(state, {
+      healthFloor: 70,
+      bigGapMiles: 150,
+      bigGapHealthBoost: 15
+    });
+    return pickOxSwapCountFor(state, 2, healthFloor);
   },
   pickRepairBudget(state, here) {
     // 1.5× balanced — generous spends to keep the wagon running.
