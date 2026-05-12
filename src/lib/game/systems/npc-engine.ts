@@ -44,11 +44,12 @@ import { applyPastryQuality } from './pastry';
 import { progressConditions } from './conditions';
 import { applyStarvation as applyEngineStarvation } from './starvation';
 import { tickOxen as tickEngineOxen, recoverOxenFatigue } from './oxen';
+import { tickWagon as tickEngineWagon, applyAxleGrease as applyEngineAxleGrease } from './wagon';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
 import { applyNpcDehydration } from './npc-water';
 import { rollNpcTheft } from './item-loss';
-import { applyNpcWagonDecay, applyNpcAxleGrease, applyNpcStormDamage } from './wagon';
+import { applyNpcStormDamage } from './wagon';
 
 /** Inputs the NPC tick needs from the train's shared environment. */
 export interface NpcTickContext {
@@ -396,16 +397,23 @@ export function tickNpcWagon(
     next = { ...next, oxen: recoverOxenFatigue(next.oxen, recovery) };
   }
 
-  // 5b. #300 — NPC wagon condition decay (parity with player tickWagon).
-  // Travel days only; pace × terrain × tar-bucket-mult formula. The
-  // axle-grease cycle consumes one tar_bucket per 500 mi (mirrors
-  // player's applyAxleGrease). Storm-day weather adds 1-3 wagon damage
-  // on top — same shape as the player's weather.ts storm branch.
-  next = applyNpcWagonDecay(next, effectiveCtx);
-  if (traveled && (ctx.traveledMiles ?? 0) > 0) {
-    const greaseResult = applyNpcAxleGrease(next, ctx.traveledMiles ?? 0);
-    next = greaseResult.wagon;
-    if (greaseResult.playerLog) playerLogs.push(greaseResult.playerLog);
+  // 5b. #300 — wagon condition decay + axle grease.
+  // #939h — unified via engine tickWagon + applyAxleGrease. NPCs gain
+  // the carpenter decay mult (CARPENTER_DECAY_MULT) the parallel impl
+  // didn't have. greaseMiles round-trips via flags bridge (#941).
+  // Storm damage stays NPC-only (no player-engine equivalent — player
+  // takes storm damage via the wagon-decay events, not a daily tick).
+  if (traveled) {
+    const env = trainEnv(effectiveCtx);
+    let synth = synthesizeWagonState(next, env);
+    let ticked = tickEngineWagon(synth, rng);
+    if ((ctx.traveledMiles ?? 0) > 0) {
+      ticked = applyEngineAxleGrease(ticked, ctx.traveledMiles ?? 0);
+    }
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
   }
   const stormResult = applyNpcStormDamage(next, ctx.weather, rng);
   next = stormResult.wagon;

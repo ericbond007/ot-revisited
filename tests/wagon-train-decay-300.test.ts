@@ -3,11 +3,7 @@
 // plus storm-day damage and the axle-grease consumption cycle.
 
 import { describe, it, expect } from 'vitest';
-import {
-  applyNpcWagonDecay,
-  applyNpcAxleGrease,
-  applyNpcStormDamage
-} from '../src/lib/game/systems/wagon';
+import { applyNpcStormDamage } from '../src/lib/game/systems/wagon';
 import { tickNpcWagon } from '../src/lib/game/systems/npc-engine';
 import { advanceTrain } from '../src/lib/game/systems/wagon-train';
 import { generateTrain } from '../src/lib/game/content/trains';
@@ -53,96 +49,10 @@ function fakeWagon(over: Partial<NpcWagonState> & { id: string }): NpcWagonState
   return { ...base, ...over };
 }
 
-describe('#300 — applyNpcWagonDecay', () => {
-  it('no-ops on rest days', () => {
-    const w = fakeWagon({ id: 'a' });
-    const after = applyNpcWagonDecay(w, { traveled: false, pace: 'moderate', terrain: 'prairie' });
-    expect(after.wagon.condition).toBe(100);
-  });
-
-  it('decays on travel days — moderate prairie ≈ -0.6/day', () => {
-    const w = fakeWagon({ id: 'a' });
-    const after = applyNpcWagonDecay(w, { traveled: true, pace: 'moderate', terrain: 'prairie' });
-    expect(after.wagon.condition).toBeCloseTo(99.4, 1);
-  });
-
-  it('mountains hit harder than prairie at the same pace', () => {
-    const w = fakeWagon({ id: 'a' });
-    const prairie = applyNpcWagonDecay(w, { traveled: true, pace: 'moderate', terrain: 'prairie' });
-    const mountains = applyNpcWagonDecay(w, { traveled: true, pace: 'moderate', terrain: 'mountains' });
-    expect(100 - mountains.wagon.condition).toBeGreaterThan(100 - prairie.wagon.condition);
-  });
-
-  it('grueling decays harder than slow', () => {
-    const w = fakeWagon({ id: 'a' });
-    const slow = applyNpcWagonDecay(w, { traveled: true, pace: 'slow', terrain: 'prairie' });
-    const grueling = applyNpcWagonDecay(w, { traveled: true, pace: 'grueling', terrain: 'prairie' });
-    expect(100 - grueling.wagon.condition).toBeGreaterThan(100 - slow.wagon.condition);
-  });
-
-  it('tar bucket cuts decay by 25% (matches player tickWagon)', () => {
-    // Use grueling + mountains for a big enough decay (1.8 × 1.8 = 3.24)
-    // that the 0.1-precision rounding doesn't dominate the ratio.
-    const dry = fakeWagon({ id: 'dry', inventory: {} });
-    const greased = fakeWagon({ id: 'gr', inventory: { tar_bucket: 1 } });
-    const ctx = { traveled: true, pace: 'grueling' as const, terrain: 'mountains' as const };
-    const dryDecay = 100 - applyNpcWagonDecay(dry, ctx).wagon.condition;
-    const greasedDecay = 100 - applyNpcWagonDecay(greased, ctx).wagon.condition;
-    expect(greasedDecay).toBeCloseTo(dryDecay * 0.75, 1);
-  });
-
-  it('clamps at 0 — never goes negative', () => {
-    const w = fakeWagon({ id: 'a', wagon: { model: 'prairie_schooner', condition: 0.1, canvas: 100, carryCapacity: 1500, hasBranBarrel: false } });
-    const after = applyNpcWagonDecay(w, { traveled: true, pace: 'grueling', terrain: 'mountains' });
-    expect(after.wagon.condition).toBe(0);
-  });
-});
-
-describe('#300 — applyNpcAxleGrease', () => {
-  it('no-ops with zero miles', () => {
-    const w = fakeWagon({ id: 'a', inventory: { tar_bucket: 2 } });
-    const after = applyNpcAxleGrease(w, 0);
-    expect(after.wagon).toEqual(w);
-    expect(after.playerLog).toBeUndefined();
-  });
-
-  it('accumulates miles across travel days without consuming a bucket below threshold', () => {
-    const w = fakeWagon({ id: 'a', inventory: { tar_bucket: 2 } });
-    const after = applyNpcAxleGrease(w, 100);
-    expect(after.wagon.greaseMiles).toBe(100);
-    expect(after.wagon.inventory.tar_bucket).toBe(2);
-    expect(after.playerLog).toBeUndefined();
-  });
-
-  it('consumes one bucket at the 500-mi cycle threshold', () => {
-    const w = fakeWagon({ id: 'a', inventory: { tar_bucket: 3 }, greaseMiles: 480 });
-    const after = applyNpcAxleGrease(w, 30);
-    expect(after.wagon.inventory.tar_bucket).toBe(2);
-    expect(after.wagon.greaseMiles).toBe(10);
-  });
-
-  it('emits a player log when the last bucket runs dry', () => {
-    const w = fakeWagon({ id: 'reed', name: 'the Reed family', inventory: { tar_bucket: 1 }, greaseMiles: 0 });
-    const after = applyNpcAxleGrease(w, 500);
-    expect(after.wagon.inventory.tar_bucket).toBe(0);
-    expect(after.playerLog).toMatch(/Reed family/);
-    expect(after.playerLog).toMatch(/tar/i);
-  });
-
-  it('saturates greaseMiles at the cycle threshold when no bucket left', () => {
-    const w = fakeWagon({ id: 'a', inventory: { tar_bucket: 0 }, greaseMiles: 0 });
-    const after = applyNpcAxleGrease(w, 1200);
-    expect(after.wagon.inventory.tar_bucket).toBe(0);
-    expect(after.wagon.greaseMiles).toBe(500);
-    expect(after.playerLog).toBeUndefined();
-  });
-
-  it('does not log when the wagon never had a bucket', () => {
-    const w = fakeWagon({ id: 'a', inventory: {}, greaseMiles: 480 });
-    const after = applyNpcAxleGrease(w, 30);
-    expect(after.playerLog).toBeUndefined();
-  });
-});
+// #939h — applyNpcWagonDecay + applyNpcAxleGrease parallel describe
+// blocks removed; NPC wagon decay + grease cycle now run through
+// engine tickWagon + applyAxleGrease via wagon-synth (covered by the
+// engine-side test suites + the tickNpcWagon integration block below).
 
 describe('#300 — applyNpcStormDamage', () => {
   it('no-ops on non-storm weather', () => {
