@@ -92,6 +92,23 @@ function gapAwareOxHealthFloor(
     : base.healthFloor;
 }
 
+/** #935 — Gap-aware wagon-condition trigger for pickRepairBudget. At
+ *  posts before a long supply-less leg, raise the "worn enough to
+ *  repair" threshold so the persona tops up the wagon preemptively.
+ *  Cap on spend stays unchanged (it's already gated by cash +
+ *  100-condition); only the trigger condition shifts.
+ *  Period: emigrants who knew they were heading into Sublette Cutoff
+ *  or the Blue Mountains topped off the wagon at the last smithy
+ *  regardless of whether anything was visibly failing. */
+function gapAwareRepairTrigger(
+  state: GameState,
+  base: { conditionTrigger: number; bigGapMiles: number; bigGapConditionBoost: number }
+): number {
+  return nextSupplyDistance(state) >= base.bigGapMiles
+    ? base.conditionTrigger + base.bigGapConditionBoost
+    : base.conditionTrigger;
+}
+
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
 function minPartyHealth(state: GameState): number {
   const alive = state.party.filter((m) => !m.dead);
@@ -450,8 +467,15 @@ export const cautiousPersona: Persona = {
   pickRepairBudget(state, here) {
     // Cautious repairs early, spends generously. Period: emigrant
     // captains who treated the wagon as the load-bearing asset.
+    // #935 — gap-aware: at ≥150 mi gaps, accept condition up to 85
+    // (vs base 75) so cautious tops off the wagon before long legs.
     if (!(here.services ?? []).includes('blacksmith')) return 0;
-    if (state.wagon.condition >= 75) return 0;
+    const trigger = gapAwareRepairTrigger(state, {
+      conditionTrigger: 75,
+      bigGapMiles: 150,
+      bigGapConditionBoost: 10
+    });
+    if (state.wagon.condition >= trigger) return 0;
     if (state.cash < 20) return 0;
     return Math.min(40, state.cash, Math.round(100 - state.wagon.condition));
   },
@@ -593,8 +617,14 @@ export const balancedPersona: Persona = {
     // Balanced is thriftier than cautious — repairs at <60 (vs 75)
     // and caps spend at $30 (vs 40). Frees ~$10/post for medicine
     // and food, addressing the v10 cash-pressure regression.
+    // #935 — gap-aware: at ≥150 mi gaps, bump trigger 60 → 75.
     if (!(here.services ?? []).includes('blacksmith')) return 0;
-    if (state.wagon.condition >= 60) return 0;
+    const trigger = gapAwareRepairTrigger(state, {
+      conditionTrigger: 60,
+      bigGapMiles: 150,
+      bigGapConditionBoost: 15
+    });
+    if (state.wagon.condition >= trigger) return 0;
     if (state.cash < 15) return 0;
     return Math.min(30, state.cash, Math.round(100 - state.wagon.condition));
   },
@@ -704,8 +734,17 @@ export const aggressivePersona: Persona = {
     // (<40) and caps spend at $20. Per the persona — push hard, fix
     // only what's about to break the journey. Period: the parties
     // that limped into Oregon City with cracked frames.
+    // #935 — gap-aware: at ≥200 mi gaps (same threshold as ox swap),
+    // bump trigger 40 → 55 so even aggressive fixes before the dead
+    // zones. Bigger gap threshold than cautious/balanced preserves
+    // the lean character at moderate gaps.
     if (!(here.services ?? []).includes('blacksmith')) return 0;
-    if (state.wagon.condition >= 40) return 0;
+    const trigger = gapAwareRepairTrigger(state, {
+      conditionTrigger: 40,
+      bigGapMiles: 200,
+      bigGapConditionBoost: 15
+    });
+    if (state.wagon.condition >= trigger) return 0;
     if (state.cash < 10) return 0;
     return Math.min(20, state.cash, Math.round(100 - state.wagon.condition));
   },
