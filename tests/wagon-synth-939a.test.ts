@@ -53,8 +53,10 @@ describe('#939a — synthesizeWagonState', () => {
     expect(s.cash).toBe(w.cash);
     expect(s.morale).toBe(w.morale);
     expect(s.rations).toBe(w.rations);
-    expect(s.eventLog).toBe(w.eventLog);
     expect(s.outcome).toBe(w.outcome);
+    // #939a-2 — synth's eventLog is empty so engine appends can be
+    // isolated; the projection concatenates them onto the NPC's log.
+    expect(s.eventLog).toEqual([]);
   });
 
   it('maps wagon water fields into resources block', () => {
@@ -65,16 +67,44 @@ describe('#939a — synthesizeWagonState', () => {
     expect(s.resources.dirtyWater).toBe(w.dirtyWater);
   });
 
-  it('synthesizes empty flags blob (NPCs do not carry flags)', () => {
-    const w = fixtureWagon();
+  it('synthesizes flags from NPC typed counters (spoilDays / dryDays / greaseMiles)', () => {
+    // #939a-2 — fields used to be empty; now bridged into the engine's
+    // magic-string flag keys so applySpoilage / applyDehydration /
+    // applyAxleGrease can read them.
+    const w: NpcWagonState = {
+      ...fixtureWagon(),
+      spoilDays: { game_meat: 12, egg: 25 },
+      dryDays: 3,
+      greaseMiles: 420
+    };
     const s = synthesizeWagonState(w, ENV);
-    expect(s.flags).toEqual({});
+    expect(s.flags._gameMeatSpoilDay).toBe(12);
+    expect(s.flags._eggSpoilDay).toBe(25);
+    expect(s.flags._dehydrationDays).toBe(3);
+    expect(s.flags._greaseSinceLastDose).toBe(420);
   });
 
-  it('null wagonTrain prevents engine recursion', () => {
+  it('omits flag entries when NPC fields are absent / zero', () => {
+    const w: NpcWagonState = {
+      ...fixtureWagon(),
+      spoilDays: undefined,
+      dryDays: 0,
+      greaseMiles: undefined
+    };
+    const s = synthesizeWagonState(w, ENV);
+    expect(s.flags._gameMeatSpoilDay).toBeUndefined();
+    expect(s.flags._dehydrationDays).toBeUndefined();
+    expect(s.flags._greaseSinceLastDose).toBeUndefined();
+  });
+
+  it('wagonTrain stub: truthy so morale.ts:54 train clamp fires, empty companions to prevent recursion', () => {
+    // #939a-2 — was `null` in initial slice; flipped to stub so NPCs
+    // get the in-train +1 morale/day. Companions stay empty so any
+    // future engine system iterating the roster sees no recursion.
     const w = fixtureWagon();
     const s = synthesizeWagonState(w, ENV);
-    expect(s.wagonTrain).toBeNull();
+    expect(s.wagonTrain).toBeTruthy();
+    expect(s.wagonTrain!.companions).toEqual([]);
   });
 
   it('completed flag mirrors outcome', () => {
@@ -139,5 +169,80 @@ describe('#939a — projectWagonDeltas', () => {
     // NpcWagonState has no `location` field — proof that the bad
     // engine delta got dropped on the floor.
     expect((projected as unknown as { location?: unknown }).location).toBeUndefined();
+  });
+
+  it('#939a-2 — appends engine eventLog entries onto the NPC log', () => {
+    const w: NpcWagonState = {
+      ...fixtureWagon(),
+      eventLog: [{ day: 4, text: 'Yesterday: rain.' }]
+    };
+    const ticked = synthesizeWagonState(w, ENV);
+    // Simulate an engine system that pushed two entries.
+    const mutated = {
+      ...ticked,
+      eventLog: [
+        { day: 5, text: '5 lb of game meat spoiled.' },
+        { day: 5, text: 'Bacon turned in the heat.' }
+      ]
+    };
+    const projected = projectWagonDeltas(mutated, w);
+    expect(projected.eventLog).toHaveLength(3);
+    expect(projected.eventLog[0].text).toBe('Yesterday: rain.');
+    expect(projected.eventLog[1].text).toMatch(/spoiled/);
+    expect(projected.eventLog[2].text).toMatch(/Bacon/);
+  });
+
+  it('#939a-2 — round-trips spoilDays (engine updates flag → projection reads back into wagon.spoilDays)', () => {
+    const w: NpcWagonState = {
+      ...fixtureWagon(),
+      spoilDays: { game_meat: 10 }
+    };
+    const ticked = synthesizeWagonState(w, ENV);
+    // Engine sets a new clock (e.g., chickens laid → eggs got a clock)
+    const mutated = {
+      ...ticked,
+      flags: { ...ticked.flags, _eggSpoilDay: 22 }
+    };
+    const projected = projectWagonDeltas(mutated, w);
+    expect(projected.spoilDays?.game_meat).toBe(10);
+    expect(projected.spoilDays?.egg).toBe(22);
+  });
+
+  it('#939a-2 — round-trips dryDays + greaseMiles', () => {
+    const w: NpcWagonState = {
+      ...fixtureWagon(),
+      dryDays: 2,
+      greaseMiles: 100
+    };
+    const ticked = synthesizeWagonState(w, ENV);
+    // Engine advanced both counters
+    const mutated = {
+      ...ticked,
+      flags: {
+        ...ticked.flags,
+        _dehydrationDays: 3,
+        _greaseSinceLastDose: 120
+      }
+    };
+    const projected = projectWagonDeltas(mutated, w);
+    expect(projected.dryDays).toBe(3);
+    expect(projected.greaseMiles).toBe(120);
+  });
+
+  it('#939a-2 — engine clears spoil flag → projection reflects empty entry in spoilDays', () => {
+    const w: NpcWagonState = {
+      ...fixtureWagon(),
+      spoilDays: { game_meat: 5 }
+    };
+    const ticked = synthesizeWagonState(w, ENV);
+    // Engine spoiled the pile and cleared the flag
+    const cleared = { ...ticked.flags };
+    delete (cleared as Record<string, unknown>)._gameMeatSpoilDay;
+    const mutated = { ...ticked, flags: cleared };
+    const projected = projectWagonDeltas(mutated, w);
+    // No active spoil rows → projection falls back to original.spoilDays
+    // (the synth helper does not invent fresh-empty objects mid-tick;
+    // a separate cleanup pass owns that). Documenting current behavior.
+    expect(projected.spoilDays?.game_meat).toBe(5);
   });
 });

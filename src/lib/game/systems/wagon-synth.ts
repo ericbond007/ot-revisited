@@ -16,6 +16,14 @@
 // Train-shared fields (location, date, weather, pace) come from the
 // `TrainEnv` and are intentionally NOT projected back — those live on
 // the train, not individual wagons.
+//
+// #939a-2 — Flag bridges. NPCs store per-wagon counters in typed
+// fields (`wagon.spoilDays[itemId]`, `wagon.dryDays`, `wagon.greaseMiles`)
+// where the engine reads/writes the same counters in `state.flags` under
+// magic-string keys (`_gameMeatSpoilDay`, `_dehydrationDays`,
+// `_greaseSinceLastDose`). The synth packs NPC fields INTO the flags
+// blob on the way in; the projection unpacks them BACK on the way out.
+// Plus a wagonTrain stub so `morale.ts:54` train clamp fires for NPCs.
 
 import type {
   GameDate,
@@ -25,6 +33,7 @@ import type {
   Pace,
   Weather
 } from '../types';
+import { SPOIL_RULES } from './spoilage';
 
 /** Shared train environment that every wagon "sees" when ticking. */
 export interface TrainEnv {
@@ -34,6 +43,73 @@ export interface TrainEnv {
   weather?: Weather;
   pace: Pace;
 }
+
+/** Engine flag key for the dehydration day-counter — see
+ *  `systems/dehydration.ts`. NPC stores in `wagon.dryDays`. */
+const FLAG_DEHYDRATION_DAYS = '_dehydrationDays';
+
+/** Engine flag key for the axle-grease mile-counter — see
+ *  `systems/wagon.ts:applyAxleGrease`. NPC stores in
+ *  `wagon.greaseMiles`. */
+const FLAG_GREASE_SINCE_LAST_DOSE = '_greaseSinceLastDose';
+
+/** Build the engine-shaped `flags` blob for an NPC wagon: pack the
+ *  typed counters (`spoilDays`, `dryDays`, `greaseMiles`) into the
+ *  magic-string keys the engine systems read. */
+function npcFlagsFromWagon(wagon: NpcWagonState): GameState['flags'] {
+  const flags: GameState['flags'] = {};
+  if (wagon.spoilDays) {
+    for (const rule of SPOIL_RULES) {
+      const v = wagon.spoilDays[rule.itemId];
+      if (typeof v === 'number') flags[rule.flagKey] = v;
+    }
+  }
+  if (typeof wagon.dryDays === 'number' && wagon.dryDays > 0) {
+    flags[FLAG_DEHYDRATION_DAYS] = wagon.dryDays;
+  }
+  if (typeof wagon.greaseMiles === 'number') {
+    flags[FLAG_GREASE_SINCE_LAST_DOSE] = wagon.greaseMiles;
+  }
+  return flags;
+}
+
+/** Unpack a ticked GameState's `flags` blob back into the NPC's typed
+ *  fields. Inverse of `npcFlagsFromWagon`. */
+function npcFieldsFromFlags(
+  ticked: GameState,
+  original: NpcWagonState
+): Pick<NpcWagonState, 'spoilDays' | 'dryDays' | 'greaseMiles'> {
+  const spoilDays: Record<string, number> = {};
+  let anySpoil = false;
+  for (const rule of SPOIL_RULES) {
+    const v = ticked.flags[rule.flagKey];
+    if (typeof v === 'number') {
+      spoilDays[rule.itemId] = v;
+      anySpoil = true;
+    }
+  }
+  const dry = ticked.flags[FLAG_DEHYDRATION_DAYS];
+  const grease = ticked.flags[FLAG_GREASE_SINCE_LAST_DOSE];
+  return {
+    spoilDays: anySpoil ? spoilDays : original.spoilDays,
+    dryDays: typeof dry === 'number' ? dry : 0,
+    greaseMiles: typeof grease === 'number' ? grease : original.greaseMiles
+  };
+}
+
+/** Marker wagonTrain attached to the synthesized GameState. The
+ *  engine's morale tick reads `state.wagonTrain` truthiness to apply
+ *  the +1/day in-train clamp (`morale.ts:54`); we want NPCs in the
+ *  train to receive that too. Empty `companions` prevents recursion
+ *  if any future engine system iterates the roster. */
+const SYNTH_TRAIN_STUB = {
+  id: 'synth-stub',
+  name: 'synth-stub',
+  joinedDay: 0,
+  joinedAtLandmarkId: null,
+  leaderId: 'player' as const,
+  companions: []
+};
 
 /** Build a full GameState shim from an NPC wagon + the train env.
  *  The shim is suitable for invoking engine system functions
@@ -62,22 +138,32 @@ export function synthesizeWagonState(wagon: NpcWagonState, env: TrainEnv): GameS
     pace: env.pace,
     rations: wagon.rations,
     weather: env.weather,
-    eventLog: wagon.eventLog,
-    flags: {},
+    // Empty so engine appends are isolated and captured by the
+    // projection — keeps NPC's prior log untouched if the engine
+    // doesn't fire anything this tick.
+    eventLog: [],
+    flags: npcFlagsFromWagon(wagon),
     completed: wagon.outcome !== 'in-progress',
     outcome: wagon.outcome,
-    wagonTrain: null
+    wagonTrain: SYNTH_TRAIN_STUB
   };
 }
 
 /** Project the wagon-local deltas from a ticked GameState back into an
  *  NpcWagonState. The original wagon is the base — only fields that
  *  belong on the wagon (party, inventory, oxen, etc.) are pulled from
- *  the ticked state. Train-shared fields are NOT projected. */
+ *  the ticked state. Train-shared fields are NOT projected.
+ *
+ *  Engine entries appended to `ticked.eventLog` are concatenated onto
+ *  the NPC's own log so each wagon retains its history.
+ *
+ *  Flag-bridged fields (spoilDays / dryDays / greaseMiles) are
+ *  unpacked from `ticked.flags` back into their typed positions. */
 export function projectWagonDeltas(
   ticked: GameState,
   original: NpcWagonState
 ): NpcWagonState {
+  const fromFlags = npcFieldsFromFlags(ticked, original);
   return {
     ...original,
     party: ticked.party,
@@ -91,7 +177,10 @@ export function projectWagonDeltas(
     water: ticked.resources.water,
     waterCap: ticked.resources.waterCap,
     dirtyWater: ticked.resources.dirtyWater ?? 0,
-    eventLog: ticked.eventLog,
-    outcome: ticked.outcome
+    eventLog: [...original.eventLog, ...ticked.eventLog],
+    outcome: ticked.outcome,
+    spoilDays: fromFlags.spoilDays,
+    dryDays: fromFlags.dryDays,
+    greaseMiles: fromFlags.greaseMiles
   };
 }
