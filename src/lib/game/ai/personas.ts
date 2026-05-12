@@ -24,7 +24,10 @@ import {
   hasLiveTeamster
 } from '../professions/predicates';
 import { getWagon } from '../content/wagons';
-import { ABANDON_PRIORITY } from '../systems/item-loss';
+// #939l — ABANDON_PRIORITY import dropped with `mudAbandonmentPriority`.
+// `systems/item-loss.ts` exports the constant directly; restore the
+// import + a Persona method when a profile actually overrides the
+// drop order.
 import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
@@ -291,21 +294,13 @@ function defaultShouldJoinTrain(): boolean {
   return true;
 }
 
-function defaultShouldBuyCookwareSpare(state: GameState, here: Landmark): boolean {
-  // Mirrors the cookware portion of postStocksMissingEquipment. When
-  // the post stocks cookware AND the bot has none, buy. Cookware loss
-  // (#306 buffalo stampede) makes this important.
-  const stock = new Set(here.stock ?? []);
-  return stock.has('cookware') && (state.inventory.cookware ?? 0) < 1;
-}
-
-function defaultShouldBuySaleratus(state: GameState, here: Landmark): boolean {
-  // Mirrors postStocksLowSaleratus. Bot starts with 4 units (~133 days
-  // for 3 eaters); refill before the chest goes dry.
-  const stock = new Set(here.stock ?? []);
-  if (!stock.has('saleratus')) return false;
-  return (state.inventory.saleratus ?? 0) < 2;
-}
+// #939l — `defaultShouldBuyCookwareSpare` / `defaultShouldBuySaleratus`
+// removed alongside the persona surface methods. Cookware-spare
+// disposition now lives on `pickEquipmentRestockOpts.cookwareSpare`
+// (#909); saleratus disposition on
+// `pickFoodRestockOpts.saleratusOverstock`. Both flow through
+// `shopping.ts:composeShoppingList`, so the one consumer reads from
+// the one surface.
 
 /** Has a working rifle + ammo? Required for hunt(). */
 function canHunt(state: GameState): boolean {
@@ -493,8 +488,6 @@ export const cautiousPersona: Persona = {
     return { cookwareSpare: true };
   },
   shouldJoinTrain: defaultShouldJoinTrain,
-  shouldBuyCookwareSpare: defaultShouldBuyCookwareSpare,
-  shouldBuySaleratus: defaultShouldBuySaleratus,
   shouldCannibalize() {
     // Default true — even the most period-cautious party (Donner survivors,
     // who also fit the cautious profile) cannibalized when nothing else
@@ -504,9 +497,6 @@ export const cautiousPersona: Persona = {
   pickNpcEventChoice() {
     // Surface only — no current choice-bearing NPC events.
     return null;
-  },
-  mudAbandonmentPriority() {
-    return ABANDON_PRIORITY;
   }
 };
 
@@ -638,11 +628,8 @@ export const balancedPersona: Persona = {
     return {};
   },
   shouldJoinTrain: defaultShouldJoinTrain,
-  shouldBuyCookwareSpare: defaultShouldBuyCookwareSpare,
-  shouldBuySaleratus: defaultShouldBuySaleratus,
   shouldCannibalize: () => true,
-  pickNpcEventChoice: () => null,
-  mudAbandonmentPriority: () => ABANDON_PRIORITY
+  pickNpcEventChoice: () => null
 };
 
 export const aggressivePersona: Persona = {
@@ -756,17 +743,8 @@ export const aggressivePersona: Persona = {
     return {};
   },
   shouldJoinTrain: defaultShouldJoinTrain,
-  shouldBuyCookwareSpare(state, here) {
-    // Aggressive packs lean — single cookware, no spare. The emergency
-    // post-loss path can buy a replacement at the next post.
-    if (!defaultShouldBuyCookwareSpare(state, here)) return false;
-    // Already has 0 → still buy the first one (won't have eaten paste).
-    return true;
-  },
-  shouldBuySaleratus: defaultShouldBuySaleratus,
   shouldCannibalize: () => true,
-  pickNpcEventChoice: () => null,
-  mudAbandonmentPriority: () => ABANDON_PRIORITY
+  pickNpcEventChoice: () => null
 };
 
 // `chaos` makes seeded-random choices — the "dumbass tourist" mode.
@@ -886,19 +864,10 @@ export const chaosPersona: Persona = {
     // Chaos joins about 70% of the time — fuzz coverage of both paths.
     return rng.chance(0.7);
   },
-  shouldBuyCookwareSpare(state, here) {
-    // Roll the standard predicate but with a 50% accept rate even
-    // when the post stocks a needed cookware.
-    return defaultShouldBuyCookwareSpare(state, here);
-  },
-  shouldBuySaleratus(state, here) {
-    return defaultShouldBuySaleratus(state, here);
-  },
   shouldCannibalize: () => true,
   pickNpcEventChoice() {
     return null; // surface-only
-  },
-  mudAbandonmentPriority: () => ABANDON_PRIORITY
+  }
 };
 
 // === #287b — named-profile variants ===

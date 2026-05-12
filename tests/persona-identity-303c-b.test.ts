@@ -6,7 +6,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { cautiousPersona, balancedPersona, aggressivePersona, chaosPersona } from '../src/lib/game/ai';
-import { ABANDON_PRIORITY } from '../src/lib/game/systems/item-loss';
 import { createInitialState } from '../src/lib/game/engine';
 import { getLandmark } from '../src/lib/game/content/landmarks';
 import { makeRng } from '../src/lib/game/rng';
@@ -46,56 +45,10 @@ describe('#303c slice B — shouldJoinTrain', () => {
   });
 });
 
-describe('#303c slice B — shouldBuyCookwareSpare', () => {
-  const laramie = getLandmark('ft_laramie');
-  const kearny = getLandmark('ft_kearny');
-  const chimney = getLandmark('chimney_rock'); // no stock
-
-  it('all personas return false when post does not stock cookware', () => {
-    const s = game();
-    for (const p of DETERMINISTIC) {
-      expect(p.shouldBuyCookwareSpare(s, chimney)).toBe(false);
-    }
-  });
-
-  it('all personas return true when stock has cookware AND inv has none', () => {
-    const s = { ...game(), inventory: { ...game().inventory, cookware: 0 } };
-    for (const p of DETERMINISTIC) {
-      expect(p.shouldBuyCookwareSpare(s, laramie)).toBe(true);
-    }
-  });
-
-  it('all personas return false when bot already has 1+ cookware', () => {
-    const s = { ...game(), inventory: { ...game().inventory, cookware: 1 } };
-    for (const p of DETERMINISTIC) {
-      expect(p.shouldBuyCookwareSpare(s, laramie)).toBe(false);
-    }
-  });
-});
-
-describe('#303c slice B — shouldBuySaleratus', () => {
-  const laramie = getLandmark('ft_laramie');
-  const chimney = getLandmark('chimney_rock');
-
-  it('returns false when post does not stock saleratus', () => {
-    const s = game();
-    expect(cautiousPersona.shouldBuySaleratus(s, chimney)).toBe(false);
-  });
-
-  it('returns true when post stocks AND bot has < 2 units', () => {
-    const s = { ...game(), inventory: { ...game().inventory, saleratus: 1 } };
-    for (const p of DETERMINISTIC) {
-      expect(p.shouldBuySaleratus(s, laramie)).toBe(true);
-    }
-  });
-
-  it('returns false when bot has 2+ units already', () => {
-    const s = { ...game(), inventory: { ...game().inventory, saleratus: 4 } };
-    for (const p of DETERMINISTIC) {
-      expect(p.shouldBuySaleratus(s, laramie)).toBe(false);
-    }
-  });
-});
+// #939l — shouldBuyCookwareSpare + shouldBuySaleratus describe blocks
+// removed. The dispositions live on `pickEquipmentRestockOpts.cookwareSpare`
+// (#909) and `pickFoodRestockOpts.saleratusOverstock` — covered by
+// `tests/npc-shouldbuy-909.test.ts`.
 
 describe('#303c slice B — shouldCannibalize', () => {
   it('all personas return true (default — Donner Party precedent)', () => {
@@ -117,18 +70,7 @@ describe('#303c slice B — pickNpcEventChoice', () => {
   });
 });
 
-describe('#303c slice B — mudAbandonmentPriority', () => {
-  it('all personas return the canonical ABANDON_PRIORITY by default', () => {
-    expect(cautiousPersona.mudAbandonmentPriority()).toEqual(ABANDON_PRIORITY);
-    expect(balancedPersona.mudAbandonmentPriority()).toEqual(ABANDON_PRIORITY);
-    expect(aggressivePersona.mudAbandonmentPriority()).toEqual(ABANDON_PRIORITY);
-    expect(chaosPersona.mudAbandonmentPriority()).toEqual(ABANDON_PRIORITY);
-  });
-
-  it('order is heaviest-luxury-first (Marcy "lining the trail with iron")', () => {
-    const order = cautiousPersona.mudAbandonmentPriority();
-    expect(order[0]).toBe('anvil');
-    // Luxuries dropped before food bulk.
-    expect(order.indexOf('china_tea_set')).toBeLessThan(order.indexOf('flour'));
-  });
-});
+// #939l — `mudAbandonmentPriority` removed (surface-only override with
+// no consumer). `systems/item-loss.ts` exports `ABANDON_PRIORITY`
+// directly for the mud-stuck abandon path; a Persona method goes back
+// on the interface when a profile actually reorders the list.

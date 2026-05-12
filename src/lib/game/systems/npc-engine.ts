@@ -255,7 +255,28 @@ export interface NpcTickResult {
  *  (treatments may consume inventory), then food consumption, then
  *  starvation onset if food=0, then ox fatigue/recovery, then a
  *  daily NPC event roll (#280c — wheel break, ox lame, snakebite,
- *  cholera, etc.), then death reaping, then outcome update. */
+ *  cholera, etc.), then death reaping, then outcome update.
+ *
+ *  Persona-surface audit (#939l). Methods that fire per-wagon, per-day
+ *  in this function:
+ *    - `pickRations`       — 1c rations block
+ *    - `shouldRest`        — 1d voluntary-rest gate
+ *    - `shouldCannibalize` — step 7 `maybeCannibalize`
+ *
+ *  Methods that fire at trading-post arrival (see
+ *  `wagon-train.ts:advanceWagonTrainTradingPost`):
+ *    `shouldTradeAtPost`, `pickFoodRestockOpts`,
+ *    `pickEquipmentRestockOpts`, `pickRepairBudget`, `pickOxSwapCount`.
+ *
+ *  Methods that DO NOT fire for NPCs by design:
+ *    - `pickPace` / `pickFordMethod` / `shouldStayAtInn` — the train
+ *      moves as a unit, so the player's choice applies to all wagons.
+ *    - `shouldHunt` / `shouldFindWater` / `shouldPan` / `shouldRaid` /
+ *      `shouldStealFromTrain` — camp actions the player drives. NPCs
+ *      don't independently camp.
+ *    - `pickNpcEventChoice` — surface only; current NPC events
+ *      (#280c) are choice-less mechanical mutations. Wires up when
+ *      #939i routes NPCs through the engine event bank. */
 export function tickNpcWagon(
   wagon: NpcWagonState,
   ctx: NpcTickContext,

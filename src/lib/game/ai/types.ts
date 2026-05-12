@@ -125,12 +125,12 @@ export interface Persona {
    *  own tighter opts directly (#299), so this only affects the
    *  player-bot composeShoppingList call. */
   pickFoodRestockOpts(state: GameState): FoodRestockOpts;
-  /** #909 — Per-persona opts for `pickEquipmentRestock`. Currently
-   *  expresses the cookware-spare disposition (cautious / Tabitha
-   *  Brown overrides true). Distinct from `shouldBuyCookwareSpare` —
-   *  that predicate gates "should I buy the FIRST cookware when
-   *  missing"; this opts struct gates "should I carry a SECOND as
-   *  insurance against #306 buffalo-stampede loss." */
+  /** #909 — Per-persona opts for `pickEquipmentRestock`. Expresses the
+   *  cookware-spare disposition (cautious / Tabitha Brown overrides
+   *  true). #939l replaced the older `shouldBuyCookwareSpare` /
+   *  `shouldBuySaleratus` predicates — their dispositions live here
+   *  (and on `pickFoodRestockOpts.saleratusOverstock`) so there is one
+   *  shopping surface, not two. */
   pickEquipmentRestockOpts(state: GameState): EquipmentRestockOpts;
   /** Should the bot join a wagon train at this post (#176)? Default
    *  true — the train morale + smithy + pace-clamp benefits stack
@@ -139,16 +139,6 @@ export interface Persona {
    *  slice B surface; current consumer is the player-bot runner's
    *  first-trading-post auto-join. */
   shouldJoinTrain(state: GameState, here: Landmark, rng: Rng): boolean;
-  /** Should the bot stock a spare cookware at this post (#308)?
-   *  Period: cautious emigrants packed two; aggressive made do with
-   *  one. Default mirrors current `postStocksMissingEquipment`
-   *  cookware check (true when stock has cookware + inv has none). */
-  shouldBuyCookwareSpare(state: GameState, here: Landmark): boolean;
-  /** Should the bot stock saleratus at this post (#308)? Default
-   *  mirrors current `postStocksLowSaleratus` (true when stock has
-   *  saleratus + inv < 2 units). #287 preacher refills religiously;
-   *  drinker might skip. */
-  shouldBuySaleratus(state: GameState, here: Landmark): boolean;
   /** Should the wagon resort to cannibalism on a fresh corpse?
    *  Period: Donner Party precedent — most parties did when the
    *  alternative was the whole company starving. Default true. #287
@@ -163,10 +153,9 @@ export interface Persona {
    *  to take the default. Surface-only today; consumer lands when
    *  the first choice-bearing NPC event ships. */
   pickNpcEventChoice(state: GameState, eventId: string, choices: readonly string[], rng: Rng): string | null;
-  /** Order of items to drop when the wagon is stuck in mud (#306
-   *  phase 2 `abandonHeavyLoad`). Default returns the canonical
-   *  list (anvil → grandfather_clock → china_tea_set → wagon parts
-   *  → food bulk). #287 drinker drops the bible last; preacher
-   *  drops whiskey first. */
-  mudAbandonmentPriority(): readonly string[];
+  // #939l — `mudAbandonmentPriority` removed: surface-only override
+  // for #306 phase 2 `abandonHeavyLoad` that never had a consumer.
+  // Mud-stuck abandonment uses the canonical `ABANDON_PRIORITY`
+  // constant from `systems/item-loss.ts` directly; if a future
+  // persona needs to reorder it, restore the method then.
 }
