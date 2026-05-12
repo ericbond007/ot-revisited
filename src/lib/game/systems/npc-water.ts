@@ -9,20 +9,13 @@
 // module becomes the second consumer.
 
 import type { NpcWagonState, Weather } from '../types';
-import type { Rng } from '../rng';
 import { weatherWaterMult } from './weather';
-import { hasLive } from '../professions/predicates';
 
 /** Per-adult daily water draw in gallons. Matches player's
  *  WATER_PER_ADULT_GAL in consumption.ts. */
 const WATER_PER_ADULT_GAL = 1;
 /** Children drink 70% of an adult's ration. Matches player CHILD_WATER_MULT. */
 const CHILD_WATER_MULT = 0.7;
-
-/** Daily dirty-water disease chance per drinking adult; doctor halves
- *  it. Matches player DIRTY_WATER_DISEASE_CHANCE. */
-const DIRTY_WATER_DISEASE_CHANCE = 0.05;
-const DIRTY_WATER_DISEASE_CHANCE_DOCTOR = 0.025;
 
 /** Dehydration damage curve — health hit per consecutive dry day.
  *  Mirrors player applyDehydration HEALTH_PER_DRY_DAY. */
@@ -48,65 +41,14 @@ export function npcWaterConsumedToday(wagon: NpcWagonState, weather: Weather | u
   return Math.ceil(base * weatherWaterMult(weather));
 }
 
-/** Drain the wagon's keg by today's draw — clean first, then dirty.
- *  Returns the wagon plus how many gallons of dirty got drunk (read
- *  by `applyNpcDirtyWaterRisk`). On a dry-keg day the wagon takes 0
- *  intake — `applyNpcDehydration` reads the resulting `water` to
- *  update the dry-day counter. */
-export function applyNpcWaterDrain(
-  wagon: NpcWagonState,
-  weather: Weather | undefined
-): { wagon: NpcWagonState; dirtyDrawn: number } {
-  const need = npcWaterConsumedToday(wagon, weather);
-  if (need <= 0) return { wagon, dirtyDrawn: 0 };
-  const cleanDrawn = Math.min(wagon.water, need);
-  const remaining = need - cleanDrawn;
-  const dirtyDrawn = Math.min(wagon.dirtyWater, remaining);
-  return {
-    wagon: {
-      ...wagon,
-      water: wagon.water - cleanDrawn,
-      dirtyWater: wagon.dirtyWater - dirtyDrawn
-    },
-    dirtyDrawn
-  };
-}
-
-/** Roll a per-adult dysentery / cholera check when the wagon drank
- *  unboiled water today. Capped at one new infection per tick to
- *  match the player's spirals-prevention rule. Doctor halves the
- *  per-adult chance. */
-export function applyNpcDirtyWaterRisk(
-  wagon: NpcWagonState,
-  dirtyDrawn: number,
-  rng: Rng,
-  day: number
-): NpcWagonState {
-  if (dirtyDrawn <= 0) return wagon;
-  const chance = hasLive(wagon, 'doctor')
-    ? DIRTY_WATER_DISEASE_CHANCE_DOCTOR
-    : DIRTY_WATER_DISEASE_CHANCE;
-  const adults = wagon.party.filter((m) => !m.dead && m.kind === 'adult');
-  for (const adult of adults) {
-    if (rng.chance(chance)) {
-      const disease: 'cholera' | 'dysentery' = rng.chance(0.5) ? 'cholera' : 'dysentery';
-      if (adult.conditions.some((c) => c.id === disease)) continue;
-      return {
-        ...wagon,
-        party: wagon.party.map((m) =>
-          m.id === adult.id
-            ? { ...m, conditions: [...m.conditions, { id: disease, daysSinceOnset: 0 }] }
-            : m
-        ),
-        eventLog: [
-          ...wagon.eventLog,
-          { day, text: `${adult.name} fell ill from drinking unboiled water — ${disease}.` }
-        ]
-      };
-    }
-  }
-  return wagon;
-}
+// #939c — `applyNpcWaterDrain` + `applyNpcDirtyWaterRisk` parallel impls
+// removed. NPC water draw + dirty-water disease rolls now flow through
+// the engine's `applyDailyConsumption` (water portion) +
+// `applyDirtyWaterRisk` via the wagon-synth helper (see consumption
+// block in `tickNpcWagon`). `npcWaterConsumedToday` kept as a public
+// query for callers that need today's projected draw without running
+// the full tick. `applyNpcDehydration` kept — runs later in the
+// pipeline alongside engine's `applyDehydration` analog.
 
 /** Apply dehydration HP + morale damage when the keg is empty.
  *  Increments `wagon.dryDays` on dry tick, resets to 0 on a wet day.

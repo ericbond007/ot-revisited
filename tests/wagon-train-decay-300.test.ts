@@ -202,7 +202,11 @@ describe('#300 — tickNpcWagon integration', () => {
   });
 
   it('bot tar_bucket gets consumed across a long run', () => {
-    const w0 = fakeWagon({ id: 'a', inventory: { flour: 1000, bacon: 100, tar_bucket: 1 } });
+    // #939c — engine draws flour BEFORE bacon (period-correct order),
+    // so cookware + saleratus must be present or every flour-day fires
+    // pastry-quality morale debits that eventually trip shouldRest
+    // and skip travel days.
+    const w0 = fakeWagon({ id: 'a', inventory: { flour: 1000, bacon: 100, tar_bucket: 1, cookware: 1, saleratus: 10 } });
     let w = w0;
     for (let day = 1; day <= 40; day++) {
       // Refill water + reset ox fatigue each iteration so the wagon
