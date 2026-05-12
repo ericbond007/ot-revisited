@@ -36,12 +36,12 @@ import type {
   Weather
 } from '../types';
 import { getPersona } from '../ai/personas';
-import { getCondition } from '../content/conditions';
 import { applySpoilage, applyHeatSpoilage } from './spoilage';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './consumption';
 import { applyDietVariety, applyHotDrinks } from './diet';
 import { applyPastryQuality } from './pastry';
+import { progressConditions } from './conditions';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
 import { applyNpcDehydration } from './npc-water';
@@ -127,16 +127,6 @@ const NPC_FATIGUE_PER_DAY: Record<Pace, number> = {
   grueling: 9
 };
 
-// Doctor profession dampens condition damage 30%, same as player path
-// (engine #154). Mirror the constant locally — keeping this dependency
-// explicit makes the future system-extraction obvious.
-const DOCTOR_RELIEF_MULT = 0.7;
-
-// Treatment item halves daily condition damage + 25% chance to clear.
-// Mirrors `progressConditions` for the player.
-const TREATMENT_DAMAGE_MULT = 0.5;
-const TREATMENT_CURE_CHANCE = 0.25;
-
 // Starvation drain — when food=0, every alive party member loses HP
 // at this rate per day. Modest at first (2 days you can sleep through);
 // after multiple days the cumulative drop kills the wagon.
@@ -149,39 +139,13 @@ const STARVATION_HP_PER_DAY = 4;
 // `tickNpcWagon`). NPCs gain the diet-variety + hot-drinks bonuses
 // that the parallel impl never had.
 
-function npcHasLiveDoctor(wagon: NpcWagonState): boolean {
-  return hasLive(wagon, 'doctor');
-}
+// #939d — `npcHasLiveDoctor` removed; engine `progressConditions`
+// uses player's `hasLiveDoctor` directly.
 
-function tickConditions(wagon: NpcWagonState, rng: Rng): NpcWagonState {
-  const reliefMult = npcHasLiveDoctor(wagon) ? DOCTOR_RELIEF_MULT : 1.0;
-  const inventory: Record<string, number> = { ...wagon.inventory };
-  const party: PartyMember[] = wagon.party.map((m) => {
-    if (m.dead) return m;
-    let healthDelta = 0;
-    const nextConditions: typeof m.conditions = [];
-    for (const c of m.conditions) {
-      const meta = getCondition(c.id);
-      // Treatment item — halves damage + 25% cure roll.
-      const treatment = (meta.treatmentItems ?? []).find(
-        (id) => (inventory[id] ?? 0) > 0
-      );
-      if (treatment) {
-        inventory[treatment] = (inventory[treatment] ?? 0) - 1;
-        if (rng.chance(TREATMENT_CURE_CHANCE)) {
-          continue; // condition cleared
-        }
-        healthDelta += meta.dailyHealthDelta * reliefMult * TREATMENT_DAMAGE_MULT;
-      } else {
-        healthDelta += meta.dailyHealthDelta * reliefMult;
-      }
-      nextConditions.push({ ...c, daysSinceOnset: c.daysSinceOnset + 1 });
-    }
-    const health = Math.max(0, Math.min(100, m.health + Math.round(healthDelta)));
-    return { ...m, health, conditions: nextConditions };
-  });
-  return { ...wagon, party, inventory };
-}
+// #939d — `tickConditions` parallel impl removed. NPC conditions now
+// flow through engine `progressConditions` via wagon-synth, which
+// includes the `resolvedByItems` auto-clear + `dailyMoraleDelta`
+// behaviors the parallel impl was missing.
 
 function tickOxenTravel(wagon: NpcWagonState, ctx: NpcTickContext): NpcWagonState {
   const fatigueAdd = NPC_FATIGUE_PER_DAY[ctx.pace];
@@ -359,7 +323,19 @@ export function tickNpcWagon(
   const playerLogs: string[] = [];
 
   // 1. Conditions tick + treatment.
-  next = tickConditions(next, rng);
+  // #939d — engine `progressConditions` via synth/project. NPC parallel
+  // impl was missing `resolvedByItems` auto-clear (e.g. scurvy ↔
+  // dried_fruit) and `dailyMoraleDelta` (some conditions debit morale
+  // daily). Engine version covers both.
+  {
+    const env = trainEnv(ctx);
+    const synth = synthesizeWagonState(next, env);
+    const ticked = progressConditions(synth, rng);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
 
   // 1b. #295 — spoilage. Runs BEFORE food consumption (mirrors the
   // player path) so a rotten pile can't be eaten on its spoil day.
