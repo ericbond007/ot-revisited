@@ -205,10 +205,11 @@ describe('#300 — tickNpcWagon integration', () => {
     const w0 = fakeWagon({ id: 'a', inventory: { flour: 1000, bacon: 100, tar_bucket: 1 } });
     let w = w0;
     for (let day = 1; day <= 40; day++) {
-      // Refill water each iteration so the wagon doesn't dehydrate
-      // out before the grease cycle completes — this test is about
-      // tar consumption, not water.
-      w = { ...w, water: w.waterCap };
+      // Refill water + reset ox fatigue each iteration so the wagon
+      // doesn't dehydrate AND the persona's #937 voluntary-rest path
+      // doesn't fire on worn oxen — this test is about tar
+      // consumption, not water or fatigue dynamics.
+      w = { ...w, water: w.waterCap, oxen: w.oxen.map((o) => ({ ...o, fatigue: 0 })) };
       const r = tickNpcWagon(w, {
         day,
         traveled: true,

@@ -25,6 +25,7 @@
 
 import type { Rng } from '../rng';
 import type {
+  GameDate,
   GameState,
   NpcWagonState,
   Outcome,
@@ -50,6 +51,12 @@ import { applyNpcWagonDecay, applyNpcAxleGrease, applyNpcStormDamage } from './w
 export interface NpcTickContext {
   /** Today's day number (for log entries). */
   day: number;
+  /** Today's calendar date. Used by #937 NPC voluntary-rest check
+   *  (`persona.shouldRest` reads `state.date` for Sunday observance).
+   *  Optional for tests / synthetic harnesses that don't model
+   *  Sundays; when omitted, the Sunday branch of `shouldRest` is
+   *  treated as false. */
+  date?: GameDate;
   /** True when the train moved today (oxen take fatigue). False on
    *  rest / camp days (oxen recover; food still drains). */
   traveled: boolean;
@@ -400,6 +407,27 @@ export function tickNpcWagon(
   const fauxState = { inventory: next.inventory } as unknown as GameState;
   next = { ...next, rations: persona.pickRations(fauxState, rng) };
 
+  // 1d. #937 — persona-driven voluntary rest. On a travel day, if the
+  // persona's shouldRest fires (Sunday, worn HP, low morale, worn ox
+  // team), the NPC takes it easier within the train: ox fatigue
+  // recovers instead of accruing, wagon decay + axle grease skipped.
+  // Player-bot uses `shouldRest` to call the engine rest action; NPC
+  // can't lag the train, but it can conserve. Period reality: emigrant
+  // companies that pushed through Sundays were the outliers (Reed);
+  // most rested when the captain's "tireder than you" call came in.
+  let traveled = ctx.traveled;
+  if (traveled) {
+    const restFauxState = {
+      date: ctx.date ?? { year: 1849, month: 1, day: 2 }, // Monday — keeps Sunday-rest false when ctx.date absent
+      party: next.party,
+      morale: next.morale,
+      oxen: next.oxen
+    } as unknown as GameState;
+    if (persona.shouldRest(restFauxState, rng)) {
+      traveled = false;
+    }
+  }
+
   // 2. Food consumption.
   const eaters = next.party.filter((m) => !m.dead).length;
   if (eaters > 0) {
@@ -423,15 +451,17 @@ export function tickNpcWagon(
   next = applyStarvation(next);
 
   // 5. Ox tick — fatigue on travel, recovery on rest.
-  next = ctx.traveled ? tickOxenTravel(next, ctx) : tickOxenRest(next, ctx);
+  // #937 — `traveled` may be flipped to false above by persona.shouldRest.
+  const effectiveCtx = traveled === ctx.traveled ? ctx : { ...ctx, traveled };
+  next = traveled ? tickOxenTravel(next, effectiveCtx) : tickOxenRest(next, effectiveCtx);
 
   // 5b. #300 — NPC wagon condition decay (parity with player tickWagon).
   // Travel days only; pace × terrain × tar-bucket-mult formula. The
   // axle-grease cycle consumes one tar_bucket per 500 mi (mirrors
   // player's applyAxleGrease). Storm-day weather adds 1-3 wagon damage
   // on top — same shape as the player's weather.ts storm branch.
-  next = applyNpcWagonDecay(next, ctx);
-  if (ctx.traveled && (ctx.traveledMiles ?? 0) > 0) {
+  next = applyNpcWagonDecay(next, effectiveCtx);
+  if (traveled && (ctx.traveledMiles ?? 0) > 0) {
     const greaseResult = applyNpcAxleGrease(next, ctx.traveledMiles ?? 0);
     next = greaseResult.wagon;
     if (greaseResult.playerLog) playerLogs.push(greaseResult.playerLog);
