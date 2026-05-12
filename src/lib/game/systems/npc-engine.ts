@@ -27,6 +27,7 @@ import type { Rng } from '../rng';
 import type {
   GameDate,
   GameState,
+  Location,
   NpcWagonState,
   Outcome,
   Pace,
@@ -36,7 +37,8 @@ import type {
 } from '../types';
 import { getPersona } from '../ai/personas';
 import { getCondition } from '../content/conditions';
-import { applyNpcSpoilage, applyNpcHeatSpoilage } from './spoilage';
+import { applySpoilage, applyHeatSpoilage } from './spoilage';
+import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
 import {
@@ -57,6 +59,12 @@ export interface NpcTickContext {
    *  Sundays; when omitted, the Sunday branch of `shouldRest` is
    *  treated as false. */
   date?: GameDate;
+  /** Trail position the train is at. #939b — passed through to the
+   *  wagon-synth helper so engine systems running on a synthesized
+   *  per-NPC GameState see the right location. Optional for
+   *  legacy/test callers; the synth falls back to a stub when absent
+   *  (see `defaultLocation` below). */
+  location?: Location;
   /** True when the train moved today (oxen take fatigue). False on
    *  rest / camp days (oxen recover; food still drains). */
   traveled: boolean;
@@ -73,6 +81,30 @@ export interface NpcTickContext {
    *  cycle (#300). Defaults to 0 on rest / event / non-travel days,
    *  so non-travel callers can omit this field. */
   traveledMiles?: number;
+}
+
+/** #939b — Build a TrainEnv from the NpcTickContext for the
+ *  wagon-synth helper. `ctx.location` and `ctx.date` are optional on
+ *  the interface (older callers don't pass them); the stub defaults
+ *  preserve engine behavior for those callers — the prairie + day-1
+ *  trail-start values are inert for the systems #939 is unifying. */
+const DEFAULT_TICK_LOCATION = {
+  trailPosition: 0,
+  nextLandmarkId: 'lone_elm_campground',
+  previousLandmarkId: null,
+  milesTraveled: 0,
+  terrain: 'prairie' as const
+};
+const DEFAULT_TICK_DATE = { year: 1849, month: 1, day: 2 }; // Monday — no Sunday-rest
+
+function trainEnv(ctx: NpcTickContext): TrainEnv {
+  return {
+    day: ctx.day,
+    date: ctx.date ?? DEFAULT_TICK_DATE,
+    location: ctx.location ?? DEFAULT_TICK_LOCATION,
+    weather: ctx.weather,
+    pace: ctx.pace
+  };
 }
 
 // Per-rations daily food draw (lb/eater/day). Matches the player's
@@ -391,12 +423,20 @@ export function tickNpcWagon(
   // Game meat / eggs / berries / milk rot off their per-pile clock;
   // bacon + salt_pork take heat attrition (with bran-barrel mitigation
   // matching the player's mechanic).
-  const spoil = applyNpcSpoilage(next, ctx.day);
-  next = spoil.wagon;
-  for (const log of spoil.logs) playerLogs.push(log);
-  const heatSpoil = applyNpcHeatSpoilage(next, ctx.weather);
-  next = heatSpoil.wagon;
-  if (heatSpoil.log) playerLogs.push(heatSpoil.log);
+  // #939b — unified tick: invoke the engine's applySpoilage +
+  // applyHeatSpoilage on a synthesized GameState. Wagon-synth packs
+  // wagon.spoilDays into flags._{x}SpoilDay; the engine reads/writes
+  // those, then we project the deltas back. Engine eventLog entries
+  // get name-suffixed and forwarded to player news so the player
+  // still sees "(Sager family)" attribution.
+  const env = trainEnv(ctx);
+  const synth = synthesizeWagonState(next, env);
+  let tickedSpoil = applySpoilage(synth);
+  tickedSpoil = applyHeatSpoilage(tickedSpoil);
+  next = projectWagonDeltas(tickedSpoil, next);
+  for (const entry of tickedSpoil.eventLog) {
+    playerLogs.push(`${entry.text} (${next.name})`);
+  }
 
   // 1c. #895 — persona-driven rations decision. Each NPC wagon carries
   // a `personaId` (set at gen from `profile.personaVariantHint`, or

@@ -1,4 +1,4 @@
-import type { GameState, NpcWagonState, Weather } from '../types';
+import type { GameState, NpcWagonState } from '../types';
 
 /**
  * Fresh-pile spoilage. Each tracked item has a freshness window in
@@ -188,72 +188,8 @@ export function setNpcSpoilClock(
   };
 }
 
-/** Day-tick spoilage step for an NPC wagon. Returns the (possibly
- *  mutated) wagon plus any player-visible log lines (named with the
- *  wagon's family name so the player knows which companion lost food).
- *  Mirrors `applySpoilage` for the player. */
-export function applyNpcSpoilage(
-  wagon: NpcWagonState,
-  currentDay: number
-): { wagon: NpcWagonState; logs: string[] } {
-  if (!wagon.spoilDays) return { wagon, logs: [] };
-  const logs: string[] = [];
-  let nextWagon = wagon;
-  let nextSpoilDays: Record<string, number> = { ...wagon.spoilDays };
-  let changed = false;
-
-  for (const rule of SPOIL_RULES) {
-    const spoilDay = nextSpoilDays[rule.itemId];
-    if (typeof spoilDay !== 'number') continue;
-    const qty = nextWagon.inventory[rule.itemId] ?? 0;
-    if (qty <= 0) {
-      // Stale clock with empty inventory — clean up.
-      delete nextSpoilDays[rule.itemId];
-      changed = true;
-      continue;
-    }
-    if (currentDay < spoilDay) continue;
-    // Pile rotted. Zero it, clear the clock, surface a player log.
-    nextWagon = {
-      ...nextWagon,
-      inventory: { ...nextWagon.inventory, [rule.itemId]: 0 }
-    };
-    delete nextSpoilDays[rule.itemId];
-    changed = true;
-    logs.push(`${rule.spoilText(qty)} (${wagon.name})`);
-  }
-
-  if (changed) {
-    nextWagon = { ...nextWagon, spoilDays: nextSpoilDays };
-  }
-  return { wagon: nextWagon, logs };
-}
-
-/** Heat-day attrition on bacon + salt_pork in an NPC wagon. Mirrors
- *  `applyHeatSpoilage` for the player; the NPC wagon's bran-barrel
- *  trait halves the loss the same way. Returns the (possibly mutated)
- *  wagon plus an optional player-visible log line. */
-export function applyNpcHeatSpoilage(
-  wagon: NpcWagonState,
-  weather: Weather
-): { wagon: NpcWagonState; log: string | null } {
-  if (weather !== 'heat') return { wagon, log: null };
-  const baconHeld = wagon.inventory.bacon ?? 0;
-  const saltPorkHeld = wagon.inventory.salt_pork ?? 0;
-  if (baconHeld <= 0 && saltPorkHeld <= 0) return { wagon, log: null };
-  const mitMult = wagon.wagon.hasBranBarrel ? 0.5 : 1;
-  const baconLoss = Math.min(baconHeld, Math.round(BACON_HEAT_LB_PER_DAY * mitMult));
-  const saltPorkLoss = Math.min(saltPorkHeld, Math.round(SALT_PORK_HEAT_LB_PER_DAY * mitMult));
-  if (baconLoss <= 0 && saltPorkLoss <= 0) return { wagon, log: null };
-  const inventory = { ...wagon.inventory };
-  if (baconLoss > 0) inventory.bacon = baconHeld - baconLoss;
-  if (saltPorkLoss > 0) inventory.salt_pork = saltPorkHeld - saltPorkLoss;
-  const parts: string[] = [];
-  if (baconLoss > 0) parts.push(`${baconLoss} lb bacon`);
-  if (saltPorkLoss > 0) parts.push(`${saltPorkLoss} lb salt pork`);
-  const note = `${wagon.name} lost ${parts.join(' + ')} to the heat.`;
-  return {
-    wagon: { ...wagon, inventory },
-    log: note
-  };
-}
+// #939b — applyNpcSpoilage + applyNpcHeatSpoilage parallel impls
+// were deleted here. NPC tick now calls the engine's `applySpoilage`
+// + `applyHeatSpoilage` via the wagon-synth helper (`tickNpcWagon`
+// in npc-engine.ts). The shared `setNpcSpoilClock` adder is still
+// used by hunt redistribution (writes to wagon.spoilDays directly).

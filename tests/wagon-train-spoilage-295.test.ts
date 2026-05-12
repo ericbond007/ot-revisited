@@ -7,11 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   setNpcSpoilClock,
-  applyNpcSpoilage,
-  applyNpcHeatSpoilage,
-  GAME_MEAT_FRESH_DAYS,
-  BACON_HEAT_LB_PER_DAY,
-  SALT_PORK_HEAT_LB_PER_DAY
+  GAME_MEAT_FRESH_DAYS
 } from '../src/lib/game/systems/spoilage';
 import { tickNpcWagon } from '../src/lib/game/systems/npc-engine';
 import { hunt } from '../src/lib/game/actions/hunt';
@@ -85,110 +81,13 @@ describe('setNpcSpoilClock', () => {
   });
 });
 
-describe('applyNpcSpoilage', () => {
-  it('no spoilDays object → no-op, no logs', () => {
-    const w = fakeWagon({ id: 'a', inventory: { game_meat: 10 } });
-    const r = applyNpcSpoilage(w, 5);
-    expect(r.wagon).toBe(w);
-    expect(r.logs).toEqual([]);
-  });
-
-  it('clock not yet reached → pile intact, no log', () => {
-    const w = setNpcSpoilClock(
-      fakeWagon({ id: 'a', inventory: { game_meat: 25 } }),
-      'game_meat',
-      5
-    );
-    const r1 = applyNpcSpoilage(w, 5);
-    expect(r1.wagon.inventory.game_meat).toBe(25);
-    expect(r1.logs).toEqual([]);
-    // Right at the spoil day → rotted (>= triggers).
-    const r2 = applyNpcSpoilage(w, 5 + GAME_MEAT_FRESH_DAYS);
-    expect(r2.wagon.inventory.game_meat).toBe(0);
-    expect(r2.logs.length).toBe(1);
-    expect(r2.logs[0]).toMatch(/game meat spoiled/);
-  });
-
-  it('zeroed pile + stale clock cleans up the clock without a log', () => {
-    let w = fakeWagon({ id: 'a', inventory: { game_meat: 0 } });
-    w = setNpcSpoilClock(w, 'game_meat', 5);
-    expect(w.spoilDays?.game_meat).toBeDefined();
-    const r = applyNpcSpoilage(w, 5);
-    expect(r.wagon.spoilDays?.game_meat).toBeUndefined();
-    expect(r.logs).toEqual([]);
-  });
-
-  it('log lines include the wagon name (so the player knows whose food rotted)', () => {
-    const w = setNpcSpoilClock(
-      fakeWagon({ id: 's', name: 'the Sager family', inventory: { game_meat: 30 } }),
-      'game_meat',
-      0
-    );
-    const r = applyNpcSpoilage(w, GAME_MEAT_FRESH_DAYS);
-    expect(r.logs[0]).toMatch(/the Sager family/);
-  });
-
-  it('multiple piles spoil independently in one tick', () => {
-    let w = fakeWagon({ id: 'a', inventory: { game_meat: 10, berries: 5 } });
-    w = setNpcSpoilClock(w, 'game_meat', 0);
-    w = setNpcSpoilClock(w, 'berries', 0);
-    const r = applyNpcSpoilage(w, GAME_MEAT_FRESH_DAYS);
-    expect(r.wagon.inventory.game_meat).toBe(0);
-    expect(r.wagon.inventory.berries).toBe(0);
-    expect(r.logs.length).toBe(2);
-  });
-});
-
-describe('applyNpcHeatSpoilage', () => {
-  it('non-heat weather → no-op', () => {
-    const w = fakeWagon({ id: 'a', inventory: { bacon: 50, salt_pork: 30 } });
-    const r = applyNpcHeatSpoilage(w, 'clear');
-    expect(r.wagon).toBe(w);
-    expect(r.log).toBeNull();
-  });
-
-  it('no bacon and no salt_pork → no-op even on heat', () => {
-    const w = fakeWagon({ id: 'a', inventory: { flour: 100 } });
-    const r = applyNpcHeatSpoilage(w, 'heat');
-    expect(r.wagon).toBe(w);
-    expect(r.log).toBeNull();
-  });
-
-  it('drops bacon + salt_pork at the player rates without bran barrel', () => {
-    const w = fakeWagon({
-      id: 'a',
-      inventory: { bacon: 50, salt_pork: 30 },
-      wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 1500, hasBranBarrel: false }
-    });
-    const r = applyNpcHeatSpoilage(w, 'heat');
-    // Engine applies Math.round so the salt_pork constant (1.5) lands at 2.
-    expect(r.wagon.inventory.bacon).toBe(50 - Math.round(BACON_HEAT_LB_PER_DAY));
-    expect(r.wagon.inventory.salt_pork).toBe(30 - Math.round(SALT_PORK_HEAT_LB_PER_DAY));
-    expect(r.log).toMatch(/heat/i);
-    expect(r.log).toMatch(/bacon/);
-    expect(r.log).toMatch(/salt pork/);
-  });
-
-  it('bran barrel halves the daily loss', () => {
-    const w = fakeWagon({
-      id: 'a',
-      inventory: { bacon: 50, salt_pork: 30 },
-      wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 1500, hasBranBarrel: true }
-    });
-    const r = applyNpcHeatSpoilage(w, 'heat');
-    const expectedBaconLoss = Math.round(BACON_HEAT_LB_PER_DAY * 0.5);
-    const expectedSaltPorkLoss = Math.round(SALT_PORK_HEAT_LB_PER_DAY * 0.5);
-    expect(r.wagon.inventory.bacon).toBe(50 - expectedBaconLoss);
-    expect(r.wagon.inventory.salt_pork).toBe(30 - expectedSaltPorkLoss);
-  });
-
-  it('floors loss at the held quantity (no negative inventory)', () => {
-    const w = fakeWagon({ id: 'a', inventory: { bacon: 1, salt_pork: 1 } });
-    const r = applyNpcHeatSpoilage(w, 'heat');
-    expect(r.wagon.inventory.bacon).toBe(0);
-    expect(r.wagon.inventory.salt_pork).toBe(0);
-  });
-});
+// #939b — applyNpcSpoilage + applyNpcHeatSpoilage parallel impls
+// removed. The mechanic now runs through the engine's `applySpoilage`
+// + `applyHeatSpoilage` via the wagon-synth helper inside
+// `tickNpcWagon`. The end-to-end tests below + the engine-side
+// spoilage suite cover the same behavior — the wagon-name suffix on
+// player news is now applied in `tickNpcWagon` after the engine
+// returns its `eventLog` deltas.
 
 describe('tickNpcWagon — spoilage wired into the daily pipeline', () => {
   it('rotted meat is gone before food consumption fires (no eating spoiled food)', () => {
