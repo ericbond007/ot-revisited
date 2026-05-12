@@ -38,7 +38,10 @@ interface SpoilRule {
   spoilText: (qty: number) => string;
 }
 
-const SPOIL_RULES: readonly SpoilRule[] = [
+/** Export so the #939 unified-tick synth helper can bridge the NPC's
+ *  typed `wagon.spoilDays[itemId]` map into the engine's
+ *  `flags._{x}SpoilDay` shape and back. */
+export const SPOIL_RULES: readonly SpoilRule[] = [
   {
     itemId: 'game_meat',
     flagKey: '_gameMeatSpoilDay',
