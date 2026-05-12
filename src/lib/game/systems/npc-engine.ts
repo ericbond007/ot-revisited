@@ -45,10 +45,12 @@ import { progressConditions } from './conditions';
 import { applyStarvation as applyEngineStarvation } from './starvation';
 import { tickOxen as tickEngineOxen, recoverOxenFatigue } from './oxen';
 import { tickWagon as tickEngineWagon, applyAxleGrease as applyEngineAxleGrease } from './wagon';
+import { applyDehydration as applyEngineDehydration } from './dehydration';
+import { rollDailyTheft } from './item-loss';
 import { hasLive } from '../professions/predicates';
 import { rollNpcEvent } from './npc-events';
-import { applyNpcDehydration } from './npc-water';
-import { rollNpcTheft } from './item-loss';
+// #939k — applyNpcDehydration + rollNpcTheft removed; engine versions
+// imported above (./dehydration + ./item-loss).
 import { applyNpcStormDamage } from './wagon';
 
 /** Inputs the NPC tick needs from the train's shared environment. */
@@ -432,13 +434,20 @@ export function tickNpcWagon(
   next = reapDead(next, ctx.day);
 
   // 6b. Dehydration HP/morale damage when keg=0 at end of tick (#303e).
-  // After reap so already-dead members don't take extra damage.
-  // Terrain mult: desert 1.5, forest 0.85, others 1.0 — mirrors player
-  // applyDehydration TERRAIN_MULT.
-  const terrainDryMult = ctx.terrain === 'desert' ? 1.5
-    : ctx.terrain === 'forest' ? 0.85
-    : 1.0;
-  next = applyNpcDehydration(next, terrainDryMult, ctx.day);
+  // #939k — engine `applyDehydration` via synth/project. Terrain
+  // multiplier is read from `state.location.terrain` against
+  // dehydration.ts TERRAIN_MULT table; flag bridge for
+  // `_dehydrationDays` from #941. Engine version has the same desert
+  // 1.5× / forest 0.85× shape the parallel impl used.
+  {
+    const env = trainEnv(ctx);
+    const synth = synthesizeWagonState(next, env);
+    const ticked = applyEngineDehydration(synth);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
 
   // 7. NPC auto-cannibalism (#288). When food=0 AND there's a fresh
   // adult corpse, the survivors take the body. Donner Party precedent.
@@ -448,13 +457,19 @@ export function tickNpcWagon(
   next = cannibalResult.wagon;
   if (cannibalResult.playerLog) playerLogs.push(cannibalResult.playerLog);
 
-  // 7b. Daily theft (#306 phase 2 NPC parity). Period: Bryant 1846
-  // documents overnight theft hitting whole companies. Same rate as
-  // player + train share-watch halving — already 0.0025/day baked in
-  // since NPCs are always in the player's train when ticking.
-  const theftResult = rollNpcTheft(next, rng, ctx.day);
-  next = theftResult.wagon;
-  if (theftResult.playerLog) playerLogs.push(theftResult.playerLog);
+  // 7b. Daily theft (#306 phase 2 NPC parity).
+  // #939k — engine `rollDailyTheft` via synth/project. Reads
+  // `state.wagonTrain` for share-watch halving (already 0.0025/day
+  // when in a train — and the SYNTH_TRAIN_STUB always provides one).
+  {
+    const env = trainEnv(ctx);
+    const synth = synthesizeWagonState(next, env);
+    const result = rollDailyTheft(synth, rng);
+    next = projectWagonDeltas(result.state, next);
+    for (const entry of result.state.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
 
   // 8. Outcome.
   next = updateOutcome(next);

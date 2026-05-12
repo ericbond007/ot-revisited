@@ -6,10 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateTrain } from '../src/lib/game/content/trains';
 import { tickNpcWagon, type NpcTickContext } from '../src/lib/game/systems/npc-engine';
-import {
-  applyNpcDehydration,
-  npcWaterConsumedToday
-} from '../src/lib/game/systems/npc-water';
+import { npcWaterConsumedToday } from '../src/lib/game/systems/npc-water';
 import { applyTrainWaterPool, joinTrain } from '../src/lib/game/systems/wagon-train';
 import { rest } from '../src/lib/game/actions/rest';
 import { createInitialState } from '../src/lib/game/engine';
@@ -92,53 +89,9 @@ describe('#303e — npcWaterConsumedToday', () => {
 // block below + the engine-side consumption test suite cover the same
 // behavior.
 
-describe('#303e — applyNpcDehydration', () => {
-  it('no-op when water > 0', () => {
-    const wagon = freshTrain().companions[0];
-    const result = applyNpcDehydration(wagon, 1.0, 1);
-    expect(result).toBe(wagon);
-  });
-
-  it('day 1 dry: -10 morale, no HP loss', () => {
-    const base = freshTrain().companions[0];
-    const wagon: NpcWagonState = { ...base, water: 0 };
-    const moraleBefore = wagon.morale;
-    const hpBefore = wagon.party[0].health;
-    const result = applyNpcDehydration(wagon, 1.0, 1);
-    expect(result.dryDays).toBe(1);
-    expect(result.morale).toBe(Math.max(0, moraleBefore - 10));
-    expect(result.party[0].health).toBe(hpBefore);
-  });
-
-  it('day 2 dry: -10 morale, -10 HP per adult, -7 HP per child', () => {
-    const base = freshTrain().companions[0];
-    const wagon: NpcWagonState = { ...base, water: 0, dryDays: 1 };
-    const moraleBefore = wagon.morale;
-    const result = applyNpcDehydration(wagon, 1.0, 2);
-    expect(result.dryDays).toBe(2);
-    expect(result.morale).toBe(Math.max(0, moraleBefore - 10));
-    const adult = result.party.find((m) => m.kind === 'adult' && !m.dead)!;
-    const adultBefore = wagon.party.find((m) => m.id === adult.id)!.health;
-    expect(adult.health).toBe(Math.max(0, adultBefore - 10));
-  });
-
-  it('desert terrain mult amplifies damage 1.5x', () => {
-    const base = freshTrain().companions[0];
-    const wagon: NpcWagonState = { ...base, water: 0, dryDays: 1 };
-    const result = applyNpcDehydration(wagon, 1.5, 2);
-    const adult = result.party.find((m) => m.kind === 'adult' && !m.dead)!;
-    const adultBefore = wagon.party.find((m) => m.id === adult.id)!.health;
-    // 10 base * 1.5 desert = 15
-    expect(adultBefore - adult.health).toBe(15);
-  });
-
-  it('wet day after dry streak resets dryDays to 0', () => {
-    const base = freshTrain().companions[0];
-    const wagon: NpcWagonState = { ...base, water: 5, dryDays: 3 };
-    const result = applyNpcDehydration(wagon, 1.0, 1);
-    expect(result.dryDays).toBe(0);
-  });
-});
+// #939k — applyNpcDehydration parallel impl removed. NPC dehydration
+// now flows through engine `applyDehydration` via wagon-synth; the
+// engine-side dehydration test suite covers the dry-day curve.
 
 describe('#303e — tickNpcWagon water integration', () => {
   it('drains keg through normal tick', () => {

@@ -401,31 +401,12 @@ describe('#306 phase 2 — rollDailyTheft', () => {
     }
   });
 
-  it('NPC theft mirror — fires across many trials, bubbles player log', async () => {
-    const { rollNpcTheft } = await import('../src/lib/game/systems/item-loss');
-    const { generateTrain } = await import('../src/lib/game/content/trains');
-    const train = generateTrain('npc-theft', 1, 'independence_mo', makeRng('npc'), { fresh: true });
-    let foundTheft = false;
-    for (let i = 0; i < 2000; i++) {
-      const result = rollNpcTheft(train.companions[0], makeRng(`nt${i}`), 30);
-      if (result.playerLog) {
-        expect(result.playerLog).toMatch(/lost.*overnight theft/i);
-        foundTheft = true;
-        break;
-      }
-    }
-    expect(foundTheft).toBe(true);
-  });
-
-  it('NPC theft skips wiped/arrived/stranded wagons', async () => {
-    const { rollNpcTheft } = await import('../src/lib/game/systems/item-loss');
-    const { generateTrain } = await import('../src/lib/game/content/trains');
-    const train = generateTrain('npc-theft-skip', 1, 'independence_mo', makeRng('npc'), { fresh: true });
-    const wagon = { ...train.companions[0], outcome: 'wiped' as const };
-    const result = rollNpcTheft(wagon, makeRng('skip'), 30);
-    expect(result.wagon).toBe(wagon);
-    expect(result.playerLog).toBeNull();
-  });
+  // #939k — `rollNpcTheft` parallel impl removed. NPC theft now flows
+  // through engine `rollDailyTheft` via wagon-synth (see theft block in
+  // `tickNpcWagon`). The engine-side `rollDailyTheft` describe block
+  // above covers the player-and-NPC behavior together; wiped/arrived/
+  // stranded skip is enforced by `tickNpcWagon` outcome gating rather
+  // than the theft fn itself.
 });
 
 describe('#306 — invariants', () => {
