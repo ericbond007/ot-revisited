@@ -50,36 +50,8 @@ export function npcWaterConsumedToday(wagon: NpcWagonState, weather: Weather | u
 // the full tick. `applyNpcDehydration` kept — runs later in the
 // pipeline alongside engine's `applyDehydration` analog.
 
-/** Apply dehydration HP + morale damage when the keg is empty.
- *  Increments `wagon.dryDays` on dry tick, resets to 0 on a wet day.
- *  Terrain mult applied at the call site since NpcTickContext carries it. */
-export function applyNpcDehydration(
-  wagon: NpcWagonState,
-  terrainMult: number,
-  day: number
-): NpcWagonState {
-  const dry = wagon.water <= 0;
-
-  if (!dry) {
-    return wagon.dryDays === 0 ? wagon : { ...wagon, dryDays: 0 };
-  }
-
-  const days = wagon.dryDays + 1;
-  const hpLoss = Math.round(healthHit(days) * terrainMult);
-  const moraleLoss = Math.round(moraleHit(days) * terrainMult);
-  const party = wagon.party.map((m) => {
-    if (m.dead) return m;
-    const mult = m.kind === 'child' ? 0.7 : 1.0;
-    const loss = Math.round(hpLoss * mult);
-    return { ...m, health: Math.max(0, m.health - loss) };
-  });
-  return {
-    ...wagon,
-    party,
-    morale: Math.max(0, wagon.morale - moraleLoss),
-    dryDays: days,
-    eventLog: hpLoss > 0 || moraleLoss > 0
-      ? [...wagon.eventLog, { day, text: `Day ${days} without water. ${wagon.name}'s wagon is failing.` }]
-      : wagon.eventLog
-  };
-}
+// #939k — applyNpcDehydration parallel impl removed. NPC dehydration
+// now flows through engine `applyDehydration` (dehydration.ts) via
+// wagon-synth. `wagon.dryDays` round-trips via the flag bridge
+// (#941). Health/morale curve constants kept for any in-flight
+// consumers + the dehydration test suite.
