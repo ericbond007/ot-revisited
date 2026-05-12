@@ -74,24 +74,38 @@ function npcFlagsFromWagon(wagon: NpcWagonState): GameState['flags'] {
 }
 
 /** Unpack a ticked GameState's `flags` blob back into the NPC's typed
- *  fields. Inverse of `npcFlagsFromWagon`. */
+ *  fields. Inverse of `npcFlagsFromWagon`.
+ *
+ *  #939a-3 — `spoilDays` always reflects exactly what's in ticked.flags
+ *  (which may be `{}` after engine clearance). The engine reads/writes
+ *  every spoil-rule key every tick, so missing = cleared, not
+ *  "untouched." The previous `anySpoil ? spoilDays : original.spoilDays`
+ *  fallback would leak stale clocks when the engine spoiled the last
+ *  pending pile.
+ *
+ *  `dryDays` falls back to 0 because the engine deletes
+ *  `_dehydrationDays` on rehydration (correct semantic: missing means
+ *  rehydrated).
+ *
+ *  `greaseMiles` falls back to `original.greaseMiles` because the
+ *  engine never deletes `_greaseSinceLastDose` — only resets it to 0
+ *  after applying a dose. Missing = engine didn't run on grease this
+ *  tick, so preserve the NPC's current value. */
 function npcFieldsFromFlags(
   ticked: GameState,
   original: NpcWagonState
 ): Pick<NpcWagonState, 'spoilDays' | 'dryDays' | 'greaseMiles'> {
   const spoilDays: Record<string, number> = {};
-  let anySpoil = false;
   for (const rule of SPOIL_RULES) {
     const v = ticked.flags[rule.flagKey];
     if (typeof v === 'number') {
       spoilDays[rule.itemId] = v;
-      anySpoil = true;
     }
   }
   const dry = ticked.flags[FLAG_DEHYDRATION_DAYS];
   const grease = ticked.flags[FLAG_GREASE_SINCE_LAST_DOSE];
   return {
-    spoilDays: anySpoil ? spoilDays : original.spoilDays,
+    spoilDays,
     dryDays: typeof dry === 'number' ? dry : 0,
     greaseMiles: typeof grease === 'number' ? grease : original.greaseMiles
   };
