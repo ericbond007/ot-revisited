@@ -170,6 +170,7 @@ export function advanceTrain(
   const ctx: NpcTickContext = {
     day: prepped.day,
     date: prepped.date, // #937 — for persona.shouldRest Sunday check
+    location: prepped.location, // #939b — for wagon-synth env
     traveled,
     pace: prepped.pace,
     terrain: prepped.location.terrain,
