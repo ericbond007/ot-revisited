@@ -17,7 +17,16 @@ function game(over: Partial<GameState> = {}): GameState {
     companions: [{ name: 'C', profession: 'doctor' }],
     startDate: { year: 1849, month: 6, day: 15 }
   });
-  return { ...s, cash: 200, ...over };
+  // Position at Fort Laramie (cum mi 702) — next supply is Caspar at
+  // 810, only a 108-mi gap. Below the 150/200 bigGapMiles triggers
+  // for #934 ox-swap and #935 repair, so these tests isolate the
+  // persona's BASE thresholds (not the gap-aware boost).
+  return {
+    ...s,
+    location: { ...s.location, milesTraveled: 702 },
+    cash: 200,
+    ...over
+  };
 }
 
 describe('#303c — Persona.pickRepairBudget', () => {
@@ -105,6 +114,31 @@ describe('#303c — Persona.pickRepairBudget', () => {
     expect(cautiousPersona.pickRepairBudget(s, robidoux)).toBeGreaterThan(0);
     expect(cautiousPersona.pickRepairBudget(s, kearny)).toBeGreaterThan(0);
   });
+
+  // #935 — at a big-gap post (Kearny, 317 mi to Robidoux), all three
+  // personas accept higher wagon condition before triggering repair.
+  // Pre-#935: balanced cond=70 → skip (>60). Post-#935: trigger 75
+  // (60 + 15 boost) → cond=70 < 75 → repair. Same for cautious 80
+  // (>75 → would skip) → boosted trigger 85 → repair. Aggressive
+  // cond=50 above base 40 but below boosted 55 → repair.
+  it('#935 — at Fort Kearny (317-mi gap ahead), all 3 personas repair at higher condition than base', () => {
+    const atKearny = (cond: number) => game({
+      location: { ...game().location, milesTraveled: 335 },
+      wagon: { ...game().wagon, condition: cond }
+    });
+    expect(cautiousPersona.pickRepairBudget(atKearny(80), kearny)).toBeGreaterThan(0);
+    expect(balancedPersona.pickRepairBudget(atKearny(70), kearny)).toBeGreaterThan(0);
+    expect(aggressivePersona.pickRepairBudget(atKearny(50), kearny)).toBeGreaterThan(0);
+  });
+
+  it('#935 — at a small-gap post (Laramie, 108 mi to Caspar), gap-aware boost does NOT fire', () => {
+    // Laramie→Caspar is 108 mi, below all three personas' bigGapMiles.
+    // game()'s default position IS Laramie, so condition values that
+    // sit ABOVE base trigger should still skip.
+    expect(cautiousPersona.pickRepairBudget(game({ wagon: { ...game().wagon, condition: 80 } }), laramie)).toBe(0);
+    expect(balancedPersona.pickRepairBudget(game({ wagon: { ...game().wagon, condition: 65 } }), laramie)).toBe(0);
+    expect(aggressivePersona.pickRepairBudget(game({ wagon: { ...game().wagon, condition: 50 } }), laramie)).toBe(0);
+  });
 });
 
 describe('#303c — Persona.pickFoodRestockOpts', () => {
@@ -112,8 +146,12 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
   // supply post at the persona's expected pace × safety factor. At
   // Independence (mi 0) the next post is Hollenberg Ranch at mi 215.
   // Cautious: ceil(215/8 × 1.5) = 40 days; balanced: 26; aggressive: 18.
+  // (We override `game()`'s default Laramie position back to mi 0 here
+  // because these tests explicitly check the Independence numbers.)
+  const indep = () => game({ location: { ...game().location, milesTraveled: 0 } });
+
   it('cautious: gap-aware floor (40 at Independence) + saleratus overstock per #909', () => {
-    expect(cautiousPersona.pickFoodRestockOpts(game())).toEqual({
+    expect(cautiousPersona.pickFoodRestockOpts(indep())).toEqual({
       daysFloor: 40,
       daysCap: 100,
       saleratusOverstock: true
@@ -121,11 +159,11 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
   });
 
   it('balanced: gap-aware floor (26 at Independence), no saleratus overstock', () => {
-    expect(balancedPersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 26, daysCap: 61 });
+    expect(balancedPersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 26, daysCap: 61 });
   });
 
   it('aggressive: gap-aware floor (18 at Independence), no saleratus overstock', () => {
-    expect(aggressivePersona.pickFoodRestockOpts(game())).toEqual({ daysFloor: 18, daysCap: 48 });
+    expect(aggressivePersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 18, daysCap: 48 });
   });
 
   // #932 — exercise the big gap at Fort Kearny (mi 335). Next post

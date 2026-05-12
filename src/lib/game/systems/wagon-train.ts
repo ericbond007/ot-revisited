@@ -629,10 +629,13 @@ export function applyNpcPostRestock(state: GameState): GameState {
     // wagon (for condition) and cash + day (chaos pseudo-rng); widen
     // if a future override touches more.
     if (offersBlacksmith) {
+      // #935 — include `location` so gap-aware pickRepairBudget sees
+      // the upcoming supply gap.
       const repairFauxState = {
         wagon: next.wagon,
         cash: next.cash,
-        day: state.day
+        day: state.day,
+        location: state.location
       } as unknown as GameState;
       const budget = persona.pickRepairBudget(repairFauxState, here);
       if (budget > 0) {
