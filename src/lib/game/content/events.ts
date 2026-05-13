@@ -68,6 +68,10 @@ export interface GameEvent {
   // `_pendingEventBody`, prepare wins. A dev-mode console warning
   // fires in `prepareEventForSurfacing` if an event sets both.
   prepare?: (state: GameState, rng: Rng) => GameState;
+  /** #939i — when true, this event is excluded from `NPC_ELIGIBLE_EVENTS`
+   *  even if its category is in the NPC allow-list. Use for events whose
+   *  `apply()` reads player-only state the wagon-synth doesn't bridge. */
+  npcSkip?: boolean;
 }
 
 // The full registry is built up in Tasks 2-5. Task 1 ships an empty-or-placeholder
@@ -1639,3 +1643,17 @@ EVENTS.push(...NOON_EVENTS);
 // per-event sub-gates (Sunday + preacher, fiddle in inventory, etc.).
 import { TRAIN_EVENTS } from './train-events';
 EVENTS.push(...TRAIN_EVENTS);
+
+// #939i — NPC event pool. Engine events run on NPC wagons via wagon-
+// synth in `tickNpcWagon`. Allow-list by category: wagon, encounter,
+// personal, health, finds. Weather (train-shared) and historical
+// (one-shot named) intentionally excluded. Per-event `npcSkip: true`
+// further opts out events whose `apply()` reads state the synth
+// doesn't bridge.
+const NPC_ALLOWED_CATEGORIES: ReadonlySet<EventCategory> = new Set([
+  'wagon', 'encounter', 'personal', 'health', 'finds'
+]);
+
+export const NPC_ELIGIBLE_EVENTS: readonly GameEvent[] = EVENTS.filter(
+  (e) => NPC_ALLOWED_CATEGORIES.has(e.category) && e.npcSkip !== true
+);
