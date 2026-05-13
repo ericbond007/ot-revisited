@@ -35,7 +35,13 @@ function effectiveWeight(ev: GameEvent, state: GameState): number {
   return w;
 }
 
-const BASE_FIRE_CHANCE = 0.30;
+// #161 — event fire chance dropped 0.30 → 0.20 per May-12 audit.
+// At 0.30, bots burned ~66 days/run on event handling (every event
+// is a full day off-trail). At 0.20 the expected event load is ~44
+// days, freeing ~22 travel days. With the 2195-mi trail and ~15
+// effective mi/day across mixed terrain that's +330 miles of head-
+// room — enough for arrival to become reachable on good runs.
+const BASE_FIRE_CHANCE = 0.20;
 
 export interface RollOptions {
   pool?: readonly GameEvent[];   // default: global EVENTS

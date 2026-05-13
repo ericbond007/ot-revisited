@@ -188,12 +188,12 @@ describe('Doctor (#154)', () => {
     const noDoc = baseState(['carpenter']);
     noDoc.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
     const after1 = progressConditions(noDoc, makeRng('d:1'));
-    expect(after1.party[0].health).toBe(90); // 100 - 10
+    expect(after1.party[0].health).toBe(93); // #161: 100 - 7
 
     const doc = baseState(['doctor']);
     doc.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
     const after2 = progressConditions(doc, makeRng('d:2'));
-    expect(after2.party[0].health).toBe(93); // 100 - round(10 * 0.7) = 93
+    expect(after2.party[0].health).toBe(95); // #161: 100 - round(7 * 0.7) = 95
   });
 });
 

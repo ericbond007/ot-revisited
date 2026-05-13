@@ -32,8 +32,9 @@ describe('tickDayPausable', () => {
   });
 
   it('returns pendingEvent when an event fires', () => {
-    // Use a seed that produces an event on day 1.
-    const seeds = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    // #161 — fire chance dropped 0.30 → 0.20, so the pool is wider now.
+    // P(no event across 30 seeds) ≈ 0.001 — comfortable safety margin.
+    const seeds = Array.from({ length: 30 }, (_, i) => `seed-${i}`);
     for (const seed of seeds) {
       const result = tickDayPausable(newGame(seed));
       if (result.pendingEvent) {
@@ -44,7 +45,7 @@ describe('tickDayPausable', () => {
         return;
       }
     }
-    throw new Error('Expected at least one event to fire across 8 seeds');
+    throw new Error('Expected at least one event to fire across 30 seeds');
   });
 
   it('applyPendingChoice applies the choice and advances the day', () => {

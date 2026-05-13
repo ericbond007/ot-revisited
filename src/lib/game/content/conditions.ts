@@ -12,10 +12,16 @@ export interface ConditionMeta {
 }
 
 export const CONDITIONS: Record<ConditionId, ConditionMeta> = {
+  // #161 — disease damage rebalance per May-12 audit. The original
+  // rates (cholera -10/day, typhoid -5) made conditions un-survivable
+  // without near-perfect treatment access, which drove the bot's
+  // rest-loop and kept arrival % at 0. New rates keep cholera as the
+  // most dangerous (~3× dysentery) but allow a fed/watered party with
+  // 2-3 days of rest to recover.
   cholera: {
     id: 'cholera',
     name: 'Cholera',
-    dailyHealthDelta: -10,
+    dailyHealthDelta: -7,
     contagious: true,
     treatmentItems: ['quinine', 'dovers_powder', 'camphor']
   },
@@ -28,7 +34,7 @@ export const CONDITIONS: Record<ConditionId, ConditionMeta> = {
   typhoid: {
     id: 'typhoid',
     name: 'Typhoid',
-    dailyHealthDelta: -5,
+    dailyHealthDelta: -4,
     contagious: true,
     treatmentItems: ['quinine', 'dovers_powder']
   },
@@ -54,7 +60,7 @@ export const CONDITIONS: Record<ConditionId, ConditionMeta> = {
   snakebite: {
     id: 'snakebite',
     name: 'Snakebite',
-    dailyHealthDelta: -5,
+    dailyHealthDelta: -4,
     immediateDamage: 15,
     treatmentItems: ['bandages', 'laudanum', 'hartshorn']
   },
