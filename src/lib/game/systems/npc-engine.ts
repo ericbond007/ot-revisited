@@ -47,7 +47,11 @@ import { tickWagon as tickEngineWagon, applyAxleGrease as applyEngineAxleGrease 
 import { applyDehydration as applyEngineDehydration } from './dehydration';
 import { reapDead as reapDeadEngine } from './death';
 import { rollDailyTheft } from './item-loss';
-import { rollNpcEvent } from './npc-events';
+// #939i — `rollNpcEvent` parallel impl removed. NPC event roll now
+// flows through engine `rollEvent` + `resolveEvent` over
+// NPC_ELIGIBLE_EVENTS via the wagon-synth bridge.
+import { rollEvent, resolveEvent } from './events';
+import { NPC_ELIGIBLE_EVENTS } from '../content/events';
 // #939k — applyNpcDehydration + rollNpcTheft removed; engine versions
 // imported above (./dehydration + ./item-loss).
 // #939m — local reapDead + updateOutcome parallel impls removed; engine
@@ -116,6 +120,11 @@ function trainEnv(ctx: NpcTickContext): TrainEnv {
 // #939c — RATIONS_LB_PER_EATER table removed. Consumption now flows
 // through engine `applyDailyConsumption` which has the real per-adult /
 // per-child / pace / weather / profession math (see consumption.ts:84).
+
+/** #939i — per-NPC-per-day event fire chance. Preserves the previous
+ *  parallel impl's 0.06 rate so a 10-wagon train surfaces ~0.6
+ *  events/day. The wider 31-event pool brings variety, not volume. */
+const NPC_FIRE_CHANCE = 0.06;
 
 // Food draw priority — game meat first (spoils), then staples.
 const FOOD_DRAW_ORDER = [
@@ -426,12 +435,38 @@ export function tickNpcWagon(
   next = stormResult.wagon;
   if (stormResult.playerLog) playerLogs.push(stormResult.playerLog);
 
-  // 5c. NPC event roll (#280c). May damage wagon, sicken a member,
-  // kill an ox, etc. Result bubbles up as a player news entry.
-  const eventResult = rollNpcEvent(next, ctx, rng);
-  if (eventResult) {
-    next = eventResult.wagon;
-    if (eventResult.playerLog) playerLogs.push(eventResult.playerLog);
+  // 5c. #939i — NPC event roll via engine event bank (replaces the
+  // rollNpcEvent parallel impl). Synthesize a per-wagon GameState,
+  // roll from NPC_ELIGIBLE_EVENTS at the per-wagon fire chance, auto-
+  // resolve via persona.pickNpcEventChoice → isDefault → first, project
+  // deltas back, suffix log entries with the wagon name.
+  {
+    const synth = synthesizeWagonState(next, env);
+    const event = rollEvent(synth, rng, {
+      pool: NPC_ELIGIBLE_EVENTS,
+      fireChance: NPC_FIRE_CHANCE
+    });
+    if (event) {
+      const personaChoice = persona.pickNpcEventChoice(
+        synth, event.id, event.choices.map((c) => c.id), rng
+      );
+      const fallbackId = event.choices.find((c) => c.isDefault)?.id ?? event.choices[0]?.id;
+      const choiceId = personaChoice ?? fallbackId;
+      if (choiceId) {
+        let ticked: GameState;
+        try {
+          ticked = resolveEvent(synth, event, choiceId, rng);
+        } catch {
+          // pickNpcEventChoice returned an unknown id — fall back.
+          if (!fallbackId) throw new Error(`#939i event ${event.id} has no resolvable choice`);
+          ticked = resolveEvent(synth, event, fallbackId, rng);
+        }
+        next = projectWagonDeltas(ticked, next);
+        for (const entry of ticked.eventLog) {
+          playerLogs.push(`${entry.text} (${next.name})`);
+        }
+      }
+    }
   }
 
   // 6. Death reaping (catches event-induced deaths too — e.g. an ox
