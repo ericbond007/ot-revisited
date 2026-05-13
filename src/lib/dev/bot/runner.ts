@@ -248,19 +248,22 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
 
       if (persona.shouldTradeAtPost(s, here, rng)) {
         const buys = buildBotShoppingList(s, here, persona);
-        // Conservative cash check — assume average $1.50/unit; trade()
-        // will refuse if the actual total exceeds cash. v8 lowered
-        // the gate from 0.5 to 0.25 because the buy list grew (food
-        // caps doubled, dysentery meds added) and a 0.5 gate was
-        // making the bot skip trades on partial cash and starve later.
-        const cashCap = buys.reduce((sum, b) => sum + b.qty * 1.5, 0);
-        if (buys.length > 0 && s.cash >= cashCap * 0.25) {
+        // #963 — removed the 0.25× cashCap gate that blocked trades
+        // when the buy list grew large. The May-13 trace audit showed
+        // bots arriving at Fort Hall with $115 cash + a gap-aware
+        // wishlist of ~1100 lb flour ($1100+ at post prices), failing
+        // the 0.25× gate ($412), then skipping the trade ENTIRELY and
+        // starving on the Boise → Columbia leg. New behavior: always
+        // attempt the trade if shouldTradeAtPost said yes; if it
+        // throws (cash short for full list), the cull-from-tail loop
+        // inside `trade()` drops items until cost fits, OR fall back
+        // to food-only as before.
+        if (buys.length > 0) {
           try {
             s = trade(s, { buys });
             stats.decisionsMade += 1;
           } catch {
-            // Trade failed (cash, stock, etc.) — try a smaller buy
-            // (food only) as a fallback.
+            // Trade refused full list — try food-only fallback.
             const fallback = buys.filter((b) =>
               b.item === 'flour' || b.item === 'bacon' || b.item === 'beans'
               || b.item === 'jerky'
@@ -270,7 +273,27 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
                 s = trade(s, { buys: fallback });
                 stats.decisionsMade += 1;
               } catch {
-                // Even the fallback failed — skip silently.
+                // Even the fallback failed — last resort: buy only
+                // flour with whatever cash remains. trade() will cull
+                // qty down to fit (#287a NPC pattern).
+                // #963 — flour fallback pared down to fit cash. Period
+                // emigrants at the last forts (Hall, Bridger) bought
+                // whatever flour their dwindling coin could afford —
+                // they didn't walk away because they couldn't afford a
+                // full barrel. Roughly $0.30-0.50/lb at post markup;
+                // use $0.50 to be conservative and divide by post mult.
+                const flourOnly = buys.find((b) => b.item === 'flour');
+                if (flourOnly && s.cash >= 5) {
+                  const postMult = here.priceMultiplier ?? 1.0;
+                  const unitCost = 0.5 * postMult;
+                  const affordableQty = Math.max(1, Math.floor((s.cash - 2) / unitCost));
+                  try {
+                    s = trade(s, { buys: [{ item: 'flour', qty: Math.min(flourOnly.qty, affordableQty) }] });
+                    stats.decisionsMade += 1;
+                  } catch {
+                    // Truly out of options — skip.
+                  }
+                }
               }
             }
           }

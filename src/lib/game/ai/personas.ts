@@ -31,17 +31,18 @@ import { getWagon } from '../content/wagons';
 import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
-import { gapBufferDays, nextSupplyDistance } from './foresight';
+import { gapBufferDays, nextSupplyDistance, effectiveGapMiles } from './foresight';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
  *  to convert "days of food needed" into a pound threshold. */
 const RAW_BASKET_LB_PER_DAY = 1.5;
 
-/** #934 — Project the persona's expected days-to-next-supply-post.
- *  The single primitive every gap-aware decision builds on. */
+/** #934 + #963 — Project the persona's expected days for food
+ *  planning. Uses `effectiveGapMiles` so late-trail decisions see
+ *  the whole remaining run, not just the next post. */
 function projectGapDays(state: GameState, fs: PersonaForesight): number {
-  return gapBufferDays(nextSupplyDistance(state), {
+  return gapBufferDays(effectiveGapMiles(state), {
     paceMiPerDay: fs.paceMiPerDay,
     safetyFactor: fs.safetyFactor,
     minDays: 0
