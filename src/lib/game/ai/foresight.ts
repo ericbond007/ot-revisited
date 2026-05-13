@@ -39,6 +39,46 @@ export function nextSupplyDistance(state: GameState): number {
   return next ? next.cum - here : 0;
 }
 
+/** Miles from the wagon's current position to the trail end (Oregon
+ *  City). Used by `effectiveGapMiles` so back-half decisions look
+ *  past the next supply post when provisioning for the whole
+ *  remaining run. */
+export function milesToEnd(state: GameState): number {
+  const end = CUM_MILES[CUM_MILES.length - 1];
+  return Math.max(0, end.cum - state.location.milesTraveled);
+}
+
+/** #963 — Effective gap distance for late-trail provisioning. The
+ *  next-supply-post helper is myopic: at Fort Hall (mile ~1262) it
+ *  returns the 289-mi gap to Boise even though the bot then faces
+ *  another 644 mi of supply-thin trail to Oregon City. Trace audit
+ *  showed bots leaving Hall provisioned for the next 289 miles, then
+ *  starving between Boise and the Columbia.
+ *
+ *  Fix: in the back half of the trail, blend next-supply gap with
+ *  miles-to-end so the bot provisions for the whole remaining run at
+ *  the last serious resupply opportunity. Curve:
+ *    - milesRemaining ≥ 1100: pure next-supply (plenty of posts ahead)
+ *    - milesRemaining 700-1100: blend toward end (approaching Hall,
+ *      start padding)
+ *    - milesRemaining < 700: pure miles-to-end (back half — provision
+ *      for the rest of the trail)
+ *
+ *  Period anchor: Bryant 1846 + Royce 1849 describe deliberate over-
+ *  stocking at Bridger/Hall because the diaries knew post density past
+ *  those forts was thin. Carpenter 1857 explicit: "leave Hall heavy
+ *  or arrive hungry." */
+export function effectiveGapMiles(state: GameState): number {
+  const next = nextSupplyDistance(state);
+  const end = milesToEnd(state);
+  if (end >= 1100) return next;
+  if (end >= 700) {
+    const t = (1100 - end) / 400;  // 0 at 1100, 1 at 700
+    return Math.max(next, Math.round(next + (end - next) * t));
+  }
+  return Math.max(next, end);
+}
+
 /** Convert a mileage gap into a days-of-food buffer at the persona's
  *  expected pace. `safetyFactor` pads for slower-than-expected days
  *  (mud, sickness, weather): cautious 1.5×, balanced 1.2×, aggressive
