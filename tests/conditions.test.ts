@@ -40,16 +40,16 @@ describe('progressConditions', () => {
     expect(next.party[1].health).toBe(100);
   });
 
-  it('applies daily delta to each condition', () => {
+  it('applies daily delta to each condition (#161: cholera -7)', () => {
     const s = newGame();
     s.party[0].conditions = [{ id: 'cholera', daysSinceOnset: 0 }];
     const rng = makeRng('t:1');
     const next = progressConditions(s, rng);
-    expect(next.party[0].health).toBe(90);
+    expect(next.party[0].health).toBe(93);
     expect(next.party[0].conditions[0].daysSinceOnset).toBe(1);
   });
 
-  it('stacks multiple conditions on the same member', () => {
+  it('stacks multiple conditions on the same member (#161: cholera -7 + dysentery -3)', () => {
     const s = newGame();
     s.party[0].conditions = [
       { id: 'cholera', daysSinceOnset: 0 },
@@ -57,7 +57,7 @@ describe('progressConditions', () => {
     ];
     const rng = makeRng('t:1');
     const next = progressConditions(s, rng);
-    expect(next.party[0].health).toBe(87);
+    expect(next.party[0].health).toBe(90);
   });
 
   it('does not drop health below 0', () => {
@@ -114,8 +114,9 @@ describe('progressConditions', () => {
     withDoctor.inventory = {};
     const docAfter = progressConditions(withDoctor, makeRng('t:d'));
 
-    // Cholera = -10/day. Without doctor: 100→90. With doctor: 100→93 (-7 rounded).
-    expect(noDocAfter.party[0].health).toBe(90);
-    expect(docAfter.party[0].health).toBe(93);
+    // #161 — cholera rebalanced from -10 to -7/day. Without doctor:
+    // 100→93. With doctor (0.7× relief): 100→95 (-5 rounded).
+    expect(noDocAfter.party[0].health).toBe(93);
+    expect(docAfter.party[0].health).toBe(95);
   });
 });

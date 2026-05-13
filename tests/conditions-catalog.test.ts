@@ -23,9 +23,9 @@ describe('condition catalog', () => {
     }
   });
 
-  it('cholera deals -10 / day and is contagious', () => {
+  it('cholera deals -7 / day and is contagious (#161 rebalance)', () => {
     const c = getCondition('cholera');
-    expect(c.dailyHealthDelta).toBe(-10);
+    expect(c.dailyHealthDelta).toBe(-7);
     expect(c.contagious).toBe(true);
   });
 
@@ -33,10 +33,10 @@ describe('condition catalog', () => {
     expect(getCondition('dysentery').dailyHealthDelta).toBe(-3);
   });
 
-  it('snakebite has immediate shock + daily drip', () => {
+  it('snakebite has immediate shock + daily drip (#161 -5 → -4)', () => {
     const c = getCondition('snakebite');
     expect(c.immediateDamage).toBe(15);
-    expect(c.dailyHealthDelta).toBe(-5);
+    expect(c.dailyHealthDelta).toBe(-4);
   });
 
   it('exhaustion also deals morale damage', () => {
