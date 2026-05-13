@@ -534,6 +534,12 @@ export function runBot(opts: BotRunOpts): BotRunReport {
   trace('START');
 
   let dayCount = 0;
+  // #161 — consecutive-rest cap explored in the May-12 audit branch
+  // (cap=2 and cap=3 both swung wipe rate 22 → 95-100%). The cap idea
+  // is preserved here for future tuning but kept disabled: it denies
+  // recovery time mid-cholera, and bots that can't rest die. A safer
+  // re-introduction would gate the cap on "HP is recovering" rather
+  // than blanket day-count.
   while (!state.completed && dayCount < maxDays) {
     dayCount += 1;
     const dayBefore = state.day;
