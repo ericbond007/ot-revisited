@@ -22,6 +22,7 @@ import { applyDairy, applyButterChurn } from './systems/dairy';
 import { isSunday } from './utils/calendar';
 import { hasLivePreacher } from './professions/predicates';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
+import { applyTravelDayRecovery } from './systems/travel-recovery';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
@@ -167,6 +168,12 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = tickOxen(s, rng);
   s = tickWagon(s, rng);
   s = adjustMorale(s, rng);
+  // #161 — light passive HP recovery on travel days. Counters the
+  // rest-loop the May-12 bot audit surfaced: healthy members regain
+  // +1 HP/day while traveling so they don't drop below shouldRest
+  // thresholds purely from event/condition wear. Skipped on fast /
+  // grueling pace and at morale < 25.
+  s = applyTravelDayRecovery(s);
   s = applyHolidays(s);
 
   // Snapshot which landmark we'd already passed before today's travel —
