@@ -48,10 +48,42 @@ function projectGapDays(state: GameState, fs: PersonaForesight): number {
   });
 }
 
+/** Total trail miles (Independence → Oregon City). See
+ *  `content/landmarks.ts` — sum of milesFromPrevious. Used by
+ *  #963 trail-progress scaling on food restocks. */
+const TOTAL_TRAIL_MI = 2195;
+
+/** #963 — Trail-progress multiplier on food restock cap.
+ *
+ *  Initial framing: drop early-trail caps to save cash for late
+ *  posts. Tested 0.65×/0.85×/1.0× tier — sweep showed miles DOWN
+ *  ~80-130 because the bot was under-stocking food at early posts
+ *  (where it's cheapest) and reaching mid-trail with less buffer.
+ *
+ *  Revised framing: front-load at early posts (where food is
+ *  cheapest), front-line the late ones. Period reality: emigrants
+ *  who outfitted lavishly at Independence then ran lean at the forts
+ *  fared better than those who tried to skim early. Bryant 1846:
+ *  "We came out of St. Louis heavy and arrived at Fort Bridger
+ *  light, by design — every pound of flour cost double the further
+ *  west we went."
+ *
+ *  Below 700 mi remaining = late trail, 1.3× (last shot, fill the wagon).
+ *  700-1500 mi remaining = mid trail, 1.0×.
+ *  >1500 mi remaining = early trail, 1.0× (default). */
+function trailProgressCapMult(state: GameState): number {
+  const milesRemaining = TOTAL_TRAIL_MI - state.location.milesTraveled;
+  if (milesRemaining < 700) return 1.3;
+  return 1.0;
+}
+
 /** #932 — Gap-aware FoodRestockOpts. Floor is the max of the persona's
  *  base floor and the projected days-to-next-supply. Cap is floor +
  *  persona buffer, never below the base cap (short upcoming gaps don't
- *  shrink the restock target below the v10 default). */
+ *  shrink the restock target below the v10 default).
+ *
+ *  #963 — Cap further modulated by trail-progress so early-trail
+ *  restocks don't drain cash that's needed for the back half. */
 function gapAwareFoodOpts(
   state: GameState,
   fs: PersonaForesight,
@@ -59,7 +91,8 @@ function gapAwareFoodOpts(
 ): FoodRestockOpts {
   const buffer = base.daysCap - base.daysFloor;
   const daysFloor = Math.max(base.daysFloor, projectGapDays(state, fs));
-  const daysCap = Math.max(base.daysCap, daysFloor + buffer);
+  const rawCap = Math.max(base.daysCap, daysFloor + buffer);
+  const daysCap = Math.max(daysFloor, Math.round(rawCap * trailProgressCapMult(state)));
   return base.saleratusOverstock
     ? { daysFloor, daysCap, saleratusOverstock: true }
     : { daysFloor, daysCap };
@@ -394,7 +427,10 @@ export const cautiousPersona: Persona = {
   },
   shouldHunt(state) {
     // Hunter alive → hunt earlier (more total trips, +20% yield each).
-    const threshold = hasLiveHunter(state) ? 200 : 150;
+    // #963 — trigger lifted modestly (150→180 / 200→225). Aggressive
+    // values traded too many travel days for marginal extra meat;
+    // these threshold bumps cap hunts at ~9-10 per run vs the prior 7.
+    const threshold = hasLiveHunter(state) ? 225 : 180;
     return canHunt(state) && foodOnHand(state) < threshold;
   },
   pickFordMethod(state, here) {
@@ -541,7 +577,11 @@ export const balancedPersona: Persona = {
     // v9 profession-aware: a live Hunter gets +20% meat per haul
     // (engine #154), so it's worth hunting earlier — bigger threshold
     // means more total trips and more total meat over the run.
-    const threshold = hasLiveHunter(state) ? 150 : 100;
+    // #963 — modest bump (100→140 / 150→200) so balanced hunts a few
+    // more times across the back half without burning too many
+    // travel days. Trace audit: pre-#963 balanced hunted ~3-7 runs;
+    // target post-bump is ~8-10.
+    const threshold = hasLiveHunter(state) ? 200 : 140;
     return canHunt(state) && foodOnHand(state) < threshold;
   },
   pickFordMethod(state, here) {
