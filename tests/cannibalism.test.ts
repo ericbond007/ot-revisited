@@ -85,9 +85,12 @@ describe('cannibalism_straws — apply', () => {
 });
 
 describe('cannibalism — registry', () => {
-  it('cannibalism_straws is the only cannibalism action in the camp grid', () => {
+  it('#939j — both cannibalism actions in the camp grid', () => {
+    // cannibalism_corpse was originally removed (#205) and reinstated
+    // by #939j for the by-choice path. Both surfaces gate strictly on
+    // food=0 so neither appears outside last-resort.
     const ids = CAMP_ACTIONS.map((a) => a.id);
     expect(ids).toContain('cannibalism_straws');
-    expect(ids).not.toContain('cannibalism_corpse');
+    expect(ids).toContain('cannibalism_corpse');
   });
 });

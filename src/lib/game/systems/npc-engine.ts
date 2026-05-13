@@ -30,7 +30,6 @@ import type {
   Location,
   NpcWagonState,
   Pace,
-  PartyMember,
   Terrain,
   Weather
 } from '../types';
@@ -46,6 +45,11 @@ import { tickOxen as tickEngineOxen, recoverOxenFatigue } from './oxen';
 import { tickWagon as tickEngineWagon, applyAxleGrease as applyEngineAxleGrease } from './wagon';
 import { applyDehydration as applyEngineDehydration } from './dehydration';
 import { reapDead as reapDeadEngine } from './death';
+import {
+  applyCannibalize,
+  findFreshUnconsumedCorpse,
+  hasFoodOnHand
+} from './cannibal';
 import { rollDailyTheft } from './item-loss';
 // #939i — `rollNpcEvent` parallel impl removed. NPC event roll now
 // flows through engine `rollEvent` + `resolveEvent` over
@@ -126,13 +130,9 @@ function trainEnv(ctx: NpcTickContext): TrainEnv {
  *  events/day. The wider 31-event pool brings variety, not volume. */
 const NPC_FIRE_CHANCE = 0.06;
 
-// Food draw priority — game meat first (spoils), then staples.
-const FOOD_DRAW_ORDER = [
-  'game_meat', 'berries', 'egg', 'milk',
-  'jerky', 'pemmican', 'salt_pork', 'bacon',
-  'flour', 'cornmeal', 'beans', 'hardtack',
-  'dried_fruit', 'cheese', 'butter'
-];
+// #939j — FOOD_DRAW_ORDER constant removed. The only remaining
+// consumer (maybeCannibalize food-check) now routes through
+// `hasFoodOnHand` in systems/cannibal.ts, which carries the same list.
 
 // #939g — NPC_FATIGUE_PER_DAY removed. NPC ox tick now flows through
 // engine `tickOxen` which has the real teamster / shoeless / mule-grain
@@ -174,79 +174,36 @@ const FOOD_DRAW_ORDER = [
 // #288 — NPC auto-cannibalism. Period reality: Donner Party survivors
 // did this without consultation when food=0 and a fresh body was
 // available. NPCs don't get a player choice — the bot decides — so
-// when both conditions hold we silently mark a recent corpse consumed
-// and add fresh meat to the wagon. The grim flavor surfaces as a
-// player-visible log line so the player feels the tonal shift.
+// when both conditions hold the wagon silently consumes a corpse via
+// the shared `applyCannibalize` helper (#939j). The grim flavor
+// surfaces as a player-visible log line so the player feels the
+// tonal shift.
 //
-// Adult corpse → 50 lb game meat. Child corpse → 25 lb (smaller
-// frame). Children are eligible only when their death cause was
-// starvation — period diaries (Sager 1844, Donner 1846) confirm
-// survivors did consume children's bodies but only when they too
-// had starved; never an injury or disease death.
-const NPC_CANNIBAL_ADULT_MEAT_LBS = 50;
-const NPC_CANNIBAL_CHILD_MEAT_LBS = 25;
-const NPC_CANNIBAL_FRESHNESS_DAYS = 5;
-
-function isCannibalEligible(m: PartyMember, day: number): boolean {
-  if (!m.dead || m.consumed) return false;
-  if (typeof m.deathDay !== 'number') return false;
-  if (day - m.deathDay > NPC_CANNIBAL_FRESHNESS_DAYS) return false;
-  // Adults: any death cause. Children: only starvation.
-  if (m.kind === 'adult') return true;
-  if (m.kind === 'child') {
-    // Engine reapDead writes 'Starvation' (capital, condition name);
-    // legacy NPC reap wrote 'starvation' / 'attrition' and some tests
-    // inject those literals. Accept both shapes.
-    const cause = (m.deathCause ?? '').toLowerCase();
-    return cause === 'starvation' || cause === 'attrition';
-  }
-  return false;
-}
-
+// #939j — math + eligibility + freshness window all live in
+// `systems/cannibal.ts`. Adult unifies on −18 morale (matching the
+// player path); child stays at −25. `_cannibalismCount` increments on
+// every consumption, uniform with player surfaces. The NPC tick
+// synthesizes a GameState, runs the helper, and projects the deltas
+// back onto the wagon.
 function maybeCannibalize(
   wagon: NpcWagonState,
-  day: number
+  ctx: NpcTickContext,
+  rng: Rng
 ): { wagon: NpcWagonState; playerLog?: string } {
-  // Only when wagon is starving (no food at all).
-  const food = FOOD_DRAW_ORDER.reduce(
-    (sum, id) => sum + (wagon.inventory[id] ?? 0),
-    0
-  );
-  if (food > 0) return { wagon };
-  const corpses = wagon.party.filter((m) => isCannibalEligible(m, day));
-  if (corpses.length === 0) return { wagon };
+  const env = trainEnv(ctx);
+  const synth = synthesizeWagonState(wagon, env);
+  if (hasFoodOnHand(synth)) return { wagon };
+  const corpse = findFreshUnconsumedCorpse(synth);
+  if (!corpse) return { wagon };
   // #907 — persona-driven moral gate. Default true (Donner reality);
-  // faithful overrides to refuse. shouldCannibalize reads no state on
-  // any current impl; widen the shim if a future override needs it.
+  // faithful overrides to refuse.
   const persona = getPersona(wagon.personaId ?? 'balanced');
-  if (!persona.shouldCannibalize({} as GameState)) return { wagon };
-  const corpse = [...corpses].sort(
-    (a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0)
-  )[0];
-  const meatLbs = corpse.kind === 'child' ? NPC_CANNIBAL_CHILD_MEAT_LBS : NPC_CANNIBAL_ADULT_MEAT_LBS;
-  // Child cannibalism is more devastating to morale than adult.
-  const moraleHit = corpse.kind === 'child' ? 25 : 15;
-  const next: NpcWagonState = {
-    ...wagon,
-    party: wagon.party.map((m) =>
-      m.id === corpse.id ? { ...m, consumed: true } : m
-    ),
-    inventory: {
-      ...wagon.inventory,
-      game_meat: (wagon.inventory.game_meat ?? 0) + meatLbs
-    },
-    morale: Math.max(0, wagon.morale - moraleHit),
-    eventLog: [
-      ...wagon.eventLog,
-      {
-        day,
-        text: `Took ${corpse.name}'s body for meat. Nobody spoke. Morale −${moraleHit}.`
-      }
-    ]
-  };
+  if (!persona.shouldCannibalize(synth)) return { wagon };
+  const { state: ticked, log } = applyCannibalize(synth, corpse.id, rng);
+  const next = projectWagonDeltas(ticked, wagon);
   return {
     wagon: next,
-    playerLog: `${wagon.name} is reduced to eating their own dead — ${corpse.name}'s body fed them.`
+    playerLog: `${log} (${next.name})`
   };
 }
 
@@ -503,7 +460,7 @@ export function tickNpcWagon(
   // adult corpse, the survivors take the body. Donner Party precedent.
   // Silent for the wagon (no player choice — they're NPCs); a grim
   // log line surfaces to the player.
-  const cannibalResult = maybeCannibalize(next, ctx.day);
+  const cannibalResult = maybeCannibalize(next, ctx, rng);
   next = cannibalResult.wagon;
   if (cannibalResult.playerLog) playerLogs.push(cannibalResult.playerLog);
 
