@@ -373,8 +373,10 @@ describe('#280c — NPC events bubble to player eventLog', () => {
     const consumedCorpse = result.wagon.party.find((m) => m.id === adults[0].id);
     expect(consumedCorpse?.consumed).toBe(true);
     expect(result.wagon.inventory.game_meat ?? 0).toBeGreaterThan(0);
-    // Player log surfaces the grim event.
-    expect(result.playerLogs.some((t) => /eating their (own )?dead/i.test(t))).toBe(true);
+    // Player log surfaces the grim event. #939j unified the log format
+    // to "Took X's body for meat — N lb of fresh game. ..." across all
+    // surfaces; NPC tick suffixes with the wagon name.
+    expect(result.playerLogs.some((t) => /body for meat/i.test(t))).toBe(true);
   });
 
   it('finished wagons (outcome != in-progress) do not fire further events', () => {

@@ -4,6 +4,15 @@ import { and, inTerrain, milesBetween, monthIs, weatherIs, yearAtLeast, yearBetw
 import { applyStampedeToPlayer, applyStampedeToNpc, rollStormWindLoss, abandonHeavyLoad } from '../systems/item-loss';
 import { consumeWagonPart, deathMoralePenalty } from '../professions/bonuses';
 import { randomChildName } from './historical-names';
+// #939j — shared cannibalism math (BURIAL_CANNIBALISM_* + freshness +
+// food-presence predicates) now lives in systems/cannibal.ts so the
+// burial event, the cannibalism_corpse camp action, and tickNpcWagon
+// all read from the same place.
+import {
+  applyCannibalize,
+  findFreshUnconsumedCorpse,
+  hasFoodOnHand
+} from '../systems/cannibal';
 
 export type EventCategory =
   | 'weather'
@@ -1019,8 +1028,10 @@ EVENTS.push(donner_rumor, gold_rush_news, cholera_peak_1852, mormon_handcart, po
 // counted in the alive list. Period reality on the third path: the
 // Donner Party precedent — when survivors are starving, fresh meat
 // is fresh meat regardless of how the deceased died.
-const BURIAL_CANNIBALISM_MEAT_LBS = 50;
-const BURIAL_CANNIBALISM_MORALE = 18;
+// #939j — BURIAL_CANNIBALISM_MEAT_LBS / BURIAL_CANNIBALISM_MORALE
+// removed; live as CANNIBAL_ADULT_MEAT_LB / CANNIBAL_ADULT_MORALE_HIT
+// in systems/cannibal.ts. The burial event uses applyCannibalize for
+// the actual mutation now.
 
 // #260 — single 3-rifle volley over the grave. Period reality: when
 // emigrants buried a man (especially a veteran or train officer), the
@@ -1037,31 +1048,16 @@ function canFireSalute(state: GameState): boolean {
     && (state.inventory.percussion_caps ?? 0) >= SALUTE_SHOTS;
 }
 
+// #939j — `hasNoFoodAtBurial` + `freshUnconsumedDead` parallel impls
+// removed. Replaced by `!hasFoodOnHand` + `findFreshUnconsumedCorpse`
+// from systems/cannibal.ts (which also adds deathCause-casing tolerance
+// for 'Starvation' / 'starvation' / 'attrition' / 'cannibalism_volunteered').
 function hasNoFoodAtBurial(state: GameState): boolean {
-  const ids = ['game_meat', 'berries', 'flour', 'beans', 'bacon', 'jerky', 'hardtack', 'dried_fruit', 'pemmican'];
-  const totalLb = ids.reduce((sum, id) => sum + (state.inventory[id] ?? 0), 0);
-  return totalLb === 0;
+  return !hasFoodOnHand(state);
 }
 
 function freshUnconsumedDead(state: GameState): GameState['party'][number] | null {
-  // Most-recently-dead-and-unconsumed body the survivors could eat.
-  // Adults are always eligible (Donner precedent). Children are
-  // eligible only when their death cause was starvation — period
-  // diaries (Sager 1844, Donner 1846) confirm survivors did consume
-  // children's bodies but only when starvation killed them, never
-  // injury or disease.
-  const fresh = state.party.filter((m) => {
-    if (!m.dead || m.consumed) return false;
-    if (typeof m.deathDay !== 'number') return false;
-    if (state.day - m.deathDay > 5) return false;
-    if (m.kind === 'adult') return true;
-    if (m.kind === 'child') {
-      return m.deathCause === 'starvation' || m.deathCause === 'cannibalism_volunteered';
-    }
-    return false;
-  });
-  if (fresh.length === 0) return null;
-  return fresh.sort((a, b) => (b.deathDay ?? 0) - (a.deathDay ?? 0))[0];
+  return findFreshUnconsumedCorpse(state);
 }
 
 const burial: GameEvent = {
@@ -1153,7 +1149,7 @@ const burial: GameEvent = {
       // Donner Party precedent — survivors only turned to this when
       // there was no food left.
       hidden: (s) => !hasNoFoodAtBurial(s),
-      apply: (s) => {
+      apply: (s, rng) => {
         // Defensive: the hidden predicate gates UI visibility, but if
         // a non-starving state somehow reaches here (dev tools, replay,
         // race), fall back to stone-mound semantics so we never grant
@@ -1173,25 +1169,12 @@ const burial: GameEvent = {
           delete (flags as Record<string, unknown>)._burialPending;
           return logLine({ ...s, flags }, 'Burial — but no body was fresh enough.');
         }
+        // #939j — applyCannibalize handles meat/morale/_cannibalismCount;
+        // we wrap it with the burial-pending clear so the modal closes.
         const flags = { ...s.flags };
         delete (flags as Record<string, unknown>)._burialPending;
-        const prevGuilt = (flags._cannibalismCount as number | undefined) ?? 0;
-        flags._cannibalismCount = prevGuilt + 1;
-        return logLine(
-          {
-            ...s,
-            flags,
-            party: s.party.map((m) =>
-              m.id === corpse.id ? { ...m, consumed: true } : m
-            ),
-            inventory: {
-              ...s.inventory,
-              game_meat: (s.inventory.game_meat ?? 0) + BURIAL_CANNIBALISM_MEAT_LBS
-            },
-            morale: Math.max(0, s.morale - BURIAL_CANNIBALISM_MORALE)
-          },
-          `Took ${corpse.name}'s body for meat — ${BURIAL_CANNIBALISM_MEAT_LBS} lb of fresh game. Nobody spoke. Morale −${BURIAL_CANNIBALISM_MORALE}.`
-        );
+        const { state, log } = applyCannibalize({ ...s, flags }, corpse.id, rng);
+        return logLine(state, log);
       }
     }
   ]

@@ -7,6 +7,15 @@ import { washAll } from '../systems/cleanliness';
 import { deathMoralePenalty } from '../professions/bonuses';
 import { tribesAtMile, getTribe } from '../content/tribes';
 import { getTribeAttitude, adjustTribeAttitude } from '../systems/tribe-relations';
+// #939j — shared cannibal math (applyCannibalize + the food/fresh-corpse
+// predicates) lives in systems/cannibal.ts. Camp actions use it for the
+// reinstated cannibalism_corpse path; cannibalism_straws kept structurally
+// (different mechanic — sacrifice, not corpse-consumption).
+import {
+  applyCannibalize,
+  findFreshUnconsumedCorpse,
+  hasFoodOnHand
+} from '../systems/cannibal';
 
 // Camp actions are one-shot activities the party can do during a rest
 // day (applied on day 1 of the rest, same as shovel actions). Each has
@@ -58,6 +67,7 @@ export type CampActionId =
   | 'wash_clothes'
   | 'press_cheese'
   | 'make_soap'
+  | 'cannibalism_corpse'
   | 'cannibalism_straws'
   | 'pan_for_gold'
   | 'raid_natives'
@@ -1103,14 +1113,34 @@ function bumpGuilt(state: GameState, weight: number): GameState {
   };
 }
 
-// (#205) — `cannibalism_corpse` camp action removed. The decision to
-// eat a fresh corpse now lives on the burial-event popup as the third
-// choice, surfaced only when the party has nothing left to eat. The
-// only cannibalism that remains in the camp grid is the draws-straws
-// path below: nobody's dead yet, the party is starving, an adult is
-// chosen by lot. recentCorpse() is still used here to gate-out
-// straws when there's already a body on the ground (the player
-// should resolve that body's burial first).
+// #939j — cannibalism_corpse REINSTATED (reversing the #205 removal).
+// Player-initiated path: when there's a fresh corpse AND no food, the
+// player can take the body from the camp grid without waiting for the
+// next-day burial event. Same `food = 0` strictness as the burial-
+// event "eat the body" choice — both surfaces are gated last-resort.
+// The burial popup remains as the forced "decide today" moment; the
+// camp action is the by-choice surface.
+const cannibalism_corpse: CampAction = {
+  id: 'cannibalism_corpse',
+  label: 'Take the body for meat',
+  sub: 'Fresh corpse · food gone · 2 hr · the unthinkable',
+  icon: '🍖',
+  hourCost: 2,
+  hidden: (s) => hasFoodOnHand(s),
+  availability: (s) => {
+    if (hasFoodOnHand(s)) return { available: false, reason: 'Only when out of food.' };
+    if (!findFreshUnconsumedCorpse(s)) return { available: false, reason: 'No fresh body to consume.' };
+    return { available: true };
+  },
+  apply: (s, rng) => {
+    // Defensive guard — availability should prevent reach.
+    if (hasFoodOnHand(s)) return s;
+    const corpse = findFreshUnconsumedCorpse(s);
+    if (!corpse) return s;
+    const { state, log } = applyCannibalize(s, corpse.id, rng);
+    return logLine(state, log);
+  }
+};
 
 const cannibalism_straws: CampAction = {
   id: 'cannibalism_straws',
@@ -1555,6 +1585,7 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   // #314 Theft from the company — hidden until you're in a train
   takeFromTrain,
   // Desperation — hidden until starvation
+  cannibalism_corpse,
   cannibalism_straws
 ];
 
@@ -1585,6 +1616,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   pan_for_gold: panForGold,
   raid_natives: raidNatives,
   take_from_train: takeFromTrain,
+  cannibalism_corpse,
   cannibalism_straws
 };
 
