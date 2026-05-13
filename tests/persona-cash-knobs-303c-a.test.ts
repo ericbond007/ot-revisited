@@ -146,10 +146,19 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
   // supply post at the persona's expected pace × safety factor. At
   // Independence (mi 0) the next post is Hollenberg Ranch at mi 215.
   // Cautious: ceil(215/8 × 1.5) = 40 days; balanced: 26; aggressive: 18.
+  //
+  // #963 — cap further scaled by `trailProgressCapMult`. At
+  // Independence (>1500 mi remaining) the cap is multiplied by 0.65
+  // so early-trail bots don't blow cash on 90-day buys when many
+  // resupply posts lie ahead. Floor is unchanged; the floor=cap
+  // clamp prevents the cap dropping below the floor.
   // (We override `game()`'s default Laramie position back to mi 0 here
   // because these tests explicitly check the Independence numbers.)
   const indep = () => game({ location: { ...game().location, milesTraveled: 0 } });
 
+  // #963 — trail-progress cap mult is 1.0× early/mid (no change),
+  // 1.3× when miles remaining < 700 (late posts get an extra buffer).
+  // Independence is early-trail so values match the pre-#963 baseline.
   it('cautious: gap-aware floor (40 at Independence) + saleratus overstock per #909', () => {
     expect(cautiousPersona.pickFoodRestockOpts(indep())).toEqual({
       daysFloor: 40,
@@ -183,13 +192,15 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
 
   // #932 — at the trail end (past Oregon City), the gap helper returns 0,
   // so floor/cap should fall back to each persona's base.
-  it('#932 — past the last post, falls back to base floor / cap', () => {
+  // #963 — late-trail (miles remaining < 700) multiplies cap by 1.3
+  // to give bots an extra "last shot" buffer for the back half.
+  it('#932 — past the last post, base floor + #963 1.3× late-trail cap', () => {
     const past = game({ location: { ...game().location, milesTraveled: 2300 } });
     expect(cautiousPersona.pickFoodRestockOpts(past)).toEqual({
-      daysFloor: 30, daysCap: 90, saleratusOverstock: true
+      daysFloor: 30, daysCap: 117, saleratusOverstock: true
     });
-    expect(balancedPersona.pickFoodRestockOpts(past)).toEqual({ daysFloor: 25, daysCap: 60 });
-    expect(aggressivePersona.pickFoodRestockOpts(past)).toEqual({ daysFloor: 15, daysCap: 45 });
+    expect(balancedPersona.pickFoodRestockOpts(past)).toEqual({ daysFloor: 25, daysCap: 78 });
+    expect(aggressivePersona.pickFoodRestockOpts(past)).toEqual({ daysFloor: 15, daysCap: 59 });
   });
 
   it('chaos: rotates through three sizes deterministically by day', () => {
