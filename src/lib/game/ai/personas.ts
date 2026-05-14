@@ -1181,7 +1181,21 @@ export const pacePusherPersona: Persona = {
     // #963a — preemptive backoff. When oxen are tired (>50 fatigue
     // soft) but not yet worn out (>70), step DOWN one rung. Avoids
     // the cycle of pushing fast until forced-rest fires.
+    //
+    // #1031 — plan ahead for fatigue + HP cost of fast pace. The
+    // smart pace_pusher knows fast travel will burn ~3-5 fatigue/day
+    // and degrade ox HP. When a long supply gap looms (≥ 200 mi, no
+    // post to swap/rest at mid-leg), going fast on a mid-fatigue
+    // team means being forced into rest with no post nearby. So:
+    // only push fast into long gaps when the team is genuinely
+    // fresh (avg fatigue < 25). Period anchor: Reed's 1879 memoir —
+    // he regretted not banking ox HP at Bridger before the Sublette
+    // push; the team that crossed was the team that died in the
+    // Sierra.
     if (minPartyHealth(state) >= 70 && !oxenWornOut(state)) {
+      const longGapAhead = nextSupplyDistance(state) > 200;
+      const teamFresh = avgOxFatigue(state) < 25;
+      if (longGapAhead && !teamFresh) return 'moderate';
       return oxenTired(state) ? 'moderate' : 'fast';
     }
     if (minPartyHealth(state) >= 50) return oxenTired(state) ? 'slow' : 'moderate';
