@@ -14,6 +14,8 @@ import { makeRng } from '../rng';
 import type { GameEvent } from '../content/events';
 import { buildStarvationCrisisEvent } from './npc-crisis-events';
 import { processDepartures } from './npc-departures';
+// #915 — barter fallback for NPC restock when cash runs short.
+import { quoteBarter } from './barter';
 import {
   pickFoodRestock,
   pickWarmthRestock,
@@ -700,6 +702,47 @@ export function applyNpcPostRestock(state: GameState): GameState {
       state.day,
       playerLogs
     );
+
+    // #915 — barter fallback for NPCs that ran low on cash earlier
+    // in the loop. NPC wagons carry their own inventory; we
+    // synthesize a GameState shim, ask the persona for barter
+    // dispositions, quote each, and apply fair ones directly onto
+    // `next.inventory`. Period reality: the wagons in the train
+    // that arrived broke at Bridger/Hall still came out with
+    // medicine + flour by trading hides / fresh meat.
+    if (here.barterEnabled !== false) {
+      const barterFauxState = {
+        inventory: next.inventory,
+        cash: next.cash,
+        party: next.party,
+        day: state.day,
+        location: state.location
+      } as unknown as GameState;
+      const barterRng = makeRng(`${next.seed}:barter:${state.day}:${id}`);
+      const dispositions = persona.pickBarterDispositions(barterFauxState, here, barterRng);
+      for (const d of dispositions) {
+        // Re-shim each iteration so inventory drift between barters
+        // doesn't make later quotes go stale.
+        const liveFaux = {
+          ...barterFauxState,
+          inventory: next.inventory
+        } as unknown as GameState;
+        const quote = quoteBarter(liveFaux, d.give, d.receive);
+        if (!quote.fair) continue;
+        const have = next.inventory[d.give.item] ?? 0;
+        if (have < d.give.qty) continue;
+        const inventory = {
+          ...next.inventory,
+          [d.give.item]: have - d.give.qty,
+          [d.receive.item]: (next.inventory[d.receive.item] ?? 0) + d.receive.qty
+        };
+        next = { ...next, inventory };
+        playerLogs.push({
+          day: state.day,
+          text: `${next.name} bartered ${d.give.qty} ${d.give.item.replace(/_/g, ' ')} for ${d.receive.qty} ${d.receive.item.replace(/_/g, ' ')} at ${here.name}.`
+        });
+      }
+    }
 
     return next;
   });
