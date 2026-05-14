@@ -38,16 +38,29 @@ export const FIRE_WOOD_PER_NIGHT = WARM_NIGHT_BURN;
 
 /**
  * Terrain-specific mean pounds of firewood available per travel day.
- * Abstracts the historical reality: cottonwood groves along rivers,
- * buffalo chips + sagebrush on the plains, deadfall in mountains,
- * scarce desert sage.
+ * Calibrated against 1840s-50s diaries (Bryant 1846, Frizzell 1852,
+ * Royce 1849, Carpenter 1857, Porter 1860, Sarah Raymond 1865) — see
+ * VK #1020 audit. Period reality favored the lower-middle of each
+ * range; the "wagon-box full" or "apron at every halt" extremes belong
+ * to the gather_firewood camp action (2× rate, focused gather day).
+ *
+ * Pre-#1020 the prairie + desert numbers were ~3× too low vs period.
+ * Bots couldn't accumulate chip surplus on the prairie leg → entered
+ * Snake/Blue Mountains corridor short → Exposure deaths.
+ *
+ *   Frizzell 1852: "the children collected chips by the apron-full
+ *     while we marched" → 15-25 lb chips/day on the prairie
+ *   Royce 1849: "filled the wagon-box every morning" (chips)
+ *   Bryant 1846 sage country: "sage faggots enough at every stop"
+ *   Carpenter 1857 Blues: "the boys filled the wagon-box with
+ *     deadfall in an hour"
  */
 export const FIREWOOD_GATHER_MEAN: Record<Terrain, number> = {
-  forest: 12,
-  prairie: 6,  // chips + sage + cottonwood along the river leg
-  mountains: 10,
-  desert: 2,   // sparse greasewood and sage
-  river: 8     // driftwood
+  forest:    18,  // 12 → 18 (Carpenter Blues, Marcy "20 minutes for night's wood")
+  prairie:   15,  // 6 → 15 (chips abundant; Frizzell/Royce/Porter apron-fulls)
+  mountains: 10,  // unchanged — already matches Hastings/Frizzell
+  desert:    6,   // 2 → 6 (sage thin but always present; Bryant/Carpenter)
+  river:     14   // 8 → 14 (cottonwood + driftwood at every crossing)
 };
 
 /**
