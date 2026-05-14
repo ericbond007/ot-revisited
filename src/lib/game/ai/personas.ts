@@ -32,6 +32,8 @@ import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
 import { gapBufferDays, nextSupplyDistance, effectiveGapMiles } from './foresight';
+import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
+import type { BarterDisposition } from './types';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
@@ -337,6 +339,110 @@ function defaultShouldJoinTrain(): boolean {
   return true;
 }
 
+/** #915 — Default barter dispositions: trade surplus food + hides for
+ *  medicine when cash is short and the post takes the offered item.
+ *  Each persona's `pickBarterDispositions` calls this as a baseline
+ *  and modifies the output for character flavor (cautious widens the
+ *  food surplus threshold, hoarder strips flour out, drinker offers
+ *  whiskey, etc.). Common shape so each persona stays terse. */
+interface DefaultBarterOpts {
+  /** Minimum food-on-hand to start offering food in barter. Cautious
+   *  uses 300 (preserves a deep reserve), balanced 200, aggressive
+   *  100, drinker uses balanced default. */
+  foodSurplusThreshold: number;
+  /** Cash floor below which the bot prioritizes barter over cash
+   *  trade. Above this, only character-flavor barters fire. */
+  cashFloor: number;
+  /** Per-disposition rate floor. Stricter than the engine FLOOR for
+   *  picky personas (aggressive: 0.80 — won't take soaking trades). */
+  rateFloor: number;
+  /** Items the persona refuses to give up regardless of post need.
+   *  Hoarder protects flour/beans/saleratus. */
+  protected: ReadonlySet<string>;
+}
+
+function defaultBarterOpts(): DefaultBarterOpts {
+  return {
+    foodSurplusThreshold: 200,
+    cashFloor: 50,
+    rateFloor: BARTER_RATE_FLOOR,
+    protected: new Set()
+  };
+}
+
+/** Build a barter wishlist: items the post wants × need-based
+ *  receive items. Returns each candidate disposition (give-side
+ *  picked from preferred + bot's surplus; receive-side picked from
+ *  medicine / ammo / staples the bot is short on). Caller validates
+ *  each via `quoteBarter` before applying. */
+function buildBarterCandidates(
+  state: GameState,
+  here: Landmark,
+  opts: DefaultBarterOpts
+): BarterDisposition[] {
+  if (here.barterEnabled === false) return [];
+  const preferred = new Set(here.barterPreferred ?? []);
+  const stock = new Set(here.stock ?? []);
+  if (stock.size === 0 || preferred.size === 0) return [];
+
+  // What the bot wants to receive — period priority order: medicine
+  // first (life-saving), then ammo (hunting backup), then food if
+  // cash is short. Skip items the post doesn't stock.
+  const receivePriority: Array<{ item: string; qty: number; need: () => boolean }> = [
+    { item: 'quinine',          qty: 2,  need: () => (state.inventory.quinine ?? 0) < 4 },
+    { item: 'calomel',          qty: 2,  need: () => (state.inventory.calomel ?? 0) < 2 },
+    { item: 'laudanum',         qty: 2,  need: () => (state.inventory.laudanum ?? 0) < 2 },
+    { item: 'bandages',         qty: 4,  need: () => (state.inventory.bandages ?? 0) < 4 },
+    { item: 'gunpowder',        qty: 10, need: () => (state.inventory.gunpowder ?? 0) < 20 },
+    { item: 'lead_balls',       qty: 10, need: () => (state.inventory.lead_balls ?? 0) < 20 },
+    { item: 'percussion_caps',  qty: 10, need: () => (state.inventory.percussion_caps ?? 0) < 20 },
+    { item: 'flour',            qty: 30, need: () => state.cash < opts.cashFloor && (state.inventory.flour ?? 0) < 100 }
+  ];
+
+  // What the bot will give — preferred items it has surplus of.
+  // Surplus rules:
+  //   - game_meat, jerky, pemmican: give 20 lb if total food on hand
+  //     is above `foodSurplusThreshold`
+  //   - buffalo_robe, raw_hide: give 1 if the bot has any (luxury
+  //     by-products of hunting; period emigrants stockpiled them
+  //     specifically to trade)
+  const food = foodOnHand(state);
+  const give: BarterDisposition['give'][] = [];
+  for (const item of preferred) {
+    if (opts.protected.has(item)) continue;
+    const have = state.inventory[item] ?? 0;
+    if (have <= 0) continue;
+    if (item === 'buffalo_robe' || item === 'raw_hide' || item === 'pelts') {
+      give.push({ item, qty: 1 });
+    } else if (item === 'game_meat' || item === 'jerky' || item === 'pemmican') {
+      if (food >= opts.foodSurplusThreshold && have >= 20) {
+        give.push({ item, qty: 20 });
+      }
+    }
+  }
+  if (give.length === 0) return [];
+
+  const dispositions: BarterDisposition[] = [];
+  for (const r of receivePriority) {
+    if (!stock.has(r.item)) continue;
+    if (!r.need()) continue;
+    for (const g of give) {
+      dispositions.push({ give: g, receive: r });
+    }
+  }
+  return dispositions;
+}
+
+/** Shared default impl. Personas with no character flavor call this
+ *  directly; flavored personas wrap it. */
+function defaultPickBarterDispositions(
+  state: GameState,
+  here: Landmark,
+  _rng: Rng
+): BarterDisposition[] {
+  return buildBarterCandidates(state, here, defaultBarterOpts());
+}
+
 // #939l — `defaultShouldBuyCookwareSpare` / `defaultShouldBuySaleratus`
 // removed alongside the persona surface methods. Cookware-spare
 // disposition now lives on `pickEquipmentRestockOpts.cookwareSpare`
@@ -543,6 +649,16 @@ export const cautiousPersona: Persona = {
   pickNpcEventChoice() {
     // Surface only — no current choice-bearing NPC events.
     return null;
+  },
+  pickBarterDispositions(state, here, _rng) {
+    // Cautious holds a deep food reserve; only barters food when
+    // truly surplus (>300 lb). Trades robes/hides aggressively for
+    // medicine — Tabitha Brown brought robes specifically to swap
+    // for quinine on the way west (#205 anchor).
+    return buildBarterCandidates(state, here, {
+      ...defaultBarterOpts(),
+      foodSurplusThreshold: 300
+    });
   }
 };
 
@@ -679,7 +795,8 @@ export const balancedPersona: Persona = {
   },
   shouldJoinTrain: defaultShouldJoinTrain,
   shouldCannibalize: () => true,
-  pickNpcEventChoice: () => null
+  pickNpcEventChoice: () => null,
+  pickBarterDispositions: defaultPickBarterDispositions
 };
 
 export const aggressivePersona: Persona = {
@@ -794,7 +911,20 @@ export const aggressivePersona: Persona = {
   },
   shouldJoinTrain: defaultShouldJoinTrain,
   shouldCannibalize: () => true,
-  pickNpcEventChoice: () => null
+  pickNpcEventChoice: () => null,
+  pickBarterDispositions(state, here, _rng) {
+    // Aggressive packs lean and only barters when cash is genuinely
+    // short. Rate threshold tighter than default (won't take soaking
+    // trades even when out of money — Reed 1846 walked away from
+    // Bridger's prices rather than pay them).
+    if (state.cash >= 30) return [];
+    return buildBarterCandidates(state, here, {
+      ...defaultBarterOpts(),
+      foodSurplusThreshold: 100,
+      cashFloor: 30,
+      rateFloor: 0.80
+    });
+  }
 };
 
 // `chaos` makes seeded-random choices — the "dumbass tourist" mode.
@@ -917,6 +1047,15 @@ export const chaosPersona: Persona = {
   shouldCannibalize: () => true,
   pickNpcEventChoice() {
     return null; // surface-only
+  },
+  pickBarterDispositions(state, here, rng) {
+    // Chaos rolls one random preferred-give × random-receive each
+    // visit, fairness-gated. Deterministic per seed since
+    // `buildBarterCandidates` is pure; rng picks which slice to keep.
+    const all = buildBarterCandidates(state, here, defaultBarterOpts());
+    if (all.length === 0) return [];
+    const pick = all[rng.int(0, all.length - 1)];
+    return [pick];
   }
 };
 
@@ -994,6 +1133,18 @@ export const hoarderPersona: Persona = {
     if (state.wagon.condition >= 60) return 0;
     if (state.cash < 10) return 0;
     return Math.min(15, state.cash);
+  },
+  pickBarterDispositions(state, here, _rng) {
+    // Hoarder refuses to give up the staple stash. Trades hides /
+    // robes only — luxury hunt by-products are fine to swap,
+    // staples never. Period: the supply-stockpiler emigrant who
+    // would rather keep flour for "if we get snowbound" than trade
+    // it for medicine.
+    return buildBarterCandidates(state, here, {
+      ...defaultBarterOpts(),
+      protected: new Set(['flour', 'beans', 'saleratus', 'bacon',
+        'sugar', 'salt', 'jerky', 'pemmican', 'game_meat'])
+    });
   }
 };
 
@@ -1078,6 +1229,28 @@ export const drinkerPersona: Persona = {
     return (here.services ?? []).includes('inn')
       && state.cash >= 5
       && (state.morale < 70 || minPartyHealth(state) < 80);
+  },
+  pickBarterDispositions(state, here, rng) {
+    // Drinker is famously casual with the bottle — Joe Meek traded
+    // whiskey for anything he needed (mountain-man diaries). Always
+    // adds a whiskey-for-anything-the-post-stocks offer, on top of
+    // the default candidates. Most posts refuse whiskey (Bridger /
+    // Hall / Whitman in our data), so the engine's fairness gate
+    // sorts out which ones actually fire.
+    const base = defaultPickBarterDispositions(state, here, rng);
+    const whiskey = state.inventory.whiskey ?? 0;
+    if (whiskey > 0 && here.barterEnabled !== false) {
+      const stock = new Set(here.stock ?? []);
+      const targets = ['quinine', 'flour', 'bacon', 'gunpowder'];
+      for (const t of targets) {
+        if (!stock.has(t)) continue;
+        base.push({
+          give: { item: 'whiskey', qty: 1 },
+          receive: { item: t, qty: t === 'flour' || t === 'bacon' ? 10 : 2 }
+        });
+      }
+    }
+    return base;
   }
 };
 

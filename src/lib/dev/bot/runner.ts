@@ -21,6 +21,10 @@ import { hunt, type HuntTarget, type AmmoBand } from '../../game/actions/hunt';
 import { trade } from '../../game/actions/trade';
 import { ford, type FordMethod, type RiverState } from '../../game/actions/ford';
 import { stayAtInn, repairWagon, swapOxen, swapOxenCost } from '../../game/systems/town-services';
+// #915 — barter at trading posts. Bot consults persona dispositions
+// after the cash trade + ox swap; each disposition is re-quoted to
+// guard against inventory drift mid-block.
+import { quoteBarter, applyBarter } from '../../game/systems/barter';
 import { joinTrain } from '../../game/systems/wagon-train';
 import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-purity';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
@@ -428,6 +432,24 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
                 // Cash-only also failed at this size — try smaller.
               }
             }
+          }
+        }
+      }
+
+      // #915 — barter pass. After cash trades + ox swaps, persona
+      // proposes goods-for-goods swaps for items the post wants.
+      // Each disposition is re-quoted (inventory may have shifted
+      // from the cash trade or ox swap) and applied if fair.
+      if (here.barterEnabled !== false) {
+        const dispositions = persona.pickBarterDispositions(s, here, rng);
+        for (const d of dispositions) {
+          const quote = quoteBarter(s, d.give, d.receive);
+          if (!quote.fair) continue;
+          try {
+            s = applyBarter(s, d.give, d.receive, rng);
+            stats.decisionsMade += 1;
+          } catch {
+            // Inventory drifted, qty cap hit, or another race — skip.
           }
         }
       }
