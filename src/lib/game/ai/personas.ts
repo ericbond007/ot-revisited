@@ -316,6 +316,16 @@ function oxenTired(state: GameState): boolean {
   return avgOxFatigue(state) > softLimit;
 }
 
+/** #963 follow-up: ANY single ox is in danger — fatigue near the HP-drain
+ *  threshold (80) or health already dropping. Catches the "one ox is
+ *  failing while team avg looks fine" case that bit pace_pusher post-#963b1
+ *  (spare oxen + sustained fast pace → individual ox HP drain → ox dies
+ *  → next ox absorbs the load → cascade). Avg-based oxenWornOut misses
+ *  this because 5 healthy oxen mask one dying one. */
+function anyOxStrained(state: GameState): boolean {
+  return state.oxen.some((o) => o.health > 0 && (o.fatigue >= 75 || o.health < 70));
+}
+
 /** Decide how many fresh oxen the bot should acquire at this post.
  *  Returns 0 unless the team is genuinely thin or worn — emigrants
  *  didn't blow cash at Laramie if the team was holding. Reads the
@@ -1134,7 +1144,33 @@ export const pacePusherPersona: Persona = {
   shouldRest(state) {
     // Only rest when the team is actually failing — not on the cautious
     // 45/25 trigger. Period: Reed pushed past prudent rest limits.
-    return minPartyHealth(state) < 30 || oxenWornOut(state);
+    //
+    // #963 follow-up: also rest when ANY individual ox is strained
+    // (fatigue ≥75 OR health <70). Post-#963b1 with spare oxen + new
+    // rest math, pace_pusher could sustain fast pace long enough for
+    // one ox to cross the HP-drain threshold (fatigue 80) while team
+    // avg stayed under oxenWornOut's 70 limit. The dying ox went
+    // unnoticed → cascade ox deaths → wipe rate climbed 27→47%.
+    return (
+      minPartyHealth(state) < 30
+      || oxenWornOut(state)
+      || anyOxStrained(state)
+    );
+  },
+  pickOxSwapCount(state, here) {
+    // #963 follow-up: pace_pusher should trade fresh AGGRESSIVELY at
+    // posts. The historical Reed regret (1879 memoir) was NOT trading
+    // fresh at Bridger after Sublette Cutoff — the team Reed brought
+    // out of Fort Bridger was the team that died in the Sierra. This
+    // persona captures that lesson by overriding balanced's healthFloor
+    // 55 → 70 (swap when team is mid-health, not just hurt).
+    if (!(here.services ?? []).includes('ox_swap')) return 0;
+    const healthFloor = gapAwareOxHealthFloor(state, {
+      healthFloor: 70,
+      bigGapMiles: 150,
+      bigGapHealthBoost: 15
+    });
+    return pickOxSwapCountFor(state, 2, healthFloor);
   }
 };
 
