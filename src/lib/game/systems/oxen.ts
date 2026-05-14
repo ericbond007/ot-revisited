@@ -135,8 +135,31 @@ export function tickOxen(state: GameState, _rng: Rng): GameState {
   s = oxFeed.state;
   const fatigueMult = grazingFatigueMult(oxFeed.effectiveGrazing);
 
+  // #963 follow-up: only oxen IN HARNESS accumulate fatigue. Spares
+  // walking alongside the wagon graze + rest as they go — period-
+  // correct (Marcy 1859 describes rotating the team for exactly this
+  // reason). Before this change, all live oxen tired in lockstep, so
+  // the spare yoke gave only insurance against death, not the
+  // rotation-rest benefit it gave historical emigrants.
+  // The hitch set is recomputed each tick by selectHitchedOxen — top
+  // N fittest oxen rotate into harness automatically as today's
+  // pullers tire.
+  //
+  // Fallback: when neither yokes nor mules are modeled in inventory
+  // (NPC wagons + many unit tests), hitchedCap is 0 — fall back to
+  // 'all alive count as hitched' so legacy fatigue behavior is
+  // preserved for state that doesn't track yoke inventory.
+  const hitchedCap = hitchedOxenCount(s) + liveMules.length;
+  const aliveOxen = s.oxen.filter((o) => o.health > 0);
+  const hitchedIds = new Set(
+    hitchedCap > 0
+      ? selectHitchedOxen(s.oxen, hitchedCap).map((o) => o.id)
+      : aliveOxen.map((o) => o.id)
+  );
+
   const oxen = s.oxen.map((animal) => {
     if (animal.health === 0) return animal;
+    if (!hitchedIds.has(animal.id)) return animal;
     const mulePenalty =
       animal.kind === 'mule' && muleUnfed > 0 ? MULE_UNFED_FATIGUE_MULT : 1;
     // Mules use their own grain rule; the team grazing penalty
@@ -207,19 +230,29 @@ export function tickOxen(state: GameState, _rng: Rng): GameState {
  * still tire and graze but don't pull. Defaults to all alive when the
  * caller doesn't model yokes (legacy callers / tests).
  */
+/** Pick the team that goes in harness today — top-N fittest alive oxen.
+ *  Shared by oxenSpeedFactor (which scores them) and tickOxen (which
+ *  only tires the hitched team, post-#963 follow-up). Sort tie-broken
+ *  by id for determinism. */
+export function selectHitchedOxen(oxen: Ox[], hitchedCount?: number): Ox[] {
+  const alive = oxen.filter((o) => o.health > 0);
+  if (alive.length === 0) return [];
+  const ordered = [...alive].sort((a, b) => {
+    const aFit = (a.health / 100) * (1 - a.fatigue / 100);
+    const bFit = (b.health / 100) * (1 - b.fatigue / 100);
+    if (bFit !== aFit) return bFit - aFit;
+    return a.id.localeCompare(b.id);
+  });
+  const cap = Math.max(0, Math.min(hitchedCount ?? alive.length, alive.length));
+  return ordered.slice(0, cap);
+}
+
 export function oxenSpeedFactor(
   oxen: Ox[],
   optimalTeam: number = 2,
   hitchedCount?: number
 ): number {
-  const alive = oxen.filter((o) => o.health > 0);
-  if (alive.length === 0) return 0;
-  // Sort by best-fitness first so the hitch goes to the strongest oxen.
-  const ordered = [...alive].sort(
-    (a, b) => (b.health / 100) * (1 - b.fatigue / 100) - (a.health / 100) * (1 - a.fatigue / 100)
-  );
-  const cap = Math.max(0, Math.min(hitchedCount ?? alive.length, alive.length));
-  const hitched = ordered.slice(0, cap);
+  const hitched = selectHitchedOxen(oxen, hitchedCount);
   if (hitched.length === 0) return 0;
   const avgFitness =
     hitched.reduce((s, o) => s + (o.health / 100) * (1 - o.fatigue / 100), 0) / hitched.length;
