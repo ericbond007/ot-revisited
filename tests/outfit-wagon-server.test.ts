@@ -44,7 +44,10 @@ describe('wagon-model integration with createInitialState', () => {
     expect(s.wagon.carryCapacity).toBe(3500);
   });
 
-  it('heavy wagon with default 4 oxen is below optimal team', () => {
+  it('heavy wagon with default 6 oxen exactly meets optimal team (#963b1)', () => {
+    // #963b1: starter oxen bumped 4 → 6 to match Marcy 1859's
+    // "indispensable extra yoke". Heavy wagon (optimalTeam=6) is now
+    // exactly fitted by default rather than under-teamed.
     const s = createInitialState({
       seed: 't',
       leader: { name: 'A', profession: 'farmer' },
@@ -53,8 +56,8 @@ describe('wagon-model integration with createInitialState', () => {
       wagonModel: 'heavy'
     });
     const heavy = getWagon('heavy');
-    expect(s.oxen.length).toBeLessThan(heavy.optimalTeam);
-    // milesPerDay should be positive (above minTeam=4) but below prairie-equivalent
+    expect(s.oxen.length).toBe(heavy.optimalTeam);
+    // milesPerDay should be positive at optimal team
     expect(milesPerDay(s)).toBeGreaterThan(0);
   });
 

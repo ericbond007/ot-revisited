@@ -29,7 +29,15 @@ export interface StarterKit {
 //    budget (#107 honesty).
 export const BASE_KIT: StarterKit = {
   cash: 400,
-  oxen: 4,
+  // #963b1 — starter oxen 4 → 6. Historical norm for a 4-soul party
+  // was 4 working + 2 spare (Marcy 1859: "an extra yoke for emergency
+  // replacement should be considered indispensable on long crossings").
+  // The old 4-ox kit = exactly minTeam for the medium wagon = NO
+  // SPARE. Bot personas already target a 6-ox team via thinThreshold=2,
+  // so the bot was chasing the missing buffer at Laramie (burning cash
+  // that should have stayed for late-trail food + repairs). Wealthy
+  // emigrants brought 8-10; this is a conservative middle ground.
+  oxen: 6,
   inventory: {
     // #963 — starter food provisions calibrated against Palmer 1845
     // (the canonical emigrant guidebook). Old kit was 380 lb total
@@ -108,11 +116,12 @@ export interface BuildStarterKitOpts {
  *
  *  #963 recalibration: post-food-bump kit costs ~$390 at Independence
  *  prices (food $225 + medicine $80 + rifle/ammo $40 + tent/rope $20
- *  + per-soul clothing $25). Refund $440 covers buy-back plus a
- *  small buffer for veterans who want regional specialties (period
- *  reality: emigrants who outfitted at Independence came with cash
- *  earmarked for the outfitter, not the trail). */
-const STARTER_KIT_REFUND = 440;
+ *  + per-soul clothing $25).
+ *
+ *  #963b1: starter oxen 4 → 6 adds ~$60 of kit value (Independence ox
+ *  was ~$25-30/head, 2 extra = $50-60). Refund bumped 440 → 500 so the
+ *  skip-the-kit path still covers buy-back at the outfitter. */
+const STARTER_KIT_REFUND = 500;
 
 export function buildStarterKit(
   professions: ProfessionId[],
