@@ -533,7 +533,11 @@ function saferHealthChoice(state: GameState, event: GameEvent): string | null {
 
 export const cautiousPersona: Persona = {
   id: 'cautious',
-  foresight: { paceMiPerDay: 8, safetyFactor: 1.5 },
+  // #1028 — paceMiPerDay 8 → 10 (matches balanced). Slow trigger
+  // tightened from <50 HP to <20 HP means cautious now actually
+  // sustains the moderate pace it picks; the old 8 reflected the
+  // many slow-pace days that no longer fire.
+  foresight: { paceMiPerDay: 10, safetyFactor: 1.5 },
   pickEventChoice(state, event) {
     // Cautious avoids violence + chronic disease. Prefer safety on
     // health events first, then the cooperative-trade patterns, then
@@ -544,7 +548,19 @@ export const cautiousPersona: Persona = {
       ?? defaultChoice(state, event);
   },
   pickPace(state) {
-    if (minPartyHealth(state) < 50) return 'slow';
+    // #1028 — cautious was the biggest "alive but out of days" persona
+    // (66% stalled / 19% arrived). Old `slow at <50 HP` burned too much
+    // calendar: every minor illness dropped pace from 20 → 14 mi/day
+    // base, often for multi-day condition stretches. A first cut to
+    // `fast` baseline killed too many teams (the Sunday + voluntary
+    // rest cadence didn't leave room for sustained fast travel).
+    //
+    // Final pass: keep `moderate` baseline but tighten the slow trigger
+    // to truly emergency-level (min health < 20) or worn oxen. Tabitha
+    // Brown / Pringle 1846 didn't drop to a crawl every time a party
+    // member ran a fever — they pushed at moderate until something was
+    // genuinely failing.
+    if (minPartyHealth(state) < 20 || oxenWornOut(state)) return 'slow';
     return 'moderate';
   },
   pickRations(state) {

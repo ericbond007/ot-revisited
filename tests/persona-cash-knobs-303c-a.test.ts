@@ -145,7 +145,8 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
   // #932 — values are now gap-aware: floor scales with miles-to-next
   // supply post at the persona's expected pace × safety factor. At
   // Independence (mi 0) the next post is Hollenberg Ranch at mi 215.
-  // Cautious: ceil(215/8 × 1.5) = 40 days; balanced: 26; aggressive: 18.
+  // #1028 — cautious paceMiPerDay 8 → 10.
+  // Cautious: 215/10 × 1.5 = 32; balanced: 26; aggressive: 18.
   //
   // #963 — cap further scaled by `trailProgressCapMult`. At
   // Independence (>1500 mi remaining) the cap is multiplied by 0.65
@@ -159,10 +160,10 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
   // #963 — trail-progress cap mult is 1.0× early/mid (no change),
   // 1.3× when miles remaining < 700 (late posts get an extra buffer).
   // Independence is early-trail so values match the pre-#963 baseline.
-  it('cautious: gap-aware floor (40 at Independence) + saleratus overstock per #909', () => {
+  it('cautious: gap-aware floor (32 at Independence post-#1028) + saleratus overstock per #909', () => {
     expect(cautiousPersona.pickFoodRestockOpts(indep())).toEqual({
-      daysFloor: 40,
-      daysCap: 100,
+      daysFloor: 32,
+      daysCap: 92,
       saleratusOverstock: true
     });
   });
@@ -183,9 +184,10 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
     const c = cautiousPersona.pickFoodRestockOpts(atKearny);
     const b = balancedPersona.pickFoodRestockOpts(atKearny);
     const a = aggressivePersona.pickFoodRestockOpts(atKearny);
-    // cautious: ceil(317/8 × 1.5) = 59; balanced: ceil(317/10 × 1.2) = 38;
-    // aggressive: ceil(317/12 × 1.0) = 26.
-    expect(c.daysFloor).toBeGreaterThanOrEqual(50);
+    // #1028 — cautious paceMiPerDay 8 → 10.
+    // cautious: 317/10 × 1.5 = 47.55 → 48; balanced: 317/10 × 1.2 = 38;
+    // aggressive: 317/12 × 1.0 = 26.4 → 27.
+    expect(c.daysFloor).toBeGreaterThanOrEqual(45);
     expect(b.daysFloor).toBeGreaterThanOrEqual(35);
     expect(a.daysFloor).toBeGreaterThanOrEqual(25);
   });
