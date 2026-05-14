@@ -302,6 +302,20 @@ function oxenWornOut(state: GameState): boolean {
   return avgOxFatigue(state) > fatigueLimit;
 }
 
+/** #963a — Soft predicate: oxen are starting to tire but NOT yet at
+ *  the forced-rest threshold. Used by push-pace personas to back off
+ *  ONE RUNG before crossing into oxenWornOut, breaking the fatigue →
+ *  forced-rest cycle that pinned aggressive/pace_pusher trace runs at
+ *  36% travel days vs 51% rest. 50/40 thresholds sit ~20 below the
+ *  worn-out 70/55 limits — enough lead time that a single downshift
+ *  averts the rest trigger. */
+function oxenTired(state: GameState): boolean {
+  const alive = state.oxen.filter((o) => o.health > 0).length;
+  if (alive === 0) return false;
+  const softLimit = hasLiveTeamster(state) ? 40 : 50;
+  return avgOxFatigue(state) > softLimit;
+}
+
 /** Decide how many fresh oxen the bot should acquire at this post.
  *  Returns 0 unless the team is genuinely thin or worn — emigrants
  *  didn't blow cash at Laramie if the team was holding. Reads the
@@ -824,6 +838,13 @@ export const aggressivePersona: Persona = {
     // 5 days grueling → oxen worn → forced rest → repeat → ox HP drains
     // → 39% rest days vs 42% travel. Trace-963 confirmed.
     if (oxenWornOut(state)) return 'moderate';
+    // #963a — preemptive backoff. Step down one rung before fatigue
+    // crosses the worn-out threshold so we don't bounce between
+    // grueling-pace travel days and forced rest days. Trace-963 showed
+    // aggressive was burning ~40% of the calendar resting AFTER hitting
+    // fatigue 70; backing off at 50 keeps the team in continuous
+    // motion at a slightly lower per-day rate but >2× the travel days.
+    if (oxenTired(state)) return 'moderate';
     return 'fast';
   },
   pickRations() {
@@ -1100,8 +1121,14 @@ export const pacePusherPersona: Persona = {
     // wrecked the team in a week. Old defaults trapped pace_pusher
     // in fatigue-rest cycles: 51% rest days vs 36% travel. Down one
     // rung: fast / moderate / slow.
-    if (minPartyHealth(state) >= 70 && !oxenWornOut(state)) return 'fast';
-    if (minPartyHealth(state) >= 50) return 'moderate';
+    //
+    // #963a — preemptive backoff. When oxen are tired (>50 fatigue
+    // soft) but not yet worn out (>70), step DOWN one rung. Avoids
+    // the cycle of pushing fast until forced-rest fires.
+    if (minPartyHealth(state) >= 70 && !oxenWornOut(state)) {
+      return oxenTired(state) ? 'moderate' : 'fast';
+    }
+    if (minPartyHealth(state) >= 50) return oxenTired(state) ? 'slow' : 'moderate';
     return 'slow';
   },
   shouldRest(state) {
