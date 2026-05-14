@@ -99,6 +99,20 @@ export interface Landmark {
   // wary trades work but at worse rates, friendly+ trades flow normally.
   // Read by isLandmarkAccessible() and the tribe-aware visit/trade flows.
   tribeId?: string;
+  // #915 — Items the post pays a +15% premium for when bartered. Period
+  // anchors: HBC at Boise prized buffalo robes (Carpenter 1857); Bridger
+  // preferred fresh meat + horses (Hastings 1845); mission stations
+  // wanted fresh game the farm couldn't supply (Whitman). Reads applied
+  // by `systems/barter.ts:quoteBarter`.
+  barterPreferred?: readonly string[];
+  // #915 — Items the post discounts by −40% if it'll take them at all.
+  // Bryant 1846 on Bridger refusing whiskey: "double the rate of any
+  // other staple." Per-post moral / stocking quirks.
+  barterRefused?: readonly string[];
+  // #915 — When explicitly false, the post runs cash-only (Mormon
+  // ferries, contract operations). Default true — every fort + mission +
+  // road ranch pre-1860 ran barter, per Bryant / Royce / Carpenter.
+  barterEnabled?: boolean;
 }
 
 /**
@@ -259,6 +273,10 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'frontier',
     stockScale: 1.5,
     services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'bath_house', 'ox_swap'],
+    // #915 — Laramie's fur-trade origins meant a permanent appetite
+    // for robes + hides for the eastbound shipments. Bryant 1846 +
+    // Sage 1846 both record bartering hides + jerky for staples here.
+    barterPreferred: ['buffalo_robe', 'raw_hide', 'game_meat', 'jerky'],
     blurb: 'A great adobe fort at the fork of the Laramie and North Platte. Last outpost before the Rockies — the broadest selection on the trail, and the steepest prices.',
     stock: [
       // Marcy 5 (period: Bryant 1846 + Carpenter 1857 record all five
@@ -364,6 +382,11 @@ export const LANDMARKS: readonly Landmark[] = [
     // remark on Bridger's exorbitant prices for what little he had.
     priceMultiplier: 1.5,
     services: ['gossip', 'blacksmith', 'ox_swap'],
+    // #915 — Bridger valued meat + hides above all (Hastings 1845
+    // notes him buying fresh game at near-cash). Refused whiskey —
+    // Bryant 1846 records it specifically.
+    barterPreferred: ['game_meat', 'jerky', 'pemmican', 'buffalo_robe', 'raw_hide'],
+    barterRefused: ['whiskey'],
     blurb: "Jim Bridger's stockade is famously thin on stock. Moccasins, buffalo robes, and whatever the mountain men happened to bring in this week. Take what you can get.",
     stock: [
       // Marcy 5 (period: Carpenter 1857 explicit "50 lb flour, 20 lb
@@ -413,6 +436,12 @@ export const LANDMARKS: readonly Landmark[] = [
     abandonedAfterYear: 1856,
     stockScale: 1.1,
     services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'ox_swap'],
+    // #915 — HBC's eastbound shipments needed buffalo robes + hides;
+    // Hall was a primary collection point (Carpenter 1857 records
+    // trading robes for British wool blankets here). Refused whiskey:
+    // HBC company policy under Pemberton.
+    barterPreferred: ['buffalo_robe', 'raw_hide', 'pemmican', 'game_meat'],
+    barterRefused: ['whiskey'],
     blurb: "A Hudson's Bay Company post on the Snake. British imports via HBC supply lines — tea, good wool blankets, manufactured goods. The California Trail splits here; half the wagons turn south.",
     stock: [
       // Marcy 5 + beans (period: HBC supply lines kept Hall the
@@ -448,6 +477,10 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'hbc',
     stockScale: 0.6,
     services: ['gossip', 'blacksmith'],
+    // #915 — HBC at Boise prized buffalo robes for the eastbound run
+    // (Carpenter 1857: "got 50 lb flour for one prime robe"). Fresh
+    // meat traded above market — desert station with limited hunting.
+    barterPreferred: ['buffalo_robe', 'raw_hide', 'game_meat', 'jerky'],
     blurb: 'A small HBC station by the Boise River. Cottonwoods, worn travelers, and a modest stock — not a major resupply, but the water is good.',
     stock: [
       // Marcy 5 partial (period: Frizzell 1852 records flour / bacon /
@@ -491,6 +524,12 @@ export const LANDMARKS: readonly Landmark[] = [
     priceMultiplier: 0.9,
     services: ['gossip', 'inn', 'blacksmith'],
     innNightlyRate: 1,
+    // #915 — Mission farm produced wheat / dairy / vegetables but not
+    // game; fresh meat from emigrant hunts traded at a premium
+    // (Whitman's letters 1845-46 note welcoming venison + bison).
+    // Refused whiskey — Methodist station, alcohol prohibited.
+    barterPreferred: ['game_meat', 'jerky', 'pemmican', 'buffalo_robe'],
+    barterRefused: ['whiskey'],
     blurb: "Waiilatpu mission station on the Walla Walla. Marcus and Narcissa Whitman keep wheat, peas, potatoes, and beef from the farm; cheese and butter from the dairy. Dr. Whitman tends the sick when there's a doctor's call. Sparse on dry goods — they're missionaries, not traders.",
     stock: [
       // Farm produce — the whole point of stopping at Whitman's.
