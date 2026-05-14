@@ -230,6 +230,29 @@ export function tickOxen(state: GameState, _rng: Rng): GameState {
  * still tire and graze but don't pull. Defaults to all alive when the
  * caller doesn't model yokes (legacy callers / tests).
  */
+/** Per-ox fitness 0..1 — health × fatigue-adjusted pull rate. Used to
+ *  rank oxen for harness selection (sort key) and to compute team speed
+ *  factor (average).
+ *
+ *  #963 F2 — fatigue denominator 100 → 200 (linear-to-50%, not
+ *  linear-to-zero). Period anchors:
+ *    Bryant 1846 day ~70 (fatigue ~50): "ten or twelve miles per day"
+ *      vs fresh ~18 → 67-75% speed.
+ *    Reed Donner Sierra (fatigue ~100, terminal): "oxen pulling at
+ *      half their usual rate" → 50% speed.
+ *    Bidwell 1841 day ~90 (fatigue ~90): "could scarcely lift heads"
+ *      but still pulling → ~55% speed.
+ *  Old curve (fatigue/100) overshot Bryant by 2× at mid-fatigue and
+ *  collapsed to literal zero at fatigue 100, which never happened in
+ *  the diaries — Bidwell's near-collapse oxen were still in harness.
+ *  New /200 curve maps cleanly onto each anchor:
+ *    fatigue 50  → 0.75 (Bryant)
+ *    fatigue 80  → 0.60 (mid)
+ *    fatigue 100 → 0.50 (Reed Donner terminal) */
+export function oxFitness(ox: Ox): number {
+  return (ox.health / 100) * (1 - ox.fatigue / 200);
+}
+
 /** Pick the team that goes in harness today — top-N fittest alive oxen.
  *  Shared by oxenSpeedFactor (which scores them) and tickOxen (which
  *  only tires the hitched team, post-#963 follow-up). Sort tie-broken
@@ -238,8 +261,8 @@ export function selectHitchedOxen(oxen: Ox[], hitchedCount?: number): Ox[] {
   const alive = oxen.filter((o) => o.health > 0);
   if (alive.length === 0) return [];
   const ordered = [...alive].sort((a, b) => {
-    const aFit = (a.health / 100) * (1 - a.fatigue / 100);
-    const bFit = (b.health / 100) * (1 - b.fatigue / 100);
+    const aFit = oxFitness(a);
+    const bFit = oxFitness(b);
     if (bFit !== aFit) return bFit - aFit;
     return a.id.localeCompare(b.id);
   });
@@ -254,8 +277,7 @@ export function oxenSpeedFactor(
 ): number {
   const hitched = selectHitchedOxen(oxen, hitchedCount);
   if (hitched.length === 0) return 0;
-  const avgFitness =
-    hitched.reduce((s, o) => s + (o.health / 100) * (1 - o.fatigue / 100), 0) / hitched.length;
+  const avgFitness = hitched.reduce((s, o) => s + oxFitness(o), 0) / hitched.length;
   const teamFactor = Math.min(TEAM_FACTOR_CAP, hitched.length / Math.max(1, optimalTeam));
   return teamFactor * avgFitness;
 }
