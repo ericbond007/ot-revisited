@@ -9,7 +9,7 @@ import { tickWeather } from '../systems/weather';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale, healingMultiplier } from '../systems/morale';
 import { advanceTrain } from '../systems/wagon-train';
-import { recoverOxenFatigue } from '../systems/oxen';
+import { recoverOxenFatigue, recoverOxenHealth } from '../systems/oxen';
 import { attemptFire } from '../systems/fire';
 import { reapDead } from '../systems/death';
 import { applyDehydration } from '../systems/dehydration';
@@ -157,6 +157,11 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
         * restFeed.effectiveGrazing
     );
     s = { ...s, oxen: recoverOxenFatigue(s.oxen, oxRecovery) };
+    // #963 H1 — passive HP recovery on rest days when an ox is fully
+    // rested off (fatigue ≤30). +1 HP/day. Single Sunday rests on a
+    // tired team clear fatigue first; second-day or multi-day stops
+    // start meaningful HP recovery (matches Bryant 1846 at Bridger).
+    s = { ...s, oxen: recoverOxenHealth(s.oxen) };
 
     s = attemptFire(s, rng);
 

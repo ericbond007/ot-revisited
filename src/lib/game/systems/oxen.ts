@@ -310,3 +310,29 @@ export function recoverOxenFatigue(oxen: Ox[], amount: number): Ox[] {
     return { ...o, fatigue };
   });
 }
+
+/** #963 H1 — slow ox HP recovery on rest days. An ox at low fatigue
+ *  (≤30, i.e. already rested off this trip's wear) gains a small HP
+ *  bump per rest day, mirroring the period 'team picks up flesh on
+ *  long stops' (Marcy 1859, Bryant 1846 at Bridger after 4-day rest:
+ *  "team much improved").
+ *
+ *  Gating on fatigue ≤30 means a Sunday rest after a hard week first
+ *  clears fatigue (30/day base recovery — second Sunday or multi-day
+ *  layover days start meaningful HP recovery). Pre-H1, oxen never
+ *  healed at all — any damage was permanent until swap.
+ *
+ *  Rate intentionally modest (1 HP/day) so a heavily damaged ox still
+ *  needs a swap at a post. Cumulative event injuries on a 220-day trip
+ *  would otherwise drag the team to 0 with no way to recover. */
+const OX_HP_RECOVERY_FATIGUE_GATE = 30;
+const OX_HP_RECOVERY_PER_REST_DAY = 1;
+
+export function recoverOxenHealth(oxen: Ox[]): Ox[] {
+  return oxen.map((o) => {
+    if (o.health === 0) return o;
+    if (o.fatigue > OX_HP_RECOVERY_FATIGUE_GATE) return o;
+    if (o.health >= 100) return o;
+    return { ...o, health: Math.min(100, o.health + OX_HP_RECOVERY_PER_REST_DAY) };
+  });
+}

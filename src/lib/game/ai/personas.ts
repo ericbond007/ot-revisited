@@ -323,7 +323,12 @@ function oxenTired(state: GameState): boolean {
  *  → next ox absorbs the load → cascade). Avg-based oxenWornOut misses
  *  this because 5 healthy oxen mask one dying one. */
 function anyOxStrained(state: GameState): boolean {
-  return state.oxen.some((o) => o.health > 0 && (o.fatigue >= 75 || o.health < 70));
+  // #963 H1 companion: health threshold bumped 70 → 75. With H1 slow
+  // HP recovery, oxen heal back above 70 between events. The tighter
+  // 75 threshold keeps pace_pusher catching oxen showing wear before
+  // they're fully healed, while not over-triggering rest on cosmetic
+  // damage. Fatigue gate (75) unchanged.
+  return state.oxen.some((o) => o.health > 0 && (o.fatigue >= 75 || o.health < 75));
 }
 
 /** Decide how many fresh oxen the bot should acquire at this post.
@@ -1151,6 +1156,13 @@ export const pacePusherPersona: Persona = {
     // one ox to cross the HP-drain threshold (fatigue 80) while team
     // avg stayed under oxenWornOut's 70 limit. The dying ox went
     // unnoticed → cascade ox deaths → wipe rate climbed 27→47%.
+    //
+    // #963 H1 companion: ALSO rest when the team is chronically
+    // wearing (avg ox health < 80). Without this, H1's slow HP
+    // recovery means individual oxen heal back above the strained
+    // 70-threshold between events while team avg keeps slipping —
+    // pace_pusher misses the trend until oxen actually die. Avg-80
+    // is the 'time to stop and recover' signal.
     return (
       minPartyHealth(state) < 30
       || oxenWornOut(state)

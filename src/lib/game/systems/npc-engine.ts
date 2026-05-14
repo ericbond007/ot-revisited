@@ -41,7 +41,7 @@ import { applyDietVariety, applyHotDrinks } from './diet';
 import { applyPastryQuality } from './pastry';
 import { progressConditions } from './conditions';
 import { applyStarvation as applyEngineStarvation } from './starvation';
-import { tickOxen as tickEngineOxen, recoverOxenFatigue } from './oxen';
+import { tickOxen as tickEngineOxen, recoverOxenFatigue, recoverOxenHealth } from './oxen';
 import { tickWagon as tickEngineWagon, applyAxleGrease as applyEngineAxleGrease } from './wagon';
 import { applyDehydration as applyEngineDehydration } from './dehydration';
 import { reapDead as reapDeadEngine } from './death';
@@ -369,6 +369,9 @@ export function tickNpcWagon(
   } else {
     const recovery = ctx.terrain === 'desert' || ctx.terrain === 'mountains' ? 5 : 15;
     next = { ...next, oxen: recoverOxenFatigue(next.oxen, recovery) };
+    // #963 H1 — passive HP recovery for NPC oxen at low fatigue, same
+    // rules as the player path. Without this, NPC ox HP only ever drops.
+    next = { ...next, oxen: recoverOxenHealth(next.oxen) };
   }
 
   // 5b. #300 — wagon condition decay + axle grease.
