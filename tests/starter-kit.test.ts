@@ -42,7 +42,7 @@ describe('starter kit', () => {
     expect(BASE_KIT.inventory.boots ?? 0).toBe(0);
   });
 
-  it('includeStarterKit=false skips BASE_KIT entirely + refunds $440 (#963)', () => {
+  it('includeStarterKit=false skips BASE_KIT entirely + refunds $500 (#963b1)', () => {
     const kit = buildStarterKit(['blacksmith'], 'prairie_schooner', { includeStarterKit: false });
     // BASE staples NOT present
     expect(kit.inventory.flour ?? 0).toBe(0);
@@ -51,8 +51,9 @@ describe('starter kit', () => {
     expect(kit.inventory.tent ?? 0).toBe(0);
     expect(kit.inventory.coat ?? 0).toBe(0);
     // Cash baseline + refund (#963 bumped refund 250 → 440 to match
-    // the new food-rich BASE_KIT value at Independence prices).
-    expect(kit.cash).toBe(BASE_KIT.cash + 440);
+    // the new food-rich BASE_KIT value at Independence prices.
+    // #963b1 bumped 440 → 500 to cover the +2 starter oxen at ~$30/head.)
+    expect(kit.cash).toBe(BASE_KIT.cash + 500);
     // Profession.starterGear still applied (blacksmith identity)
     expect(kit.inventory.iron_toolkit).toBe(1);
     expect(kit.inventory.ox_shoes).toBe(10);
