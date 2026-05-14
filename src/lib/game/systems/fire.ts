@@ -13,8 +13,28 @@ import { exposureMult } from './warmth';
 //   1. If firewood < FIRE_WOOD_PER_NIGHT → cold camp, no fire.
 //   2. Otherwise consume the wood and set hadFireLastNight.
 
-/** Pounds consumed per night of fire. */
-export const FIRE_WOOD_PER_NIGHT = 5;
+/** Pounds consumed per night of fire — split by night temperature
+ *  (#1017). Period reality (Bryant 1846, Marcy 1859 Prairie Traveler,
+ *  Royce 1849):
+ *    - Warm-night cookfire only: small evening fire of chips or
+ *      twigs for coffee + supper. Bryant: "the evening fire was
+ *      small, of chips, for the coffee pot." ~2 lb wood-equivalent.
+ *    - Cold-night sustained fire: kept stacked through the night for
+ *      warmth. Reed Donner Sierra: "kept the fire stacked through
+ *      the night, the cold being so deep no man slept without a
+ *      foot to it." ~5 lb wood-equivalent (current rate).
+ *  Pre-#1017 the engine burned 5 lb every night unconditionally —
+ *  the Donner-Sierra rate applied to a July prairie cookfire. Result:
+ *  bots couldn't stockpile fuel for the Snake/Blue Mountains push,
+ *  universally died of Exposure in the late trail (see #963 audit). */
+export const COLD_NIGHT_BURN = 5;
+export const WARM_NIGHT_BURN = 2;
+
+/** Legacy export — was used as a single threshold before #1017 split
+ *  fire burn by temperature. Some callers still gate on "at least
+ *  enough wood for a fire" without caring which kind; that floor
+ *  is the warm-night rate. */
+export const FIRE_WOOD_PER_NIGHT = WARM_NIGHT_BURN;
 
 /**
  * Terrain-specific mean pounds of firewood available per travel day.
@@ -57,10 +77,25 @@ const COLD_NIGHT_HEALTH_HIT = 3;
 const COLD_NIGHT_MORALE_HIT = 2;
 
 function isColdNight(state: GameState): boolean {
-  // Mountains always bite. Winter months (Nov–Feb) bite everywhere.
+  // #1017 — weather signals first (period reality: Bryant 1846 July
+  // hailstorm "men shivered in their coats"; Frizzell 1852 August
+  // Sweetwater frost "the canvas was stiff at dawn"). A storm or
+  // frost or snow night reads cold ANYWHERE — including a July
+  // prairie that the terrain+month rule would call warm.
+  const w = state.weather;
+  if (w === 'frost' || w === 'snow' || w === 'storm') return true;
+  // Mountains always bite — even in clear July, alpine nights drop
+  // to 30-40°F at altitude. Marcy 1859: South Pass 7400 ft, "the
+  // nights cold from June through August on the high passes."
   if (state.location.terrain === 'mountains') return true;
+  // Winter months (Nov–Feb) bite everywhere on a clear-weather day
+  // by virtue of season alone.
   const m = state.date.month;
   return m === 11 || m === 12 || m === 1 || m === 2;
+  // #1019 (deferred): replace this binary predicate with a continuous
+  // night-temperature model (terrain × elevation × month × weather).
+  // The binary captures the load-bearing cases (mountain, storm,
+  // frost, winter) for now.
 }
 
 function applyColdPenalty(state: GameState): GameState {
@@ -91,17 +126,23 @@ function applyColdPenalty(state: GameState): GameState {
 
 export function attemptFire(state: GameState, _rng: Rng): GameState {
   const wood = state.resources.firewood ?? 0;
+  // #1017 — fire burn rate depends on the night's coldness. Warm
+  // prairie nights consume just the cookfire-equivalent (2 lb);
+  // cold mountain / storm / frost nights consume the sustained-warmth
+  // fire rate (5 lb). Pre-#1017 every night burned 5 lb unconditionally.
+  const cold = isColdNight(state);
+  const burn = cold ? COLD_NIGHT_BURN : WARM_NIGHT_BURN;
 
-  // No wood → cold camp, no fire.
-  if (wood < FIRE_WOOD_PER_NIGHT) {
-    const cold = applyColdPenalty(state);
-    const line = isColdNight(state)
+  // Not enough wood for tonight's fire → cold camp.
+  if (wood < burn) {
+    const next = applyColdPenalty(state);
+    const line = cold
       ? 'No firewood tonight. The camp shivered through a cold dark.'
       : 'No firewood tonight. Camp is dark but not dangerous.';
     return {
-      ...cold,
-      flags: { ...cold.flags, hadFireLastNight: false },
-      eventLog: [...cold.eventLog, { day: state.day, text: line }]
+      ...next,
+      flags: { ...next.flags, hadFireLastNight: false },
+      eventLog: [...next.eventLog, { day: state.day, text: line }]
     };
   }
 
@@ -110,7 +151,7 @@ export function attemptFire(state: GameState, _rng: Rng): GameState {
   return {
     ...state,
     flags: { ...state.flags, hadFireLastNight: true },
-    resources: { ...state.resources, firewood: wood - FIRE_WOOD_PER_NIGHT }
+    resources: { ...state.resources, firewood: wood - burn }
   };
 }
 
