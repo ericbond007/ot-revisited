@@ -607,7 +607,14 @@ export const cautiousPersona: Persona = {
     // topped through ordinary travel. The 0.15 trigger reserves
     // findWater for genuinely dry stretches where ambient sources
     // aren't enough.
-    return waterRatio(state) < 0.15 && state.location.terrain !== 'desert';
+    //
+    // #1022 — desert exclusion removed. In desert the runner's
+    // restWithWaterChain falls back to dig_well (40% success per
+    // attempt, Marcy 1859: "a well of moderate depth will yield
+    // water on most parts of the Plains"). Pre-1022 bots died of
+    // dehydration in the Snake bench because the trigger never
+    // fired in desert — they had a shovel and never used it.
+    return waterRatio(state) < 0.15;
   },
   shouldPan() {
     // Cautious skips panning — period: didn't dawdle on speculative
@@ -765,7 +772,8 @@ export const balancedPersona: Persona = {
   shouldFindWater(state) {
     // #926 → 0.18 → 0.10. Same logic as cautious — passive ambient
     // refill keeps the keg topped through ordinary travel.
-    return waterRatio(state) < 0.10 && state.location.terrain !== 'desert';
+    // #1022 — desert exclusion removed; runner falls back to dig_well.
+    return waterRatio(state) < 0.10;
   },
   shouldPan(state) {
     // Balanced tries panning when the timing is right — period:
@@ -893,7 +901,8 @@ export const aggressivePersona: Persona = {
   shouldStayAtInn: () => false,
   shouldFindWater(state) {
     // Only when nearly out of water — aggressive doesn't waste time on stops.
-    return waterRatio(state) < 0.2 && state.location.terrain !== 'desert';
+    // #1022 — desert exclusion removed; runner falls back to dig_well.
+    return waterRatio(state) < 0.2;
   },
   shouldPan(state) {
     // Aggressive bot has Gold Rush fever — pans every chance.
@@ -1025,8 +1034,9 @@ export const chaosPersona: Persona = {
   shouldStayAtInn(state, here, rng) {
     return (here.services ?? []).includes('inn') && state.cash >= 5 && rng.chance(0.4);
   },
-  shouldFindWater(state, rng) {
-    return state.location.terrain !== 'desert' && rng.chance(0.25);
+  shouldFindWater(_state, rng) {
+    // #1022 — desert exclusion removed; runner falls back to dig_well.
+    return rng.chance(0.25);
   },
   shouldPan(state, rng) {
     // Chaos pans 30% of eligible days regardless of cooldown — gates

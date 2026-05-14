@@ -140,8 +140,17 @@ function pickHuntTarget(state: GameState): { target: HuntTarget; ammo: AmmoBand 
  *  and by the v8 rest-chains-water-when-low piggyback path so the bot
  *  doesn't burn separate calendar days on rest and water-find. */
 function restWithWaterChain(state: GameState, stats: RunningStats): GameState {
-  const tryCamps: Array<readonly ('find_water' | 'boil_water' | 'gather_firewood')[]> = [];
+  const tryCamps: Array<readonly ('find_water' | 'boil_water' | 'gather_firewood' | 'dig_well')[]> = [];
   const fw = state.resources.firewood ?? 0;
+  // #1022 — desert has no surface streams (find_water gates off with
+  // "no streams in this country — dig a well instead"). Dig_well is
+  // 6hr, 40% success per attempt, returns 10-20 gal — Marcy 1859:
+  // "a well of moderate depth will yield water on most parts of the
+  // Plains." Try dig_well first in desert; find_water elsewhere.
+  // Both fall back to plain rest if the camp action is gated off.
+  if (state.location.terrain === 'desert' && (state.inventory.shovel ?? 0) > 0) {
+    tryCamps.push(['dig_well']);
+  }
   if (canBoilWaterInState(state)) {
     if (fw < 5) {
       tryCamps.push(['gather_firewood', 'find_water', 'boil_water']);
