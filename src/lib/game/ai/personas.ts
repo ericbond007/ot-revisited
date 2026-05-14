@@ -815,8 +815,16 @@ export const aggressivePersona: Persona = {
     // worn ox team killed the wagon. Aggressive without this tweak ran
     // grueling at 70+ fatigue, lost oxen between non-swap posts, and
     // wiped before Laramie.
+    //
+    // #963c — pace rebalance (was 'grueling'). Period reality: emigrant
+    // "aggressive" was FAST (15-18 mi/day sustained, the Reed/Donner
+    // push out of Truckee), not GRUELING (25+, which only made sense
+    // for true emergencies — outrunning a storm, racing to a ferry).
+    // The grueling default trapped aggressive in fatigue-rest cycles:
+    // 5 days grueling → oxen worn → forced rest → repeat → ox HP drains
+    // → 39% rest days vs 42% travel. Trace-963 confirmed.
     if (oxenWornOut(state)) return 'moderate';
-    return 'grueling';
+    return 'fast';
   },
   pickRations() {
     return 'meager';
@@ -1085,9 +1093,16 @@ export const pacePusherPersona: Persona = {
   ...balancedPersona,
   id: 'pace_pusher',
   pickPace(state) {
-    if (minPartyHealth(state) >= 70 && !oxenWornOut(state)) return 'grueling';
-    if (minPartyHealth(state) >= 50) return 'fast';
-    return 'moderate';
+    // #963c — pace rebalance (was grueling/fast/moderate). Real
+    // "pace pusher" emigrants (the Reed/Donner outrunning-storms
+    // archetype, the express riders) pushed FAST sustained, not
+    // GRUELING — grueling pace was an emergency-only gait that
+    // wrecked the team in a week. Old defaults trapped pace_pusher
+    // in fatigue-rest cycles: 51% rest days vs 36% travel. Down one
+    // rung: fast / moderate / slow.
+    if (minPartyHealth(state) >= 70 && !oxenWornOut(state)) return 'fast';
+    if (minPartyHealth(state) >= 50) return 'moderate';
+    return 'slow';
   },
   shouldRest(state) {
     // Only rest when the team is actually failing — not on the cautious
