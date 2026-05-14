@@ -237,8 +237,8 @@ const noon_lost_emigrant: GameEvent = {
 const noon_antelope: GameEvent = {
   id: 'noon_antelope',
   category: 'finds',
-  title: 'An antelope watching',
-  body: "Mid-meal, someone whispers and points. An antelope is standing at two hundred yards in the sage, head up, watching. Curious as a child. The rifle's packed.",
+  title: 'A pronghorn watching',
+  body: "Mid-meal, someone whispers and points. A pronghorn is standing at two hundred yards in the sage, head up, watching. Curious as a child. The rifle's packed.",
   weight: 1,
   choices: [
     {
@@ -249,7 +249,7 @@ const noon_antelope: GameEvent = {
       silentLog: true,
       apply: (s) => logLine(
         { ...s, morale: Math.min(100, s.morale + 1) },
-        'Watched the antelope until it bolted into the sage. The party smiled. Morale +1.'
+        'Watched the pronghorn until it bolted into the sage. The party smiled. Morale +1.'
       )
     }
   ]
