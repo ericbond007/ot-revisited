@@ -215,8 +215,21 @@ describe('Blacksmith (#201)', () => {
 
 describe('Scout (#154)', () => {
   it('grants +8% travel speed', () => {
-    const noScout = baseState(['carpenter']);
-    const withScout = baseState(['scout']);
+    // #963 F2: bump to a full 4-ox optimal team so milesPerDay is
+    // large enough that the +8% scout bonus survives Math.round().
+    // (Default 2-ox state from baseState() gives ~10 mi/day where
+    // +8% rounds away.)
+    const fullTeam = {
+      oxen: [
+        { id: 'o1', health: 100, fatigue: 0, shod: true },
+        { id: 'o2', health: 100, fatigue: 0, shod: true },
+        { id: 'o3', health: 100, fatigue: 0, shod: true },
+        { id: 'o4', health: 100, fatigue: 0, shod: true }
+      ],
+      inventory: { flour: 200, bacon: 100, yoke: 2 }
+    };
+    const noScout = baseState(['carpenter'], fullTeam);
+    const withScout = baseState(['scout'], fullTeam);
     expect(milesPerDay(withScout)).toBeGreaterThan(milesPerDay(noScout));
   });
 });
