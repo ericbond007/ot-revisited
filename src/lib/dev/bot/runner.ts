@@ -671,8 +671,38 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         // plain rest if no chain succeeds.
         const cap = state.resources.waterCap ?? 20;
         const ratio = cap > 0 ? state.resources.water / cap : 1;
+        // #963 firewood economy: when firewood is low and terrain can
+        // be gathered, piggyback gather_firewood on the rest day. Bots
+        // were entering the Snake/Blue-Mountains corridor with <10 lb
+        // firewood and dying of Exposure (universal failure mode in
+        // post-#963 trace audit). The gather camp action yields 2× the
+        // passive daily rate (#963 traces: 12 lb prairie, 20 lb mtn,
+        // 24 lb forest, 4 lb desert) — one good rest day buys a week+
+        // of fire. `terrain==='river'` excluded since the post is
+        // usually a town, not a wood-yard. (W3 stockpile-via-rest path
+        // — W1 tradeable-at-posts is a follow-up for the player UI.)
+        const fw = state.resources.firewood ?? 0;
+        const FW_LOW_LB = 15; // < 3 nights of fire
+        const canGather = state.location.terrain !== 'river';
+        const wantFirewood = fw < FW_LOW_LB && canGather;
         if (ratio < 0.6) {
           state = restWithWaterChain(state, stats);
+        } else if (wantFirewood) {
+          try {
+            state = rest(state, 1, { campActions: ['gather_firewood'] });
+            stats.decisionsMade += 1;
+            firedEventToday = true;
+          } catch {
+            // Fall back to plain rest if camp action is somehow gated off.
+            try {
+              state = rest(state, 1);
+              stats.decisionsMade += 1;
+              firedEventToday = true;
+            } catch (err) {
+              stats.errors.push(`rest: ${(err as Error).message}`);
+              break;
+            }
+          }
         } else {
           try {
             state = rest(state, 1);
