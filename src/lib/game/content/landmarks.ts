@@ -462,7 +462,13 @@ export const LANDMARKS: readonly Landmark[] = [
   // summer. Period emigrants traded knives, beads, and tobacco for
   // fresh fish. The salmon-trade encounter (#239) already covers the
   // gameplay; this entry is the geographic anchor.
-  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 110, terrain: 'river',     kind: 'landmark' },
+  // #963 audit fix: terrain was 'river' but kind is 'landmark' (scenic
+  // Snake-River waterfall, not a ford). 'river' terrain has milesPerDay
+  // multiplier 0 — fine for kind:'river' fords where the bot uses ford()
+  // to bypass, broken for a kind:'landmark' the bot walks past. Bot
+  // would freeze on arrival (mile 1343) and never advance. Snake-basin
+  // southern Idaho is sage desert; 'desert' is correct.
+  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 110, terrain: 'desert',    kind: 'landmark' },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 40, terrain: 'river',   kind: 'river',
     river: {
       depthFt: 5.0, currentMph: 3, ferryPrice: 6,
