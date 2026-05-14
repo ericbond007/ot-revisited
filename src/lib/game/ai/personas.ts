@@ -119,12 +119,21 @@ function gapAwareFoodTrigger(
  *  Period: emigrants knew the long legs (Hall→Boise dry plains,
  *  Boise→Whitman Blue Mountains) and traded for fresh teams at the
  *  last resupply even when the current team was technically still
- *  pulling. */
+ *  pulling.
+ *
+ *  #963 — uses `effectiveGapMiles` so the late-trail posts (Hall,
+ *  Bridger after Sublette) evaluate against the whole remaining
+ *  run, not just the next leg. At Hall the next leg is only 289mi
+ *  to Boise, but Boise→Oregon City is another 644mi of mountains
+ *  + desert. The original `nextSupplyDistance ≥ 150` already
+ *  triggered at Hall, but the same threshold also fires at every
+ *  intermediate post — using effective gap raises the bar
+ *  proportionally for the genuinely long remaining runs. */
 function gapAwareOxHealthFloor(
   state: GameState,
   base: { healthFloor: number; bigGapMiles: number; bigGapHealthBoost: number }
 ): number {
-  return nextSupplyDistance(state) >= base.bigGapMiles
+  return effectiveGapMiles(state) >= base.bigGapMiles
     ? base.healthFloor + base.bigGapHealthBoost
     : base.healthFloor;
 }
