@@ -199,7 +199,7 @@ function postStocksMissingWarmthGear(state: GameState, here: Landmark): boolean 
  *  per pastry day for the rest of the journey. Period reality:
  *  emigrants who lost cooking pots ABSOLUTELY stopped at the next
  *  post that stocked them. Cookware is the load-bearing item; rope /
- *  shovel / water_skin are also worth catching since they each have
+ *  shovel / water_bag are also worth catching since they each have
  *  a downstream gameplay role. */
 function postStocksMissingEquipment(state: GameState, here: Landmark): boolean {
   const stock = new Set(here.stock ?? []);
@@ -207,7 +207,7 @@ function postStocksMissingEquipment(state: GameState, here: Landmark): boolean {
   if (stock.has('cookware') && (inv.cookware ?? 0) < 1) return true;
   if (stock.has('shovel') && (inv.shovel ?? 0) < 1) return true;
   if (stock.has('rope') && (inv.rope ?? 0) < 1) return true;
-  if (stock.has('water_skin') && (inv.water_skin ?? 0) < 1) return true;
+  if (stock.has('water_bag') && (inv.water_bag ?? 0) < 1) return true;
   return false;
 }
 

@@ -70,7 +70,7 @@ export interface EquipmentRestockOpts {
   cookwareSpare?: boolean;
 }
 
-/** One-time utility kit: shovel, cookware, water_skin, rope. Gear the
+/** One-time utility kit: shovel, cookware, water_bag, rope. Gear the
  *  party functions without — buy on first stop that stocks it.
  *  Persona-tunable since #909 — `cookwareSpare` adds a second cookware
  *  for prudent personas (Tabitha Brown / cautious). */
@@ -86,7 +86,7 @@ export function pickEquipmentRestock(
     const need = Math.max(0, cookwareTarget - (inv.cookware ?? 0));
     if (need > 0) buys.push({ item: 'cookware', qty: need });
   }
-  if (stock.has('water_skin') && (inv.water_skin ?? 0) < 2) buys.push({ item: 'water_skin', qty: 1 });
+  if (stock.has('water_bag') && (inv.water_bag ?? 0) < 2) buys.push({ item: 'water_bag', qty: 1 });
   if (stock.has('rope') && (inv.rope ?? 0) < 1) buys.push({ item: 'rope', qty: 1 });
   return buys;
 }

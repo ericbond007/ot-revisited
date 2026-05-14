@@ -13,11 +13,23 @@ function causeFromConditions(conditions: Condition[]): string | null {
 
 export function reapDead(state: GameState, _rng: Rng): GameState {
   let anyChange = false;
+  // #1021 audit: dehydration HP drain doesn't set a condition (per #135
+  // design) so deaths during dry-day streaks were silently labeled
+  // 'Exposure' (the default fallback). With water tracking, we can
+  // reliably attribute: if the keg is dry OR we've been in a dry streak,
+  // the death cause is Dehydration.
+  const dryStreakActive =
+    state.resources.water <= 0
+    || (typeof state.flags._dehydrationDays === 'number' && (state.flags._dehydrationDays as number) >= 1);
+
   const party = state.party.map((m) => {
     if (m.dead) return m;
     if (m.health > 0) return m;
     anyChange = true;
-    const cause = causeFromConditions(m.conditions) ?? 'Exposure';
+    const fromCondition = causeFromConditions(m.conditions);
+    // Cause priority: condition (cholera, dysentery, etc.) > dehydration > exposure default.
+    const cause = fromCondition
+      ?? (dryStreakActive ? 'Dehydration' : 'Exposure');
     return {
       ...m,
       dead: true,

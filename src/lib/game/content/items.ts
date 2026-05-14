@@ -208,7 +208,15 @@ export const ITEMS: Record<string, ItemMeta> = {
   // tar, skin salve for chapped hands and sunburn.
   lard: { id: 'lard', name: 'Lard', category: 'tool', weightLbPerUnit: 5, description: 'Rendered pork fat. Cooks meals, greases axles in a pinch, salves chapped skin.' },
   compass: { id: 'compass', name: 'Compass', category: 'tool', weightLbPerUnit: 0.5, description: 'Reduces the chance of being lost in storms or fog.' },
-  water_skin: { id: 'water_skin', name: 'Water skin', category: 'tool', weightLbPerUnit: 2, description: '+5 gal water carry cap each. A buffer for dry stretches — base cap is 20 gal.' },
+  // #1021 — renamed from `water_skin` (anachronistic, mountain-man era
+  // term) to `water_bag` (period-correct rubber bag, Goodyear 1844
+  // vulcanization → common emigrant use 1849+). Carpenter 1857 at
+  // Hall: 'two rubber bags at Hall, four dollars apiece' — price
+  // anchor. Save migration handled in upgrade.ts. Year-gated at posts
+  // (only stocked 1849+) since pre-Goodyear emigrants relied on the
+  // wagon cask alone or auxiliary oak kegs (a future ticket may add
+  // a year-agnostic `water_keg` item for the 1843-48 window).
+  water_bag: { id: 'water_bag', name: 'Rubber water bag', category: 'tool', weightLbPerUnit: 2, description: '+5 gal water carry cap each. Vulcanized rubber, hung inside the wagon — a strong buffer for the Snake/Blue Mountains dry stretches.' },
   ox_shoes: { id: 'ox_shoes', name: 'Ox / mule shoes', category: 'livestock', weightLbPerUnit: 2, description: 'Replace shoes that oxen or mules throw on rocky terrain. A Blacksmith or Teamster re-shoes them.' },
   spyglass: { id: 'spyglass', name: 'Spyglass', category: 'tool', weightLbPerUnit: 2, description: 'Reveals landmarks further ahead on the map. Helps with spotting game on hunts.' },
 

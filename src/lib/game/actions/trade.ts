@@ -193,7 +193,7 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
     }
   };
 
-  // Water-carrying cap scales with water_skin count. Recompute after
+  // Water-carrying cap scales with water_bag count. Recompute after
   // every trade in case the player bought or sold skins; keep current
   // water level, clamped to the new cap (rare — cap rarely shrinks
   // mid-game, but sells can do it).

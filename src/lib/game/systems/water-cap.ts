@@ -1,25 +1,25 @@
 import type { GameState } from '../types';
 import { getWagon, type WagonModelId } from '../content/wagons';
 
-/** Extra gallons per water_skin item owned (strap-on leather bags). */
-export const WATER_SKIN_GAL = 5;
+/** Extra gallons per water_bag item owned (Goodyear rubber bag, 1849+). */
+export const WATER_BAG_GAL = 5;
 
 /**
  * Pure function — total waterCap from wagon model + skins. Wagon model
  * sets the wooden-keg baseline (~10–30 gal depending on size); each
- * water_skin adds 5 gal on top.
+ * water_bag adds 5 gal on top.
  */
 export function computeWaterCap(
   wagonModel: WagonModelId,
   inventory: Record<string, number>
 ): number {
-  const skins = inventory.water_skin ?? 0;
-  return getWagon(wagonModel).baseWaterCapGal + skins * WATER_SKIN_GAL;
+  const skins = inventory.water_bag ?? 0;
+  return getWagon(wagonModel).baseWaterCapGal + skins * WATER_BAG_GAL;
 }
 
 /**
  * Reconcile resources.waterCap with the player's current wagon +
- * water_skin count, preserving resources.water (clamped to new cap).
+ * water_bag count, preserving resources.water (clamped to new cap).
  * Call after any mutation that can change either (trade, outfit, wagon
  * swap).
  */

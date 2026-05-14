@@ -29,6 +29,7 @@ import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
 import { maybeElectCaptain, forceElection } from './systems/wagon-train-elections';
 import type { CrisisVoteReason } from './systems/wagon-train-elections';
 import type { GameEvent } from './content/events';
+import { getLandmark } from './content/landmarks';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickApproachEvent, approachFiredFlag } from './content/landmark-approach-events';
 import { pickText } from './content/text-pools';
@@ -202,6 +203,38 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     // through TownStage; gates internally on landmark.kind ===
     // 'trading_post'.
     s = applyNpcPostRestock(s);
+  }
+
+  // #1021 — free water refill at trading-post arrival. Period reality:
+  // every Oregon Trail trading post was sited next to a year-round
+  // water source (Platte, Laramie, Black's Fork, Snake, Boise, Walla
+  // Walla), and emigrant diaries are unanimous that refilling the
+  // cask was free and routine. Bryant 1846: "we watered the team and
+  // the cask at every fort." Royce 1849: "the cask was full again at
+  // Bridger." Carpenter 1857 at Hall: "topped off everything at Hall
+  // before the desert." Per-(landmark, day) flag prevents re-fill on
+  // every TownStage tick. Gated on kind === 'trading_post' so river
+  // crossings (which are gated by the ford action) don't double-dip.
+  if (arrivedAtLandmark && s.location.atLandmarkId) {
+    const here = getLandmark(s.location.atLandmarkId);
+    const flag = `_wateredAtPost:${s.location.atLandmarkId}:${s.day}`;
+    if (here?.kind === 'trading_post' && !s.flags[flag]) {
+      const cap = s.resources.waterCap;
+      const beforeWater = s.resources.water;
+      if (beforeWater < cap) {
+        s = {
+          ...s,
+          resources: { ...s.resources, water: cap },
+          flags: { ...s.flags, [flag]: true },
+          eventLog: [
+            ...s.eventLog,
+            { day: s.day, text: `Topped off the water cask at ${here.name}. (${cap - beforeWater} gal)` }
+          ]
+        };
+      } else {
+        s = { ...s, flags: { ...s.flags, [flag]: true } };
+      }
+    }
   }
 
   // Landmark arrival events fire when we cross a scenic landmark (one

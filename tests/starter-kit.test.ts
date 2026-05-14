@@ -22,7 +22,7 @@ describe('starter kit', () => {
     expect(BASE_KIT.inventory.bullets ?? 0).toBe(0);
     // Water skins removed from BASE — wagons declare their own
     // baseWaterCapGal; skins are an outfitter upgrade.
-    expect(BASE_KIT.inventory.water_skin ?? 0).toBe(0);
+    expect(BASE_KIT.inventory.water_bag ?? 0).toBe(0);
     // Yokes are added per-wagon in buildStarterKit (#107) — no longer
     // a flat constant on BASE_KIT.
   });

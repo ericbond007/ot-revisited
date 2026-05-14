@@ -47,7 +47,7 @@ function bareWagon(persona: NpcWagonState['personaId'] = 'cautious'): GameState 
       boots: 0,
       cookware: 0,
       shovel: 0,
-      water_skin: 0,
+      water_bag: 0,
       rope: 0,
       quinine: 0,
       bandages: 0,
