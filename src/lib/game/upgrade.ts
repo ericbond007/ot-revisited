@@ -102,6 +102,18 @@ export function upgradeState(state: GameState): GameState {
     inventory = next;
   }
 
+  // #1021 — `water_skin` renamed to `water_bag` (period-correct: rubber
+  // bags, Goodyear 1849+ — mountain-man "water skin" was 1820s-30s
+  // terminology). Save migration: roll old water_skin count into
+  // water_bag count and drop the old key.
+  const oldSkins = inventory.water_skin ?? 0;
+  if (oldSkins > 0 || inventory.water_skin !== undefined) {
+    const next: Record<string, number> = { ...inventory };
+    delete next.water_skin;
+    next.water_bag = (next.water_bag ?? 0) + oldSkins;
+    inventory = next;
+  }
+
   return { ...state, flags, party, wagon, weather, inventory, location };
 }
 

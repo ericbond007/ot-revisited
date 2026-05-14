@@ -140,7 +140,7 @@ export const PROFESSIONS: Record<ProfessionId, ProfessionMeta> = {
     bonusSummary: '+8% travel speed — knows the country and finds shortcuts.',
     starterGear: [
       { item: 'compass', qty: 1 },
-      { item: 'water_skin', qty: 2 },
+      { item: 'water_bag', qty: 2 },
       { item: 'spyglass', qty: 1 }
     ],
     charisma: 4

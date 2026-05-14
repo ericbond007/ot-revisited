@@ -87,18 +87,18 @@ describe('#303a — pickWarmthRestock', () => {
 
 describe('#303a — pickEquipmentRestock', () => {
   it('buys missing utility items', () => {
-    const buys = pickEquipmentRestock(input({}, ['shovel', 'cookware', 'water_skin', 'rope']));
+    const buys = pickEquipmentRestock(input({}, ['shovel', 'cookware', 'water_bag', 'rope']));
     expect(buys).toContainEqual({ item: 'shovel', qty: 1 });
     expect(buys).toContainEqual({ item: 'cookware', qty: 1 });
-    expect(buys).toContainEqual({ item: 'water_skin', qty: 1 });
+    expect(buys).toContainEqual({ item: 'water_bag', qty: 1 });
     expect(buys).toContainEqual({ item: 'rope', qty: 1 });
   });
 
-  it('water_skin threshold is 2', () => {
-    expect(pickEquipmentRestock(input({ inventory: { water_skin: 1 } }, ['water_skin']))).toEqual([
-      { item: 'water_skin', qty: 1 }
+  it('water_bag threshold is 2', () => {
+    expect(pickEquipmentRestock(input({ inventory: { water_bag: 1 } }, ['water_bag']))).toEqual([
+      { item: 'water_bag', qty: 1 }
     ]);
-    expect(pickEquipmentRestock(input({ inventory: { water_skin: 2 } }, ['water_skin']))).toEqual([]);
+    expect(pickEquipmentRestock(input({ inventory: { water_bag: 2 } }, ['water_bag']))).toEqual([]);
   });
 });
 

@@ -290,7 +290,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins',
-      'shovel', 'salt', 'saleratus', 'soap', 'lard', 'rope', 'cookware', 'compass', 'water_skin', 'chicken', 'milk_cow', 'cheese_press', 'butter_crock', 'grain',
+      'shovel', 'salt', 'saleratus', 'soap', 'lard', 'rope', 'cookware', 'compass', 'water_bag', 'chicken', 'milk_cow', 'cheese_press', 'butter_crock', 'grain',
       'tobacco', 'whiskey', 'bible',
       'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
       'moccasins', 'buffalo_robe', 'beads',
@@ -396,7 +396,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'bacon', 'beans', 'coffee', 'sugar', 'salt', 'saleratus',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
       'blanket',
-      'spare_plank', 'ox_shoes', 'rope', 'grain',
+      'spare_plank', 'ox_shoes', 'rope', 'grain', 'water_bag',
       'moccasins', 'buffalo_robe',
       // Bridger's specialty per Marcy 1859 — fur-trade beads and trinkets.
       'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
@@ -454,6 +454,10 @@ export const LANDMARKS: readonly Landmark[] = [
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'grain', 'milk_cow', 'cheese_press', 'butter_crock',
       'soap', 'tobacco', 'whiskey', 'harmonica',
+      // #1021 — water_bag (rubber bag, 1849+). Period: Carpenter 1857
+      // "two rubber bags at Hall, four dollars apiece." THE post for
+      // the Snake desert push.
+      'water_bag',
       // HBC supply lines kept abundant Plains trade goods on hand.
       'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
@@ -495,7 +499,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'flour', 'bacon', 'coffee', 'salt', 'saleratus',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
       'coat', 'blanket',
-      'canvas', 'spare_plank', 'ox_shoes', 'grain',
+      'canvas', 'spare_plank', 'ox_shoes', 'grain', 'water_bag',
       'moccasins', 'buffalo_robe'
     ] },
   // #252 — Burnt River Canyon (mile ~1680, OR). Tortured zigzag

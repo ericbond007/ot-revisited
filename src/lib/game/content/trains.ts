@@ -423,7 +423,7 @@ function generateNpcWagon(
     else if (entry.item === 'ox') {} // ox count handled separately
     else inventory[entry.item] = (inventory[entry.item] ?? 0) + entry.qty;
   }
-  // #303e — water tracking. Cap from wagon model + any starter water_skin
+  // #303e — water tracking. Cap from wagon model + any starter water_bag
   // (none today, but kept symmetric with the player's computeWaterCap so
   // when NPCs gain trade access the cap follows). Fresh joins start at
   // full keg; mid-trail joins start at 60-100% to reflect light wear.

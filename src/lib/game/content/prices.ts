@@ -114,7 +114,11 @@ export const PRICES: Record<string, PriceEntry> = {
   lard:         { buy: 0.25,  sell: 0.10 },
   // #276 Period pocket compass was $2–5; was running $8.
   compass:      { buy: 4.00,  sell: 2.00 },
-  water_skin:   { buy: 2.00,  sell: 1.00 },
+  // #1021 — water_skin → water_bag rename (anachronistic mountain-man
+  // term replaced by period-correct Goodyear rubber bag, 1849+).
+  // Price bumped 2 → 4 per Carpenter 1857 at Hall: "two rubber bags
+  // at Hall, four dollars apiece."
+  water_bag:    { buy: 4.00,  sell: 2.00 },
   ox_shoes:     { buy: 1.00,  sell: 0.50 },
   spyglass:     { buy: 15.00, sell: 8.00 },
 

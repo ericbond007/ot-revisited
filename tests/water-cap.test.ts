@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeWaterCap,
   recomputeWaterCap,
-  WATER_SKIN_GAL
+  WATER_BAG_GAL
 } from '../src/lib/game/systems/water-cap';
 import { createInitialState } from '../src/lib/game/engine';
 import { getWagon } from '../src/lib/game/content/wagons';
@@ -19,11 +19,11 @@ function game(wagonModel: 'light' | 'prairie_schooner' | 'heavy' = 'prairie_scho
 }
 
 describe('water-cap', () => {
-  it('computeWaterCap is wagon baseline + skins × WATER_SKIN_GAL', () => {
+  it('computeWaterCap is wagon baseline + skins × WATER_BAG_GAL', () => {
     const prairieBase = getWagon('prairie_schooner').baseWaterCapGal;
     expect(computeWaterCap('prairie_schooner', {})).toBe(prairieBase);
-    expect(computeWaterCap('prairie_schooner', { water_skin: 3 })).toBe(
-      prairieBase + 3 * WATER_SKIN_GAL
+    expect(computeWaterCap('prairie_schooner', { water_bag: 3 })).toBe(
+      prairieBase + 3 * WATER_BAG_GAL
     );
   });
 
@@ -38,9 +38,9 @@ describe('water-cap', () => {
 
   it('createInitialState sets waterCap from wagon + starter-kit skins', () => {
     const s = game('prairie_schooner');
-    const skins = s.inventory.water_skin ?? 0;
+    const skins = s.inventory.water_bag ?? 0;
     const expected =
-      getWagon('prairie_schooner').baseWaterCapGal + skins * WATER_SKIN_GAL;
+      getWagon('prairie_schooner').baseWaterCapGal + skins * WATER_BAG_GAL;
     expect(s.resources.waterCap).toBe(expected);
     // Starts topped off.
     expect(s.resources.water).toBe(expected);
@@ -49,11 +49,11 @@ describe('water-cap', () => {
   it('recomputeWaterCap updates cap and clamps water downward', () => {
     const s: GameState = {
       ...game('heavy'),
-      inventory: { water_skin: 2 },
+      inventory: { water_bag: 2 },
       resources: { water: 50, waterCap: 999 }
     };
     const out = recomputeWaterCap(s);
-    const expected = getWagon('heavy').baseWaterCapGal + 2 * WATER_SKIN_GAL;
+    const expected = getWagon('heavy').baseWaterCapGal + 2 * WATER_BAG_GAL;
     expect(out.resources.waterCap).toBe(expected);
     expect(out.resources.water).toBe(expected); // clamped from 50
   });
