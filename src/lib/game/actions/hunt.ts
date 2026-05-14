@@ -1,5 +1,5 @@
-import type { GameState, NpcWagonState } from '../types';
-import { makeRng } from '../rng';
+import type { GameState, NpcWagonState, Terrain } from '../types';
+import { makeRng, type Rng } from '../rng';
 import { hasLiveHunter } from '../professions/predicates';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption } from '../systems/consumption';
@@ -12,6 +12,10 @@ import { applyEggLay } from '../systems/eggs';
 
 export type HuntTarget = 'small' | 'medium' | 'big' | 'gather';
 export type AmmoBand = 'light' | 'moderate' | 'heavy';
+// #1002 — species rolled within target='big' so hide yields scale to
+// real body size. Region-gated by terrain (prairie → buffalo country,
+// mountains → grizzly/elk, forest → elk/black bear).
+export type BigSpecies = 'buffalo' | 'grizzly' | 'black_bear' | 'elk';
 
 export interface HuntOptions {
   target: HuntTarget;
@@ -52,7 +56,10 @@ export interface HuntHaul {
   // the killer wagon.
   tallow: number;     // lb of rendered fat (medium 5–10, big 15–40)
   prizeCut: number;   // lb of tongue+hump delicacy (big only, 1–2)
-  rawHides: number;   // count of raw hides taken (medium 60% ×1, big 80% ×1–2)
+  rawHides: number;   // count of raw hides taken (#1002: medium=1, big scales by species)
+  /** #1002 — which big-game species the kill rolled as, for hide
+   *  yield + future modal display. Undefined on medium/small/gather. */
+  bigSpecies?: BigSpecies;
   bullets: number;    // bullets spent
   injured: string | null; // name of injured member, if any
   /** True when the hunt's injury came from a grizzly mauling (#198) — used
@@ -91,6 +98,43 @@ const BASE_YIELD_BY_TARGET: Record<HuntTarget, { min: number; max: number; injur
 const GRIZZLY_MAUL_CHANCE = 0.05;
 const GRIZZLY_HP_MIN = 25;
 const GRIZZLY_HP_MAX = 45;
+
+// #1002 — deterministic hide yield per big-game species. Scaled to
+// real raw-hide body weight: 1 raw_hide ≈ 10 lb of hide material, so
+// the stack weight on the wagon mirrors the historical kill (buffalo
+// hide ~60-80 lb raw = 5-6 raw_hide units, etc.). See VK #1002.
+const BIG_HIDE_YIELD: Record<BigSpecies, { min: number; max: number }> = {
+  buffalo:    { min: 5, max: 6 },
+  grizzly:    { min: 3, max: 4 },
+  elk:        { min: 2, max: 3 },
+  black_bear: { min: 2, max: 2 }
+};
+
+// #1002 — region-gated species roll for big-game hide yield. Prairie
+// is buffalo country (Parkman 1846, Bryant 1846). Mountains run
+// grizzly + elk, with occasional black bear (Lewis/Clark, emigrant
+// Snake-basin diaries). Forest splits elk + black bear. Desert and
+// river crossings are transitional and stay buffalo-leaning since the
+// prairie's edge kept bleeding into the Snake. Independent of the
+// grizzly-maul injury roll (#198) — maul is an injury event; this is
+// the haul's hide species.
+function rollBigSpecies(terrain: Terrain, rng: Rng): BigSpecies {
+  const r = rng.next();
+  if (terrain === 'mountains') {
+    if (r < 0.35) return 'grizzly';
+    if (r < 0.85) return 'elk';
+    return 'black_bear';
+  }
+  if (terrain === 'forest') {
+    if (r < 0.50) return 'elk';
+    if (r < 0.85) return 'black_bear';
+    return 'buffalo';
+  }
+  // prairie / desert / river — buffalo dominant
+  if (r < 0.80) return 'buffalo';
+  if (r < 0.95) return 'elk';
+  return 'black_bear';
+}
 
 function advanceOneDay(d: { year: number; month: number; day: number }) {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -225,6 +269,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   let tallowGain = 0;
   let prizeCutGain = 0;
   let rawHideGain = 0;
+  let bigSpecies: BigSpecies | undefined;
   const renderTallow = opts.renderTallow ?? true;
   if (isPrizeOnly && yieldFraction > 0) {
     // #199 — kill went down but the party only carried off tongue + hump.
@@ -239,11 +284,20 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   } else if (!isGather && meatGain > 0) {
     if (opts.target === 'medium') {
       if (renderTallow) tallowGain = Math.round(rng.int(5, 10) * yieldFraction);
-      if (rng.chance(0.6)) rawHideGain = 1;
+      // #1002 — deterministic 1 hide on successful medium kill (was
+      // probabilistic 60%). A deer or pronghorn produces a single ~10 lb
+      // hide; the take-or-leave decision is now wagon-weight, not RNG.
+      rawHideGain = 1;
     } else if (opts.target === 'big') {
       if (renderTallow) tallowGain = Math.round(rng.int(15, 40) * yieldFraction);
       if (rng.chance(0.7)) prizeCutGain = rng.int(1, 2);
-      if (rng.chance(0.8)) rawHideGain = rng.int(1, 2);
+      // #1002 — species-aware deterministic hide yield. Roll the species
+      // from the terrain table, then apply the size-scaled range. The
+      // buffalo's 5-6 hides at 10 lb/unit = 50-60 lb on the wagon,
+      // matching real raw-hide weights.
+      bigSpecies = rollBigSpecies(s.location.terrain, rng);
+      const yieldRange = BIG_HIDE_YIELD[bigSpecies];
+      rawHideGain = rng.int(yieldRange.min, yieldRange.max);
     }
   }
 
@@ -450,6 +504,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     tallow: tallowGain,
     prizeCut: prizeCutGain,
     rawHides: rawHideGain,
+    bigSpecies,
     bullets: spentBullets,
     injured: injuredName,
     mauled,
