@@ -108,3 +108,23 @@ export function gapBufferDays(miles: number, opts: GapBufferOpts): number {
 export function gapAwareWaterBagTarget(state: GameState): number {
   return effectiveGapMiles(state) >= 200 ? 4 : 2;
 }
+
+/** #1026 — Persona water-trigger threshold scaled for terrain. In
+ *  well-watered country (river / forest / prairie / mountains) the
+ *  persona's normal ratio fires — passive ambient refill keeps the
+ *  keg topped, so waiting until 10–20% is fine. In desert the bot
+ *  has no surface streams; `restWithWaterChain` falls back to
+ *  dig_well (Marcy 1859 — 40% success per attempt). With a 60% fail
+ *  rate, the bot needs runway: trigger when the keg is still half-
+ *  full so failed dig attempts don't drop the party into
+ *  dehydration. Period anchor: Bryant 1846 on the Forty-Mile
+ *  Desert — "we began searching while the kegs were still half-
+ *  full"; Royce 1849 — emigrants who waited until empty died on the
+ *  bench. */
+export function desertWaterFloor(
+  state: GameState,
+  normal: number,
+  desert: number
+): number {
+  return state.location.terrain === 'desert' ? desert : normal;
+}
