@@ -69,7 +69,16 @@ function avg(nums: number[]): number {
   return Math.round(nums.reduce((s, n) => s + n, 0) / nums.length);
 }
 
-const OX_FATIGUE_RECOVERY_PER_REST_DAY = 25;
+// #963b2 — recovery 25 → 30. Period reality (Marcy 1859): a full
+// day at picket with grazing was restorative — "oxen must lie down
+// at least eight hours of twenty-four to keep their condition," and
+// a full Sunday rest counted as a complete reset. The old 25/day
+// base failed the 6-on/1-off Sunday cadence for fast pace (net
+// +11/week → forced rest every 6 weeks). Bumping to 30 makes the
+// fast-pace cadence near-balanced (net +6/week on a bare team,
+// 0/week with a teamster). Grueling stays unsustainable regardless
+// (the historical Reed-Donner-style team-killer pace).
+const OX_FATIGUE_RECOVERY_PER_REST_DAY = 30;
 const BASE_HEAL_PER_REST_DAY = 8;
 // Berries the Farmer rounds up at rest — wild blackberry / chokeberry /
 // serviceberry / currant on the prairie or forest, frozen out in winter.
