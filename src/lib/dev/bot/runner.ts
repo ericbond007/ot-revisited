@@ -394,29 +394,38 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           const sorted = [...s.oxen]
             .filter((o) => o.health > 0)
             .sort((a, b) => (a.health - a.fatigue) - (b.health - b.fatigue));
-          const barterNeed = 2 * want;
           let swapped = false;
-          if (sorted.length >= barterNeed) {
-            const surrenderIds = sorted.slice(0, barterNeed).map((o) => o.id);
-            const { cost } = swapOxenCost(s, want, {});
-            if (s.cash >= cost) {
+
+          // #963 — try the persona's want count first; if cash short,
+          // step down to want-1, want-2, ... until something fits or
+          // we hit zero. Pre-#963, the bot saw a $112 cash-only
+          // estimate at Hall vs $115 cash, refused, and walked into
+          // the mountains with a worn 3-ox team. Period emigrants
+          // bought ONE fresh ox when they couldn't afford two.
+          for (let n = want; n >= 1 && !swapped; n--) {
+            const barterNeed = 2 * n;
+            if (sorted.length >= barterNeed) {
+              const surrenderIds = sorted.slice(0, barterNeed).map((o) => o.id);
+              const { cost } = swapOxenCost(s, n, {});
+              if (s.cash >= cost) {
+                try {
+                  s = swapOxen(s, surrenderIds, n, {}).state;
+                  stats.decisionsMade += 1;
+                  swapped = true;
+                  break;
+                } catch {
+                  // Barter failed — fall through to cash-only.
+                }
+              }
+            }
+            const { cost: cashCost } = swapOxenCost(s, n, { cashOnly: true });
+            if (s.cash >= cashCost) {
               try {
-                s = swapOxen(s, surrenderIds, want, {}).state;
+                s = swapOxen(s, [], n, { cashOnly: true }).state;
                 stats.decisionsMade += 1;
                 swapped = true;
               } catch {
-                // Barter failed — try cash-only fallback below.
-              }
-            }
-          }
-          if (!swapped) {
-            const { cost: cashCost } = swapOxenCost(s, want, { cashOnly: true });
-            if (s.cash >= cashCost) {
-              try {
-                s = swapOxen(s, [], want, { cashOnly: true }).state;
-                stats.decisionsMade += 1;
-              } catch {
-                // Cash-only failed — skip.
+                // Cash-only also failed at this size — try smaller.
               }
             }
           }
