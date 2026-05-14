@@ -90,15 +90,31 @@ describe('#303a — pickEquipmentRestock', () => {
     const buys = pickEquipmentRestock(input({}, ['shovel', 'cookware', 'water_bag', 'rope']));
     expect(buys).toContainEqual({ item: 'shovel', qty: 1 });
     expect(buys).toContainEqual({ item: 'cookware', qty: 1 });
-    expect(buys).toContainEqual({ item: 'water_bag', qty: 1 });
+    // #1023 — water_bag tops up to target (default 2) in one buy.
+    expect(buys).toContainEqual({ item: 'water_bag', qty: 2 });
     expect(buys).toContainEqual({ item: 'rope', qty: 1 });
   });
 
-  it('water_bag threshold is 2', () => {
+  it('water_bag default target is 2', () => {
     expect(pickEquipmentRestock(input({ inventory: { water_bag: 1 } }, ['water_bag']))).toEqual([
       { item: 'water_bag', qty: 1 }
     ]);
     expect(pickEquipmentRestock(input({ inventory: { water_bag: 2 } }, ['water_bag']))).toEqual([]);
+  });
+
+  it('#1023 — waterBagTarget opt bumps the top-up target (gap-aware caller)', () => {
+    // Empty inventory, target 4 → buy 4 in one visit.
+    expect(
+      pickEquipmentRestock(input({}, ['water_bag']), { waterBagTarget: 4 })
+    ).toEqual([{ item: 'water_bag', qty: 4 }]);
+    // Partial inventory, target 4 → buy the gap.
+    expect(
+      pickEquipmentRestock(input({ inventory: { water_bag: 1 } }, ['water_bag']), { waterBagTarget: 4 })
+    ).toEqual([{ item: 'water_bag', qty: 3 }]);
+    // Already at or above target → no buy.
+    expect(
+      pickEquipmentRestock(input({ inventory: { water_bag: 4 } }, ['water_bag']), { waterBagTarget: 4 })
+    ).toEqual([]);
   });
 });
 

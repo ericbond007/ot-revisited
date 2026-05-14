@@ -36,6 +36,7 @@ import {
   makeBotRng,
   type Persona,
   composeShoppingList,
+  gapAwareWaterBagTarget,
   type BuyOrder
 } from '../../game/ai';
 import { computeFunScore } from './scoring';
@@ -195,11 +196,21 @@ function buildBotShoppingList(state: GameState, here: Landmark, persona: Persona
   // #909 — also thread the equipment opts (cookwareSpare). Cautious
   // (Tabitha Brown) is the only stock persona that carries a spare
   // cookware against #306 buffalo-stampede loss.
+  // #1023 — overlay gap-aware water_bag target on the persona's
+  // equipment opts so every player-bot persona stocks 4 vessels before
+  // a meaningful (≥ 200 mi) gap and 2 otherwise. Period anchor lives
+  // on `gapAwareWaterBagTarget`. NPC drivers (wagon-train.ts) keep the
+  // default-2 behavior for now; flip in #1023 follow-up if NPC death
+  // attribution shows the same dehydration pattern.
+  const equipmentOpts = {
+    ...persona.pickEquipmentRestockOpts(state),
+    waterBagTarget: gapAwareWaterBagTarget(state)
+  };
   return composeShoppingList(
     { wagon: state, stock },
     {
       food: persona.pickFoodRestockOpts(state),
-      equipment: persona.pickEquipmentRestockOpts(state)
+      equipment: equipmentOpts
     }
   );
 }
