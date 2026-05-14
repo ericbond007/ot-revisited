@@ -31,7 +31,7 @@ import { getWagon } from '../content/wagons';
 import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
-import { gapBufferDays, nextSupplyDistance, effectiveGapMiles } from './foresight';
+import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor } from './foresight';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
 import type { BarterDisposition } from './types';
 
@@ -611,10 +611,15 @@ export const cautiousPersona: Persona = {
     // #1022 — desert exclusion removed. In desert the runner's
     // restWithWaterChain falls back to dig_well (40% success per
     // attempt, Marcy 1859: "a well of moderate depth will yield
-    // water on most parts of the Plains"). Pre-1022 bots died of
-    // dehydration in the Snake bench because the trigger never
-    // fired in desert — they had a shovel and never used it.
-    return waterRatio(state) < 0.15;
+    // water on most parts of the Plains").
+    //
+    // #1026 — desert bump 0.15 → 0.25. Higher than well-watered
+    // terrain because dig_well misses 60% of attempts (Marcy 1859);
+    // dialed back from a 0.40 first cut after the sweep showed 0.40
+    // converted wipes into stalls (every extra rest day in the Snake
+    // bench burns calendar). 0.25 keeps a ~2-day cushion against a
+    // failed dig sequence without dawdling.
+    return waterRatio(state) < desertWaterFloor(state, 0.15, 0.25);
   },
   shouldPan() {
     // Cautious skips panning — period: didn't dawdle on speculative
@@ -773,7 +778,12 @@ export const balancedPersona: Persona = {
     // #926 → 0.18 → 0.10. Same logic as cautious — passive ambient
     // refill keeps the keg topped through ordinary travel.
     // #1022 — desert exclusion removed; runner falls back to dig_well.
-    return waterRatio(state) < 0.10;
+    // #1026 — desert bump 0.10 → 0.20. Padding stays smaller than
+    // cautious — balanced spends fewer days resting overall, so a
+    // smaller cushion matches the personality. 0.20 covers ~1-2
+    // failed dig_well attempts; the rest-day piggyback (water_chain
+    // at <0.6 ratio on any rest) catches the rest.
+    return waterRatio(state) < desertWaterFloor(state, 0.10, 0.20);
   },
   shouldPan(state) {
     // Balanced tries panning when the timing is right — period:
@@ -902,7 +912,12 @@ export const aggressivePersona: Persona = {
   shouldFindWater(state) {
     // Only when nearly out of water — aggressive doesn't waste time on stops.
     // #1022 — desert exclusion removed; runner falls back to dig_well.
-    return waterRatio(state) < 0.2;
+    // #1026 — desert bump 0.20 → 0.25. Aggressive rarely rests, so
+    // the rest-day piggyback (water_chain at <0.6) doesn't help — the
+    // dedicated trigger is this persona's only water mgmt in dry
+    // country. Tiny bump from baseline buys one dig_well retry against
+    // Marcy 1859's 60% miss rate.
+    return waterRatio(state) < desertWaterFloor(state, 0.20, 0.25);
   },
   shouldPan(state) {
     // Aggressive bot has Gold Rush fever — pans every chance.
