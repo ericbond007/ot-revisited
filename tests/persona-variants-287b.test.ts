@@ -63,21 +63,21 @@ describe('#287b — sunday_rester', () => {
 });
 
 describe('#287b — pace_pusher', () => {
-  it('grueling pace when party healthy AND oxen fresh', () => {
+  it('fast pace when party healthy AND oxen fresh (#963c — down from grueling)', () => {
     const s = game({ morale: 90 });
-    expect(pacePusherPersona.pickPace(s, makeRng('x'))).toBe('grueling');
-  });
-
-  it('falls back to fast when party HP is mid-range', () => {
-    const s = game();
-    s.party = s.party.map((m) => ({ ...m, health: 60 }));
     expect(pacePusherPersona.pickPace(s, makeRng('x'))).toBe('fast');
   });
 
-  it('falls back to moderate when party HP is low', () => {
+  it('falls back to moderate when party HP is mid-range (#963c)', () => {
+    const s = game();
+    s.party = s.party.map((m) => ({ ...m, health: 60 }));
+    expect(pacePusherPersona.pickPace(s, makeRng('x'))).toBe('moderate');
+  });
+
+  it('falls back to slow when party HP is low (#963c)', () => {
     const s = game();
     s.party = s.party.map((m) => ({ ...m, health: 40 }));
-    expect(pacePusherPersona.pickPace(s, makeRng('x'))).toBe('moderate');
+    expect(pacePusherPersona.pickPace(s, makeRng('x'))).toBe('slow');
   });
 
   it('only rests at <30 HP or worn oxen — not at balanced 45 threshold', () => {
