@@ -153,9 +153,32 @@ export interface Persona {
    *  to take the default. Surface-only today; consumer lands when
    *  the first choice-bearing NPC event ships. */
   pickNpcEventChoice(state: GameState, eventId: string, choices: readonly string[], rng: Rng): string | null;
+  /** #915 — Ordered list of barter swaps the persona wants to make
+   *  at the current trading post. Empty when no exchange makes
+   *  sense (cash surplus, no stockable surplus, post barter
+   *  disabled, no preferred items in inventory). Each disposition
+   *  is independently validated by `quoteBarter` before applying.
+   *
+   *  Cautious: trades surplus food/robes for medicine when food
+   *  > 200 lb; preserves cash.
+   *  Aggressive: only barters when cash < $30; rate threshold 0.80.
+   *  Hoarder: refuses to give up flour/beans/saleratus.
+   *  Drinker: barters whiskey freely.
+   *  Chaos: rng-driven within fairness gate.
+   *
+   *  Bot consumer is `runner.ts:handleLandmark` after the cash
+   *  trade attempt; NPC consumer is `wagon-train.ts` post-restock
+   *  fallback. */
+  pickBarterDispositions(state: GameState, here: Landmark, rng: Rng): BarterDisposition[];
   // #939l — `mudAbandonmentPriority` removed: surface-only override
   // for #306 phase 2 `abandonHeavyLoad` that never had a consumer.
   // Mud-stuck abandonment uses the canonical `ABANDON_PRIORITY`
   // constant from `systems/item-loss.ts` directly; if a future
   // persona needs to reorder it, restore the method then.
+}
+
+/** #915 — A single barter offer-pair the bot wants to make. */
+export interface BarterDisposition {
+  give: { item: string; qty: number };
+  receive: { item: string; qty: number };
 }
