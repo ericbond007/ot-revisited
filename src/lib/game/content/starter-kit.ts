@@ -31,10 +31,26 @@ export const BASE_KIT: StarterKit = {
   cash: 400,
   oxen: 4,
   inventory: {
-    flour:     300,
-    beans:      50,
-    bacon:      30,
-    coffee:      2,
+    // #963 — starter food provisions calibrated against Palmer 1845
+    // (the canonical emigrant guidebook). Old kit was 380 lb total
+    // food — about 24% of Palmer's per-adult × 4-soul recommendation
+    // and barely 50 days of normal rations. Bots ran out of food and
+    // cash mid-Snake every run. The new kit lands at ~905 lb staples,
+    // ~60% Palmer scaled for a typical 4-adult party + matching the
+    // medium wagon's 2,500 lb capacity (still ~45% loaded after kit
+    // + clothing + yokes — leaves room for hunts, water, spare parts).
+    //
+    // Palmer 1845 per adult: 200 lb flour, 75 lb bacon, 30 lb beans,
+    // 30 lb hardtack, 60 lb dried fruit, 25 lb sugar, 10 lb coffee
+    // (≈400 lb total). We scale that to a 4-soul family at ~60% so
+    // post resupply remains a real strategic choice, not optional.
+    flour:     600,
+    beans:      80,
+    bacon:     100,
+    hardtack:   50,
+    dried_fruit: 40,
+    sugar:      25,
+    coffee:      4,
     salt:        2,
     // #305 saleratus — period baking soda. 4 units (2 lb) lasts a
     // 3-eater family ~4 months at 1 lb flour/eater/day; player needs
@@ -88,13 +104,15 @@ export interface BuildStarterKitOpts {
 
 /** #888b — outfitter-equivalent cash refund when player skips the
  *  starter kit. Calibrated against the cost of buying the BASE_KIT
- *  contents (food + medicine + rifle + ammo + tent + rope + per-soul
- *  clothing) at Independence prices for a 4-soul reference family
- *  (~$213). $250 covers the buy-back plus a small buffer for the
- *  veteran's choice — period reality says wealthy emigrants who
- *  outfitted at Independence (rather than home) came with extra cash
- *  to spend on regional specialties. */
-const STARTER_KIT_REFUND = 250;
+ *  contents at Independence prices for a 4-soul reference family.
+ *
+ *  #963 recalibration: post-food-bump kit costs ~$390 at Independence
+ *  prices (food $225 + medicine $80 + rifle/ammo $40 + tent/rope $20
+ *  + per-soul clothing $25). Refund $440 covers buy-back plus a
+ *  small buffer for veterans who want regional specialties (period
+ *  reality: emigrants who outfitted at Independence came with cash
+ *  earmarked for the outfitter, not the trail). */
+const STARTER_KIT_REFUND = 440;
 
 export function buildStarterKit(
   professions: ProfessionId[],

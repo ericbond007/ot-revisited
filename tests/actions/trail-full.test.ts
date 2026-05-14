@@ -33,11 +33,12 @@ describe('full-trail smoke', () => {
       s = rest(s, 1);
       s = rest(s, 1);
     }
-    // #888c — BASE_KIT now ships ~100 lb of period-correct outfitter
-    // gear (rifle + ammo + tent + rope + per-soul clothing). A loaded
-    // wagon moves slightly slower; threshold drops from 500 → 450.
-    // Test still proves survival + meaningful progress.
-    expect(s.location.milesTraveled).toBeGreaterThan(450);
+    // #888c — BASE_KIT ships ~100 lb of period-correct outfitter gear.
+    // #963 — BASE_KIT food bumped 380 → 905 lb (Palmer 1845 calibrated).
+    // Heavier starting wagon shifts the rng sequence + a small load
+    // penalty; threshold drops from 500 → 450 → 400. Test still proves
+    // survival + meaningful progress over 150 days.
+    expect(s.location.milesTraveled).toBeGreaterThan(400);
     expect(s.party.some((m) => !m.dead)).toBe(true);
   });
 
