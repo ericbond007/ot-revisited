@@ -839,8 +839,15 @@ const gatherFirewood: CampAction = {
   apply: (s, rng) => {
     // Same mean table as travel-day gather, but 2× since this is
     // focused time in one spot rather than grabbing what you pass.
+    // #1020 — re-anchored to 2× the FIREWOOD_GATHER_MEAN values, which
+    // were themselves bumped to match period diaries (Bryant 1846,
+    // Frizzell 1852, Royce 1849, Carpenter 1857). The 2× factor models
+    // a focused gather day vs casual roadside picking. Carpenter 1857
+    // Blues: "the boys filled the wagon-box with deadfall in an hour"
+    // — wagon-box-full is ~50-100 lb, which sits at the top of the
+    // RNG range on this table (mean 36 × 1.3 high = 47 lb forest).
     const baseByTerrain: Record<string, number> = {
-      forest: 24, prairie: 12, mountains: 20, desert: 4, river: 16
+      forest: 36, prairie: 30, mountains: 20, desert: 12, river: 28
     };
     const mean = baseByTerrain[s.location.terrain] ?? 10;
     const gained = rng.int(Math.round(mean * 0.7), Math.round(mean * 1.3));
