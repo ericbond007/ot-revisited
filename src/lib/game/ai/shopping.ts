@@ -68,12 +68,19 @@ export interface EquipmentRestockOpts {
    *  beyond the default first-replacement buy. Cautious is currently
    *  the only stock persona that opts in. */
   cookwareSpare?: boolean;
+  /** #1023 — desired water_bag count. Default 2 (Carpenter 1857
+   *  Hall anchor: "two rubber bags at Hall"). Personas / driver code
+   *  bump this to 4 before dry stretches (Bidwell 1841 / Royce 1849
+   *  "every keg, every gourd, every bottle"). Player-bot threads
+   *  `gapAwareWaterBagTarget(state)`; NPCs default to 2. */
+  waterBagTarget?: number;
 }
 
 /** One-time utility kit: shovel, cookware, water_bag, rope. Gear the
  *  party functions without — buy on first stop that stocks it.
  *  Persona-tunable since #909 — `cookwareSpare` adds a second cookware
- *  for prudent personas (Tabitha Brown / cautious). */
+ *  for prudent personas (Tabitha Brown / cautious). #1023 — water_bag
+ *  is target-based (top up to N), gap-aware via `waterBagTarget`. */
 export function pickEquipmentRestock(
   { wagon, stock }: ShoppingInput,
   opts: EquipmentRestockOpts = {}
@@ -86,7 +93,11 @@ export function pickEquipmentRestock(
     const need = Math.max(0, cookwareTarget - (inv.cookware ?? 0));
     if (need > 0) buys.push({ item: 'cookware', qty: need });
   }
-  if (stock.has('water_bag') && (inv.water_bag ?? 0) < 2) buys.push({ item: 'water_bag', qty: 1 });
+  if (stock.has('water_bag')) {
+    const waterBagTarget = opts.waterBagTarget ?? 2;
+    const need = Math.max(0, waterBagTarget - (inv.water_bag ?? 0));
+    if (need > 0) buys.push({ item: 'water_bag', qty: need });
+  }
   if (stock.has('rope') && (inv.rope ?? 0) < 1) buys.push({ item: 'rope', qty: 1 });
   return buys;
 }

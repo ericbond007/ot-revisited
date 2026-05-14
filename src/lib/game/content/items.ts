@@ -208,15 +208,20 @@ export const ITEMS: Record<string, ItemMeta> = {
   // tar, skin salve for chapped hands and sunburn.
   lard: { id: 'lard', name: 'Lard', category: 'tool', weightLbPerUnit: 5, description: 'Rendered pork fat. Cooks meals, greases axles in a pinch, salves chapped skin.' },
   compass: { id: 'compass', name: 'Compass', category: 'tool', weightLbPerUnit: 0.5, description: 'Reduces the chance of being lost in storms or fog.' },
-  // #1021 — renamed from `water_skin` (anachronistic, mountain-man era
-  // term) to `water_bag` (period-correct rubber bag, Goodyear 1844
-  // vulcanization → common emigrant use 1849+). Carpenter 1857 at
-  // Hall: 'two rubber bags at Hall, four dollars apiece' — price
-  // anchor. Save migration handled in upgrade.ts. Year-gated at posts
-  // (only stocked 1849+) since pre-Goodyear emigrants relied on the
-  // wagon cask alone or auxiliary oak kegs (a future ticket may add
-  // a year-agnostic `water_keg` item for the 1843-48 window).
-  water_bag: { id: 'water_bag', name: 'Rubber water bag', category: 'tool', weightLbPerUnit: 2, description: '+5 gal water carry cap each. Vulcanized rubber, hung inside the wagon — a strong buffer for the Snake/Blue Mountains dry stretches.' },
+  // #1023 — water_bag is the generic catch-all for extra water carry,
+  // not specifically a rubber bag. Pivoted from the original Goodyear-
+  // bag framing because period emigrants on dry stretches packed
+  // every container they had: rubber bags (1849+), auxiliary oak
+  // kegs, gourds, bottles, tin canteens. Bidwell 1841 before
+  // Humboldt Sink: "filled every keg, every gourd, every bottle we
+  // had." Royce 1849 before the Forty-Mile Desert: "the men spent
+  // the day binding extra kegs and bottles to the wagon." Carpenter
+  // 1857 specifically at Hall: "two rubber bags at Hall, four
+  // dollars apiece" — that's where the price anchor still lives.
+  // Year-gating intentionally not enforced (#1019 deferred to the
+  // continuous temperature model) — for a pre-1849 emigrant, the
+  // same +5 gal abstracts as an extra keg or gourd assembly.
+  water_bag: { id: 'water_bag', name: 'Water vessels', category: 'tool', weightLbPerUnit: 2, description: '+5 gal water carry cap each. Rubber bag, auxiliary keg, gourd, or bottle — period emigrants packed every vessel they could before dry stretches.' },
   ox_shoes: { id: 'ox_shoes', name: 'Ox / mule shoes', category: 'livestock', weightLbPerUnit: 2, description: 'Replace shoes that oxen or mules throw on rocky terrain. A Blacksmith or Teamster re-shoes them.' },
   spyglass: { id: 'spyglass', name: 'Spyglass', category: 'tool', weightLbPerUnit: 2, description: 'Reveals landmarks further ahead on the map. Helps with spotting game on hunts.' },
 

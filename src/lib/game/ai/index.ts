@@ -23,6 +23,7 @@ export {
   makeBotRng
 } from './personas';
 export type { BuyOrder, ShoppingInput } from './shopping';
+export { gapAwareWaterBagTarget, effectiveGapMiles, nextSupplyDistance } from './foresight';
 export {
   pickWarmthRestock,
   pickEquipmentRestock,

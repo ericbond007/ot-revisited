@@ -95,3 +95,16 @@ export function gapBufferDays(miles: number, opts: GapBufferOpts): number {
   const raw = (miles / Math.max(1, opts.paceMiPerDay)) * opts.safetyFactor;
   return Math.max(opts.minDays, Math.round(raw));
 }
+
+/** #1023 — Desired water_bag count when shopping at the current
+ *  post. Targets 4 vessels before a meaningful gap (≥ 200 mi to next
+ *  supply), 2 otherwise. Period anchor: Bidwell 1841 before the
+ *  Humboldt Sink — "filled every keg, every gourd, every bottle";
+ *  Royce 1849 before the Forty-Mile Desert — "the men spent the day
+ *  binding extra kegs and bottles to the wagon"; Carpenter 1857 at
+ *  Hall — "two rubber bags at Hall, four dollars apiece." Posts that
+ *  stock water_bag are the late-trail forts (Bridger / Hall / Boise)
+ *  where every onward leg is the dry stretch the diaries described. */
+export function gapAwareWaterBagTarget(state: GameState): number {
+  return effectiveGapMiles(state) >= 200 ? 4 : 2;
+}
