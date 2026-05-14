@@ -196,7 +196,7 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
   // that night — morale + small health bump. Not inventoried; it's
   // consumed on the spot by convention. Roll chance scales with target.
   //   small: 0 — rabbits and birds don't produce a trail-worthy liver.
-  //   medium: 55% — deer, antelope.
+  //   medium: 55% — deer, pronghorn.
   //   big:    85% — buffalo, bear, elk.
   const liverChance = opts.target === 'big' ? 0.85 : opts.target === 'medium' ? 0.55 : 0;
   const liverFound = !isGather && meatGain > 0 && liverChance > 0 && rng.chance(liverChance);

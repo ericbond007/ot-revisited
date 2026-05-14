@@ -182,7 +182,7 @@ const sweetwaterWashday: GameEvent = {
 // 4th of July at the Rock (#227) — date-gated set-piece. Period
 // reality: emigrants aimed to reach Independence Rock by July 4 and
 // hold the date there; companies converging for sunrise gun-salutes,
-// fiddle dances after dark, antelope-feast suppers, toasts to the
+// fiddle dances after dark, pronghorn-feast suppers, toasts to the
 // Republic. Bruff (1849) and Porter (1860) describe it in detail.
 // Replaces the regular sign-the-rock event WHEN AND ONLY WHEN the
 // arrival lands on July 4.
@@ -190,7 +190,7 @@ const independenceRockJuly4: GameEvent = {
   id: 'arrival_independence_rock_july4',
   category: 'historical',
   title: 'Independence Rock — the Fourth of July',
-  body: 'Wagons from a half-dozen companies are circled around the Rock. A flag flies from the summit. Fiddles tune up. Someone is roasting an antelope. By tradition, this is the day a westbound party celebrates here — and prays the Sierras stay clear of snow until you reach them.',
+  body: 'Wagons from a half-dozen companies are circled around the Rock. A flag flies from the summit. Fiddles tune up. Someone is roasting a pronghorn. By tradition, this is the day a westbound party celebrates here — and prays the Sierras stay clear of snow until you reach them.',
   weight: 1,
   choices: [
     {
@@ -218,7 +218,7 @@ const independenceRockJuly4: GameEvent = {
         };
         return logLine(
           { ...s, inventory, morale: Math.min(100, s.morale + 10) },
-          `30-gun sunrise salute, fiddles after dark, antelope feast — the trail's best day. Powder/balls/caps −${cost} each. Morale +10.`
+          `30-gun sunrise salute, fiddles after dark, pronghorn feast — the trail's best day. Powder/balls/caps −${cost} each. Morale +10.`
         );
       }
     },

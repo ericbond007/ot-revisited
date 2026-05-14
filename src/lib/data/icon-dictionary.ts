@@ -161,7 +161,7 @@ export const ICON = {
   // Hunt-modal target list + post-hunt resolution flavor.
   fauna: {
     small:  '🐇',  // rabbit / squirrel
-    medium: '🦌',  // deer / antelope
+    medium: '🦌',  // deer / pronghorn
     big:    '🦬',  // bison / elk
     forage: '🌿'   // berries / greens
   },

@@ -76,7 +76,7 @@
     {
       value: 'medium' as const,
       label: 'Medium Game',
-      sublabel: 'Deer, antelope — balanced',
+      sublabel: 'Deer, pronghorn — balanced',
       icon: ICON.fauna.medium,
       disabled: noRifle || noBullets,
       disabledReason: noRifle ? 'Need a rifle' : noBullets ? 'Out of bullets' : undefined
