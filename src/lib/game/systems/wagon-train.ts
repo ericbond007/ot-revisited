@@ -163,11 +163,25 @@ export function advanceTrain(
   // #303e — pool the train's clean + dirty water on rest days. Period
   // reality: Helen Carpenter 1857 documents communal water-sharing at
   // company camps. Rest day = the wagons cluster, kegs cross-pour.
-  // Travel days drain each wagon independently. Done before tick so
-  // a wagon that was about to dehydrate gets its share first.
+  // Pool runs before tick so a wagon about to dehydrate gets its share
+  // first.
+  //
+  // #1031 — Travel-day sharing also fires when any wagon in the train
+  // is in crisis (keg ratio < 25%). Period anchor: Bryant 1846 on the
+  // Forty-Mile Desert and Royce 1849 on the Snake bench — "the rear
+  // wagons emptied first, the lead drivers gave from their barrels."
+  // Frizzell 1852 same dynamic: "Mr. Williams' wagon ran dry by noon,
+  // we passed up two gallons from our keg." Travel-day pool fires
+  // because the train is moving together; on a dry stretch one
+  // wagon's crisis is everyone's crisis.
   let prepped: GameState = state;
   if (!traveled && state.wagonTrain) {
+    // Rest day: full soul-weighted equalization (Carpenter 1857 camp anchor).
     prepped = applyTrainWaterPool(state);
+  } else if (traveled && state.wagonTrain) {
+    // Travel day: asymmetric crisis share — surplus wagons give a
+    // little, no full equalization (Bryant 1846 lead-drivers anchor).
+    prepped = applyTrainCrisisShare(state);
   }
   const ctx: NpcTickContext = {
     day: prepped.day,
@@ -317,6 +331,85 @@ export function advanceTrain(
  *  wagon drains its own keg. Pool respects per-wagon `waterCap` so
  *  surplus stays with the player keg if NPCs are full. Only counts
  *  in-progress companions (wiped/arrived/stranded skipped). */
+/** #1031 — travel-day crisis sharing. The rest-day pool
+ *  (`applyTrainWaterPool`) does full soul-weighted redistribution: when
+ *  wagons cluster at camp, every keg ends up at the same per-capita
+ *  fill. That's correct for rest. Travel-day crisis sharing is
+ *  asymmetric: surplus wagons (≥60% keg) give to crisis wagons (<25%)
+ *  to bring crisis kegs up to ~40%. The wagons with mid-fill kegs are
+ *  untouched. Period: Bryant 1846 / Frizzell 1852 — the lead drivers
+ *  passed a couple gallons back from their barrels, they didn't pour
+ *  out half their supply for an equal share. */
+const TRAIN_CRISIS_KEG_RATIO = 0.25;
+const TRAIN_SURPLUS_KEG_RATIO = 0.60;
+const TRAIN_CRISIS_RELIEF_RATIO = 0.40;
+function applyTrainCrisisShare(state: GameState): GameState {
+  if (!state.wagonTrain) return state;
+  type WagonRef = { kind: 'player' } | { kind: 'npc'; idx: number };
+  interface Entry {
+    ref: WagonRef;
+    water: number;
+    waterCap: number;
+  }
+  const entries: Entry[] = [
+    { ref: { kind: 'player' }, water: state.resources.water, waterCap: state.resources.waterCap }
+  ];
+  state.wagonTrain.companions.forEach((c, idx) => {
+    if (c.outcome !== 'in-progress') return;
+    entries.push({ ref: { kind: 'npc', idx }, water: c.water, waterCap: c.waterCap });
+  });
+
+  const crisis = entries.filter((e) => e.waterCap > 0 && e.water / e.waterCap < TRAIN_CRISIS_KEG_RATIO);
+  if (crisis.length === 0) return state;
+  const surplus = entries.filter((e) => e.waterCap > 0 && e.water / e.waterCap >= TRAIN_SURPLUS_KEG_RATIO);
+  if (surplus.length === 0) return state;
+
+  // Per-crisis-wagon need: bring up to 40% of cap. Sum then pull
+  // proportionally from surplus wagons; each surplus wagon never goes
+  // below 50% (the giving-but-not-suicidal threshold).
+  const totalNeed = crisis.reduce(
+    (s, e) => s + Math.max(0, Math.round(e.waterCap * TRAIN_CRISIS_RELIEF_RATIO) - e.water),
+    0
+  );
+  const totalAvailable = surplus.reduce(
+    (s, e) => s + Math.max(0, e.water - Math.round(e.waterCap * 0.5)),
+    0
+  );
+  if (totalNeed === 0 || totalAvailable === 0) return state;
+  const fulfillment = Math.min(totalNeed, totalAvailable);
+
+  // Pull from each surplus wagon proportionally to its excess.
+  for (const e of surplus) {
+    const excess = Math.max(0, e.water - Math.round(e.waterCap * 0.5));
+    const give = totalAvailable > 0
+      ? Math.round((excess / totalAvailable) * fulfillment)
+      : 0;
+    e.water -= give;
+  }
+  // Distribute to each crisis wagon proportionally to its gap.
+  let leftover = fulfillment;
+  for (const e of crisis) {
+    const need = Math.max(0, Math.round(e.waterCap * TRAIN_CRISIS_RELIEF_RATIO) - e.water);
+    const share = totalNeed > 0 ? Math.round((need / totalNeed) * fulfillment) : 0;
+    const take = Math.min(share, leftover, e.waterCap - e.water);
+    e.water += take;
+    leftover -= take;
+  }
+
+  // Materialize entries back into state.
+  let newPlayerWater = state.resources.water;
+  const newCompanions = [...state.wagonTrain.companions];
+  for (const e of entries) {
+    if (e.ref.kind === 'player') newPlayerWater = e.water;
+    else newCompanions[e.ref.idx] = { ...newCompanions[e.ref.idx], water: e.water };
+  }
+  return {
+    ...state,
+    resources: { ...state.resources, water: newPlayerWater },
+    wagonTrain: { ...state.wagonTrain, companions: newCompanions }
+  };
+}
+
 export function applyTrainWaterPool(state: GameState): GameState {
   if (!state.wagonTrain) return state;
   const inProgress = state.wagonTrain.companions.filter(

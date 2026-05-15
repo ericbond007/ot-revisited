@@ -63,7 +63,7 @@ describe('#303e — npcWaterConsumedToday', () => {
     const wagon = freshTrain().companions[0];
     const adults = wagon.party.filter((m) => !m.dead && m.kind === 'adult').length;
     expect(npcWaterConsumedToday(wagon, 'clear')).toBe(adults
-      + Math.ceil(wagon.party.filter((m) => !m.dead && m.kind === 'child').length * 0.7));
+      + Math.ceil(wagon.party.filter((m) => !m.dead && m.kind === 'child').length * 0.5));
   });
 
   it('doubles consumption on heat days', () => {

@@ -90,10 +90,10 @@ describe('foodConsumedToday', () => {
     expect(foodConsumedToday(s)).toBe(7);
   });
 
-  it('children drink 70% of adult water (ceil)', () => {
+  it('children drink 50% of adult water (ceil) — #1031b rationing', () => {
     const s = baseState();
     // 3 adults × 1 = 3 baseline.
-    // 2 children × 1 × 0.7 = 1.4 → ceil = 2.
+    // 2 children × 1 × 0.5 = 1.0 → ceil = 1.
     s.party.push({
       id: 'k1', name: 'A', sex: 'male', kind: 'child', isLeader: false,
       age: 8, health: 100, conditions: [], dead: false
@@ -102,7 +102,7 @@ describe('foodConsumedToday', () => {
       id: 'k2', name: 'B', sex: 'female', kind: 'child', isLeader: false,
       age: 6, health: 100, conditions: [], dead: false
     });
-    expect(waterConsumedToday(s)).toBe(5);
+    expect(waterConsumedToday(s)).toBe(4);
   });
 });
 

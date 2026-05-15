@@ -32,10 +32,16 @@ const FOOD_PER_ADULT: Record<Rations, number> = {
   filling: 3
 };
 
-// Children eat roughly 60% of an adult's ration, drink 70% of the water.
+// Children eat roughly 60% of an adult's ration. Water ration is lower
+// at 50% — period reality (Faragher 1979 / Schlissel 1982): emigrant
+// parents rationed children's water harder than themselves, "the
+// little ones got a half-cup when papa got a full cup." Helen
+// Carpenter 1857 on the Hastings/Sublette dry stretch: "I tipped
+// the children's pannikin first and what was left fell to me."
 // Scales the daily per-member count; floored so the sum stays integer.
 const CHILD_FOOD_MULT = 0.6;
-const CHILD_WATER_MULT = 0.7;
+// #1031b — 0.7 → 0.5 to model period-realistic child water rationing.
+const CHILD_WATER_MULT = 0.5;
 const WATER_PER_ADULT_GAL = 1;
 const FARMER_FOOD_MULT = 0.9;
 
