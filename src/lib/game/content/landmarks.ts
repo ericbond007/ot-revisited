@@ -41,6 +41,17 @@ export interface Landmark {
   // Present on river-kind landmarks. Per-river depth/current vary realistically
   // and drive Ford modal display + ford-action risk.
   river?: RiverStats;
+  // #1039 — scenic landmark that sits on a year-round water source the
+  // party can reach to refill the cask, even though it isn't a trading
+  // post or a ford. Period reality: the Snake River ran beside the
+  // Hall→Boise trail the whole way but in a deep canyon; emigrants
+  // could only get down to it at known descents (Salmon Falls fishery,
+  // American Falls). Diaries describe these as the watering stops that
+  // made the Snake desert survivable. Engine treats the leg as bone-dry
+  // desert otherwise; this flag re-adds the historical access points.
+  // Refill fires when the party PASSES the scenic landmark (it doesn't
+  // pause the UI like a post/ford does).
+  waterSource?: boolean;
   // Per-post trading inventory for trading_post landmarks. TradeModal filters
   // its buyable list against this. If undefined, the generic buyable list is
   // used as a fallback. Lists are historically flavored, not exhaustive — each
@@ -472,7 +483,14 @@ export const LANDMARKS: readonly Landmark[] = [
   // to bypass, broken for a kind:'landmark' the bot walks past. Bot
   // would freeze on arrival (mile 1343) and never advance. Snake-basin
   // southern Idaho is sage desert; 'desert' is correct.
-  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 110, terrain: 'desert',    kind: 'landmark' },
+  // #1039 — waterSource: Salmon Falls IS the Snake River (a major
+  // waterfall + Shoshone salmon fishery). Frizzell 1852 and the #239
+  // salmon-trade encounter both have emigrants camped here watering
+  // and trading for fish. Modeling it as bone-dry desert was the bug
+  // behind the Hall→Boise dehydration-wipe cluster (audit #1039: 6 of
+  // 11 family-wagon dehydration wipes died on this 110-mi leg with no
+  // water access). The descent to the falls is the historical relief.
+  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 110, terrain: 'desert',    kind: 'landmark', waterSource: true },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 40, terrain: 'river',   kind: 'river',
     river: {
       depthFt: 5.0, currentMph: 3, ferryPrice: 6,
