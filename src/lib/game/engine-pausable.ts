@@ -237,11 +237,43 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     }
   }
 
+  const prevLandmarkAfter = s.location.previousLandmarkId;
+
+  // #1039 — water refill when the party passes a scenic landmark
+  // flagged `waterSource` (Salmon Falls = the Snake River fishery). The
+  // #1021 post refill is gated on kind:'trading_post' and fords refill
+  // via the ford action; this is the third water-access channel — a
+  // walk-past landmark that nonetheless sits on a year-round source the
+  // emigrants descended to. Fires once per (landmark, day) like #1021.
+  if (
+    prevLandmarkAfter
+    && prevLandmarkAfter !== prevLandmarkBefore
+  ) {
+    const passed = getLandmark(prevLandmarkAfter);
+    const flag = `_wateredAtSource:${prevLandmarkAfter}`;
+    if (passed?.waterSource && !s.flags[flag]) {
+      const cap = s.resources.waterCap;
+      const beforeWater = s.resources.water;
+      if (beforeWater < cap) {
+        s = {
+          ...s,
+          resources: { ...s.resources, water: cap },
+          flags: { ...s.flags, [flag]: true },
+          eventLog: [
+            ...s.eventLog,
+            { day: s.day, text: `Descended to the water at ${passed.name} and filled the cask. (${cap - beforeWater} gal)` }
+          ]
+        };
+      } else {
+        s = { ...s, flags: { ...s.flags, [flag]: true } };
+      }
+    }
+  }
+
   // Landmark arrival events fire when we cross a scenic landmark (one
   // that doesn't already pause for a Visit/Ford/End screen). Detected by
   // a change in previousLandmarkId during this tick. Skipped at
   // stop-worthy landmarks so the post/river/end UI is the moment.
-  const prevLandmarkAfter = s.location.previousLandmarkId;
   if (
     !arrivedAtLandmark
     && prevLandmarkAfter
