@@ -139,6 +139,13 @@ export interface Persona {
    *  slice B surface; current consumer is the player-bot runner's
    *  first-trading-post auto-join. */
   shouldJoinTrain(state: GameState, here: Landmark, rng: Rng): boolean;
+  /** #1031 — Should the bot start its run already in a wagon train?
+   *  Default true (Helen Carpenter 1857: single wagons 'did not pass
+   *  the frontier'). Loner personas opt out — pace_pusher (Reed/Donner
+   *  archetype that split companies to push pace), aggressive
+   *  (impatient hard-charger), chaos (random). Player-bot runner
+   *  calls `joinTrain` at construction when this returns true. */
+  shouldStartInTrain?(rng: Rng): boolean;
   /** Should the wagon resort to cannibalism on a fresh corpse?
    *  Period: Donner Party precedent — most parties did when the
    *  alternative was the whole company starving. Default true. #287

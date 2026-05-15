@@ -585,6 +585,21 @@ export function runBot(opts: BotRunOpts): BotRunReport {
     startDate
   });
 
+  // Bot-side RNG — distinct from the engine's tick RNG so chaos
+  // randomness doesn't reach into engine state. Threaded into every
+  // persona method.
+  const botRng = makeBotRng(opts.seed);
+
+  // #1031 — most personas start in a wagon train at Independence. Helen
+  // Carpenter 1857 / Bryant 1846 anchor: single wagons did not pass the
+  // frontier; companies formed at the jumping-off point. Loner personas
+  // (aggressive, pace_pusher, sometimes chaos) override shouldStartInTrain
+  // to false and run solo, matching the Reed/Donner-archetype emigrant
+  // who split companies to push pace.
+  if (persona.shouldStartInTrain?.(botRng) ?? true) {
+    state = joinTrain(state, botRng).state;
+  }
+
   const stats = newStats();
   const startingPartySize = state.party.length;
 
@@ -592,11 +607,6 @@ export function runBot(opts: BotRunOpts): BotRunReport {
     state.party.filter((m) => !m.dead && m.health < 30).map((m) => m.id)
   );
   let prevLiveOxen = new Set<string>(state.oxen.filter((o) => o.health > 0).map((o) => o.id));
-
-  // Bot-side RNG — distinct from the engine's tick RNG so chaos
-  // randomness doesn't reach into engine state. Threaded into every
-  // persona method.
-  const botRng = makeBotRng(opts.seed);
 
   // BOT_TRACE=1 prints a per-N-day snapshot of party HP, conditions,
   // morale, oxen, water, and key meds. Used to diagnose stall causes.

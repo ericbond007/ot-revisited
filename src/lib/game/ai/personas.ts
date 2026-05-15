@@ -994,6 +994,13 @@ export const aggressivePersona: Persona = {
     return {};
   },
   shouldJoinTrain: defaultShouldJoinTrain,
+  // #1031 — Aggressive is the impatient solo-outfit archetype. Reed
+  // 1846 / Hastings 1845 promoted speed and split companies; the
+  // aggressive bot starts ahead of the trains rather than waiting
+  // to form one. Bot may STILL join a train mid-trail via the
+  // post-arrival path (shouldJoinTrain stays true) — they just don't
+  // wait at Independence for one to form.
+  shouldStartInTrain: () => false,
   shouldCannibalize: () => true,
   pickNpcEventChoice: () => null,
   pickBarterDispositions(state, here, _rng) {
@@ -1129,6 +1136,16 @@ export const chaosPersona: Persona = {
     // Chaos joins about 70% of the time — fuzz coverage of both paths.
     return rng.chance(0.7);
   },
+  // #1031 — Chaos stays solo at start to preserve fuzz variance.
+  // Trains homogenize decisions (pace clamp + pooled water + share-
+  // watch morale lift), which is good for survival but bad for the
+  // random-decision exercise chaos is meant to provide. Trace bot-275
+  // test showed two different chaos seeds collapsing to identical
+  // outcomes once both joined a train. Loner-by-default keeps the
+  // chaos-divergence test (different seeds → different outcomes)
+  // meaningful, while still allowing mid-trail train joins via the
+  // post-arrival path.
+  shouldStartInTrain: () => false,
   shouldCannibalize: () => true,
   pickNpcEventChoice() {
     return null; // surface-only
@@ -1169,6 +1186,12 @@ export const sundayResterPersona: Persona = {
 export const pacePusherPersona: Persona = {
   ...balancedPersona,
   id: 'pace_pusher',
+  // #1031 — Reed/Donner archetype. Split companies to push pace ahead
+  // of slower-moving family wagons. Starts solo at Independence even
+  // though the period default was to form companies — pace_pusher is
+  // exactly the archetype that wouldn't wait. (May still join a
+  // train mid-trail via the post-arrival path if they catch up to one.)
+  shouldStartInTrain: () => false,
   pickPace(state) {
     // #963c — pace rebalance (was grueling/fast/moderate). Real
     // "pace pusher" emigrants (the Reed/Donner outrunning-storms

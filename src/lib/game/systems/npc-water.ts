@@ -14,8 +14,10 @@ import { weatherWaterMult } from './weather';
 /** Per-adult daily water draw in gallons. Matches player's
  *  WATER_PER_ADULT_GAL in consumption.ts. */
 const WATER_PER_ADULT_GAL = 1;
-/** Children drink 70% of an adult's ration. Matches player CHILD_WATER_MULT. */
-const CHILD_WATER_MULT = 0.7;
+/** Children drink 50% of an adult's ration. Matches player CHILD_WATER_MULT.
+ *  #1031b — dropped from 0.7 to 0.5 per Faragher 1979 / Carpenter 1857:
+ *  emigrant parents rationed children's water harder than themselves. */
+const CHILD_WATER_MULT = 0.5;
 
 /** Dehydration damage curve — health hit per consecutive dry day.
  *  Mirrors player applyDehydration HEALTH_PER_DRY_DAY. */
