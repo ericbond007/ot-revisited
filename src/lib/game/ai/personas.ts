@@ -13,7 +13,7 @@
 // the decision layer is shared infrastructure for the player bot, NPC
 // companion wagons (#280b), and any future encountered-train wagon.
 
-import type { GameState } from '../types';
+import type { GameState, ConditionId } from '../types';
 import type { GameEvent } from '../content/events';
 import type { Landmark } from '../content/landmarks';
 import type { Rng } from '../rng';
@@ -32,6 +32,7 @@ import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
 import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor } from './foresight';
+import { warmthFor } from '../systems/warmth';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
 import type { BarterDisposition } from './types';
 
@@ -162,6 +163,20 @@ function minPartyHealth(state: GameState): number {
   const alive = state.party.filter((m) => !m.dead);
   if (alive.length === 0) return 100;
   return Math.min(...alive.map((m) => m.health));
+}
+
+/** #921 — the fast-killing disease cluster: cholera (−7/day), typhoid
+ *  (−4), dysentery (−3). Explicitly the set the #921 audit named — not
+ *  derived from `dailyHealthDelta` so it doesn't also catch one-off
+ *  trauma (snakebite/bear_mauling) that resting doesn't fix. These are
+ *  the conditions #161 documents as "survivable with 2-3 days of rest"
+ *  for a fed/watered party — i.e. exactly the spirals a timely rest
+ *  trigger can break. */
+const SEVERE_CONDITIONS = new Set<ConditionId>(['cholera', 'typhoid', 'dysentery']);
+function partyHasSevereCondition(state: GameState): boolean {
+  return state.party.some(
+    (m) => !m.dead && m.conditions.some((c) => SEVERE_CONDITIONS.has(c.id))
+  );
 }
 
 /** First non-default, non-hidden, non-gated choice on the event. Used
@@ -881,7 +896,13 @@ export const balancedPersona: Persona = {
 
 export const aggressivePersona: Persona = {
   id: 'aggressive',
-  foresight: { paceMiPerDay: 12, safetyFactor: 1.0 },
+  // #921r — safetyFactor 1.0 (zero margin) was "sacrifice planning to
+  // make time": aggressive sized its water/food gap buffers with no
+  // pad and ran dry in the desert. Lifted to balanced's 1.2 (competent
+  // planning); paceMiPerDay stays 12 so the buffer-days math
+  // (miles / pace × safety) is still naturally a hair leaner than
+  // balanced's — it plans properly, it just also travels faster.
+  foresight: { paceMiPerDay: 12, safetyFactor: 1.2 },
   pickEventChoice(state, event) {
     // Aggressive refuses tolls, pushes through, hoards.
     return choiceMatching(state, event, /refuse/i, /push/i, /pass/i, /ignore/i, /wave/i)
@@ -913,13 +934,58 @@ export const aggressivePersona: Persona = {
     if (oxenTired(state)) return 'moderate';
     return 'fast';
   },
-  pickRations() {
-    return 'meager';
+  pickRations(state) {
+    // #921r — "don't cheap out on rations" means don't starve the
+    // party DURING RECOVERY, not feed a healthy one lavishly. Meager
+    // is the default — it stretches the larder across the longer
+    // recovery-rest cadence #921r adds (unconditional normal burned
+    // the food and merely traded dehydration deaths for a worse
+    // starvation wave). But a hurt party's rest only heals with the
+    // calories to back it: eat normal WHILE a member is actually
+    // recovering (min HP < 40), provided food isn't itself the
+    // emergency. Healthy + lean = fine (period emigrants ate lean);
+    // hurt + lean + no food = the bug this fixes.
+    const recovering = minPartyHealth(state) < 40;
+    const foodOk = foodOnHand(state) >= 40;
+    return recovering && foodOk ? 'normal' : 'meager';
   },
   shouldRest(state) {
     // Aggressive still respects oxen — burning the team to extinction
     // is not "aggressive", it's just a stuck wagon.
-    return minPartyHealth(state) < 20 || oxenWornOut(state);
+    if (minPartyHealth(state) < 20 || oxenWornOut(state)) return true;
+    // #921r — post-shock recovery rebalance. The dominant aggressive
+    // failure was NOT death (13% wiped) — it was 68% STRANDED: a
+    // desert dehydration / ox loss around mile 1300-1600, then the
+    // party + ox team limping at ~15 mi/day (vs 19 healthy) on meager
+    // rations with almost no rest, never recovering, until the
+    // 220-day season ran out. milesPerDay() is ox-condition-bound
+    // (party HP doesn't slow the wagon — ox fatigue/health does, and
+    // that only recovers with rest). So aggressive must rest back to a
+    // workable minimum, then push again — that nets more total miles
+    // than grinding forward broken. Still leaner than cautious/
+    // balanced (it pushes sooner and resumes fast); it just stops
+    // digging the hole deeper:
+    //  - oxenTired: preemptive team recovery one rung before worn-out
+    //    (mirrors the #963a pace backoff — same signal, now also
+    //    applied to rest so the team recovers before damage compounds
+    //    instead of after).
+    //  - HP < 28: recover the party to a viable-travel floor before
+    //    resuming the push (above the 20 emergency, below cautious 30).
+    if (oxenTired(state) || minPartyHealth(state) < 28) return true;
+    // #921 — chronic-disease + cold-exposure spirals. The bare HP<20
+    // floor above is too late for a member running cholera (−7/day) or
+    // dysentery (−3/day): by HP<20 they die within 1-3 ticks. #161
+    // says these are survivable with 2-3 days' rest for a fed/watered
+    // party — but only if the bot stops before the cliff. Gate on
+    // HP<35 so a healthy party still gets the push:
+    //  - any severe disease (cholera/typhoid/dysentery).
+    //  - cold high-passes (mountains terrain — fire.ts treats alpine
+    //    nights as always-cold) with thin warmth gear.
+    if (minPartyHealth(state) < 35) {
+      if (partyHasSevereCondition(state)) return true;
+      if (state.location.terrain === 'mountains' && warmthFor(state) < 50) return true;
+    }
+    return false;
   },
   shouldHunt(state) {
     // Aggressive only hunts when starving — burns ammo for nothing

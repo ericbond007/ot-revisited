@@ -176,8 +176,8 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
     expect(balancedPersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 25, daysCap: 60 });
   });
 
-  it('aggressive: base floor (15 at Independence post-#1040), no saleratus overstock', () => {
-    expect(aggressivePersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 15, daysCap: 45 });
+  it('aggressive: base floor (#921r safetyFactor 1.0→1.2 lifts 15/45 → 18/48 at Independence), no saleratus overstock', () => {
+    expect(aggressivePersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 18, daysCap: 48 });
   });
 
   // #932 / #1040 — Fort Kearny (mi 319, canonical). Next post is
