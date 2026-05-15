@@ -23,8 +23,15 @@ export interface BotRunOpts {
   /** Total party size including leader (2-6). When `companionProfessions` is
    *  not given, the runner picks companions in this priority order:
    *  doctor → hunter → teamster → blacksmith → scout. Defaults to 3 (a
-   *  realistic mid-range emigrant party — leader, partner, and one helper). */
+   *  realistic mid-range emigrant party — leader, partner, and one helper).
+   *  This is the ADULT count — children are added on top via `childCount`. */
   partySize?: number;
+  /** #1030 — number of children to add on top of `partySize` adults.
+   *  Each child has no profession, defaults to age 8, alternates sex.
+   *  Used by the bot sweep to model the period-modal 2-adult-2-child
+   *  family wagon (Faragher 1979). Defaults to 0 (adult-only party,
+   *  preserves pre-#1030 behavior). */
+  childCount?: number;
   /** Start date — defaults to a 1849 Apr 15 sweet-spot start. */
   startDate?: { year: number; month: number; day: number };
   /** Hard ceiling on days simulated — guards infinite-loop bugs. */

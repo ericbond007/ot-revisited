@@ -1,4 +1,4 @@
-import type { GameDate, GameState, PartyMember, ProfessionId, Sex } from './types';
+import type { GameDate, GameState, MemberKind, PartyMember, ProfessionId, Sex } from './types';
 import { DEFAULT_WAGON_MODEL, getWagon, type WagonModelId } from './content/wagons';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { tickWeather } from './systems/weather';
@@ -22,10 +22,21 @@ import { applyDietVariety, applyHotDrinks } from './systems/diet';
 
 export interface PartyPick {
   name: string;
-  profession: ProfessionId;
+  // #1030 — optional for child picks. Adults always carry a profession;
+  // children have none (matches PartyMember.profession's optional shape
+  // and the existing mid-trail orphan-adoption flow).
+  profession?: ProfessionId;
   // Optional in tests; defaults to 'male' to match the save-upgrade default
   // for pre-migration data. Real UI always supplies it.
   sex?: Sex;
+  // #1030 — defaults to 'adult'. Child picks are allowed in the starting
+  // party so the bot sweep and player wizard can construct the 2-adults-
+  // 2-children family demographic (Faragher 1979 / Unruh 1979 modal
+  // emigrant unit).
+  kind?: MemberKind;
+  // #1030 — child age. Defaults: 30 for adults, 8 for children
+  // (matches the mid-trail adoption event's typical age range).
+  age?: number;
 }
 
 export interface NewGameOptions {
@@ -73,14 +84,19 @@ function makeMember(
   isLeader: boolean,
   index: number
 ): PartyMember {
+  const kind: MemberKind = pick.kind ?? 'adult';
+  // Children never carry a profession even if a caller mistakenly supplies
+  // one — strip it to keep PartyMember invariants intact.
+  const profession = kind === 'child' ? undefined : pick.profession;
+  const age = pick.age ?? (kind === 'child' ? 8 : 30);
   return {
     id: `p${index}`,
     name: pick.name,
-    profession: pick.profession,
+    profession,
     sex: pick.sex ?? 'male',
-    kind: 'adult',
+    kind,
     isLeader,
-    age: 30,
+    age,
     health: 100,
     cleanliness: 100,
     conditions: [],
@@ -89,12 +105,17 @@ function makeMember(
 }
 
 export function createInitialState(opts: NewGameOptions): GameState {
-  const size = 1 + opts.companions.length;
-  if (size < 2) throw new Error('Party must have at least 2 adults.');
-  if (size > 6) throw new Error('Party must have at most 6 adults.');
+  // #1030 — leader is always an adult (no child can be the head of a
+  // wagon). Companions may be a mix of adults + children. Size limits
+  // apply to ADULTS only — historical wagons commonly held 2 adults
+  // and 4-7 children (Sager 1844, Donner brothers 1846).
+  const adultCompanions = opts.companions.filter((c) => (c.kind ?? 'adult') === 'adult');
+  const adultCount = 1 + adultCompanions.length;
+  if (adultCount < 2) throw new Error('Party must have at least 2 adults.');
+  if (adultCount > 6) throw new Error('Party must have at most 6 adults.');
 
   const party: PartyMember[] = [
-    makeMember(opts.leader, true, 0),
+    makeMember({ ...opts.leader, kind: 'adult' }, true, 0),
     ...opts.companions.map((c, i) => makeMember(c, false, i + 1))
   ];
 
