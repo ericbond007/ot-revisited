@@ -115,20 +115,23 @@ describe('#303c — Persona.pickRepairBudget', () => {
     expect(cautiousPersona.pickRepairBudget(s, kearny)).toBeGreaterThan(0);
   });
 
-  // #935 — at a big-gap post (Kearny, 317 mi to Robidoux), all three
-  // personas accept higher wagon condition before triggering repair.
-  // Pre-#935: balanced cond=70 → skip (>60). Post-#935: trigger 75
-  // (60 + 15 boost) → cond=70 < 75 → repair. Same for cautious 80
-  // (>75 → would skip) → boosted trigger 85 → repair. Aggressive
-  // cond=50 above base 40 but below boosted 55 → repair.
-  it('#935 — at Fort Kearny (317-mi gap ahead), all 3 personas repair at higher condition than base', () => {
+  // #935 / #1040 — at Fort Kearny (mi 319) the leg to Robidoux is now
+  // the historically-correct 199 mi (was an inflated 317). 199 ≥ 150
+  // so cautious/balanced gap-boost still fires (cond 80/70 → repair).
+  // Aggressive's gap threshold is 200 mi; 199 < 200 so it does NOT
+  // boost — aggressive only repairs when genuinely failing (<40). This
+  // is correct post-mileage-pass behavior, not a regression.
+  it('#935 — at Fort Kearny (mi 319), cautious/balanced gap-boost repair; aggressive does not', () => {
     const atKearny = (cond: number) => game({
-      location: { ...game().location, milesTraveled: 335 },
+      location: { ...game().location, milesTraveled: 319 },
       wagon: { ...game().wagon, condition: cond }
     });
     expect(cautiousPersona.pickRepairBudget(atKearny(80), kearny)).toBeGreaterThan(0);
     expect(balancedPersona.pickRepairBudget(atKearny(70), kearny)).toBeGreaterThan(0);
-    expect(aggressivePersona.pickRepairBudget(atKearny(50), kearny)).toBeGreaterThan(0);
+    // 199 < aggressive bigGapMiles 200 → no boost; cond 50 ≥ base 40 → skip.
+    expect(aggressivePersona.pickRepairBudget(atKearny(50), kearny)).toBe(0);
+    // But a genuinely failing wagon still triggers aggressive's base.
+    expect(aggressivePersona.pickRepairBudget(atKearny(35), kearny)).toBeGreaterThan(0);
   });
 
   it('#935 — at a small-gap post (Laramie, 108 mi to Caspar), gap-aware boost does NOT fire', () => {
@@ -143,10 +146,11 @@ describe('#303c — Persona.pickRepairBudget', () => {
 
 describe('#303c — Persona.pickFoodRestockOpts', () => {
   // #932 — values are now gap-aware: floor scales with miles-to-next
-  // supply post at the persona's expected pace × safety factor. At
-  // Independence (mi 0) the next post is Hollenberg Ranch at mi 215.
-  // #1028 — cautious paceMiPerDay 8 → 10.
-  // Cautious: 215/10 × 1.5 = 32; balanced: 26; aggressive: 18.
+  // supply post at the persona's expected pace × safety factor.
+  // #1040 historical mileage pass: first supply post (Hollenberg) is
+  // now mi 180 (was 215), so the early gap shrank — gap-aware floors
+  // fall back to each persona's BASE since 180mi/pace doesn't exceed
+  // the base floor. Cautious base 30, balanced 25, aggressive 15.
   //
   // #963 — cap further scaled by `trailProgressCapMult`. At
   // Independence (>1500 mi remaining) the cap is multiplied by 0.65
@@ -160,36 +164,36 @@ describe('#303c — Persona.pickFoodRestockOpts', () => {
   // #963 — trail-progress cap mult is 1.0× early/mid (no change),
   // 1.3× when miles remaining < 700 (late posts get an extra buffer).
   // Independence is early-trail so values match the pre-#963 baseline.
-  it('cautious: gap-aware floor (32 at Independence post-#1028) + saleratus overstock per #909', () => {
+  it('cautious: base floor (30 at Independence post-#1040) + saleratus overstock per #909', () => {
     expect(cautiousPersona.pickFoodRestockOpts(indep())).toEqual({
-      daysFloor: 32,
-      daysCap: 92,
+      daysFloor: 30,
+      daysCap: 90,
       saleratusOverstock: true
     });
   });
 
-  it('balanced: gap-aware floor (26 at Independence), no saleratus overstock', () => {
-    expect(balancedPersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 26, daysCap: 61 });
+  it('balanced: base floor (25 at Independence post-#1040), no saleratus overstock', () => {
+    expect(balancedPersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 25, daysCap: 60 });
   });
 
-  it('aggressive: gap-aware floor (18 at Independence), no saleratus overstock', () => {
-    expect(aggressivePersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 18, daysCap: 48 });
+  it('aggressive: base floor (15 at Independence post-#1040), no saleratus overstock', () => {
+    expect(aggressivePersona.pickFoodRestockOpts(indep())).toEqual({ daysFloor: 15, daysCap: 45 });
   });
 
-  // #932 — exercise the big gap at Fort Kearny (mi 335). Next post
-  // is Robidoux at mi 652, a 317-mile leg with no resupply. This is
-  // exactly the failure mode #930's harness exposed.
-  it('#932 — at Fort Kearny (mi 335), all 3 personas inflate for the 317-mi gap to Robidoux', () => {
-    const atKearny = game({ location: { ...game().location, milesTraveled: 335 } });
+  // #932 / #1040 — Fort Kearny (mi 319, canonical). Next post is
+  // Robidoux at mi 518, a 199-mi leg with no resupply (the old 317
+  // figure was the pre-#1040 inflated-mileage artifact; real
+  // Kearny→Robidoux is ~200 mi). Gap-aware floors still hold at/above
+  // each persona's base for this leg.
+  it('#932 — at Fort Kearny (mi 319), personas hold gap-aware floors for the 199-mi Robidoux leg', () => {
+    const atKearny = game({ location: { ...game().location, milesTraveled: 319 } });
     const c = cautiousPersona.pickFoodRestockOpts(atKearny);
     const b = balancedPersona.pickFoodRestockOpts(atKearny);
     const a = aggressivePersona.pickFoodRestockOpts(atKearny);
-    // #1028 — cautious paceMiPerDay 8 → 10.
-    // cautious: 317/10 × 1.5 = 47.55 → 48; balanced: 317/10 × 1.2 = 38;
-    // aggressive: 317/12 × 1.0 = 26.4 → 27.
-    expect(c.daysFloor).toBeGreaterThanOrEqual(45);
-    expect(b.daysFloor).toBeGreaterThanOrEqual(35);
-    expect(a.daysFloor).toBeGreaterThanOrEqual(25);
+    // cautious: 199/10 × 1.5 = 30; balanced base 25; aggressive 199/12 = 17.
+    expect(c.daysFloor).toBeGreaterThanOrEqual(30);
+    expect(b.daysFloor).toBeGreaterThanOrEqual(25);
+    expect(a.daysFloor).toBeGreaterThanOrEqual(16);
   });
 
   // #932 — at the trail end (past Oregon City), the gap helper returns 0,

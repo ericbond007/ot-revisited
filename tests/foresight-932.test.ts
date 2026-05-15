@@ -21,33 +21,36 @@ function atMile(s: GameState, miles: number): GameState {
 }
 
 describe('#932 nextSupplyDistance', () => {
-  it('at the start, reports distance to first supply post (Hollenberg Ranch, mi 215)', () => {
+  // #1040 — historical mileage pass re-anchored supply-post cumulative
+  // miles: Hollenberg 180, Rock Creek 207, Kearny 319, Robidoux 518,
+  // The Dalles 1950, Oregon City (end) 2170.
+  it('at the start, reports distance to first supply post (Hollenberg Ranch, mi 180)', () => {
     const s = atMile(game(), 0);
-    expect(nextSupplyDistance(s)).toBe(215);
+    expect(nextSupplyDistance(s)).toBe(180);
   });
 
-  it('right after Hollenberg (mi 215), reports distance to Rock Creek (mi 230, gap 15)', () => {
-    const s = atMile(game(), 215);
-    expect(nextSupplyDistance(s)).toBe(15);
+  it('right after Hollenberg (mi 180), reports distance to Rock Creek (mi 207, gap 27)', () => {
+    const s = atMile(game(), 180);
+    expect(nextSupplyDistance(s)).toBe(27);
   });
 
-  it('after Fort Kearny (mi 335), reports the big 317-mile gap to Robidoux (mi 652)', () => {
-    const s = atMile(game(), 335);
-    expect(nextSupplyDistance(s)).toBe(317);
+  it('at Fort Kearny (mi 319), reports the gap to Robidoux (mi 518, gap 199)', () => {
+    const s = atMile(game(), 319);
+    expect(nextSupplyDistance(s)).toBe(199);
   });
 
-  it('mid-gap (mi 500, between Kearny and Robidoux), reports remaining 152 mi', () => {
+  it('mid-gap (mi 500, between Kearny and Robidoux), reports remaining 18 mi', () => {
     const s = atMile(game(), 500);
-    expect(nextSupplyDistance(s)).toBe(152);
+    expect(nextSupplyDistance(s)).toBe(18);
   });
 
-  it('after the final post (past The Dalles at mi 2065), reports 130 mi to Oregon City end', () => {
-    const s = atMile(game(), 2065);
-    expect(nextSupplyDistance(s)).toBe(130);
+  it('at The Dalles (mi 1950), reports 220 mi to Oregon City end', () => {
+    const s = atMile(game(), 1950);
+    expect(nextSupplyDistance(s)).toBe(220);
   });
 
   it('returns 0 when the wagon has cleared the trail end', () => {
-    const s = atMile(game(), 2195);
+    const s = atMile(game(), 2170);
     expect(nextSupplyDistance(s)).toBe(0);
   });
 

@@ -778,10 +778,15 @@ export function runBot(opts: BotRunOpts): BotRunReport {
       }
 
       // Attribute the day delta to the action that ran. Some actions
-      // (zero-day landmark walk-pasts) are 0; rest/find_water/inn-stay
-      // can be ≥1.
-      const delta = Math.max(1, state.day - dayBefore);
-      stats.actionDays[actionType] += delta;
+      // (zero-day landmark walk-pasts, trade/repair/ox-swap at a post)
+      // consume 0 calendar days — they must NOT be attributed a
+      // phantom day. #1040 fix: was `Math.max(1, …)`, which inflated
+      // tradingPost (and any 0-day handler) by ~1 day per visit and
+      // made `actionDays` overcount vs real `daysElapsed`. Now: only
+      // attribute the true delta; 0-day iterations add nothing, so
+      // sum(actionDays) === daysElapsed exactly.
+      const delta = state.day - dayBefore;
+      if (delta > 0) stats.actionDays[actionType] += delta;
 
       recordDeaths(state, stats);
       prevLowHealthIds = recordHealthDrama(state, prevLowHealthIds, stats);

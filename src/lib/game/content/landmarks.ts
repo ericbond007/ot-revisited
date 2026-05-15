@@ -159,6 +159,23 @@ export function isNativeCampHostile(
   return attitude < 21;
 }
 
+// #1040 — Historical mileage pass. Every `milesFromPrevious` was
+// re-anchored so the cumulative distance from Independence matches the
+// canonical Oregon Trail figures. Sources: Gregory Franzwa, "Maps of
+// the Oregon Trail" (1982, the mile-by-mile standard); NPS Oregon
+// National Historic Trail; Aubrey Haines, "Historic Sites Along the
+// Oregon Trail"; OCTA mileage tables. Anchor cumulative miles:
+//   Fort Kearny 319 · Chimney Rock 492 · Fort Laramie 650 ·
+//   Independence Rock 815 · South Pass 915 (Continental Divide) ·
+//   Fort Bridger 1040 · Soda Springs 1145 · Fort Hall 1290 ·
+//   Fort Boise 1570 · Whitman Mission 1830 · The Dalles 1950 ·
+//   Oregon City 2170 (canonical total).
+// Pre-pass the trail was 2195 mi and bloated the mid-section by up to
+// +127 mi at South Pass (then compressed the Columbia leg to
+// compensate) — emigrants ground through ~125 phantom mid-trail miles.
+// Landmark ORDER is unchanged here; the massacre_rocks/ft_hall and
+// north_platte_2/martins_cove geographic-sequence quirks are tracked
+// separately (#1040 follow-up) since re-ordering touches event anchors.
 export const LANDMARKS: readonly Landmark[] = [
   { id: 'independence_mo',     name: 'Independence, MO',    milesFromPrevious: 0,   terrain: 'prairie',   kind: 'start' },
   // #242 — Lone Elm Campground (mile ~40, KS). The first overnight
@@ -170,21 +187,21 @@ export const LANDMARKS: readonly Landmark[] = [
   // now — arrival event with the company-organizing vignette is a
   // follow-up.
   { id: 'lone_elm_campground', name: 'Lone Elm Campground', milesFromPrevious: 40,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'kansas_river',        name: 'Kansas River',        milesFromPrevious: 70,  terrain: 'river',     kind: 'river',
+  { id: 'kansas_river',        name: 'Kansas River',        milesFromPrevious: 60,  terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 3 } },
   // #243 — Vieux's Crossing on the Vermillion (mile ~145, KS). Louis
   // Vieux ran a toll bridge across the Vermillion 1840s+. Iconic 1849
   // cholera cemetery sprung up around the crossing — diary after diary
   // mentions the line of fresh graves on the rise above the toll. The
   // year-gated cholera flavor event is a follow-up.
-  { id: 'vieux_crossing',      name: "Vieux's Crossing",    milesFromPrevious: 35,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'alcove_spring',       name: 'Alcove Spring',       milesFromPrevious: 25,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'vieux_crossing',      name: "Vieux's Crossing",    milesFromPrevious: 24,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'alcove_spring',       name: 'Alcove Spring',       milesFromPrevious: 24,  terrain: 'prairie',   kind: 'landmark' },
   // Alcove Spring sits at the Big Blue ford; the named camp and the
   // crossing are essentially collocated. 5 mi covers wagons rolling
   // down from the spring to the river bank.
-  { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 5,   terrain: 'river',     kind: 'river',
+  { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 2,   terrain: 'river',     kind: 'river',
     river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
-  { id: 'hollenberg_ranch',    name: 'Hollenberg Ranch',    milesFromPrevious: 40,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'hollenberg_ranch',    name: 'Hollenberg Ranch',    milesFromPrevious: 30,  terrain: 'prairie',   kind: 'trading_post',
     // Private road ranch on Cottonwood Creek. Small sod-and-timber store
     // run by a German emigrant (Gerat Hollenberg). Mail stop later — for
     // now, just a handful of prairie staples and a few luxuries.
@@ -207,7 +224,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // McCanles affair) is 1861 — the post predates that by four years.
   // Year-gated abandonedBeforeYear: 1857 so pre-1857 starts see open
   // prairie. Sparse stock — frontier ranch, not a hub.
-  { id: 'rock_creek_station',  name: 'Rock Creek Station',  milesFromPrevious: 15,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'rock_creek_station',  name: 'Rock Creek Station',  milesFromPrevious: 27,  terrain: 'prairie',   kind: 'trading_post',
     postKind: 'frontier',
     abandonedBeforeYear: 1857,
     stockScale: 0.4,
@@ -218,7 +235,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'gunpowder', 'lead_balls', 'percussion_caps', 'bandages',
       'rope', 'tobacco', 'whiskey'
     ] },
-  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 105, terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 112, terrain: 'prairie',   kind: 'trading_post',
     // U.S. Army post. Quartermaster-issue basics — no luxuries.
     // Historical note: Army quartermasters issued to soldiers; they did
     // not buy goods from emigrants. Kearny is sell-only (for the player).
@@ -245,20 +262,20 @@ export const LANDMARKS: readonly Landmark[] = [
   // behind. Period diaries describe taking three to four hours per
   // wagon. The ox-fatigue / wagon-damage descent mechanic is a
   // follow-up; for now, just a flavor landmark before Ash Hollow.
-  { id: 'windlass_hill',       name: 'Windlass Hill',       milesFromPrevious: 143, terrain: 'mountains', kind: 'landmark' },
+  { id: 'windlass_hill',       name: 'Windlass Hill',       milesFromPrevious: 92, terrain: 'mountains', kind: 'landmark' },
   { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 2,   terrain: 'prairie',   kind: 'landmark' },
   // #246 — Rachel Pattison's grave (mile ~516, NE). 1849 cholera
   // death — a 19-year-old bride from Iowa, buried with a sandstone
   // marker that still stands. The most-photographed grave on the
   // trail. Year-gated arrival event with the cholera vignette is a
   // follow-up; for now just a passing landmark.
-  { id: 'rachel_pattison_grave', name: "Rachel Pattison's Grave", milesFromPrevious: 6, terrain: 'prairie', kind: 'landmark' },
-  { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 59, terrain: 'river', kind: 'river',
+  { id: 'rachel_pattison_grave', name: "Rachel Pattison's Grave", milesFromPrevious: 2, terrain: 'prairie', kind: 'landmark' },
+  { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 30, terrain: 'river', kind: 'river',
     river: { depthFt: 2.5, currentMph: 2, ferryPrice: 4 } },
-  { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 50, terrain: 'prairie', kind: 'landmark' },
-  { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 25,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 22,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'robidoux_post',       name: 'Robidoux Trading Post', milesFromPrevious: 10, terrain: 'prairie',  kind: 'trading_post',
+  { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 27, terrain: 'prairie', kind: 'landmark' },
+  { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'robidoux_post',       name: 'Robidoux Trading Post', milesFromPrevious: 6, terrain: 'prairie',  kind: 'trading_post',
     // Joseph Robidoux's post at Robidoux Pass, just south of Scotts Bluff.
     // A small fur-trader outfit — blacksmith services, moccasins, beads,
     // and whatever furs he's willing to spare.
@@ -278,7 +295,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // Robidoux was a fur trader — kept the small trinkets in stock.
       'mirror', 'awl', 'thimble', 'pocket_knife'
     ] },
-  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 132,  terrain: 'prairie',   kind: 'trading_post',
     // Fur-trade origin turned emigrant hub. The broadest selection on the
     // trail — and famously the highest prices.
     postKind: 'frontier',
@@ -309,7 +326,7 @@ export const LANDMARKS: readonly Landmark[] = [
     ] },
   // Register Cliff sits ~60 mi past Laramie near present-day Guernsey.
   // The wagon ruts at Guernsey are a couple miles further along.
-  { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 60,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 3,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'guernsey_ruts',       name: 'Guernsey Ruts',       milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
   // #247 — Mormon Ferry / Fort Caspar (mile ~810, WY). Brigham Young's
   // Mormons opened a ferry on the North Platte west crossing in 1847
@@ -319,7 +336,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // 1855 parties see open ground (and pay the river ferry as before),
   // 1855+ get a quartermaster stop. The era-gated ferry-vs-bridge
   // pricing on north_platte_2 itself is a follow-up.
-  { id: 'ft_caspar',           name: 'Fort Caspar',         milesFromPrevious: 45,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_caspar',           name: 'Fort Caspar',         milesFromPrevious: 114,  terrain: 'prairie',   kind: 'trading_post',
     postKind: 'us_army',
     abandonedBeforeYear: 1855,
     buysFromEmigrants: false,
@@ -336,15 +353,15 @@ export const LANDMARKS: readonly Landmark[] = [
   // handcart disaster — the Martin Company was caught by an October
   // blizzard and 56 of 576 died of exposure at the cove. Memorial
   // landmark. Year-gated cold-weather arrival vignette is a follow-up.
-  { id: 'martins_cove',        name: "Martin's Cove",       milesFromPrevious: 45,  terrain: 'mountains', kind: 'landmark' },
+  { id: 'martins_cove',        name: "Martin's Cove",       milesFromPrevious: 30,  terrain: 'mountains', kind: 'landmark' },
   // North Platte west crossing was at the Casper area; with ft_caspar
   // and Martin's Cove inserted, the remaining stretch is short.
-  { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 20, terrain: 'river', kind: 'river',
+  { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 8, terrain: 'river', kind: 'river',
     river: { depthFt: 4.0, currentMph: 3, ferryPrice: 5 } },
-  { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 25,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 12,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 4,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 3,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
-  { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 15, terrain: 'river',    kind: 'river',
+  { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 10, terrain: 'river',    kind: 'river',
     river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
   // Cheyenne summer camp on the Sweetwater plains (#202). Cheyenne
   // bands ranged the high country south of the Black Hills west to
@@ -352,7 +369,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // would have been a normal sight to a passing wagon. Trade is
   // hide-for-robe at a favorable rate — Cheyenne women tanned the
   // finest robes on the plains.
-  { id: 'cheyenne_camp',       name: 'Cheyenne Summer Camp', milesFromPrevious: 20, terrain: 'prairie',   kind: 'trading_post',
+  { id: 'cheyenne_camp',       name: 'Cheyenne Summer Camp', milesFromPrevious: 30, terrain: 'prairie',   kind: 'trading_post',
     postKind: 'native',
     tribeId: 'cheyenne',
     stockScale: 0.4,
@@ -363,15 +380,15 @@ export const LANDMARKS: readonly Landmark[] = [
       'beads', 'blanket', 'jerky'
     ],
     excludeBuyCategories: ['wagon_part', 'tool'] },
-  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 30,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
   // South Pass is the broad sage flat saddle of the Continental Divide
   // — wagons rolled through, not over. Treat as prairie for travel
   // pacing despite the elevation. Same for the rolling sage country
   // out to Fort Bridger.
-  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 60,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 35,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
-  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 10,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 45, terrain: 'river',    kind: 'river',
+  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 7,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 50, terrain: 'river',    kind: 'river',
     river: {
       depthFt: 4.5, currentMph: 4, ferryPrice: 8,
       // Shoshone bull-boat — Sage 1846, Frizzell 1852. Beads were the
@@ -383,7 +400,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // skids. Period diaries describe it as "the worst hill we have yet
   // seen." Ox-fatigue / wagon-damage descent mechanic is a follow-up;
   // for now, scenic landmark only.
-  { id: 'big_hill',            name: 'Big Hill',            milesFromPrevious: 40,  terrain: 'mountains', kind: 'landmark' },
+  { id: 'big_hill',            name: 'Big Hill',            milesFromPrevious: 35,  terrain: 'mountains', kind: 'landmark' },
   { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 30,  terrain: 'prairie',   kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
@@ -417,7 +434,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // summer hunt — Bear River valley was the regular gathering. Trade
   // is excellent: Washakie's people maintained warm relations with
   // emigrants from the Lewis & Clark generation onward.
-  { id: 'shoshone_camp',       name: 'Shoshone Summer Camp', milesFromPrevious: 60, terrain: 'prairie',   kind: 'trading_post',
+  { id: 'shoshone_camp',       name: 'Shoshone Summer Camp', milesFromPrevious: 45, terrain: 'prairie',   kind: 'trading_post',
     postKind: 'native',
     tribeId: 'shoshone',
     stockScale: 0.5,
@@ -428,15 +445,15 @@ export const LANDMARKS: readonly Landmark[] = [
       'beads', 'blanket', 'jerky', 'tobacco'
     ],
     excludeBuyCategories: ['wagon_part', 'tool'] },
-  { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 5,  terrain: 'river',     kind: 'river',
+  { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 10,  terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
   { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'landmark' },
   // #250 — Massacre Rocks (mile ~1290, ID). Pre-1862 just "Gate of
   // Death" — a narrow basalt gap on the Snake where ambushes were
   // feared. After the 1862 Shoshone-Bannock attacks killed 10
   // emigrants the name stuck. Year-aware ambush flavor is a follow-up.
-  { id: 'massacre_rocks',      name: 'Massacre Rocks',      milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
-  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 50,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'massacre_rocks',      name: 'Massacre Rocks',      milesFromPrevious: 100,   terrain: 'mountains', kind: 'landmark' },
+  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 45,  terrain: 'prairie',   kind: 'trading_post',
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
     // wool blankets, manufactured goods). California Trail splits here.
@@ -490,8 +507,8 @@ export const LANDMARKS: readonly Landmark[] = [
   // behind the Hall→Boise dehydration-wipe cluster (audit #1039: 6 of
   // 11 family-wagon dehydration wipes died on this 110-mi leg with no
   // water access). The descent to the falls is the historical relief.
-  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 110, terrain: 'desert',    kind: 'landmark', waterSource: true },
-  { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 40, terrain: 'river',   kind: 'river',
+  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 90, terrain: 'desert',    kind: 'landmark', waterSource: true },
+  { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 30, terrain: 'river',   kind: 'river',
     river: {
       depthFt: 5.0, currentMph: 3, ferryPrice: 6,
       // Bannock / Shoshone bands at the crossing helped emigrants float
@@ -500,7 +517,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // tobacco — pricier than the Green because the Snake is wider.
       nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 4, blurb: 'Bannock-Shoshone raft — 4 strings of beads' }
     } },
-  { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 120, terrain: 'desert',    kind: 'trading_post',
+  { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 160, terrain: 'desert',    kind: 'trading_post',
     // Small HBC station. Modest stock, not a major resupply.
     postKind: 'hbc',
     stockScale: 0.6,
@@ -524,18 +541,18 @@ export const LANDMARKS: readonly Landmark[] = [
   // through a brushy gorge — diaries describe oxen hung up on snags,
   // wagons banged off rocks, repeated unyokings. Wagon-damage / ox-
   // fatigue penalty mechanic is a follow-up.
-  { id: 'burnt_river_canyon',  name: 'Burnt River Canyon',  milesFromPrevious: 70,  terrain: 'mountains', kind: 'landmark' },
+  { id: 'burnt_river_canyon',  name: 'Burnt River Canyon',  milesFromPrevious: 50,  terrain: 'mountains', kind: 'landmark' },
   // #253 — Flagstaff Hill (mile ~1720, OR). First view of the Blue
   // Mountains for westbound emigrants. Some parties cried at the
   // sight; others built cairns. A morale-bump arrival event is a
   // follow-up.
-  { id: 'flagstaff_hill',      name: 'Flagstaff Hill',      milesFromPrevious: 40,  terrain: 'mountains', kind: 'landmark' },
-  { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 20,  terrain: 'desert',    kind: 'landmark' },
+  { id: 'flagstaff_hill',      name: 'Flagstaff Hill',      milesFromPrevious: 30,  terrain: 'mountains', kind: 'landmark' },
+  { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 10,  terrain: 'desert',    kind: 'landmark' },
   // Blue Mountains landmark fires when wagons enter the foothills, ~60
   // mi west of Farewell Bend; the actual crossing into Grande Ronde
   // takes another ~50 mi over the divide.
   { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 60,  terrain: 'mountains', kind: 'landmark' },
-  { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 50,  terrain: 'forest',    kind: 'landmark' },
+  { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 25,  terrain: 'forest',    kind: 'landmark' },
   // Methodist mission at Waiilatpu, headwaters of the Walla Walla. Marcus
   // + Narcissa Whitman ran it as both medical aid and a layover for
   // emigrants — Marcus was a physician, the farm produced wheat /
@@ -544,7 +561,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // in the November 1847 massacre — abandonedAfterYear gates the post
   // mode and triggers ruin styling for later parties. Sparse on dry
   // goods and ammunition — the Whitmans were missionaries, not traders.
-  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 60,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 85,  terrain: 'prairie',   kind: 'trading_post',
     postKind: 'mission',
     abandonedAfterYear: 1847,
     stockScale: 0.5,
@@ -593,7 +610,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'canvas', 'tongue', 'grain',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
-  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 130, terrain: 'prairie',   kind: 'trading_post',
+  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 95, terrain: 'prairie',   kind: 'trading_post',
     // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
@@ -617,12 +634,12 @@ export const LANDMARKS: readonly Landmark[] = [
   // overland alternative to rafting the Columbia. Sam Barlow opened it
   // in 1846; this entry marks the trail decision point just past The
   // Dalles. Laurel Hill is the steepest descent on the road itself.
-  { id: 'barlow_road',         name: 'Barlow Road',         milesFromPrevious: 30,  terrain: 'forest',    kind: 'landmark' },
+  { id: 'barlow_road',         name: 'Barlow Road',         milesFromPrevious: 20,  terrain: 'forest',    kind: 'landmark' },
   // Laurel Hill is dense Cascades forest — the Barlow Road's worst
   // stretch. Reclassed mountain → forest so the terrain descriptor
   // matches the visual + the forest mult (0.85) gives it bite.
-  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 50,  terrain: 'forest',    kind: 'landmark' },
-  { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 50,  terrain: 'forest',    kind: 'end' }
+  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 60,  terrain: 'forest',    kind: 'landmark' },
+  { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 140,  terrain: 'forest',    kind: 'end' }
 ];
 
 export function getLandmark(id: string): Landmark {

@@ -23,28 +23,31 @@ describe('#242-#253 historical-landmark batch — registration', () => {
 });
 
 describe('#242-#253 trail mileage preservation', () => {
-  it('total mileage to Oregon City is unchanged at 2195', () => {
+  // #1040 — historical mileage pass re-anchored every milesFromPrevious
+  // to the canonical Franzwa/NPS/Haines/OCTA figures. These guards now
+  // assert the corrected historical cumulative miles.
+  it('total mileage to Oregon City is the canonical 2170', () => {
     let sum = 0;
     for (const l of LANDMARKS) sum += l.milesFromPrevious;
-    expect(sum).toBe(2195);
+    expect(sum).toBe(2170);
   });
 
-  it('cumulative miles to chimney_rock stays at 620', () => {
+  it('cumulative miles to chimney_rock is the historical 492', () => {
     let sum = 0;
     for (const l of LANDMARKS) {
       sum += l.milesFromPrevious;
       if (l.id === 'chimney_rock') break;
     }
-    expect(sum).toBe(620);
+    expect(sum).toBe(492);
   });
 
-  it('cumulative miles to ft_kearny stays at 335', () => {
+  it('cumulative miles to ft_kearny is the canonical 319', () => {
     let sum = 0;
     for (const l of LANDMARKS) {
       sum += l.milesFromPrevious;
       if (l.id === 'ft_kearny') break;
     }
-    expect(sum).toBe(335);
+    expect(sum).toBe(319);
   });
 });
 

@@ -740,13 +740,18 @@ export const balancedPersona: Persona = {
     // #154), so the bot can run a thinner HP margin without spiraling.
     // Hunter doesn't change rest — they help food, not health.
     // #922 — Sabbath observance. Period: most emigrant companies
-    // (Bryant 1846, Carpenter 1857, Palmer 1845) kept Sunday rest
-    // by default. The pace-pusher / Reed archetype that PUSHED past
-    // Sundays was noted as deliberate and reckless, not standard.
-    // Aggressive overrides this; the balanced default holds Sunday.
-    // #924 — voluntary-rest triggers tightened (HP 40/30 → 25/15,
-    // morale 20→10). Sunday-rest covers the recovery cadence;
-    // voluntary rest now reserved for genuine crises.
+    // (Bryant 1846, Carpenter 1857, Palmer 1845) kept Sunday rest by
+    // default. #1040 tested a persona-split (secular personas travel
+    // 7 days per Unruh's "half observed" finding) — it lifted the
+    // bachelor demographic (+10pp) but cratered the period-modal
+    // family wagon (2/2: −8pp, balanced/drinker/hoarder/generous all
+    // ~32% → ~6%). Sunday rest is mechanically load-bearing for
+    // fragile family parties (#922 +10 morale/day + HP recovery is
+    // what keeps a 2-adult-2-child wagon alive — same lesson as the
+    // reverted #1029 rest-discipline experiment). The split is a real
+    // period-vs-mechanics tradeoff deferred to a separate decision;
+    // mainstream personas keep the Sabbath.
+    // #924 — voluntary-rest triggers (HP 25/15, morale 10) still hold.
     if (isSunday(state.date)) return true;
     const hpFloor = hasLiveDoctor(state) ? 15 : 25;
     return minPartyHealth(state) < hpFloor
