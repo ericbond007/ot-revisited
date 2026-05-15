@@ -716,6 +716,18 @@ export const cautiousPersona: Persona = {
       ...defaultBarterOpts(),
       foodSurplusThreshold: 300
     });
+  },
+  mudAbandonmentPriority() {
+    // Tabitha Brown 1846: wagon integrity over comfort. Luxuries +
+    // the tea set go first; the spare wheel/axle/tongue/canvas and
+    // the food reserve are the last things she'd let the slough
+    // have — a stranded wagon with no spares is a death sentence.
+    return [
+      'grandfather_clock', 'shelf_clock', 'china_tea_set',
+      'silver_tea_service', 'feather_mattress', 'anvil',
+      'printing_press', 'iron_strongbox', 'plow', 'flour', 'beans',
+      'cornmeal', 'wheel', 'axle', 'tongue', 'canvas'
+    ];
   }
 };
 
@@ -1318,6 +1330,18 @@ export const hoarderPersona: Persona = {
       protected: new Set(['flour', 'beans', 'saleratus', 'bacon',
         'sugar', 'salt', 'jerky', 'pemmican', 'game_meat'])
     });
+  },
+  mudAbandonmentPriority() {
+    // The stockpiler parts with luxuries grudgingly and clings to
+    // spare parts + food to the bitter end — "we might need that wheel
+    // / that flour if we get snowbound." Comfort goods first; the
+    // wagon-integrity kit + bulk staples never if it can help it.
+    return [
+      'grandfather_clock', 'shelf_clock', 'china_tea_set',
+      'silver_tea_service', 'feather_mattress', 'anvil',
+      'printing_press', 'iron_strongbox', 'plow', 'wheel', 'axle',
+      'tongue', 'canvas', 'flour', 'beans', 'cornmeal'
+    ];
   }
 };
 
@@ -1350,6 +1374,17 @@ export const generousPersona: Persona = {
   shouldJoinTrain() {
     // Always joins — generous is a team player.
     return true;
+  },
+  mudAbandonmentPriority() {
+    // Tamzene Donner kept the table set for travellers even as their
+    // own stores thinned — the tea services are hospitality, dumped
+    // dead last. Anvil, clocks, and spare parts go first.
+    return [
+      'anvil', 'grandfather_clock', 'shelf_clock', 'printing_press',
+      'iron_strongbox', 'plow', 'wheel', 'axle', 'tongue', 'canvas',
+      'feather_mattress', 'flour', 'beans', 'cornmeal',
+      'china_tea_set', 'silver_tea_service'
+    ];
   }
 };
 
@@ -1379,6 +1414,17 @@ export const faithfulPersona: Persona = {
     // funerals over corpses no one would touch. Faithful wagons take
     // the starvation deaths over the moral break.
     return false;
+  },
+  mudAbandonmentPriority() {
+    // The preacher-led wagon pitches the demon drink first and clings
+    // to the Word longest — the family Bible is the last thing off the
+    // wagon, after even the food.
+    return [
+      'whiskey', 'anvil', 'grandfather_clock', 'shelf_clock',
+      'feather_mattress', 'china_tea_set', 'silver_tea_service',
+      'iron_strongbox', 'plow', 'printing_press', 'wheel', 'axle',
+      'tongue', 'canvas', 'flour', 'beans', 'cornmeal', 'bible'
+    ];
   }
 };
 
@@ -1424,6 +1470,17 @@ export const drinkerPersona: Persona = {
       }
     }
     return base;
+  },
+  mudAbandonmentPriority() {
+    // Joe Meek would pitch the family Bible and the parlor china before
+    // the jug. Bottle goes last, food after that — everything else,
+    // including the anvil, the river can have.
+    return [
+      'bible', 'china_tea_set', 'shelf_clock', 'grandfather_clock',
+      'silver_tea_service', 'feather_mattress', 'anvil', 'plow',
+      'printing_press', 'iron_strongbox', 'wheel', 'axle', 'tongue',
+      'canvas', 'flour', 'beans', 'cornmeal', 'whiskey'
+    ];
   }
 };
 

@@ -20,6 +20,7 @@ import { makeRng } from '$lib/game/rng';
 import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
 import { trade } from '$lib/game/actions/trade';
+import { abandonSelected, droppableHeavyItems } from '$lib/game/systems/item-loss';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
   const slot = url.searchParams.get('slot');
@@ -360,6 +361,59 @@ export const actions: Actions = {
           day: state.day,
           text: `Lightened the wagon ${where}: dropped ${drop} ${itemId.replace(/_/g, ' ')}.`
         }
+      ]
+    };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
+  // #936b — player resolution of the stuck-in-mud abandon_load choice.
+  // The wagon_stuck event set `_mudAbandonPending`; MudAbandonModal
+  // posts here with the checked itemIds. Drops exactly those stacks
+  // (full-stack each) and clears the flag.
+  mudAbandon: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const itemIds = fd.getAll('itemId').map((v) => v.toString()).filter(Boolean);
+    const state = await loadState(locals, slot);
+    // Never trust the POST: clamp to the server-computed droppable set
+    // so a crafted request can't jettison essentials (medicine, ammo,
+    // required tools). The modal only ever submits droppable ids; this
+    // is the boundary guard.
+    const allowed = new Set(droppableHeavyItems(state).map((r) => r.id));
+    const safeIds = itemIds.filter((id) => allowed.has(id));
+    const { state: dropped } = abandonSelected(state, safeIds);
+    const flags = { ...dropped.flags };
+    delete (flags as Record<string, unknown>)._mudAbandonPending;
+    const next = { ...dropped, flags };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
+  // #936b — the modal's "Force through instead" escape. Applies the
+  // same outcome as the wagon_stuck `force` choice (oxen fatigue, no
+  // drops) so the player is never soft-locked if they refuse to shed
+  // enough weight.
+  mudForceThrough: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const state = await loadState(locals, slot);
+    const rng = makeRng(`${state.seed}:mud-force:${state.day}`);
+    const fatigueHit = rng.int(12, 25);
+    const oxen = state.oxen.map((o) => ({
+      ...o,
+      fatigue: Math.min(100, o.fatigue + fatigueHit)
+    }));
+    const flags = { ...state.flags };
+    delete (flags as Record<string, unknown>)._mudAbandonPending;
+    const next = {
+      ...state,
+      oxen,
+      flags,
+      eventLog: [
+        ...state.eventLog,
+        { day: state.day, text: `Forced through the mud. The oxen are wrecked (+${fatigueHit} fatigue each).` }
       ]
     };
     await locals.repo.save(locals.deviceId, slot, next);

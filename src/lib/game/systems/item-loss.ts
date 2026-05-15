@@ -14,6 +14,7 @@
 
 import type { GameState, NpcWagonState } from '../types';
 import type { Rng } from '../rng';
+import { getItem } from '../content/items';
 
 /** Items the buffalo stampede smashes — period: cast-iron cookware, tin
  *  butter-crocks, cheese-press wood/iron rigs, basically anything left
@@ -291,22 +292,50 @@ export interface AbandonResult {
   lostItems: { id: string; qty: number }[];
 }
 
+/** Mud target — one ox-load worth (Palmer 1845 "ox-load worth"). Shed
+ *  this many pounds and the wagon breaks free. */
+export const MUD_SHED_TARGET = 80;
+
+/** Comfort heirlooms a desperate party would jettison to break free but
+ *  that aren't in the auto `ABANDON_PRIORITY` (whiskey/bible/fiddle are
+ *  morale anchors a bot keeps; the player may still choose to dump
+ *  them). Union'd with ABANDON_PRIORITY for `droppableHeavyItems`. */
+const PLAYER_DROPPABLE_EXTRAS = [
+  'whiskey',
+  'bible',
+  'fiddle',
+  'feather_mattress',
+  'silver_tea_service'
+] as const;
+
 /** Drop heavy items until ~80 lb is shed (one ox-load worth — Palmer's
  *  threshold to break free). Returns the new state + an abandonment
- *  summary. Abandons in `ABANDON_PRIORITY` order, full-stack each. */
-export function abandonHeavyLoad(state: GameState): AbandonResult {
-  const target = 80; // lb — period: Palmer 1845 "ox-load worth"
+ *  summary. This is the AUTO path (NPC / bot, persona-driven): abandons
+ *  in `priority` order (defaults to `ABANDON_PRIORITY`), full-stack
+ *  each. A persona's `mudAbandonmentPriority()` passes its own order;
+ *  ids not in the supplied list fall back to the const order appended
+ *  after, so a partial reorder still drains the rest. */
+export function abandonHeavyLoad(
+  state: GameState,
+  priority: readonly string[] = ABANDON_PRIORITY
+): AbandonResult {
+  const target = MUD_SHED_TARGET;
+  // Persona lists are partial reorderings — append the const tail so
+  // anything the persona didn't rank still gets dropped if still stuck.
+  const order = [
+    ...priority,
+    ...ABANDON_PRIORITY.filter((id) => !priority.includes(id))
+  ];
   const inv = { ...state.inventory };
   const lost: { id: string; qty: number }[] = [];
   let shed = 0;
-  for (const id of ABANDON_PRIORITY) {
+  for (const id of order) {
     if (shed >= target) break;
     const have = inv[id] ?? 0;
     if (have <= 0) continue;
-    const itemMeta = ITEM_WEIGHTS[id] ?? 1;
     inv[id] = 0;
     lost.push({ id, qty: have });
-    shed += have * itemMeta;
+    shed += have * getItem(id).weightLbPerUnit;
   }
   const summary = lost.length === 0
     ? 'Nothing heavy to drop. Pried the wagon free with rope and curse words.'
@@ -321,28 +350,54 @@ export function abandonHeavyLoad(state: GameState): AbandonResult {
   };
 }
 
-/** Approximate weights for the abandonment math. Using rough lb/unit
- *  values that match the items.ts catalog — exact values aren't
- *  load-bearing because the threshold is just "shed enough to break
- *  free." Items not in this map default to 1 lb/unit. */
-const ITEM_WEIGHTS: Record<string, number> = {
-  anvil: 100,
-  grandfather_clock: 60,
-  shelf_clock: 8,
-  feather_mattress: 25,
-  china_tea_set: 15,
-  silver_tea_service: 12,
-  iron_strongbox: 80,
-  plow: 70,
-  printing_press: 200,
-  wheel: 30,
-  axle: 25,
-  tongue: 20,
-  canvas: 15,
-  flour: 1,
-  beans: 1,
-  cornmeal: 1
-};
+/** Drop exactly the listed item stacks, full-stack each. This is the
+ *  PLAYER path — the picks come from the MudAbandonModal, so we don't
+ *  enforce the 80 lb floor here (the modal's confirm button does).
+ *  Same `AbandonResult` shape as the auto path. */
+export function abandonSelected(
+  state: GameState,
+  itemIds: string[]
+): AbandonResult {
+  const inv = { ...state.inventory };
+  const lost: { id: string; qty: number }[] = [];
+  for (const id of itemIds) {
+    const have = inv[id] ?? 0;
+    if (have <= 0) continue;
+    inv[id] = 0;
+    lost.push({ id, qty: have });
+  }
+  const summary = lost.length === 0
+    ? 'Nothing dropped. Pried the wagon free with rope and curse words.'
+    : `Abandoned ${lost.map((l) => `${l.qty} ${l.id.replace(/_/g, ' ')}`).join(', ')} — the wagon broke free.`;
+  return {
+    state: {
+      ...state,
+      inventory: inv,
+      eventLog: [...state.eventLog, { day: state.day, text: summary }]
+    },
+    lostItems: lost
+  };
+}
+
+/** Every droppable stack the player could jettison to break free —
+ *  the union of `ABANDON_PRIORITY` and the comfort heirlooms, filtered
+ *  to what's actually in the wagon (qty > 0). Excludes essential
+ *  survival gear (medicine, ammo, tools the wagon needs) by simply not
+ *  listing it. Weight is the canonical `getItem().weightLbPerUnit ×
+ *  qty`. Sorted heaviest-first so the modal leads with the items that
+ *  break the wagon free fastest. */
+export function droppableHeavyItems(
+  state: GameState
+): { id: string; qty: number; weightLb: number }[] {
+  const ids = new Set<string>([...ABANDON_PRIORITY, ...PLAYER_DROPPABLE_EXTRAS]);
+  const rows: { id: string; qty: number; weightLb: number }[] = [];
+  for (const id of ids) {
+    const qty = state.inventory[id] ?? 0;
+    if (qty <= 0) continue;
+    rows.push({ id, qty, weightLb: qty * getItem(id).weightLbPerUnit });
+  }
+  return rows.sort((a, b) => b.weightLb - a.weightLb);
+}
 
 // --- #306 phase 2 — daily theft / pilferage (Bryant 1846, Hancock 1852) ---
 

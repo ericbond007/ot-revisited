@@ -70,7 +70,7 @@ describe('#303c slice B — pickNpcEventChoice', () => {
   });
 });
 
-// #939l — `mudAbandonmentPriority` removed (surface-only override with
-// no consumer). `systems/item-loss.ts` exports `ABANDON_PRIORITY`
-// directly for the mud-stuck abandon path; a Persona method goes back
-// on the interface when a profile actually reorders the list.
+// #936b — `mudAbandonmentPriority` re-added to the Persona interface
+// WITH a consumer: NPC/bot stuck-in-mud resolution calls
+// `abandonHeavyLoad(state, persona.mudAbandonmentPriority?.())`.
+// Per-persona drop-order character is covered in mud-abandon-936b.test.ts.

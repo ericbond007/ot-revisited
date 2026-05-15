@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { and, inTerrain, milesBetween, monthIs, weatherIs, yearAtLeast, yearBetween } from './event-gating';
-import { applyStampedeToPlayer, applyStampedeToNpc, rollStormWindLoss, abandonHeavyLoad } from '../systems/item-loss';
+import { applyStampedeToPlayer, applyStampedeToNpc, rollStormWindLoss } from '../systems/item-loss';
 import { consumeWagonPart, deathMoralePenalty } from '../professions/bonuses';
 import { randomChildName } from './historical-names';
 // #939j — shared cannibalism math (BURIAL_CANNIBALISM_* + freshness +
@@ -1234,14 +1234,19 @@ const stuck_in_mud: GameEvent = {
     {
       // #306 phase 2 — Joel Palmer 1845: "had to leave the cookware to
       // get the wagon out of the slough." Marcy 1859 calls the discard
-      // pattern "lining the trail with iron." Drop heavy items in
-      // priority order until ~80 lb shed. Player choice — never the
+      // pattern "lining the trail with iron." Player choice — never the
       // default; only pick this when other options aren't enough.
+      //
+      // #936b — two-step: don't auto-dump for the player. Set a flag;
+      // the play route opens MudAbandonModal so the player picks which
+      // heavy gear to jettison. NPC/bot wagons resolve the flag
+      // immediately via the persona-driven auto path (npc-engine /
+      // bot runner) — they never see a modal.
       id: 'abandon_load',
       icon: '🪦',
       label: 'Lighten the load — abandon heavy gear',
       silentLog: true,
-      apply: (s) => abandonHeavyLoad(s).state
+      apply: (s) => ({ ...s, flags: { ...s.flags, _mudAbandonPending: true } })
     }
   ]
 };

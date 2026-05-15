@@ -50,7 +50,7 @@ import {
   findFreshUnconsumedCorpse,
   hasFoodOnHand
 } from './cannibal';
-import { rollDailyTheft } from './item-loss';
+import { rollDailyTheft, abandonHeavyLoad } from './item-loss';
 // #939i — `rollNpcEvent` parallel impl removed. NPC event roll now
 // flows through engine `rollEvent` + `resolveEvent` over
 // NPC_ELIGIBLE_EVENTS via the wagon-synth bridge.
@@ -420,6 +420,17 @@ export function tickNpcWagon(
           // pickNpcEventChoice returned an unknown id — fall back.
           if (!fallbackId) throw new Error(`#939i event ${event.id} has no resolvable choice`);
           ticked = resolveEvent(synth, event, fallbackId, rng);
+        }
+        // #936b — wagon_stuck `abandon_load` sets `_mudAbandonPending`
+        // (the player gets a modal). NPC wagons have no modal: resolve
+        // it immediately via the persona's own drop order (#298 train
+        // parity — each wagon sheds by its captain's character).
+        if (ticked.flags._mudAbandonPending) {
+          const order = persona.mudAbandonmentPriority?.();
+          ticked = abandonHeavyLoad(ticked, order).state;
+          const flags = { ...ticked.flags };
+          delete (flags as Record<string, unknown>)._mudAbandonPending;
+          ticked = { ...ticked, flags };
         }
         next = projectWagonDeltas(ticked, next);
         for (const entry of ticked.eventLog) {

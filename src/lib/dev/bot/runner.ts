@@ -25,6 +25,7 @@ import { stayAtInn, repairWagon, swapOxen, swapOxenCost } from '../../game/syste
 // after the cash trade + ox swap; each disposition is re-quoted to
 // guard against inventory drift mid-block.
 import { quoteBarter, applyBarter } from '../../game/systems/barter';
+import { abandonHeavyLoad } from '../../game/systems/item-loss';
 import { joinTrain } from '../../game/systems/wagon-train';
 import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-purity';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
@@ -774,6 +775,15 @@ export function runBot(opts: BotRunOpts): BotRunReport {
           const choiceId = persona.pickEventChoice(state, ev, botRng);
           stats.decisionsMade += 1;
           state = applyPendingChoice(state, ev, choiceId);
+          // #936b — the bot has no modal; if it chose `abandon_load`
+          // (or any path that sets `_mudAbandonPending`), resolve it
+          // here via the persona's drop order so the run never stalls.
+          if (state.flags._mudAbandonPending) {
+            state = abandonHeavyLoad(state, persona.mudAbandonmentPriority?.()).state;
+            const flags = { ...state.flags };
+            delete (flags as Record<string, unknown>)._mudAbandonPending;
+            state = { ...state, flags };
+          }
         }
       }
 
