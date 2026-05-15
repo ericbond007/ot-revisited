@@ -15,7 +15,8 @@ describe('#206 Whitman Mission — post conversion', () => {
 
   it('still in the LANDMARKS table at the same position', () => {
     expect(LANDMARKS.find((l) => l.id === 'whitman_mission')).toBeDefined();
-    expect(whitman.milesFromPrevious).toBe(60);
+    // #1040 historical pass: grande_ronde→whitman re-anchored 60→85.
+    expect(whitman.milesFromPrevious).toBe(85);
   });
 
   it('has a sparse stock (modest stockScale)', () => {

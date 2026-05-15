@@ -19,9 +19,8 @@ function newGame(over: Partial<GameState> = {}): GameState {
   return { ...s, ...over };
 }
 
-// Trail miles to chimney_rock from start: kansas_river 110 + alcove_spring 60
-// + big_blue_river 5 + hollenberg_ranch 40 + ft_kearny 120 + ash_hollow 145
-// + north_platte_1 65 + courthouse_rock 50 + chimney_rock 25 = 620.
+// #1040 — historical mileage pass: chimney_rock cumulative is now the
+// canonical 492 mi from Independence (was 620).
 function setMilesAndNext(s: GameState, milesTraveled: number, nextLandmarkId: string): GameState {
   return {
     ...s,
@@ -46,7 +45,7 @@ describe('#233 landmark approach events — registry', () => {
 describe('#233 milesToLandmark helper', () => {
   it('returns positive distance to a future landmark', () => {
     const s = newGame();
-    expect(milesToLandmark(s, 'chimney_rock')).toBe(620);
+    expect(milesToLandmark(s, 'chimney_rock')).toBe(492);
   });
 
   it('returns negative for a passed landmark', () => {
@@ -68,7 +67,7 @@ describe('#233 pickApproachEvent — gating', () => {
 
   it('fires once miles-away drops to threshold', () => {
     // 30 mi from chimney_rock → 620 - 30 = 590 traveled.
-    const s = setMilesAndNext(newGame(), 590, 'courthouse_rock');
+    const s = setMilesAndNext(newGame(), 462, 'courthouse_rock');
     const picked = pickApproachEvent(s, (id) => milesToLandmark(s, id));
     expect(picked).toBeDefined();
     expect(picked!.landmarkId).toBe('chimney_rock');
@@ -76,7 +75,7 @@ describe('#233 pickApproachEvent — gating', () => {
 
   it('does not re-fire once one-shot flag is set', () => {
     const s: GameState = {
-      ...setMilesAndNext(newGame(), 590, 'courthouse_rock'),
+      ...setMilesAndNext(newGame(), 462, 'courthouse_rock'),
       flags: { ...newGame().flags, [approachFiredFlag('chimney_rock')]: true }
     };
     const picked = pickApproachEvent(s, (id) => milesToLandmark(s, id));
@@ -92,7 +91,7 @@ describe('#233 pickApproachEvent — gating', () => {
 
 describe('#233 engine wiring', () => {
   it('day-tick pauses with the approach event when threshold is crossed', () => {
-    const base = setMilesAndNext(newGame(), 580, 'courthouse_rock');
+    const base = setMilesAndNext(newGame(), 452, 'courthouse_rock');
     const result = tickDayPausable(base);
     // Travel will advance milesTraveled; at moderate pace that lands within 30mi of chimney_rock.
     expect(result.pendingEvent).toBeDefined();
@@ -102,7 +101,7 @@ describe('#233 engine wiring', () => {
   });
 
   it('approach event does not re-fire on a subsequent tick', () => {
-    const base = setMilesAndNext(newGame(), 580, 'courthouse_rock');
+    const base = setMilesAndNext(newGame(), 452, 'courthouse_rock');
     const first = tickDayPausable(base);
     expect(first.pendingEvent?.id).toBe('approach_chimney_rock');
     // Clear the pause and tick again from the marked state.

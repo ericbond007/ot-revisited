@@ -36,11 +36,12 @@ describe('native landmarks (#202)', () => {
     }
   });
 
-  it('total trail mileage is preserved (no drift from inserting the camps)', () => {
+  it('total trail mileage is the canonical 2170 (#1040 historical pass)', () => {
     const totalMiles = LANDMARKS.reduce((sum, l) => sum + l.milesFromPrevious, 0);
-    // #172 calibrated total to 2195 mi; the new camps split existing
-    // gaps without changing the cumulative total.
-    expect(totalMiles).toBe(2195);
+    // #1040 re-anchored every milesFromPrevious to canonical Oregon
+    // Trail figures (Franzwa/NPS/Haines/OCTA). Total is now 2170 mi,
+    // the standard Independence→Oregon City figure.
+    expect(totalMiles).toBe(2170);
   });
 });
 
