@@ -65,6 +65,18 @@ describe('every event choice produces an outcome log entry', () => {
           : baseState();
         const before = state.eventLog.length;
         const after = resolveEvent(state, event, choice.id, makeRng(`audit:${event.id}:${choice.id}`));
+
+        // #936b — wagon_stuck/abandon_load is a deferred two-step
+        // choice: its apply sets `_mudAbandonPending` (the player
+        // gets MudAbandonModal; NPC/bot resolve via persona). The
+        // outcome log line is written when that flag is resolved, not
+        // by the choice apply itself.
+        if (event.id === 'wagon_stuck' && choice.id === 'abandon_load') {
+          expect(after.flags._mudAbandonPending).toBe(true);
+          expect(after.eventLog.length).toBe(before);
+          return;
+        }
+
         const grew = after.eventLog.length - before;
         expect(grew).toBeGreaterThanOrEqual(1);
 

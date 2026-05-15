@@ -177,11 +177,15 @@ export interface Persona {
    *  trade attempt; NPC consumer is `wagon-train.ts` post-restock
    *  fallback. */
   pickBarterDispositions(state: GameState, here: Landmark, rng: Rng): BarterDisposition[];
-  // #939l — `mudAbandonmentPriority` removed: surface-only override
-  // for #306 phase 2 `abandonHeavyLoad` that never had a consumer.
-  // Mud-stuck abandonment uses the canonical `ABANDON_PRIORITY`
-  // constant from `systems/item-loss.ts` directly; if a future
-  // persona needs to reorder it, restore the method then.
+  /** #936b — drop order for the stuck-in-mud auto path. The list is
+   *  the jettison sequence (first dumped first); ids it omits fall
+   *  back to the engine's `ABANDON_PRIORITY` const appended after, so
+   *  a partial reorder still drains the rest. `undefined` (no
+   *  override) → pure const order. Re-added by #936b (removed by
+   *  #939l as consumerless): the consumer is now `abandonHeavyLoad`
+   *  via NPC mud handling (`npc-engine.ts`) and the bot runner — the
+   *  player path goes through MudAbandonModal instead. */
+  mudAbandonmentPriority?(): readonly string[];
 }
 
 /** #915 — A single barter offer-pair the bot wants to make. */
