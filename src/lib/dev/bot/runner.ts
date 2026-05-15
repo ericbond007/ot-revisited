@@ -560,11 +560,23 @@ export function runBot(opts: BotRunOpts): BotRunReport {
   const partySize = Math.max(1, Math.min(6, opts.partySize ?? 3));
   const companionProfs = opts.companionProfessions
     ?? defaultCompanions(partySize, leaderProfession);
-  const companions = companionProfs.map((p, i) => ({
+  const adultCompanions = companionProfs.map((p, i) => ({
     name: `Comp${i + 1}`,
     profession: p,
-    sex: i % 2 === 0 ? ('female' as const) : ('male' as const)
+    sex: i % 2 === 0 ? ('female' as const) : ('male' as const),
+    kind: 'adult' as const
   }));
+  // #1030 — append `childCount` children after adult companions. No
+  // profession; alternating sex starting opposite from adults so a
+  // 2-adult-2-child party reads as a mixed family. Age 8 default
+  // (set in engine.makeMember).
+  const childCount = Math.max(0, opts.childCount ?? 0);
+  const children = Array.from({ length: childCount }, (_, i) => ({
+    name: `Kid${i + 1}`,
+    sex: i % 2 === 0 ? ('male' as const) : ('female' as const),
+    kind: 'child' as const
+  }));
+  const companions = [...adultCompanions, ...children];
 
   let state: GameState = createInitialState({
     seed: opts.seed,
