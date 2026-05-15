@@ -298,11 +298,13 @@ export function tickNpcWagon(
 
   // 1c. #895 — persona-driven rations decision. Each NPC wagon carries
   // a `personaId` (set at gen from `profile.personaVariantHint`, or
-  // 'balanced' for fillers). Persona reads only `state.inventory` for
-  // pickRations today, so the shim below is sufficient — widen it if a
-  // future override touches other state.
+  // 'balanced' for fillers). #921r widened the shim: aggressive's
+  // pickRations now also reads party HP (eat normal only while a
+  // member is recovering) on top of `state.inventory`, so `party` is
+  // threaded through too — keeps #298 NPC parity (an NPC aggressive
+  // wagon self-rations the same way the player-bot does).
   const persona = getPersona(next.personaId ?? 'balanced');
-  const fauxState = { inventory: next.inventory } as unknown as GameState;
+  const fauxState = { inventory: next.inventory, party: next.party } as unknown as GameState;
   next = { ...next, rations: persona.pickRations(fauxState, rng) };
 
   // 1d. #937 — persona-driven voluntary rest. On a travel day, if the
