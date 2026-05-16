@@ -191,7 +191,8 @@ export function advanceTrain(
     pace: prepped.pace,
     terrain: prepped.location.terrain,
     weather: prepped.weather ?? 'clear',
-    traveledMiles
+    traveledMiles,
+    companyRestMode: prepped.wagonTrain?.companyDecisionBlock?.mode
   };
   const companions: typeof state.wagonTrain.companions = [];
   const playerLogs: { day: number; text: string }[] = [];

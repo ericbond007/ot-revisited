@@ -18,6 +18,12 @@ function withPersona(w: NpcWagonState, personaId: NpcWagonState['personaId']): N
   return { ...w, personaId };
 }
 
+// #1046 C2 — the bare TRAVEL_CTX below carries NO `companyRestMode`,
+// so every test in this file now exercises the SOLO wagon contract
+// (a solo wagon still self-rests via persona.shouldRest, exactly as
+// pre-C2). In-train wagons follow the company decision instead — that
+// contract is covered by the `#1046 C2 — in-train` describe block at
+// the bottom of this file (and in tests/company-rest-c2-1046.test.ts).
 const TRAVEL_CTX = {
   day: 1,
   traveled: true,
@@ -83,5 +89,49 @@ describe('#937 — NPC shouldRest parity', () => {
     const endFatigue = next.oxen.reduce((s, o) => s + o.fatigue, 0);
     const startFatigue = wagon.oxen.reduce((s, o) => s + o.fatigue, 0);
     expect(endFatigue).toBeGreaterThan(startFatigue);
+  });
+});
+
+describe('#1046 C2 — in-train wagons follow the company, not persona.shouldRest', () => {
+  // A worn 'cautious' wagon (avg ox-fatigue 80 > worn-out 70) would
+  // self-rest if solo. In a train, companyRestMode overrides:
+  //  - company says travel  → it travels (fatigue accrues)
+  //  - company says lay-by  → it rests   (fatigue recovers)
+  function wornCautious(): NpcWagonState {
+    const train = freshTrain();
+    const w = withPersona(train.companions[0], 'cautious');
+    return { ...w, oxen: w.oxen.map((o) => ({ ...o, fatigue: 80 })) };
+  }
+
+  it('company says travel → worn in-train wagon TRAVELS (persona bypassed)', () => {
+    const w = wornCautious();
+    const start = w.oxen.reduce((s, o) => s + o.fatigue, 0);
+    const { wagon } = tickNpcWagon(
+      w,
+      { ...TRAVEL_CTX, traveled: true, companyRestMode: 'travel' },
+      makeRng('c2-travel')
+    );
+    const end = wagon.oxen.reduce((s, o) => s + o.fatigue, 0);
+    expect(end).toBeGreaterThan(start); // accrued — did not self-rest
+  });
+
+  it('company says lay-by → worn in-train wagon RESTS', () => {
+    const w = wornCautious();
+    const start = w.oxen.reduce((s, o) => s + o.fatigue, 0);
+    const { wagon } = tickNpcWagon(
+      w,
+      { ...TRAVEL_CTX, traveled: false, companyRestMode: 'maintenance_layby' },
+      makeRng('c2-layby')
+    );
+    const end = wagon.oxen.reduce((s, o) => s + o.fatigue, 0);
+    expect(end).toBeLessThan(start); // recovered — rest day
+  });
+
+  it('solo (no companyRestMode) worn cautious wagon STILL self-rests (unchanged #937)', () => {
+    const w = wornCautious();
+    const start = w.oxen.reduce((s, o) => s + o.fatigue, 0);
+    const { wagon } = tickNpcWagon(w, { ...TRAVEL_CTX, traveled: true }, makeRng('c2-solo'));
+    const end = wagon.oxen.reduce((s, o) => s + o.fatigue, 0);
+    expect(end).toBeLessThan(start); // persona.shouldRest fired — rested
   });
 });

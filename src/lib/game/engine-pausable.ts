@@ -1,4 +1,4 @@
-import type { GameState } from './types';
+import type { GameState, CompanyRestMode } from './types';
 import { makeRng } from './rng';
 import type { Rng } from './rng';
 import { upgradeState } from './upgrade';
@@ -26,6 +26,7 @@ import { applyTravelDayRecovery } from './systems/travel-recovery';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
+import { companyRestDecision } from './systems/company-rest';
 import { maybeElectCaptain, forceElection } from './systems/wagon-train-elections';
 import type { CrisisVoteReason } from './systems/wagon-train-elections';
 import type { GameEvent } from './content/events';
@@ -180,10 +181,38 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // Snapshot which landmark we'd already passed before today's travel —
   // used below to detect a fresh arrival.
   const prevLandmarkBefore = s.location.previousLandmarkId;
+
+  // #1046 C2 — the captain's daily decision gates the whole company.
+  // companyRestDecision reads the PRIOR companyDecisionBlock for
+  // hysteresis; persist the updated block right after (for tomorrow's
+  // hysteresis + slice-B dissent). No train → decision is
+  // { mode:'travel' } so solo behavior is byte-identical to before.
+  let companyMode: CompanyRestMode = 'travel';
+  if (s.wagonTrain) {
+    const decision = companyRestDecision(s);
+    companyMode = decision.mode;
+    const block = s.wagonTrain.companyDecisionBlock;
+    const isNewBlock = !block || block.mode !== decision.mode;
+    s = {
+      ...s,
+      wagonTrain: {
+        ...s.wagonTrain,
+        companyDecisionBlock: isNewBlock
+          ? { mode: decision.mode, blockStartDay: s.day }
+          : block
+      },
+      eventLog: isNewBlock
+        ? [...s.eventLog, { day: s.day, text: `The company ${decision.mode === 'travel' ? 'breaks camp' : 'lays by'} — ${decision.reason}.` }]
+        : s.eventLog
+    };
+  }
+
   // #300 — capture miles before travel so advanceTrain can drive the
   // NPC axle-grease consumption cycle off the same daily delta.
   const milesBeforeTravel = s.location.milesTraveled;
-  s = applyTravel(s, rng);
+  if (companyMode === 'travel') {
+    s = applyTravel(s, rng);
+  }
   const milesTraveledToday = s.location.milesTraveled - milesBeforeTravel;
 
   const arrivedAtLandmark = s.location.atLandmarkId !== null && s.location.atLandmarkId !== undefined;
@@ -274,8 +303,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // that doesn't already pause for a Visit/Ford/End screen). Detected by
   // a change in previousLandmarkId during this tick. Skipped at
   // stop-worthy landmarks so the post/river/end UI is the moment.
+  // #1046 C2 — lay-by days don't move, so prevLandmarkId can't change;
+  // gate on companyMode === 'travel' defensively.
   if (
-    !arrivedAtLandmark
+    companyMode === 'travel'
+    && !arrivedAtLandmark
     && prevLandmarkAfter
     && prevLandmarkAfter !== prevLandmarkBefore
     && s.flags._lastEventDay !== s.day
@@ -291,7 +323,8 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // reaching a landmark, when its silhouette first becomes visible from
   // miles out. One-shot per landmark via _approachFired_<id>. Skipped on
   // arrival days so the at-landmark stage takes precedence.
-  if (!arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
+  // #1046 C2 — no approach events on lay-by days (the company isn't moving).
+  if (companyMode === 'travel' && !arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
     const approach = pickApproachEvent(s, (id) => milesToLandmark(s, id));
     if (approach) {
       s = {
@@ -308,7 +341,8 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // stop-worthy landmark, the player gets the landmark stage first; any
   // on-road event from today would arrive on top of the trading-post UI.
   // Check event WITHOUT resolving. If cooldown allows, roll; if one fires, pause here.
-  if (!arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
+  // #1046 C2 — no travel events on lay-by days.
+  if (companyMode === 'travel' && !arrivedAtLandmark && s.flags._lastEventDay !== s.day) {
     const pending = rollEvent(s, rng);
     if (pending) {
       s = prepareEventForSurfacing(s, pending, rng);
@@ -322,10 +356,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = reapDead(s, rng);
 
   // #280b/#288 — advance NPC wagons one day alongside the player.
-  // Travel day, so `traveled=true`. Each companion runs its own
-  // attrition. May return a pendingEvent if a companion just hit
-  // a starvation crisis — surface it before advancing the day.
-  const trainResult = advanceTrain(s, true, milesTraveledToday);
+  // traveled = whether the company actually moved today (#1046 C2).
+  // Each companion runs its own attrition. May return a pendingEvent
+  // if a companion just hit a starvation crisis — surface it before
+  // advancing the day.
+  const trainResult = advanceTrain(s, companyMode === 'travel', milesTraveledToday);
   s = trainResult.state;
   if (trainResult.pendingEvent) {
     return { state: s, pendingEvent: trainResult.pendingEvent };

@@ -25,6 +25,7 @@
 
 import type { Rng } from '../rng';
 import type {
+  CompanyRestMode,
   GameDate,
   GameState,
   Location,
@@ -95,6 +96,11 @@ export interface NpcTickContext {
    *  cycle (#300). Defaults to 0 on rest / event / non-travel days,
    *  so non-travel callers can omit this field. */
   traveledMiles?: number;
+  /** #1046 C2 — when set, this wagon is in a captained train and the
+   *  company's daily decision governs travel/rest; the per-persona
+   *  #937 voluntary-rest gate is bypassed (handled in a later step).
+   *  Absent = solo wagon. */
+  companyRestMode?: CompanyRestMode;
 }
 
 /** #939b — Build a TrainEnv from the NpcTickContext for the
@@ -316,7 +322,11 @@ export function tickNpcWagon(
   // companies that pushed through Sundays were the outliers (Reed);
   // most rested when the captain's "tireder than you" call came in.
   let traveled = ctx.traveled;
-  if (traveled) {
+  // #1046 C2 — in a captained train the company's daily decision
+  // governs travel/rest coherently for all wagons; skip the
+  // per-persona #937 voluntary-rest gate. Solo wagons (no
+  // companyRestMode) keep #937 behavior unchanged.
+  if (traveled && ctx.companyRestMode === undefined) {
     const restFauxState = {
       date: ctx.date ?? { year: 1849, month: 1, day: 2 }, // Monday — keeps Sunday-rest false when ctx.date absent
       party: next.party,
