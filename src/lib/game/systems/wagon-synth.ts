@@ -134,7 +134,10 @@ const SYNTH_TRAIN_STUB = {
   joinedDay: 0,
   joinedAtLandmarkId: null,
   leaderId: 'player' as const,
-  companions: []
+  companions: [],
+  // #1046 C1 — placeholder doctrine for the synth stub (NPC ticking
+  // shim; no real captain governs this).
+  doctrine: 'prudent' as const
 };
 
 /** Build a full GameState shim from an NPC wagon + the train env.

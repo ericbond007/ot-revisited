@@ -221,6 +221,25 @@ export interface WagonStateLike {
   wagon: Wagon;
 }
 
+/** #1046 — the train captain's fixed rest doctrine, set at formation
+ *  from the captain figure's persona. Static for the journey; the
+ *  daily decision it produces is condition-driven. */
+export type CaptainDoctrine = 'hard_driver' | 'prudent' | 'devout';
+
+/** #1046 — the company's daily rest decision. Precedence when
+ *  computed: crisis > sabbath > maintenance > travel. */
+export type CompanyRestMode =
+  | 'travel'
+  | 'sabbath_layby'
+  | 'maintenance_layby'
+  | 'crisis_layby';
+
+export interface CompanyRestDecision {
+  mode: CompanyRestMode;
+  /** Short human-readable why, for logs/UI/tests. */
+  reason: string;
+}
+
 // #176 — Wagon-train state. Generated at join time, persists until the
 // player splits from the train (or the run ends). See
 // `src/lib/game/content/trains.ts` for roster generation.
@@ -250,6 +269,16 @@ export interface WagonTrain {
    *  in elections. Set/cleared from the wagon-train roster modal. The
    *  captaincy will go to the highest-charisma companion instead. */
   playerStandsAside?: boolean;
+  /** #1046 — chartered rest doctrine, stamped at generation from the
+   *  captain figure's persona. Required on all trains created from
+   *  #1046 onward. */
+  doctrine: CaptainDoctrine;
+  /** #1046 — the in-flight company-rest decision block. Carries the
+   *  current mode + the day it started so the daily decision has
+   *  hysteresis (a maintenance lay-by holds until conditions clear a
+   *  margin, not 1-day-thrash) and so the dissent prompt (slice B)
+   *  fires once per block. Absent until the first day's decision. */
+  companyDecisionBlock?: { mode: CompanyRestMode; blockStartDay: number };
 }
 
 // #280a — NPC wagon state. Same field-shape as the player's relevant

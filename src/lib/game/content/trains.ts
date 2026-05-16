@@ -21,6 +21,7 @@ import { computeWaterCap } from '../systems/water-cap';
 import type { BotProfile } from './bot-profiles';
 import { LAUNCH_PROFILES, pickProfilesForRoster } from './bot-profiles';
 import { getProfession } from './professions';
+import { personaToDoctrine } from '../systems/company-rest';
 
 // #287a — surnames reserved for named profiles. Random fillers must
 // never pick these (would produce a duplicate "the Sager family"
@@ -544,7 +545,8 @@ export function generateTrain(
     joinedDay: joinDay,
     joinedAtLandmarkId,
     leaderId: 'player',
-    companions
+    companions,
+    doctrine: personaToDoctrine(companions[0]?.personaId)
   };
 }
 
