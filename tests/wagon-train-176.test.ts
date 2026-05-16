@@ -258,7 +258,7 @@ describe('wagon-train smithy support', () => {
       ...s,
       wagonTrain: {
         id: 't', name: 'T', joinedDay: 1, joinedAtLandmarkId: null,
-        leaderId: 'player',
+        leaderId: 'player', doctrine: 'prudent' as const,
         companions: [stubNpc({ id: 'wagon-0', leaderProfession: 'blacksmith' })]
       }
     };
@@ -271,7 +271,7 @@ describe('wagon-train smithy support', () => {
       ...solo,
       wagonTrain: {
         id: 't', name: 'T', joinedDay: 1, joinedAtLandmarkId: null,
-        leaderId: 'player' as const,
+        leaderId: 'player' as const, doctrine: 'prudent' as const,
         companions: [stubNpc({ id: 'wagon-0', leaderProfession: 'blacksmith' })]
       }
     };
@@ -286,7 +286,7 @@ describe('wagon-train smithy support', () => {
       ...solo,
       wagonTrain: {
         id: 't', name: 'T', joinedDay: 1, joinedAtLandmarkId: null,
-        leaderId: 'player' as const,
+        leaderId: 'player' as const, doctrine: 'prudent' as const,
         companions: [stubNpc({ id: 'wagon-0', leaderProfession: 'blacksmith' })]
       }
     };
@@ -305,7 +305,7 @@ describe('train roster helpers', () => {
   it('trainOxSurplus sums alive-ox excess over 4', () => {
     const train = {
       id: 't', name: 'T', joinedDay: 1, joinedAtLandmarkId: null,
-      leaderId: 'player' as const,
+      leaderId: 'player' as const, doctrine: 'prudent' as const,
       companions: [
         // 6 alive oxen → +2 surplus
         stubNpc({ id: 'wagon-0', leaderProfession: 'farmer',
