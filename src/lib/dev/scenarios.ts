@@ -183,7 +183,7 @@ export const SCENARIOS: Scenario[] = [
       s = setInventory(s, {
         game_meat: 180,
         berries: 6,
-        bullets: 18
+        gunpowder: 18, lead_balls: 18, percussion_caps: 18
       });
       const haul: HuntHaul = {
         target: 'big',
@@ -291,7 +291,7 @@ export const SCENARIOS: Scenario[] = [
       };
       s = setInventory(s, {
         flour: 40, beans: 20, bacon: 10, hardtack: 15, dried_fruit: 5,
-        pemmican: 8, bullets: 4, quinine: 0, bandages: 1
+        pemmican: 8, gunpowder: 4, lead_balls: 4, percussion_caps: 4, quinine: 0, bandages: 1
       });
       return s;
     }
@@ -420,7 +420,7 @@ export const SCENARIOS: Scenario[] = [
       return trade(s, {
         buys: [
           { item: 'flour', qty: 30 },
-          { item: 'bullets', qty: 15 }
+          { item: 'lead_balls', qty: 15 }
         ],
         sells: [{ item: 'bacon', qty: 10 }]
       });

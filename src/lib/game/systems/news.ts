@@ -237,7 +237,7 @@ export function generatePostGossip(
     return {
       text: buffalo
         ? 'Buffalo herds are running thick to the south — good hunting.'
-        : `${postName} is well stocked with bullets and bandages this week.`,
+        : `${postName} is well stocked with powder, lead, and bandages this week.`,
       source, topic: 'opportunity', day,
       // Buffalo tip is real — bumps hunt yield for a week.
       applyEffect: buffalo ? effectHuntBonus : undefined

@@ -7,7 +7,18 @@
 
   const qp = $derived(encodeURIComponent(slot));
   const rifleCount = $derived(gameState.inventory.rifle ?? 0);
-  const bullets = $derived(gameState.inventory.bullets ?? 0);
+  // #1056 — `bullets` was removed in #174 (split into gunpowder +
+  // lead_balls + percussion_caps). The engine fires
+  // min(gunpowder, lead_balls, percussion_caps) shots (hunt.ts
+  // `spentBullets`); mirror that exactly so the modal's gate matches
+  // what hunt() will actually do. Reading the dead `inventory.bullets`
+  // here made it always 0 → every rifle target disabled "Out of
+  // bullets" → rifle hunting unreachable for the player.
+  const availableShots = $derived(Math.min(
+    gameState.inventory.gunpowder ?? 0,
+    gameState.inventory.lead_balls ?? 0,
+    gameState.inventory.percussion_caps ?? 0
+  ));
   // Children can't hunt — they stay at camp. "Able-bodied" = alive adults.
   const aliveCount = $derived(
     gameState.party.filter((m) => !m.dead && m.kind === 'adult').length
@@ -57,12 +68,12 @@
   // Smart defaults based on available resources
   $effect(() => {
     if (rifleCount === 0 && target !== 'gather') target = 'gather';
-    if (bullets === 0 && target !== 'gather') target = 'gather';
+    if (availableShots === 0 && target !== 'gather') target = 'gather';
   });
 
   // Target options — gated by rifle presence
   const noRifle = $derived(rifleCount === 0);
-  const noBullets = $derived(bullets === 0);
+  const noAmmo = $derived(availableShots === 0);
 
   const targetOptions = $derived([
     {
@@ -70,24 +81,24 @@
       label: 'Small Game',
       sublabel: 'Rabbits, birds, prairie chickens',
       icon: ICON.fauna.small,
-      disabled: noRifle || noBullets,
-      disabledReason: noRifle ? 'Need a rifle' : noBullets ? 'Out of bullets' : undefined
+      disabled: noRifle || noAmmo,
+      disabledReason: noRifle ? 'Need a rifle' : noAmmo ? 'Out of ammunition' : undefined
     },
     {
       value: 'medium' as const,
       label: 'Medium Game',
       sublabel: 'Deer, pronghorn — balanced',
       icon: ICON.fauna.medium,
-      disabled: noRifle || noBullets,
-      disabledReason: noRifle ? 'Need a rifle' : noBullets ? 'Out of bullets' : undefined
+      disabled: noRifle || noAmmo,
+      disabledReason: noRifle ? 'Need a rifle' : noAmmo ? 'Out of ammunition' : undefined
     },
     {
       value: 'big' as const,
       label: 'Big Game',
       sublabel: 'Buffalo, bear — high yield, injury risk',
       icon: ICON.fauna.big,
-      disabled: noRifle || noBullets,
-      disabledReason: noRifle ? 'Need a rifle' : noBullets ? 'Out of bullets' : undefined
+      disabled: noRifle || noAmmo,
+      disabledReason: noRifle ? 'Need a rifle' : noAmmo ? 'Out of ammunition' : undefined
     },
     {
       value: 'gather' as const,
@@ -98,9 +109,9 @@
   ]);
 
   const ammoOptions = [
-    { value: 'light' as const,    label: 'Light',    sublabel: '5 bullets',  icon: '🔸' },
-    { value: 'moderate' as const, label: 'Moderate', sublabel: '10 bullets', icon: '🔹' },
-    { value: 'heavy' as const,    label: 'Heavy',    sublabel: '20 bullets', icon: '💥' }
+    { value: 'light' as const,    label: 'Light',    sublabel: '5 shots',  icon: '🔸' },
+    { value: 'moderate' as const, label: 'Moderate', sublabel: '10 shots', icon: '🔹' },
+    { value: 'heavy' as const,    label: 'Heavy',    sublabel: '20 shots', icon: '💥' }
   ];
 
   const styleOptions = [
@@ -169,7 +180,7 @@
     <h2 class="modal-title">Hunt or Gather</h2>
     <div class="stats">
       <span><strong>Rifles:</strong> {rifleCount}</span>
-      <span><strong>Bullets:</strong> {bullets}</span>
+      <span><strong>Ammo:</strong> {availableShots} shots</span>
       <span><strong>Able-bodied:</strong> {aliveCount}</span>
     </div>
 
