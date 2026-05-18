@@ -9,7 +9,9 @@ import type {
   CompanyRestDecision
 } from '../types';
 import type { PersonaId } from '../ai/types';
+import type { Rng } from '../rng';
 import { isSunday } from '../utils/calendar';
+import { leaveTrain } from './wagon-train';
 
 /** Captain persona → chartered doctrine. aggressive-family pushes
  *  (hard_driver); the devotion/caution personas keep the Sabbath
@@ -134,4 +136,107 @@ export function companyRestDecision(state: GameState): CompanyRestDecision {
   }
 
   return { mode: 'travel', reason: 'no rest trigger' };
+}
+
+// ── #1046 B: Dissent trigger + resolution ────────────────────────────────────
+
+const OVERRIDE_MORALE_COST = 5;
+const LOBBY_FAIL_MORALE_COST = 2;
+const LOBBY_BASE_CHANCE = 0.35;
+const LOBBY_MORALE_PIVOT = 50;
+const LOBBY_MORALE_COEFF = 0.005;
+const LOBBY_PRIOR_FAIL_COEFF = 0.05;
+const LOBBY_HARD_DRIVER_PENALTY = 0.10;
+const LEFT_TRAIN_COOLDOWN_DAYS = 10;
+
+export type DissentChoice = 'abide' | 'override' | 'lobby' | 'press_on';
+
+/** Predicate: should the dissent prompt be shown right now?
+ *  True iff: the player is in a captained wagon train, the current company
+ *  mode is a lay-by (any variant), and no choice has been recorded yet. */
+export function dissentTrigger(state: GameState, companyMode: CompanyRestMode): boolean {
+  const block = state.wagonTrain?.companyDecisionBlock;
+  if (!state.wagonTrain || !block) return false;
+  // Dissent is for DOCTRINE lay-bys only (maintenance / Sabbath). A
+  // crisis_layby is the doctrine-independent universal safety floor
+  // (spec §4 "even a hard-driver stops") — C2 contractually advances
+  // the day on it; never pause/prompt there.
+  if (companyMode === 'travel' || companyMode === 'crisis_layby') return false;
+  return block.dissentChoice === undefined;
+}
+
+/** Apply the player's (or bot's) dissent answer. Pure — returns a new GameState.
+ *  The recorded dissentChoice is sticky: calling this a second time with a
+ *  different choice is a caller bug; the function will overwrite but callers
+ *  should gate on dissentTrigger first. */
+export function resolveCompanyDissent(
+  state: GameState,
+  choice: DissentChoice,
+  rng: Rng
+): GameState {
+  const train = state.wagonTrain;
+  if (!train || !train.companyDecisionBlock) return state;
+  const block = train.companyDecisionBlock;
+
+  /** Helper: stamp a dissentChoice onto the block and merge any extra GameState
+   *  fields (morale delta, eventLog append, flags patch). */
+  const setChoice = (
+    c: NonNullable<typeof block.dissentChoice>,
+    extra: Partial<GameState> = {}
+  ): GameState => ({
+    ...state,
+    ...extra,
+    wagonTrain: { ...train, companyDecisionBlock: { ...block, dissentChoice: c } }
+  });
+
+  if (choice === 'abide') return setChoice('abide');
+
+  if (choice === 'press_on') {
+    // Leave the train entirely — wagonTrain becomes null.
+    const left = leaveTrain(state);
+    return {
+      ...left,
+      flags: { ...left.flags, _leftTrainCooldownUntilDay: state.day + LEFT_TRAIN_COOLDOWN_DAYS }
+    };
+  }
+
+  if (choice === 'override') {
+    // Player-captain only: override the lay-by, pay the morale cost.
+    return setChoice('override', {
+      morale: Math.max(0, state.morale - OVERRIDE_MORALE_COST),
+      eventLog: [...state.eventLog,
+        { day: state.day, text: `You overruled the company's lay-by. (−${OVERRIDE_MORALE_COST} morale)` }]
+    });
+  }
+
+  // choice === 'lobby': appeal to the NPC captain.
+  // Devout captains will not break the Sabbath under any argument.
+  if (train.doctrine === 'devout' && isSunday(state.date)) {
+    return setChoice('lobby_fail', {
+      morale: Math.max(0, state.morale - LOBBY_FAIL_MORALE_COST),
+      eventLog: [...state.eventLog,
+        { day: state.day, text: `The captain will not break the Sabbath, whatever you say. (−${LOBBY_FAIL_MORALE_COST} morale)` }]
+    });
+  }
+
+  // Gated lobby roll: morale bonus, prior-fail penalty, doctrine stubbornness.
+  const moraleBonus = (state.morale - LOBBY_MORALE_PIVOT) * LOBBY_MORALE_COEFF;
+  const priorFails = (state.flags._failedLobbyCount as number | undefined) ?? 0;
+  const failPenalty = priorFails * LOBBY_PRIOR_FAIL_COEFF;
+  const stubborn = train.doctrine === 'hard_driver' ? LOBBY_HARD_DRIVER_PENALTY : 0;
+  const threshold = LOBBY_BASE_CHANCE + moraleBonus - failPenalty - stubborn;
+
+  if (rng.chance(Math.max(0, threshold))) {
+    return setChoice('lobby_ok', {
+      eventLog: [...state.eventLog,
+        { day: state.day, text: `Your appeal carried — the captain calls a travel day.` }]
+    });
+  }
+
+  return setChoice('lobby_fail', {
+    morale: Math.max(0, state.morale - LOBBY_FAIL_MORALE_COST),
+    flags: { ...state.flags, _failedLobbyCount: priorFails + 1 },
+    eventLog: [...state.eventLog,
+      { day: state.day, text: `The captain refused your appeal. (−${LOBBY_FAIL_MORALE_COST} morale)` }]
+  });
 }

@@ -10,7 +10,7 @@
 // paths — public actions for the player bot, direct state mutation
 // for the NPC tick.
 
-import type { GameState } from '../types';
+import type { GameState, CompanyRestDecision } from '../types';
 import type { GameEvent } from '../content/events';
 import type { Landmark } from '../content/landmarks';
 import type { Rng } from '../rng';
@@ -70,6 +70,13 @@ export interface Persona {
   pickRations(state: GameState, rng: Rng): GameState['rations'];
   /** Should the party rest a day? */
   shouldRest(state: GameState, rng: Rng): boolean;
+  /** #1046 B — when the chartered company forces a lay-by, what does
+   *  this persona do? 'abide' (default — trust the company), 'lobby'
+   *  (NPC-captain only — appeal the call), 'press_on' (split from the
+   *  train and travel solo). Only consulted on a `*_layby` decision;
+   *  return 'abide' for travel. The bot-player path maps 'lobby' to
+   *  the captain-override when the bot itself is captain. */
+  shouldDissent(state: GameState, decision: CompanyRestDecision, rng: Rng): 'abide' | 'lobby' | 'press_on';
   /** Should the party hunt? Returns true when food is low + ammo available. */
   shouldHunt(state: GameState, rng: Rng): boolean;
   /** Pick a river-crossing method. `native_ferry` is preferred when the
