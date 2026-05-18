@@ -1,3 +1,5 @@
+import type { Terrain } from '$lib/game/types';
+
 export type DebrisCategory = 'natural' | 'bones' | 'junk' | 'graves';
 export type SizeClass = 'small' | 'large';
 
@@ -43,11 +45,54 @@ export function hash32(n: number): number {
 
 /** k decorrelated deterministic floats in [0,1) from a seed. Each
  *  channel is independently hashed (counter mode) so channels drawn
- *  from one seed are not cross-correlated. */
+ *  from one seed are not cross-correlated. (Improved over the plan's
+ *  initial shared-multiply draft — XOR-counter avoids seed=0 collision
+ *  and gives full inter-channel independence.) */
 export function hashFloats(seed: number, k: number): number[] {
   const out: number[] = [];
   for (let i = 0; i < k; i++) {
     out.push(hash32(seed ^ Math.imul(i, 2246822519)) / 4294967296);
   }
   return out;
+}
+
+export interface FieldInputs {
+  progress: number; // 0..1 trail fraction
+  terrain: Terrain;
+  deathCount: number;
+  /** Trail-progress of Fort Laramie, or null → no Camp-Sacrifice spike. */
+  laramieProgress: number | null;
+}
+
+export interface CategoryWeights {
+  natural: number;
+  bones: number;
+  junk: number;
+  graves: number;
+}
+
+function smoothstep(a: number, b: number, x: number): number {
+  if (a === b) return x < a ? 0 : 1;
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+export function categoryWeights(inp: FieldInputs): CategoryWeights {
+  const { progress: p, terrain, deathCount, laramieProgress } = inp;
+  const natural = 1.0;
+  // 'river' terrain (landmark crossings only) → neutral 1.0 multiplier:
+  // bone scatter at a crossing is the same as baseline.
+  const tMul =
+    terrain === 'prairie' || terrain === 'desert' ? 1.5
+    : terrain === 'forest' || terrain === 'mountains' ? 0.6
+    : 1.0;
+  const bones = (0.15 + 0.85 * smoothstep(0.12, 0.55, p)) * tMul;
+  // Gaussian σ = 0.05 trail-fraction half-width around Fort Laramie:
+  const spike =
+    laramieProgress == null // == null intentionally also covers undefined
+      ? 0
+      : 1.6 * Math.exp(-(((p - laramieProgress) / 0.05) ** 2));
+  const junk = 1.1 * smoothstep(0.22, 0.85, p) + spike;
+  const graves = Math.min(0.6, (0.05 + 0.25 * p) * (1 + 0.15 * deathCount));
+  return { natural, bones, junk, graves };
 }

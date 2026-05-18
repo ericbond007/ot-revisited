@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEBRIS_CATALOG, hash32, hashFloats } from '../src/lib/ui/wagon/terrain/debris-field';
+import { DEBRIS_CATALOG, hash32, hashFloats, categoryWeights } from '../src/lib/ui/wagon/terrain/debris-field';
 
 describe('debris catalog', () => {
   it('has 21 sprites across 4 categories', () => {
@@ -32,3 +32,56 @@ describe('hash', () => {
     }
   });
 });
+
+describe('categoryWeights', () => {
+  const base = { terrain: 'prairie' as const, deathCount: 0, laramieProgress: 0.4 };
+
+  it('junk baseline rises from low to high across the trail', () => {
+    // Not globally monotone — there is a local Fort-Laramie spike; these
+    // three sample points sit clear of it and verify the baseline ramp.
+    const a = categoryWeights({ ...base, progress: 0.1 }).junk;
+    const b = categoryWeights({ ...base, progress: 0.6 }).junk;
+    const c = categoryWeights({ ...base, progress: 0.95 }).junk;
+    expect(a).toBeLessThan(b);
+    expect(b).toBeLessThan(c);
+  });
+  it('bones rise from near-zero early to substantial mid-trail', () => {
+    expect(categoryWeights({ ...base, progress: 0.05 }).bones).toBeLessThan(0.4);
+    expect(categoryWeights({ ...base, progress: 0.6 }).bones).toBeGreaterThan(0.9);
+  });
+  it('bones weighted up on plains vs forest/mountains', () => {
+    const plains = categoryWeights({ ...base, terrain: 'desert', progress: 0.6 }).bones;
+    const mtn = categoryWeights({ ...base, terrain: 'mountains', progress: 0.6 }).bones;
+    expect(plains).toBeGreaterThan(mtn);
+  });
+  it('river terrain uses the neutral bone multiplier (baseline)', () => {
+    const river = categoryWeights({ ...base, terrain: 'river', progress: 0.6 }).bones;
+    const plains = categoryWeights({ ...base, terrain: 'prairie', progress: 0.6 }).bones;
+    const mtn = categoryWeights({ ...base, terrain: 'mountains', progress: 0.6 }).bones;
+    expect(river).toBeGreaterThan(mtn);   // > 0.6x
+    expect(river).toBeLessThan(plains);   // < 1.5x
+  });
+  it('graves scale with deathCount but stay capped at 0.6', () => {
+    const none = categoryWeights({ ...base, progress: 0.5, deathCount: 0 }).graves;
+    const some = categoryWeights({ ...base, progress: 0.5, deathCount: 4 }).graves;
+    expect(some).toBeGreaterThan(none);
+    expect(categoryWeights({ ...base, progress: 1, deathCount: 99 }).graves).toBeLessThanOrEqual(0.6);
+  });
+  it('junk has a local maximum at the Fort Laramie progress', () => {
+    const at = categoryWeights({ ...base, progress: 0.4 }).junk;
+    const before = categoryWeights({ ...base, progress: 0.3 }).junk;
+    const after = categoryWeights({ ...base, progress: 0.5 }).junk;
+    expect(at).toBeGreaterThan(before);
+    expect(at).toBeGreaterThan(after);
+  });
+  it('no spike when laramieProgress is null', () => {
+    const w = categoryWeights({ ...base, progress: 0.4, laramieProgress: null });
+    expect(w.junk).toBeCloseTo(1.1 * smoothstepRef(0.22, 0.85, 0.4), 5);
+  });
+});
+
+function smoothstepRef(a: number, b: number, x: number): number {
+  if (a === b) return x < a ? 0 : 1;
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
