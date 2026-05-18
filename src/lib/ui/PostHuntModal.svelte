@@ -158,7 +158,7 @@
         {#if haul.target === 'gather'}
           The foragers turned up nothing worth bringing back.
         {:else}
-          No game in the glass. The hunters returned hungry — and {haul.bullets} bullet{haul.bullets === 1 ? '' : 's'} lighter.
+          No game in the glass. The hunters returned hungry — {haul.bullets} shot{haul.bullets === 1 ? '' : 's'} wasted, that much powder and lead gone.
         {/if}
       </p>
 

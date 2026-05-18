@@ -46,15 +46,15 @@ export const TRIBES: readonly Tribe[] = [
     // hostile to wagons. Baseline tuned up from 55 → 60 so they read
     // friendly-leaning out of the gate.
     baselineAttitude: 60,
-    preferredTrade: ['tobacco', 'beads', 'bullets'],
-    blurb: 'Horticulturists of the central Platte valley. Generally friendly to emigrants but often raided by Sioux — sometimes ask for tolls in tobacco or bullets.'
+    preferredTrade: ['tobacco', 'beads', 'gunpowder', 'lead_balls'],
+    blurb: 'Horticulturists of the central Platte valley. Generally friendly to emigrants but often raided by Sioux — sometimes ask for tolls in tobacco or powder and lead.'
   },
   {
     id: 'sioux',
     name: 'Sioux',
     region: { fromMile: 250, toMile: 650 },
     baselineAttitude: 45,
-    preferredTrade: ['tobacco', 'whiskey', 'bullets', 'beads'],
+    preferredTrade: ['tobacco', 'whiskey', 'gunpowder', 'lead_balls', 'beads'],
     blurb: 'Lakota bands of the North Platte and Laramie plains. Powerful and increasingly cautious of the emigrant stream — traders who pay respect pass easily; those who do not, may not.'
   },
   {
@@ -98,7 +98,7 @@ export const TRIBES: readonly Tribe[] = [
     // baseline at 50 here avoids double-counting for any 1848+ start
     // and lets a future pre-1846 start play through the actual shift.
     baselineAttitude: 50,
-    preferredTrade: ['rifle', 'bullets', 'tobacco'],
+    preferredTrade: ['rifle', 'gunpowder', 'lead_balls', 'tobacco'],
     blurb: 'Plateau people of the Umatilla country. Since the Whitman Massacre of 1847 they have been at war with the Americans — trade is tense, sometimes refused outright.'
   },
   {

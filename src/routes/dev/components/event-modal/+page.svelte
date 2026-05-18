@@ -8,7 +8,7 @@
   import type { GameState } from '$lib/game/types';
 
   const gameState = {
-    inventory: { flour: 60, beans: 20, bullets: 40 }
+    inventory: { flour: 60, beans: 20, gunpowder: 40, lead_balls: 40, percussion_caps: 40 }
   } as unknown as GameState;
 </script>
 

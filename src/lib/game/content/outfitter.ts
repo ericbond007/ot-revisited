@@ -12,7 +12,7 @@ export const OUTFITTER_BUYABLES: readonly string[] = [
   // Wagon parts
   'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket',
   // Weapons
-  'rifle', 'bullets', 'rifle_cleaning_kit',
+  'rifle', 'gunpowder', 'lead_balls', 'percussion_caps', 'rifle_cleaning_kit',
   // Clothing
   'coat', 'boots', 'blanket', 'tent',
   // Tools

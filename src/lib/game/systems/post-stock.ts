@@ -9,7 +9,7 @@ import type { Landmark } from '../content/landmarks';
 //
 // Remaining qty is tracked in `flags._postStock[landmarkId]`:
 //   {
-//     bought: { flour: 40, bullets: 10, ... }   // running totals
+//     bought: { flour: 40, lead_balls: 10, ... } // running totals
 //     restockedDay: 123                          // when bought was last zeroed
 //   }
 //
@@ -24,7 +24,7 @@ export const DEFAULT_STOCK_QTY: Record<ItemCategory, number> = {
   tool: 4,
   wagon_part: 3,
   weapon: 2,
-  ammo: 300,          // bullets are sold by the piece
+  ammo: 300,          // powder / ball / caps sold by the piece
   clothing: 6,
   livestock: 8,
   feed: 80,           // grain lbs

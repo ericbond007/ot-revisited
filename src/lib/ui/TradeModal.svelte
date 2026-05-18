@@ -34,7 +34,7 @@
 
   // Fallback stock for any trading_post without its own declared stock list.
   const FALLBACK_STOCK = [
-    'flour', 'beans', 'bacon', 'bullets', 'bandages', 'quinine',
+    'flour', 'beans', 'bacon', 'gunpowder', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
     'coat', 'blanket', 'ox_shoes', 'rope'
   ];
 
