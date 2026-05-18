@@ -5,7 +5,7 @@ import { sundayLayBy } from '$lib/game/actions/sunday-lay-by';
 import { isSunday } from '$lib/game/utils/calendar';
 import { CAMP_ACTIONS_BY_ID, type CampActionId } from '$lib/game/actions/camp-actions';
 import { getLandmark } from '$lib/game/content/landmarks';
-import { tickDayPausable, applyPendingChoice } from '$lib/game/engine-pausable';
+import { tickDayPausable, applyPendingChoice, applyCompanyDissent } from '$lib/game/engine-pausable';
 import { EVENTS } from '$lib/game/content/events';
 import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-events';
 import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
@@ -416,6 +416,26 @@ export const actions: Actions = {
         { day: state.day, text: `Forced through the mud. The oxen are wrecked (+${fatigueHit} fatigue each).` }
       ]
     };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
+  // #1046b — player resolution of the company lay-by dissent choice.
+  // tickDayPausable set `_companyDissentPending` when the chartered company
+  // called a maintenance or Sabbath halt. CompanyDissentModal posts here;
+  // applyCompanyDissent is a tail-only continuation that resolves the choice
+  // AND finishes the day — do NOT re-tick (that would double-drain food/conditions).
+  companyDissent: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const choice = (await request.formData()).get('choice')?.toString();
+    if (choice !== 'abide' && choice !== 'override' && choice !== 'lobby' && choice !== 'press_on') {
+      throw error(400, 'bad choice');
+    }
+    const state = await loadState(locals, slot);
+    if (!state.flags._companyDissentPending) throw error(400, 'no dissent pending');
+    const rng = makeRng(`${state.seed}:dissent:${state.day}`);
+    const next = applyCompanyDissent(state, choice, rng);
     await locals.repo.save(locals.deviceId, slot, next);
     return { state: next };
   },

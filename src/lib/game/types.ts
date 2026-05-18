@@ -273,12 +273,17 @@ export interface WagonTrain {
    *  captain figure's persona. Required on all trains created from
    *  #1046 onward. */
   doctrine: CaptainDoctrine;
-  /** #1046 — the in-flight company-rest decision block. Carries the
-   *  current mode + the day it started so the daily decision has
-   *  hysteresis (a maintenance lay-by holds until conditions clear a
-   *  margin, not 1-day-thrash) and so the dissent prompt (slice B)
-   *  fires once per block. Absent until the first day's decision. */
-  companyDecisionBlock?: { mode: CompanyRestMode; blockStartDay: number };
+  /** #1046 C2 hysteresis state + #1046 B sticky dissent. `dissentChoice`
+   *  is recorded once per decision block (the player/bot answered the
+   *  dissent prompt for THIS block); the engine reads it instead of
+   *  re-prompting. 'abide' → follow the lay-by; 'override'/'lobby_ok' →
+   *  the player's day flips to travel for the block; 'press_on' → the
+   *  player has left the train (handled at resolve). */
+  companyDecisionBlock?: {
+    mode: CompanyRestMode;
+    blockStartDay: number;
+    dissentChoice?: 'abide' | 'override' | 'lobby_ok' | 'lobby_fail' | 'press_on';
+  };
 }
 
 // #280a — NPC wagon state. Same field-shape as the player's relevant

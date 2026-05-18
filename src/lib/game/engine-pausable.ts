@@ -26,7 +26,8 @@ import { applyTravelDayRecovery } from './systems/travel-recovery';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
-import { companyRestDecision } from './systems/company-rest';
+import { companyRestDecision, dissentTrigger, resolveCompanyDissent } from './systems/company-rest';
+import type { DissentChoice } from './systems/company-rest';
 import { maybeElectCaptain, forceElection } from './systems/wagon-train-elections';
 import type { CrisisVoteReason } from './systems/wagon-train-elections';
 import type { GameEvent } from './content/events';
@@ -207,6 +208,16 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     };
   }
 
+  // #1046 B — dissent. On a forced lay-by the player hasn't answered
+  // for THIS block, pause for the modal. Resume is NOT a re-tick — the
+  // play route / bot calls applyCompanyDissent (a tail-only
+  // continuation, like applyPendingChoice) so the daily systems that
+  // already ran above are not double-applied.
+  if (s.wagonTrain && dissentTrigger(s, companyMode)) {
+    s = { ...s, flags: { ...s.flags, _companyDissentPending: true } };
+    return { state: s };
+  }
+
   // #300 — capture miles before travel so advanceTrain can drive the
   // NPC axle-grease consumption cycle off the same daily delta.
   const milesBeforeTravel = s.location.milesTraveled;
@@ -373,6 +384,30 @@ export function tickDayPausable(state: GameState): PausableTickResult {
       date: advanceDate(s.date)
     }
   };
+}
+
+/** #1046 B — resume a dissent pause. Tail-only continuation (mirrors
+ *  applyPendingChoice): the daily systems already ran in the paused
+ *  tickDayPausable, so this resolves the choice then ONLY finishes the
+ *  day (travel-if-the-company-moves, fire, death, advanceTrain,
+ *  day-advance). Never re-runs progressConditions/consumption/etc. */
+export function applyCompanyDissent(
+  state: GameState,
+  choice: DissentChoice,
+  rng: Rng
+): GameState {
+  let s = resolveCompanyDissent(state, choice, rng);
+  const clearedFlags = { ...s.flags };
+  delete (clearedFlags as Record<string, unknown>)._companyDissentPending;
+  s = { ...s, flags: clearedFlags };
+  const dc = s.wagonTrain?.companyDecisionBlock?.dissentChoice;
+  const travels = !s.wagonTrain || dc === 'override' || dc === 'lobby_ok';
+  if (travels) s = applyTravel(s, rng);
+  s = attemptFire(s, rng);
+  s = reapDead(s, rng);
+  const trainResult = advanceTrain(s, travels);
+  s = trainResult.state;
+  return { ...s, day: s.day + 1, date: advanceDate(s.date) };
 }
 
 // Apply the player's chosen choice, then finish the rest of the day (fire attempt, death reap, advance).

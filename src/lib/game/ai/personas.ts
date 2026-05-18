@@ -743,7 +743,8 @@ export const cautiousPersona: Persona = {
       'printing_press', 'iron_strongbox', 'plow', 'flour', 'beans',
       'cornmeal', 'wheel', 'axle', 'tongue', 'canvas'
     ];
-  }
+  },
+  shouldDissent() { return 'abide'; }
 };
 
 export const balancedPersona: Persona = {
@@ -891,7 +892,11 @@ export const balancedPersona: Persona = {
   shouldJoinTrain: defaultShouldJoinTrain,
   shouldCannibalize: () => true,
   pickNpcEventChoice: () => null,
-  pickBarterDispositions: defaultPickBarterDispositions
+  pickBarterDispositions: defaultPickBarterDispositions,
+  shouldDissent() {
+    // Trust the chartered company; never break off over a rest call.
+    return 'abide';
+  }
 };
 
 export const aggressivePersona: Persona = {
@@ -1098,6 +1103,10 @@ export const aggressivePersona: Persona = {
       cashFloor: 30,
       rateFloor: 0.80
     });
+  },
+  shouldDissent(_state, decision) {
+    // #921r identity: push. Split from a forced lay-by, reclaim the day.
+    return decision.mode === 'travel' ? 'abide' : 'press_on';
   }
 };
 
@@ -1241,6 +1250,10 @@ export const chaosPersona: Persona = {
     if (all.length === 0) return [];
     const pick = all[rng.int(0, all.length - 1)];
     return [pick];
+  },
+  shouldDissent(_state, decision, rng) {
+    if (decision.mode === 'travel') return 'abide';
+    return rng.chance(0.5) ? 'press_on' : 'abide';
   }
 };
 
@@ -1344,6 +1357,9 @@ export const pacePusherPersona: Persona = {
       bigGapHealthBoost: 15
     });
     return pickOxSwapCountFor(state, 2, healthFloor);
+  },
+  shouldDissent(_state, decision) {
+    return decision.mode === 'travel' ? 'abide' : 'press_on';
   }
 };
 

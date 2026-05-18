@@ -853,6 +853,9 @@ export function applyNpcPostRestock(state: GameState): GameState {
   };
 }
 
+// #1046 B: the canonical splitter is resolveCompanyDissent (it sets the
+// #127 re-join cooldown via flags._leftTrainCooldownUntilDay). A direct
+// leaveTrain caller that wants the cooldown must set that flag itself.
 /** Split off from the wagon train — the party continues alone.
  *  Period reality: parties split routinely at posts (especially
  *  Bridger and Hall), and the social fallout could be bitter. We

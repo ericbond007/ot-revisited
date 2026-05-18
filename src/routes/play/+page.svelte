@@ -15,6 +15,7 @@
   import FordModal from '$lib/ui/FordModal.svelte';
   import TradeModal from '$lib/ui/TradeModal.svelte';
   import MudAbandonModal from '$lib/ui/MudAbandonModal.svelte';
+  import CompanyDissentModal from '$lib/ui/CompanyDissentModal.svelte';
   import { droppableHeavyItems, MUD_SHED_TARGET } from '$lib/game/systems/item-loss';
   import CampStage from '$lib/ui/CampStage.svelte';
   import CampSummaryModal from '$lib/ui/CampSummaryModal.svelte';
@@ -54,6 +55,7 @@
   const paperBatch = $derived((gs.flags._paperBatch as unknown as PaperBatch | undefined));
   const pendingLetter = $derived((gs.flags._pendingLetter as unknown as PendingLetter | undefined));
   const mudAbandonPending = $derived(gs.flags._mudAbandonPending === true);
+  const companyDissentPending = $derived(gs.flags._companyDissentPending === true);
   const qp = $derived(encodeURIComponent(data.slot));
   const paceAction = $derived(`?/setPace&slot=${qp}`);
   const rationsAction = $derived(`?/setRations&slot=${qp}`);
@@ -373,6 +375,14 @@
     rows={droppableHeavyItems(gs)}
     target={MUD_SHED_TARGET}
     slot={data.slot}
+  />
+{/if}
+
+{#if companyDissentPending && !gs.completed}
+  <CompanyDissentModal
+    state={gs}
+    slot={data.slot}
+    onclose={() => {}}
   />
 {/if}
 

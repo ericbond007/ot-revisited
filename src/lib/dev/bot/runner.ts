@@ -15,7 +15,9 @@
 //     else → tickDayPausable, handle pendingEvent if any
 
 import { createInitialState } from '../../game/engine';
-import { tickDayPausable, applyPendingChoice } from '../../game/engine-pausable';
+import { tickDayPausable, applyPendingChoice, applyCompanyDissent } from '../../game/engine-pausable';
+import { companyRestDecision, type DissentChoice } from '../../game/systems/company-rest';
+import { playerIsCaptain } from '../../game/systems/wagon-train-elections';
 import { rest } from '../../game/actions/rest';
 import { hunt, type HuntTarget, type AmmoBand } from '../../game/actions/hunt';
 import { trade } from '../../game/actions/trade';
@@ -246,7 +248,12 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
       // gets +1 morale/day, possibly half-price smithy, and pace-clamp
       // safety — all positive-EV unless the player is committing to a
       // grueling-pace push (the bot doesn't, so this is pure upside).
-      if (!s.wagonTrain && persona.shouldJoinTrain(s, here, rng)) {
+      const rejoinCooldown = s.flags._leftTrainCooldownUntilDay as number | undefined;
+      if (
+        !s.wagonTrain &&
+        (rejoinCooldown === undefined || s.day >= rejoinCooldown) &&
+        persona.shouldJoinTrain(s, here, rng)
+      ) {
         try {
           s = joinTrain(s, rng).state;
           stats.decisionsMade += 1;
@@ -784,6 +791,24 @@ export function runBot(opts: BotRunOpts): BotRunReport {
             delete (flags as Record<string, unknown>)._mudAbandonPending;
             state = { ...state, flags };
           }
+        }
+
+        // #1046 B — company-rest dissent. If tickDayPausable paused for a
+        // forced lay-by the player hasn't answered, resolve it here via
+        // the persona's shouldDissent. Resume is applyCompanyDissent (a
+        // tail-only continuation that finishes the day) — NOT a re-tick
+        // (re-ticking double-drains food/conditions; that was the fixed bug).
+        if (state.flags._companyDissentPending) {
+          const decision = companyRestDecision(state);
+          let choice: DissentChoice = persona.shouldDissent(state, decision, botRng);
+          // A bot that IS the captain can't "lobby" itself → that maps
+          // to the deterministic captain-override.
+          if (choice === 'lobby' && playerIsCaptain(state)) choice = 'override';
+          // Resume via the tail-only continuation — it resolves the
+          // choice AND finishes the day (advances it). Do NOT `continue`
+          // into a re-tick of the same day (would double-drain).
+          state = applyCompanyDissent(state, choice, botRng);
+          stats.decisionsMade += 1;
         }
       }
 
