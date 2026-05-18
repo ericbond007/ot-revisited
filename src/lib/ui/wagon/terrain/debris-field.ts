@@ -1,4 +1,6 @@
 import type { Terrain } from '$lib/game/types';
+import { LANDMARKS } from '$lib/game/content/landmarks';
+import { trailProgress } from './trail-progress';
 
 export type DebrisCategory = 'natural' | 'bones' | 'junk' | 'graves';
 export type SizeClass = 'small' | 'large';
@@ -96,3 +98,21 @@ export function categoryWeights(inp: FieldInputs): CategoryWeights {
   const graves = Math.min(0.6, (0.05 + 0.25 * p) * (1 + 0.15 * deathCount));
   return { natural, bones, junk, graves };
 }
+
+/**
+ * Cumulative trail-progress of the Fort Laramie landmark (stable id
+ * `ft_laramie`). Returns null if the landmark is absent so the
+ * Camp-Sacrifice spike degrades gracefully (no spike, no NaN).
+ * Exported for tests; downstream code should read LARAMIE_PROGRESS.
+ */
+export function fortLaramieProgress(): number | null {
+  let miles = 0;
+  for (const lm of LANDMARKS) {
+    miles += lm.milesFromPrevious;
+    if (lm.id === 'ft_laramie') return trailProgress(miles);
+  }
+  return null;
+}
+
+/** Memoised — LANDMARKS is static. */
+export const LARAMIE_PROGRESS: number | null = fortLaramieProgress();

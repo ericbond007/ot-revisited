@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEBRIS_CATALOG, hash32, hashFloats, categoryWeights } from '../src/lib/ui/wagon/terrain/debris-field';
+import { DEBRIS_CATALOG, hash32, hashFloats, categoryWeights, fortLaramieProgress, LARAMIE_PROGRESS } from '../src/lib/ui/wagon/terrain/debris-field';
 
 describe('debris catalog', () => {
   it('has 21 sprites across 4 categories', () => {
@@ -77,6 +77,23 @@ describe('categoryWeights', () => {
   it('no spike when laramieProgress is null', () => {
     const w = categoryWeights({ ...base, progress: 0.4, laramieProgress: null });
     expect(w.junk).toBeCloseTo(1.1 * smoothstepRef(0.22, 0.85, 0.4), 5);
+  });
+});
+
+describe('fortLaramieProgress', () => {
+  it("resolves to Fort Laramie's real mid-trail position", () => {
+    // Computed from LANDMARKS: cumulative milesFromPrevious through
+    // ft_laramie (702) ÷ total (2195) ≈ 0.320. Tight band catches
+    // landmark-data / accumulation regressions, not just "some 0..1".
+    const p = fortLaramieProgress();
+    expect(p).not.toBeNull();
+    expect(p as number).toBeGreaterThan(0.25);
+    expect(p as number).toBeLessThan(0.39);
+  });
+  it('LARAMIE_PROGRESS is the memoised value', () => {
+    // Guards referential stability of the module-load memo; the band
+    // test above carries the real value-regression coverage.
+    expect(LARAMIE_PROGRESS).toBe(fortLaramieProgress());
   });
 });
 
