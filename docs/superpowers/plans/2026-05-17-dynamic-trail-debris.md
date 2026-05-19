@@ -15,7 +15,7 @@ Spec: `docs/superpowers/specs/2026-05-17-dynamic-trail-debris-design.md`
 ## File structure
 
 - **Create** `src/lib/ui/wagon/terrain/debris-field.ts` — pure: catalog, hash, `categoryWeights`, `fortLaramieProgress`/`LARAMIE_PROGRESS`, `debrisAt`. One responsibility: "what debris exists at trail position X".
-- **Create** `src/lib/ui/wagon/terrain/debris-field.test.ts` — Vitest unit tests.
+- **Create** `tests/debris-field.test.ts` — Vitest unit tests. (Tests live under `tests/` per `vite.config.ts` `include: ['tests/**/*.test.ts']`; embedded snippets below say `from './debris-field'` illustratively — the real import is `from '../src/lib/ui/wagon/terrain/debris-field'`.)
 - **Modify** `src/lib/ui/wagon/terrain/GroundPainting.svelte` — replace static `DEBRIS[]` with a windowed `debrisAt` sweep; add `terrain`/`milesTraveled`/`deathCount` props (defaulted).
 - **Modify** `src/lib/ui/wagon/terrain/GroundBand.svelte` — accept + forward `milesTraveled`/`deathCount` (already has `terrain`).
 - **Modify** `src/lib/ui/wagon/terrain/ParallaxBands.svelte` — accept + forward `milesTraveled`/`deathCount`.
@@ -31,12 +31,12 @@ Spec: `docs/superpowers/specs/2026-05-17-dynamic-trail-debris-design.md`
 
 **Files:**
 - Create: `src/lib/ui/wagon/terrain/debris-field.ts`
-- Test: `src/lib/ui/wagon/terrain/debris-field.test.ts`
+- Test: `tests/debris-field.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-// src/lib/ui/wagon/terrain/debris-field.test.ts
+// tests/debris-field.test.ts
 import { describe, it, expect } from 'vitest';
 import { DEBRIS_CATALOG, hash32, hashFloats } from './debris-field';
 
@@ -75,7 +75,7 @@ describe('hash', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run src/lib/ui/wagon/terrain/debris-field.test.ts`
+Run: `npx vitest run tests/debris-field.test.ts`
 Expected: FAIL — `Cannot find module './debris-field'`.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -129,11 +129,13 @@ export function hash32(n: number): number {
   return x >>> 0;
 }
 
-/** k independent deterministic floats in [0,1) from a seed. */
+/** k decorrelated deterministic floats in [0,1) from a seed. Each
+ *  channel is independently hashed (counter mode) so channels drawn
+ *  from one seed are not cross-correlated. */
 export function hashFloats(seed: number, k: number): number[] {
   const out: number[] = [];
   for (let i = 0; i < k; i++) {
-    out.push(hash32(Math.imul(seed, 2654435761) + Math.imul(i, 40503)) / 4294967296);
+    out.push(hash32(seed ^ Math.imul(i, 2246822519)) / 4294967296);
   }
   return out;
 }
@@ -141,13 +143,13 @@ export function hashFloats(seed: number, k: number): number[] {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx vitest run src/lib/ui/wagon/terrain/debris-field.test.ts`
+Run: `npx vitest run tests/debris-field.test.ts`
 Expected: PASS (4 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/ui/wagon/terrain/debris-field.ts src/lib/ui/wagon/terrain/debris-field.test.ts
+git add src/lib/ui/wagon/terrain/debris-field.ts tests/debris-field.test.ts
 git commit -m "feat(wagon): debris-field catalog + deterministic hash"
 ```
 
@@ -157,7 +159,7 @@ git commit -m "feat(wagon): debris-field catalog + deterministic hash"
 
 **Files:**
 - Modify: `src/lib/ui/wagon/terrain/debris-field.ts`
-- Test: `src/lib/ui/wagon/terrain/debris-field.test.ts`
+- Test: `tests/debris-field.test.ts`
 
 - [ ] **Step 1: Write the failing test** (append to the test file)
 
@@ -210,7 +212,7 @@ function smoothstepRef(a: number, b: number, x: number): number {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run src/lib/ui/wagon/terrain/debris-field.test.ts`
+Run: `npx vitest run tests/debris-field.test.ts`
 Expected: FAIL — `categoryWeights is not exported`.
 
 - [ ] **Step 3: Write minimal implementation** (append to `debris-field.ts`)
@@ -257,13 +259,13 @@ export function categoryWeights(inp: FieldInputs): CategoryWeights {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx vitest run src/lib/ui/wagon/terrain/debris-field.test.ts`
+Run: `npx vitest run tests/debris-field.test.ts`
 Expected: PASS (all Task 1 + Task 2 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/ui/wagon/terrain/debris-field.ts src/lib/ui/wagon/terrain/debris-field.test.ts
+git add src/lib/ui/wagon/terrain/debris-field.ts tests/debris-field.test.ts
 git commit -m "feat(wagon): debris category-weight curves"
 ```
 
@@ -273,7 +275,7 @@ git commit -m "feat(wagon): debris category-weight curves"
 
 **Files:**
 - Modify: `src/lib/ui/wagon/terrain/debris-field.ts`
-- Test: `src/lib/ui/wagon/terrain/debris-field.test.ts`
+- Test: `tests/debris-field.test.ts`
 
 - [ ] **Step 1: Write the failing test** (append)
 
@@ -295,7 +297,7 @@ describe('fortLaramieProgress', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run src/lib/ui/wagon/terrain/debris-field.test.ts`
+Run: `npx vitest run tests/debris-field.test.ts`
 Expected: FAIL — `fortLaramieProgress is not exported`.
 
 - [ ] **Step 3: Write minimal implementation** (append)
@@ -321,13 +323,13 @@ export const LARAMIE_PROGRESS: number | null = fortLaramieProgress();
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx vitest run src/lib/ui/wagon/terrain/debris-field.test.ts`
+Run: `npx vitest run tests/debris-field.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/ui/wagon/terrain/debris-field.ts src/lib/ui/wagon/terrain/debris-field.test.ts
+git add src/lib/ui/wagon/terrain/debris-field.ts tests/debris-field.test.ts
 git commit -m "feat(wagon): resolve Fort Laramie trail-progress"
 ```
 
@@ -337,7 +339,7 @@ git commit -m "feat(wagon): resolve Fort Laramie trail-progress"
 
 **Files:**
 - Modify: `src/lib/ui/wagon/terrain/debris-field.ts`
-- Test: `src/lib/ui/wagon/terrain/debris-field.test.ts`
+- Test: `tests/debris-field.test.ts`
 
 - [ ] **Step 1: Write the failing test** (append)
 
@@ -390,7 +392,7 @@ describe('debrisAt', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run src/lib/ui/wagon/terrain/debris-field.test.ts`
+Run: `npx vitest run tests/debris-field.test.ts`
 Expected: FAIL — `debrisAt is not exported`.
 
 - [ ] **Step 3: Write minimal implementation** (append)
@@ -441,13 +443,13 @@ export function debrisAt(slotIndex: number, w: CategoryWeights): DebrisInstance 
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx vitest run src/lib/ui/wagon/terrain/debris-field.test.ts`
+Run: `npx vitest run tests/debris-field.test.ts`
 Expected: PASS (all tests, ~17).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/ui/wagon/terrain/debris-field.ts src/lib/ui/wagon/terrain/debris-field.test.ts
+git add src/lib/ui/wagon/terrain/debris-field.ts tests/debris-field.test.ts
 git commit -m "feat(wagon): deterministic debrisAt placement field"
 ```
 
