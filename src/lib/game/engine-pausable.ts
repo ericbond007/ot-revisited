@@ -22,7 +22,7 @@ import { applyDairy, applyButterChurn } from './systems/dairy';
 import { isSunday } from './utils/calendar';
 import { hasLivePreacher } from './professions/predicates';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
-import { applyTravelDayRecovery } from './systems/travel-recovery';
+import { applyDailyRecovery } from './systems/travel-recovery';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
@@ -171,12 +171,6 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = tickOxen(s, rng);
   s = tickWagon(s, rng);
   s = adjustMorale(s, rng);
-  // #161 — light passive HP recovery on travel days. Counters the
-  // rest-loop the May-12 bot audit surfaced: healthy members regain
-  // +1 HP/day while traveling so they don't drop below shouldRest
-  // thresholds purely from event/condition wear. Skipped on fast /
-  // grueling pace and at morale < 25.
-  s = applyTravelDayRecovery(s);
   s = applyHolidays(s);
 
   // Snapshot which landmark we'd already passed before today's travel —
@@ -217,6 +211,14 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     s = { ...s, flags: { ...s.flags, _companyDissentPending: true } };
     return { state: s };
   }
+
+  // #1046 A+D — governance-agnostic daily recovery, keyed on whether
+  // the company actually moves today. Travel => #161 +1 + convalesce;
+  // lay-by => the rest-day heal (this is what makes the C2/B company
+  // lay-by finally pay off). Runs here (not in the daily-systems block)
+  // because on a dissent day "did we move" is only known after the
+  // player's choice — applyCompanyDissent applies it for that path.
+  s = applyDailyRecovery(s, companyMode === 'travel');
 
   // #300 — capture miles before travel so advanceTrain can drive the
   // NPC axle-grease consumption cycle off the same daily delta.
@@ -402,6 +404,7 @@ export function applyCompanyDissent(
   s = { ...s, flags: clearedFlags };
   const dc = s.wagonTrain?.companyDecisionBlock?.dissentChoice;
   const travels = !s.wagonTrain || dc === 'override' || dc === 'lobby_ok';
+  s = applyDailyRecovery(s, travels);
   if (travels) s = applyTravel(s, rng);
   s = attemptFire(s, rng);
   s = reapDead(s, rng);

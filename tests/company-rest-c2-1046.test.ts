@@ -114,7 +114,19 @@ it('a freshly generated train starts with no decision block; first tick sets it'
 
 it('a held lay-by block keeps its original blockStartDay + logs only once across ticks', () => {
   const s = gameInTrain('prudent');
-  s.party[0].health = 15; // crisis → crisis_layby; stays crisis next tick → block HOLDS
+  // #1046 A+D — scenario hardened so the lay-by rest-heal doesn't exit
+  // the crisis band on tick 2; original hysteresis-hold intent
+  // preserved under A+D recovery. Pre-A+D a lay-by day had no heal so
+  // health=15 trivially stayed in crisis; post-A+D layByRecovery (+8×
+  // morale-mult ≈ +9/tick) would lift 15→24 and reclassify
+  // crisis_layby→maintenance_layby (a real mode change ⇒ new block —
+  // correct A+D "the lay-by pays off"). Starting deeper in crisis
+  // (health 8) means even after the tick-1 heal (8→17) and tick-2 heal
+  // (17→26 while the held block + hysteresis pin the mode) the company
+  // genuinely STAYS in crisis_layby across both ticks, so the
+  // hysteresis-hold invariant (blockStartDay stable within a held mode,
+  // only re-stamped on a real mode change) is actually exercised.
+  s.party[0].health = 8; // deep crisis → crisis_layby; one rest-heal can't exit → block HOLDS
   const t1 = tickDayPausable(s).state;
   const block1 = t1.wagonTrain!.companyDecisionBlock!;
   expect(block1.mode).toBe('crisis_layby');

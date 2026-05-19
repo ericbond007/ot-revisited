@@ -2,6 +2,7 @@ import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { getCondition } from '../content/conditions';
 import { hasLiveDoctor } from '../professions/predicates';
+import { careLevel } from './care';
 
 // Doctor profession dampens condition damage by 30% — they bleed,
 // purge, dose with calomel and laudanum, and the patient takes a
@@ -18,9 +19,31 @@ const DOCTOR_RELIEF_MULT = 0.7;
 const TREATMENT_DAMAGE_MULT = 0.5;
 const TREATMENT_CURE_CHANCE = 0.25;
 
+// #1046 D — natural-course resolve probability. Rises linearly from
+// minCourseDays (0) to naturalCourseDays (NATURAL_BASE_CEILING) and
+// holds at the ceiling beyond. Doctor care closes half the remaining
+// gap to certainty (accelerated, never instant — medicine + the
+// treatment-cure roll above is still the fastest path). Untended is
+// suppressed by the caller. Starting curve; slice-5 sweep-tuned.
+const NATURAL_BASE_CEILING = 0.35;
+
+function naturalResolveChance(
+  daysSinceOnset: number,
+  minCourseDays: number,
+  naturalCourseDays: number,
+  accelerated: boolean
+): number {
+  if (daysSinceOnset < minCourseDays) return 0;
+  const span = Math.max(1, naturalCourseDays - minCourseDays);
+  const t = Math.min(1, (daysSinceOnset - minCourseDays) / span);
+  const base = NATURAL_BASE_CEILING * t;
+  return accelerated ? base + (1 - base) * 0.5 : base;
+}
+
 export function progressConditions(state: GameState, rng: Rng): GameState {
   let moraleDelta = 0;
   const reliefMult = hasLiveDoctor(state) ? DOCTOR_RELIEF_MULT : 1.0;
+  const care = careLevel(state);
 
   // Mutable copy of inventory — items consumed by `resolvedByItems`
   // auto-cure or `treatmentItems` daily dosing aren't available to
@@ -62,6 +85,22 @@ export function progressConditions(state: GameState, rng: Rng): GameState {
         }
         healthDelta += meta.dailyHealthDelta * reliefMult * TREATMENT_DAMAGE_MULT;
       } else {
+        // #1046 D — care-gated natural-course resolve. Checked on the
+        // INCOMING daysSinceOnset, after the item paths so medicine
+        // stays the fastest cure. Untended suppresses it entirely (you
+        // don't mend while starving — you decline to death).
+        const naturalDays = meta.naturalCourseDays;
+        const minDays = meta.minCourseDays;
+        const canResolve =
+          care !== 'untended' &&
+          naturalDays !== undefined &&
+          minDays !== undefined;
+        const resolveP = canResolve
+          ? naturalResolveChance(c.daysSinceOnset, minDays as number, naturalDays as number, care === 'doctor')
+          : 0;
+        if (resolveP > 0 && rng.chance(resolveP)) {
+          continue; // ran its course; no damage, condition dropped
+        }
         healthDelta += meta.dailyHealthDelta * reliefMult;
       }
       if (meta.dailyMoraleDelta) moraleDelta += meta.dailyMoraleDelta;

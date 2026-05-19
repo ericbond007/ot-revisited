@@ -8,6 +8,7 @@ import { applyStarvation } from '../systems/starvation';
 import { tickWeather } from '../systems/weather';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale, healingMultiplier } from '../systems/morale';
+import { REST_HEAL_PER_DAY } from '../systems/travel-recovery';
 import { advanceTrain } from '../systems/wagon-train';
 import { recoverOxenFatigue, recoverOxenHealth } from '../systems/oxen';
 import { attemptFire } from '../systems/fire';
@@ -79,7 +80,6 @@ function avg(nums: number[]): number {
 // 0/week with a teamster). Grueling stays unsustainable regardless
 // (the historical Reed-Donner-style team-killer pace).
 const OX_FATIGUE_RECOVERY_PER_REST_DAY = 30;
-const BASE_HEAL_PER_REST_DAY = 8;
 // Berries the Farmer rounds up at rest — wild blackberry / chokeberry /
 // serviceberry / currant on the prairie or forest, frozen out in winter.
 // Realistic wild-edibles forage; bonus to a profession that knows the
@@ -135,7 +135,7 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
       ...s,
       party: s.party.map((m) => {
         if (m.dead) return m;
-        const gain = Math.round(BASE_HEAL_PER_REST_DAY * mult);
+        const gain = Math.round(REST_HEAL_PER_DAY * mult);
         return { ...m, health: Math.min(100, m.health + gain) };
       })
     };

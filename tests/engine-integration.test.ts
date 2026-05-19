@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, tickDay } from '../src/lib/game/engine';
+import { foodItemIds } from '../src/lib/game/content/items';
 import type { GameState, Ox } from '../src/lib/game/types';
 
 function freshGameWithOxen(): GameState {
@@ -60,17 +61,48 @@ describe('30-day deterministic simulation', () => {
   });
 
   it('a cholera outbreak + no doctor + low morale kills the party given enough days', () => {
-    let s = freshGameWithOxen();
-    s = {
-      ...s,
-      // Strip the doctor's starter quinine — this test is about
-      // untreated cholera attrition, not the treatment-item mechanic.
-      inventory: { ...s.inventory, quinine: 0, dovers_powder: 0, camphor: 0 },
-      party: s.party.map((m) => ({
+    // #1046 A+D — party must be genuinely untended (no doctor, no
+    // medicine, no food, low morale ⇒ careLevel='untended') for
+    // "untreated cholera kills" to hold; pre-A+D the latent doctor
+    // companion (freshGameWithOxen builds one) was inert so this passed
+    // by accident. Spec §7 guarantees a genuinely untended cholera
+    // party still spirals to death; this rebuilds the party to MATCH
+    // the test's stated "no doctor" intent rather than weakening it.
+    const base = createInitialState({
+      seed: 'integration',
+      leader: { name: 'Ezra', profession: 'farmer' },
+      // No doctor — hasLiveDoctor must be false so careLevel can't be
+      // the accelerated 'doctor' tier.
+      companions: [
+        { name: 'Mary', profession: 'teamster' },
+        { name: 'Tom', profession: 'hunter' }
+      ],
+      startDate: { year: 1848, month: 4, day: 15 }
+    });
+    const oxen: Ox[] = Array.from({ length: 4 }, (_, i) => ({
+      id: `ox-${i}`,
+      health: 100,
+      fatigue: 0,
+      shod: true
+    }));
+    // Zero ALL food so careLevel's hasFood arm is false → 'untended'
+    // regardless of any morale-lift passive that might drift morale
+    // back up mid-run. Belt-and-suspenders: morale also starts at 5.
+    const noFood: Record<string, number> = {};
+    for (const id of foodItemIds()) noFood[id] = 0;
+    let s: GameState = {
+      ...base,
+      oxen,
+      // Water/firewood cushion so the run measures cholera attrition,
+      // not dehydration/cold (mirrors freshGameWithOxen rationale).
+      resources: { water: 500, waterCap: 500, firewood: 500 },
+      // No treatment items AND no food — genuinely untended.
+      inventory: { ...base.inventory, ...noFood, quinine: 0, dovers_powder: 0, camphor: 0 },
+      party: base.party.map((m) => ({
         ...m,
         conditions: [{ id: 'cholera' as const, daysSinceOnset: 0 }]
       })),
-      morale: 30
+      morale: 5
     };
     for (let i = 0; i < 20; i++) s = tickDay(s);
     expect(s.party.every((m) => m.dead)).toBe(true);
