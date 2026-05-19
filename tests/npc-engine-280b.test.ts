@@ -88,9 +88,19 @@ describe('tickNpcWagon — per-wagon attrition', () => {
 
   it('reaps dead party members and logs an entry on the wagon eventLog', () => {
     const train = freshTrain();
+    // #1046 A+D — preserve the "no food → starve to death → reaped +
+    // logged" causality the test asserts. Post-A+D a starving wagon
+    // would voluntarily lay by (#937) and the lay-by heal (which has no
+    // morale floor by design) would mend the party — that's correct A+D
+    // behavior, but it erases this test's death signal. Pin the wagon to
+    // a captained-train 'travel' decision so the #937 voluntary-rest gate
+    // is bypassed and it keeps moving; keep morale < TRAVEL_HEAL_MIN_MORALE
+    // (25) so the travel-day recovery is a no-op. The party then starves
+    // in motion exactly as pre-A+D, so reaping still fires.
     let wagon: NpcWagonState = {
       ...train.companions[0],
       inventory: {},
+      morale: 10,
       party: train.companions[0].party.map((p, i) => i === 0
         ? { ...p, health: 1 }
         : p)
@@ -98,7 +108,7 @@ describe('tickNpcWagon — per-wagon attrition', () => {
     for (let i = 0; i < 4; i++) {
       wagon = tickNpcWagon(
         wagon,
-        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
+        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear', companyRestMode: 'travel' },
         makeRng('d' + i)
       ).wagon;
     }
@@ -109,22 +119,29 @@ describe('tickNpcWagon — per-wagon attrition', () => {
 
   it('marks outcome=wiped when every party member is dead', () => {
     const train = freshTrain();
+    // #1046 A+D — same as above: pin the wagon to a 'travel' company
+    // decision (bypasses the #937 voluntary-rest gate, whose lay-by heal
+    // has no morale floor) and keep morale < 25 so the travel-day heal
+    // is a no-op. The empty-inventory party then starves out and the
+    // wagon's outcome flips to 'wiped' (the invariant under test),
+    // unobscured by A's in-motion / lay-by recovery.
     let wagon: NpcWagonState = {
       ...train.companions[0],
       inventory: {},
+      morale: 10,
       party: train.companions[0].party.map((p) => ({ ...p, health: 1 }))
     };
     for (let i = 0; i < 10; i++) {
       wagon = tickNpcWagon(
         wagon,
-        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
+        { day: i + 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear', companyRestMode: 'travel' },
         makeRng('w' + i)
       ).wagon;
     }
     expect(wagon.outcome).toBe('wiped');
     const sealed = tickNpcWagon(
       wagon,
-      { day: 99, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' },
+      { day: 99, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear', companyRestMode: 'travel' },
       makeRng('post')
     );
     expect(sealed.wagon).toBe(wagon);
@@ -226,25 +243,36 @@ describe('#280c — NPC events bubble to player eventLog', () => {
   });
 
   it('event-driven wagon damage and condition changes persist on the wagon state', () => {
-    // Force the dice — feed a deterministic seed and rest a long time.
+    // #1046 A+D — assert event occurrence, not post-recovery end-state
+    // (lay-by now heals). Pre-A+D this snapshotted wagon.condition /
+    // party.conditions at day 120 because conditions never self-resolved
+    // and a lay-by never healed; both are false post-A+D (D resolves
+    // conditions on natural course, A rest-heals the party every lay-by
+    // day, and a long demoralizing run can split the train so
+    // wagonTrain is null by day 120). The #280c events still FIRE every
+    // run — only their HP/condition aftermath is now mended — so we
+    // assert the causal signal that survives recovery: a wagon-
+    // attributed #280c mechanical / disease event line bubbled to the
+    // player eventLog over the run. Driven day-by-day so the cumulative
+    // signal is captured even if the company later splits.
     let s = joinTrain(game(), makeRng('events-2')).state;
-    const beforeWagons = s.wagonTrain!.companions.map((c) => ({
-      condition: c.wagon.condition,
-      conditions: c.party.flatMap((p) => p.conditions.map((co) => co.id))
-    }));
-    s = rest(s, 120);
-    const afterWagons = s.wagonTrain!.companions.map((c) => ({
-      condition: c.wagon.condition,
-      conditions: c.party.flatMap((p) => p.conditions.map((co) => co.id))
-    }));
-    // At least one wagon should have lost some condition (wheel
-    // breaks, ox lameness, etc.) OR picked up a disease condition
-    // somewhere in the party.
-    const someChange = afterWagons.some((after, i) =>
-      after.condition < beforeWagons[i].condition
-      || after.conditions.length > beforeWagons[i].conditions.length
+    const startLogLen = s.eventLog.length;
+    const seen: string[] = [];
+    for (let d = 0; d < 120; d++) {
+      s = rest(s, 1);
+      seen.push(...s.eventLog.slice(startLogLen + seen.length).map((e) => e.text));
+      if (!s.wagonTrain) break; // company dissolved — #280c signal already accrued above
+    }
+    // A #280c mechanical / health event, name-suffixed by the NPC tick.
+    // Distinct from the sibling test's generic train-chatter filter:
+    // this looks for the concrete event aftermath verbs (a wheel
+    // shatters, an ox goes lame, the tongue cracks, cholera/snakebite,
+    // a storm tears canvas, condition delta prose).
+    const npcEvent = seen.some((t) =>
+      /wheel|axle|tongue|canvas|went lame|reshod|cholera|snakebit|bitten|wagon condition|fell ill|came down with|storm/i.test(t)
+      && /\((the )?[A-Z][\w'-]+ (family|party|brothers)\)/.test(t)
     );
-    expect(someChange).toBe(true);
+    expect(npcEvent).toBe(true);
   });
 
   it('#288 — fires a starvation pendingEvent when an NPC wagon just bottomed out today', () => {

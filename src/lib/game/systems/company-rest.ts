@@ -46,8 +46,20 @@ export function trainAggregate(state: GameState): TrainAggregate {
   const partyGroups = [state.party, ...(state.wagonTrain?.companions ?? []).map((w) => w.party)];
   const oxGroups = [state.oxen, ...(state.wagonTrain?.companions ?? []).map((w) => w.oxen)];
 
+  // #1046 §13 (B) — weakest *viable* wagon. Skip a wagon whose every
+  // alive member is ≤EFFECTIVE_DEAD_HP (corpse-in-motion; can't be
+  // saved by laying by). Fallback: if NO group is viable (whole company
+  // terminal) use all groups — don't fabricate a healthy aggregate that
+  // marches into mass death (crisis fires; CRISIS_MAX_DAYS breaks it).
+  const groupViable = (party: typeof partyGroups[number]) => {
+    const alive = party.filter((m) => !m.dead);
+    return alive.length > 0 && alive.some((m) => m.health > EFFECTIVE_DEAD_HP);
+  };
+  const viable = partyGroups.filter(groupViable);
+  const hpGroups = viable.length > 0 ? viable : partyGroups;
+
   let minHP = 100;
-  for (const party of partyGroups) {
+  for (const party of hpGroups) {
     for (const m of party) {
       if (m.dead) continue;
       if (m.health < minHP) minHP = m.health;
@@ -87,6 +99,20 @@ export const DOCTRINE_PARAMS: Record<CaptainDoctrine, DoctrineParams> = {
  *  the existing engine emergency bar (min HP < 20). */
 const CRISIS_MIN_HP = 20;
 
+/** #1046 §13 (B) — a wagon whose every alive member is pinned at/below
+ *  this is a corpse-in-motion: laying by cannot save it, so it is not
+ *  the "weakest *viable* wagon" the captain holds the company for.
+ *  Excluding it stops an A+D lay-by-healed undead wagon pinning the
+ *  company in a permanent crisis. Starting value; slice-5 sweep-tuned. */
+const EFFECTIVE_DEAD_HP = 3;
+
+/** #1046 §13 (cap) — a crisis_layby block held this long without
+ *  clearing means an unrecoverable wagon; the company stops waiting and
+ *  travels (it dies en route and reaps). Defense-in-depth behind B.
+ *  Legitimate crises self-resolve in days. Starting value; slice-5
+ *  sweep-tuned. */
+const CRISIS_MAX_DAYS = 12;
+
 /** Hysteresis: once a maintenance lay-by is called it holds until
  *  avg ox-fatigue drops a margin below the trigger (and HP recovers a
  *  margin) — prevents 1-day-rest-then-instant-retrigger thrash. */
@@ -103,6 +129,17 @@ export function companyRestDecision(state: GameState): CompanyRestDecision {
 
   // 1. Crisis — highest precedence, doctrine-independent.
   if (agg.minPartyHP < CRISIS_MIN_HP) {
+    const block = train.companyDecisionBlock;
+    const crisisHeld =
+      block?.mode === 'crisis_layby' ? state.day - block.blockStartDay : 0;
+    if (crisisHeld >= CRISIS_MAX_DAYS) {
+      // #1046 §13 cap — held in crisis ≥CRISIS_MAX_DAYS without
+      // clearing ⇒ an unrecoverable wagon. Stop waiting and TRAVEL
+      // (decisively — not maintenance, or the company never moves);
+      // the failing wagon dies en route and reaps. Defense-in-depth
+      // behind B's viable-wagon aggregate.
+      return { mode: 'travel', reason: `crisis cap (${crisisHeld}d) — company breaks camp` };
+    }
     return { mode: 'crisis_layby', reason: `crisis: min HP ${Math.round(agg.minPartyHP)}` };
   }
 

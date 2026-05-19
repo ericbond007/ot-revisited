@@ -37,6 +37,7 @@ import type {
 import { getPersona } from '../ai/personas';
 import { applySpoilage, applyHeatSpoilage } from './spoilage';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
+import { applyDailyRecovery } from './travel-recovery';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './consumption';
 import { applyDietVariety, applyHotDrinks } from './diet';
 import { applyPastryQuality } from './pastry';
@@ -363,6 +364,31 @@ export function tickNpcWagon(
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
+
+  // 3b. #1046 A+D parity — governance-agnostic daily recovery on the synth,
+  // keyed on the NPC's resolved travel flag (already accounts for C2's
+  // companyRestMode + #937 solo voluntary rest). D's natural-course
+  // resolve already rode the step-1 progressConditions synth; this wires
+  // A (convalesce on travel / rest-heal on lay-by) at parity. Synth
+  // carries party/inventory/resources.water/morale/env.pace — every
+  // field applyDailyRecovery reads (the #921r missing-field lesson).
+  // #1046 — runs AFTER consumption (mirrors the player's
+  // progressConditions → applyDailyConsumption → applyDailyRecovery
+  // order at engine-pausable.ts:128/156/221) so a sick NPC convalesces
+  // off post-consumption food/water/morale identically to the player.
+  {
+    const synth = synthesizeWagonState(next, env);
+    // #1046 §13 (C) — crisis NPC-heal carve-out. In a company
+    // crisis_layby, NPC wagons take NO lay-by rest-heal (exact master
+    // parity: pre-A+D there was no lay-by heal, so fatally-hit wagons
+    // died & reaped & cleared the aggregate). A+D's +8 otherwise keeps
+    // them undead → permanent crisis lock. Travel + maintenance/Sabbath
+    // lay-bys keep the full §8 A+D parity heal; only crisis is carved.
+    if (ctx.companyRestMode !== 'crisis_layby') {
+      const recovered = applyDailyRecovery(synth, traveled);
+      next = projectWagonDeltas(recovered, next);
     }
   }
 
