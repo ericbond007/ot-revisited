@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEBRIS_CATALOG, hash32, hashFloats, categoryWeights, fortLaramieProgress, LARAMIE_PROGRESS } from '../src/lib/ui/wagon/terrain/debris-field';
+import { DEBRIS_CATALOG, hash32, hashFloats, categoryWeights, fortLaramieProgress, LARAMIE_PROGRESS, debrisAt, SLOT_PITCH } from '../src/lib/ui/wagon/terrain/debris-field';
 
 describe('debris catalog', () => {
   it('has 21 sprites across 4 categories', () => {
@@ -94,6 +94,49 @@ describe('fortLaramieProgress', () => {
     // Guards referential stability of the module-load memo; the band
     // test above carries the real value-regression coverage.
     expect(LARAMIE_PROGRESS).toBe(fortLaramieProgress());
+  });
+});
+
+describe('debrisAt', () => {
+  const heavy = { natural: 1, bones: 1, junk: 2, graves: 0.3 };
+
+  it('is deterministic for a slot index', () => {
+    expect(debrisAt(123, heavy)).toEqual(debrisAt(123, heavy));
+  });
+  it('returns null for empty slots and DebrisInstance otherwise', () => {
+    let hit = 0;
+    for (let i = 0; i < 200; i++) if (debrisAt(i, heavy)) hit++;
+    expect(hit).toBeGreaterThan(20);
+    expect(hit).toBeLessThan(200);
+  });
+  it('never emits the rut band: row is only above|below', () => {
+    for (let i = 0; i < 500; i++) {
+      const d = debrisAt(i, heavy);
+      if (d) expect(['above', 'below']).toContain(d.row);
+    }
+  });
+  it('large sprites are always placed below the rut', () => {
+    for (let i = 0; i < 500; i++) {
+      const d = debrisAt(i, heavy);
+      if (d && /wheel|barrel|trunk|stove|bacon|rib-cage|grave/.test(d.sprite)) {
+        expect(d.row).toBe('below');
+      }
+    }
+  });
+  it('worldX stays within its slot +/- jitter', () => {
+    for (let i = 0; i < 200; i++) {
+      const d = debrisAt(i, heavy);
+      if (d) {
+        expect(Math.abs(d.worldX - i * SLOT_PITCH)).toBeLessThanOrEqual(0.4 * SLOT_PITCH + 1e-9);
+      }
+    }
+  });
+  it('zero-weight category is never selected', () => {
+    const noGraves = { natural: 1, bones: 0, junk: 0, graves: 0 };
+    for (let i = 0; i < 400; i++) {
+      const d = debrisAt(i, noGraves);
+      if (d) expect(d.sprite).toMatch(/pebble|stick|rock|buffalo/);
+    }
   });
 });
 

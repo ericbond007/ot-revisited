@@ -116,3 +116,47 @@ export function fortLaramieProgress(): number | null {
 
 /** Memoised — LANDMARKS is static. */
 export const LARAMIE_PROGRESS: number | null = fortLaramieProgress();
+
+export interface DebrisInstance {
+  sprite: string;             // catalog name → /wagon-bg/trail-debris/<name>.webp
+  worldX: number;             // absolute trail x of this instance
+  row: 'above' | 'below';     // rut band (560..585 scene-y) is never used
+  rowT: number;               // [0,1) position within the chosen band
+  size: number;               // base scene-unit size; GroundPainting places it
+  rot: number;                // degrees
+}
+
+/** Scene-x units between candidate debris slots. */
+export const SLOT_PITCH = 26;
+
+export function debrisAt(slotIndex: number, w: CategoryWeights): DebrisInstance | null {
+  const f = hashFloats(slotIndex + 1, 8);
+  const total = w.natural + w.bones + w.junk + w.graves;
+  if (total <= 0) return null;
+  // density ~0.4 early → ~0.7 late as more categories activate
+  const occ = Math.min(0.7, 0.3 + 0.1 * total);
+  if (f[0] >= occ) return null;
+
+  const pick = f[1] * total;
+  const cat: DebrisCategory =
+      pick < w.natural ? 'natural'
+    : pick < w.natural + w.bones ? 'bones'
+    : pick < w.natural + w.bones + w.junk ? 'junk'
+    : 'graves';
+
+  const pool = DEBRIS_CATALOG.filter((s) => s.category === cat);
+  // Defensive: a future catalog edit could leave a weighted category
+  // with no sprites — treat as an empty slot rather than crash the
+  // per-frame render path on `undefined.size`.
+  if (pool.length === 0) return null;
+  const sprite = pool[Math.min(pool.length - 1, Math.floor(f[2] * pool.length))];
+
+  const big = sprite.size === 'large';
+  const row: 'above' | 'below' = big ? 'below' : f[4] < 0.5 ? 'above' : 'below';
+  const rowT = f[5];
+  const size = big ? 26 + f[6] * 14 : 14 + f[6] * 10;
+  const rot = sprite.category === 'graves' ? 0 : Math.round((f[7] - 0.5) * 50);
+  const worldX = slotIndex * SLOT_PITCH + (f[3] - 0.5) * 0.8 * SLOT_PITCH;
+
+  return { sprite: sprite.name, worldX, row, rowT, size, rot };
+}
