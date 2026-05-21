@@ -34,3 +34,8 @@ export {
   composeShoppingList,
   missingSurvivalGear
 } from './shopping';
+// #303b — three lift-and-shifts from src/lib/dev/bot/runner.ts so the
+// same decisions can drive NPC and named-profile AI.
+export { pickHuntTarget } from './hunt';
+export { defaultCompanions, COMPANION_PRIORITY } from './party';
+export { pickRestCampChain, type CampActionId } from './rest';
