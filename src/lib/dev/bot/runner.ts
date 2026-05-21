@@ -29,7 +29,9 @@ import { stayAtInn, repairWagon, swapOxen, swapOxenCost } from '../../game/syste
 import { quoteBarter, applyBarter } from '../../game/systems/barter';
 import { abandonHeavyLoad } from '../../game/systems/item-loss';
 import { joinTrain } from '../../game/systems/wagon-train';
-import { canBoilWater as canBoilWaterInState } from '../../game/systems/water-purity';
+import { pickHuntTarget } from '../../game/ai/hunt';
+import { defaultCompanions } from '../../game/ai/party';
+import { pickRestCampChain } from '../../game/ai/rest';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
 import type { GameState, ProfessionId } from '../../game/types';
@@ -123,48 +125,16 @@ function recordOxDeaths(
   return currentLive;
 }
 
-/** Pick a hunt target based on terrain. Big game on plains/prairie,
- *  small in forest, gather as the no-ammo fallback. */
-function pickHuntTarget(state: GameState): { target: HuntTarget; ammo: AmmoBand } {
-  const inv = state.inventory;
-  const plenty = (inv.gunpowder ?? 0) > 30
-    && ((inv.lead_balls ?? 0) > 30 || (inv.lead_pig ?? 0) >= 1)
-    && (inv.percussion_caps ?? 0) > 30;
-  const terrain = state.location.terrain;
-  if (terrain === 'prairie' && plenty) return { target: 'big', ammo: 'moderate' };
-  if (terrain === 'forest') return { target: 'medium', ammo: 'moderate' };
-  return { target: 'small', ammo: 'light' };
-}
-
 /** Rest one day with a find_water + boil_water camp-action chain.
  *  Falls back gracefully if the rest action throws (e.g. firewood out,
- *  no boil capability): `gather_firewood + find_water + boil_water` →
- *  `find_water + boil_water` → `find_water` alone → plain rest.
+ *  no boil capability): the chains come from `pickRestCampChain`
+ *  (game/ai/rest.ts, #303b); this driver tries each in turn and
+ *  falls back to a plain rest if every chain throws.
  *  Used both by the explicit findWater branch (keg <persona threshold)
  *  and by the v8 rest-chains-water-when-low piggyback path so the bot
  *  doesn't burn separate calendar days on rest and water-find. */
 function restWithWaterChain(state: GameState, stats: RunningStats): GameState {
-  const tryCamps: Array<readonly ('find_water' | 'boil_water' | 'gather_firewood' | 'dig_well')[]> = [];
-  const fw = state.resources.firewood ?? 0;
-  // #1022 — desert has no surface streams (find_water gates off with
-  // "no streams in this country — dig a well instead"). Dig_well is
-  // 6hr, 40% success per attempt, returns 10-20 gal — Marcy 1859:
-  // "a well of moderate depth will yield water on most parts of the
-  // Plains." Try dig_well first in desert; find_water elsewhere.
-  // Both fall back to plain rest if the camp action is gated off.
-  if (state.location.terrain === 'desert' && (state.inventory.shovel ?? 0) > 0) {
-    tryCamps.push(['dig_well']);
-  }
-  if (canBoilWaterInState(state)) {
-    if (fw < 5) {
-      tryCamps.push(['gather_firewood', 'find_water', 'boil_water']);
-    }
-    if (fw >= 1) {
-      tryCamps.push(['find_water', 'boil_water']);
-    }
-  }
-  tryCamps.push(['find_water']);
-  for (const camp of tryCamps) {
+  for (const camp of pickRestCampChain(state)) {
     try {
       const next = rest(state, 1, { campActions: [...camp] });
       stats.decisionsMade += 1;
@@ -538,26 +508,6 @@ function doBotHunt(state: GameState, stats: RunningStats): GameState {
     stats.errors.push(`hunt: ${(err as Error).message}`);
     return state;
   }
-}
-
-/** Auto-fill companion professions to reach the requested party size,
- *  picking in priority order: doctor (medic), hunter (food), teamster
- *  (oxen), blacksmith (repairs), scout (speed). Capped at 5 companions
- *  (= party size 6). Skips the leader's profession to avoid duplicates
- *  when the leader is one of the priority roles. */
-const COMPANION_PRIORITY: ProfessionId[] = ['doctor', 'hunter', 'teamster', 'blacksmith', 'scout'];
-
-function defaultCompanions(partySize: number, leader: ProfessionId): ProfessionId[] {
-  const want = Math.max(0, Math.min(5, partySize - 1));
-  const picks: ProfessionId[] = [];
-  for (const p of COMPANION_PRIORITY) {
-    if (picks.length >= want) break;
-    if (p !== leader) picks.push(p);
-  }
-  // If the leader was in the priority list, the loop above produced one
-  // short — pad with farmer (generic able-body) until we hit the count.
-  while (picks.length < want) picks.push('farmer');
-  return picks;
 }
 
 export function runBot(opts: BotRunOpts): BotRunReport {
