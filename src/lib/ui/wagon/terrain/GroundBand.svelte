@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Solid foreground earth band. Three render paths, each independent of
+  // Solid foreground earth band. Four render paths, each independent of
   // the backdrop renderer:
   //
   //   default            — two-stop linear gradient + horizon shadow fade.
@@ -9,15 +9,18 @@
   //                        (warm dirt base + feTurbulence painterly noise +
   //                        two stroke-path wagon ruts + deterministic
   //                        pebble specks + grass tufts at top edge),
-  //                        scrolled via patternTransform. Replaces an
-  //                        earlier SDXL-generated texture path that kept
-  //                        producing landscape strips instead of usable
-  //                        side-view trail content. TODO #32 Phase A.
+  //                        scrolled via patternTransform.
+  //   ?groundstrip=1     — SDXL+LoRA painted ground strip (ground_strip-
+  //                        {biome}.webp at 3072×512), seamlessly tiled and
+  //                        parallax-scrolled. Matches BackdropPainting's
+  //                        painterly style and shares its tile/scroll math.
+  //                        TODO #955 — production target.
   //
   // Toggleable from /dev/wagon-view to compare under any backdrop renderer.
   import { page } from '$app/state';
   import type { Terrain } from '$lib/game/types';
   import { GROUND_FILL } from './terrain-tokens';
+  import GroundPainting from './GroundPainting.svelte';
 
   interface Props {
     terrain: Terrain;
@@ -29,12 +32,18 @@
     scrollX?: number;
     /** Used as the unique id prefix for the inline gradient defs. */
     idPrefix?: string;
+    milesTraveled?: number;
+    deathCount?: number;
   }
 
-  let { terrain, groundY, h, w, scrollX = 0, idPrefix = 'gb' }: Props = $props();
+  let {
+    terrain, groundY, h, w, scrollX = 0, idPrefix = 'gb',
+    milesTraveled = 0, deathCount = 0,
+  }: Props = $props();
 
   const useRaster = $derived(page.url.searchParams.get('groundraster') === '1');
   const useGroundtex = $derived(page.url.searchParams.get('groundtex') === '1');
+  const useGroundstrip = $derived(page.url.searchParams.get('groundstrip') === '1');
 
   // Match BackdropPainting's river → prairie fallback. River terrain is
   // landmark-only (river crossings); LandmarkStage takes over there. If
@@ -90,7 +99,12 @@
 </script>
 
 <g>
-  {#if useGroundtex}
+  {#if useGroundstrip}
+    <!-- Painted ground strip from FLUX (single trail tile, biome-neutral).
+         Plays UNDER the wagon/ox composite and OVER the backdrop's
+         horizon-vista painting. -->
+    <GroundPainting {scrollX} {terrain} {milesTraveled} {deathCount} />
+  {:else if useGroundtex}
     <defs>
       <!-- Painterly noise filter — feTurbulence + colormatrix tints
            the noise to a brown haze, blended at low alpha over the

@@ -194,6 +194,7 @@
   // leftward (negative x). Origin convention changed in #158 — the
   // team no longer takes anchorX/wagonHookX, just wraps in a translate.
   const liveOxen = $derived(gameState.oxen.filter((o) => o.health > 0));
+  const deadCount = $derived(gameState.party.filter((m) => m.dead).length);
   const oxCount = $derived(Math.max(1, Math.min(6, liveOxen.length)));
   const isMule = $derived(liveOxen.length > 0 && liveOxen[0].kind === 'mule');
 
@@ -297,7 +298,9 @@
            with a seamless biome texture; scrollX drives the pattern
            translate so the ground reads as moving with the wagon. -->
       <GroundBand terrain={gameState.location.terrain} groundY={GROUND_Y}
-                  h={SCENE_H - GROUND_Y} w={SCENE_W} {scrollX} idPrefix="ws" />
+                  h={SCENE_H - GROUND_Y} w={SCENE_W} {scrollX} idPrefix="ws"
+                  milesTraveled={gameState.location.milesTraveled}
+                  deathCount={deadCount} />
 
       {#if useSvgLayers}
         <!-- 8. near parallax — SVG mode only -->

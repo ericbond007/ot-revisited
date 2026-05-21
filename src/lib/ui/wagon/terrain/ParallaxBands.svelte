@@ -26,6 +26,8 @@
     /** Unique-ish prefix for the GroundBand gradient ids. Pass when
      *  multiple ParallaxBands render on one page. */
     idPrefix?: string;
+    milesTraveled?: number;
+    deathCount?: number;
   }
 
   let {
@@ -35,7 +37,9 @@
     groundY = GROUND_Y,
     w = SCENE_W,
     h = SCENE_H,
-    idPrefix = 'pb'
+    idPrefix = 'pb',
+    milesTraveled = 0,
+    deathCount = 0,
   }: Props = $props();
 
   const groundH = $derived(h - groundY);
@@ -44,6 +48,6 @@
 <g>
   <FarLayer {terrain} {scrollX} {horizonY} />
   <MidLayer {terrain} {scrollX} {horizonY} {groundY} />
-  <GroundBand {terrain} {groundY} h={groundH} {w} {idPrefix} />
+  <GroundBand {terrain} {scrollX} {groundY} h={groundH} {w} {idPrefix} {milesTraveled} {deathCount} />
   <NearLayer {terrain} {scrollX} {groundY} />
 </g>
