@@ -28,7 +28,7 @@ export const TRAVEL_HEAL_MIN_MORALE = 25;
 
 // #1046 A — condition-burdened in-motion convalesce. Deliberately
 // weaker than rest (+8). Starting value; slice-5 sweep-tuned.
-export const CONVALESCE_HEAL = 3;
+export const CONVALESCE_HEAL = 5;
 export const CONVALESCE_DOCTOR_MULT = 1.5;
 // Pace gate mirrors #161's intent (fast/grueling tax the body).
 const CONVALESCE_PACE_MULT: Record<GameState['pace'], number> = {
