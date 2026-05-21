@@ -348,26 +348,34 @@ function anyOxStrained(state: GameState): boolean {
 
 /** Decide how many fresh oxen the bot should acquire at this post.
  *  Returns 0 unless the team is genuinely thin or worn — emigrants
- *  didn't blow cash at Laramie if the team was holding. Reads the
- *  wagon's minTeam from state.wagon.model — that's the floor where
- *  movement stops, so we want a buffer of at least 2 above it. */
+ *  didn't blow cash at Laramie if the team was holding.
+ *
+ *  #931 — target is `optimalTeam + freshBuffer`, aligned with
+ *  oxenSpeedFactor (which uses optimalTeam). Pre-#931 this targeted
+ *  `minTeam + thinThreshold`, which made aggressive run at the
+ *  can't-move floor and not realize a sub-optimal team is a permanent
+ *  speed penalty. `freshBuffer` is the persona's offset *relative to
+ *  optimal*: cautious/generous +1 (slight above-optimal buffer),
+ *  balanced 0 (exactly optimal), aggressive −1 (lean but viable).
+ *  Clamped at minTeam so a wagon never targets below the can't-move
+ *  floor. */
 function pickOxSwapCountFor(
   state: GameState,
-  thinThreshold: number,
+  freshBuffer: number,
   healthFloor: number
 ): number {
-  const minTeam = getWagon(state.wagon.model).minTeam;
+  const wagon = getWagon(state.wagon.model);
+  const target = Math.max(wagon.minTeam, wagon.optimalTeam + freshBuffer);
   const alive = state.oxen.filter((o) => o.health > 0);
   const aliveCount = alive.length;
-  if (aliveCount === 0) return Math.max(2, minTeam + 1);
+  if (aliveCount === 0) return Math.max(2, wagon.optimalTeam);
   const avgHealth = alive.reduce((a, o) => a + o.health, 0) / aliveCount;
   // Two trigger conditions: thin team OR worn-down team.
-  const tooThin = aliveCount < minTeam + thinThreshold;
+  const tooThin = aliveCount < target;
   const tooWorn = avgHealth < healthFloor;
   if (!tooThin && !tooWorn) return 0;
-  // Target = minTeam + thinThreshold (a comfortable buffer) - aliveCount.
-  // For worn-team trigger, swap 2 to refresh the average.
-  const need = Math.max(0, (minTeam + thinThreshold) - aliveCount);
+  // Thin: top up to target. Worn: swap 2 to refresh the average.
+  const need = Math.max(0, target - aliveCount);
   return tooThin ? Math.max(1, need) : 2;
 }
 
@@ -671,17 +679,17 @@ export const cautiousPersona: Persona = {
   },
   pickOxSwapCount(state, here) {
     if (!(here.services ?? []).includes('ox_swap')) return 0;
-    // Cautious wants a generous buffer (2 above minTeam) and refreshes
-    // worn teams aggressively (health <70). Survival-first. #934 —
-    // gap-aware: at posts before a long leg (≥150 mi), bump the
-    // worn-team threshold to 85 so cautious refreshes even a healthy-
-    // looking 70-health team before entering Kearny→Robidoux etc.
+    // Cautious wants a fresh buffer above optimal (#931 freshBuffer=+1)
+    // and refreshes worn teams aggressively (health <70). Survival-
+    // first. #934 — gap-aware: at posts before a long leg (≥150 mi),
+    // bump the worn-team threshold to 85 so cautious refreshes even a
+    // healthy-looking 70-health team before entering Kearny→Robidoux.
     const healthFloor = gapAwareOxHealthFloor(state, {
       healthFloor: 70,
       bigGapMiles: 150,
       bigGapHealthBoost: 15
     });
-    return pickOxSwapCountFor(state, 2, healthFloor);
+    return pickOxSwapCountFor(state, 1, healthFloor);
   },
   pickRepairBudget(state, here) {
     // Cautious repairs early, spends generously. Period: emigrant
@@ -854,16 +862,18 @@ export const balancedPersona: Persona = {
   },
   pickOxSwapCount(state, here) {
     if (!(here.services ?? []).includes('ox_swap')) return 0;
-    // #930 — thinThreshold=2 targets optimalTeam (4 for prairie
-    // schooner) to recover the 25% travel-speed penalty of a 3-ox
-    // team. #934 — gap-aware: at ≥150 mi gaps, bump health floor
-    // 55 → 75 so balanced refreshes mid-life teams before long legs.
+    // #931 — freshBuffer=0 targets optimalTeam exactly (4 for prairie
+    // schooner) — aligns with oxenSpeedFactor's optimalTeam baseline
+    // so the bot recovers the 25% travel-speed penalty of a sub-
+    // optimal team. #934 — gap-aware: at ≥150 mi gaps, bump health
+    // floor 55 → 75 so balanced refreshes mid-life teams before long
+    // legs.
     const healthFloor = gapAwareOxHealthFloor(state, {
       healthFloor: 55,
       bigGapMiles: 150,
       bigGapHealthBoost: 20
     });
-    return pickOxSwapCountFor(state, 2, healthFloor);
+    return pickOxSwapCountFor(state, 0, healthFloor);
   },
   pickRepairBudget(state, here) {
     // Balanced is thriftier than cautious — repairs at <60 (vs 75)
@@ -1042,18 +1052,20 @@ export const aggressivePersona: Persona = {
     return false;
   },
   pickOxSwapCount(state, here) {
-    // Aggressive runs lean teams — only swaps below minTeam in
-    // normal conditions. #934 — gap-aware: at ≥200 mi gaps (Kearny→
-    // Robidoux, Hall→Boise, Boise→Whitman), even aggressive bumps
-    // the health floor 30 → 55 because slow-walking the dead zone
-    // costs more days than the swap costs cash.
+    // Aggressive runs lean teams — #931 freshBuffer=-1 (one below
+    // optimal, still above minTeam on schooner). Pre-#931 this
+    // targeted minTeam and the bot never realized a sub-optimal team
+    // is a permanent speed penalty. #934 — gap-aware: at ≥200 mi gaps
+    // (Kearny→Robidoux, Hall→Boise, Boise→Whitman), even aggressive
+    // bumps the health floor 30 → 55 because slow-walking the dead
+    // zone costs more days than the swap costs cash.
     if (!(here.services ?? []).includes('ox_swap')) return 0;
     const healthFloor = gapAwareOxHealthFloor(state, {
       healthFloor: 30,
       bigGapMiles: 200,
       bigGapHealthBoost: 25
     });
-    return pickOxSwapCountFor(state, 0, healthFloor);
+    return pickOxSwapCountFor(state, -1, healthFloor);
   },
   pickRepairBudget(state, here) {
     // Aggressive only repairs when the wagon is genuinely failing
@@ -1349,14 +1361,16 @@ export const pacePusherPersona: Persona = {
     // fresh at Bridger after Sublette Cutoff — the team Reed brought
     // out of Fort Bridger was the team that died in the Sierra. This
     // persona captures that lesson by overriding balanced's healthFloor
-    // 55 → 70 (swap when team is mid-health, not just hurt).
+    // 55 → 70 (swap when team is mid-health, not just hurt). #931 —
+    // freshBuffer=+1 (above optimal) matches the Reed-at-Bridger
+    // urgency to maintain a strong team.
     if (!(here.services ?? []).includes('ox_swap')) return 0;
     const healthFloor = gapAwareOxHealthFloor(state, {
       healthFloor: 70,
       bigGapMiles: 150,
       bigGapHealthBoost: 15
     });
-    return pickOxSwapCountFor(state, 2, healthFloor);
+    return pickOxSwapCountFor(state, 1, healthFloor);
   },
   shouldDissent(_state, decision) {
     return decision.mode === 'travel' ? 'abide' : 'press_on';
@@ -1436,15 +1450,15 @@ export const generousPersona: Persona = {
   id: 'generous',
   pickOxSwapCount(state, here) {
     if (!(here.services ?? []).includes('ox_swap')) return 0;
-    // Generous mirrors cautious — wants 2 above minTeam, refreshes
-    // worn at <70 health. #934 — gap-aware at the same bigGap shape
-    // as cautious (+15 at ≥150 mi).
+    // Generous mirrors cautious — #931 freshBuffer=+1 (slight above-
+    // optimal buffer), refreshes worn at <70 health. #934 — gap-aware
+    // at the same bigGap shape as cautious (+15 at ≥150 mi).
     const healthFloor = gapAwareOxHealthFloor(state, {
       healthFloor: 70,
       bigGapMiles: 150,
       bigGapHealthBoost: 15
     });
-    return pickOxSwapCountFor(state, 2, healthFloor);
+    return pickOxSwapCountFor(state, 1, healthFloor);
   },
   pickRepairBudget(state, here) {
     // 1.5× balanced — generous spends to keep the wagon running.

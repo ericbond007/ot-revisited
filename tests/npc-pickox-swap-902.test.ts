@@ -110,18 +110,22 @@ describe('#902 — applyNpcPostRestock consumes persona.pickOxSwapCount', () => 
   });
 
   it('cash-only fallback when barter has too few surrender candidates', () => {
-    // 1 alive ox means barter can't fund even 1 fresh (needs 2
-    // surrendered). Cautious's pickOxSwapCountFor(state, 2, 70)
-    // returns 4 - 1 = 3 (way thin). Cash-only cost: 3 × $75 = $225.
-    // Wagon at $300 → can afford. Final team has the original ox +
-    // 3 fresh ones.
-    const oneOx: Ox[] = [{ id: 'ox-only', health: 60, fatigue: 30, shod: true }];
-    const s = setupAtLaramie('cautious', oneOx, 300);
+    // 2 alive oxen means barter can't fund 3 fresh (needs 2 surrendered
+    // per fresh, only 2 available → 1 fresh by barter, the rest must
+    // be cash). #931 — cautious's pickOxSwapCountFor(state, +1, 70)
+    // targets optimalTeam+1 = 5, so on a 2-ox team need = 5 - 2 = 3.
+    // Cash-only fallback cost: ≥3 × $75 = $225+. Wagon at $400 affords
+    // the cash-only mix. Final team has the original 2 oxen + ≥1 fresh.
+    const startOxen: Ox[] = [
+      { id: 'ox-a', health: 60, fatigue: 30, shod: true },
+      { id: 'ox-b', health: 60, fatigue: 30, shod: true }
+    ];
+    const s = setupAtLaramie('cautious', startOxen, 400);
     const before = s.wagonTrain!.companions[0];
     const result = applyNpcPostRestock(s);
     const after = result.wagonTrain!.companions[0];
     expect(after.oxen.length).toBeGreaterThan(before.oxen.length);
-    expect(after.oxen.some((o) => o.id === 'ox-only')).toBe(true);
+    expect(after.oxen.some((o) => o.id === 'ox-a')).toBe(true);
     expect(after.cash).toBeLessThan(before.cash);
   });
 });
