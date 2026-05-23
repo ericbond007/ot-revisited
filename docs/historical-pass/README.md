@@ -11,6 +11,11 @@ Research pass on items, mechanics, daily routines, diary sources, and landmarks.
 | [03-diaries.md](03-diaries.md) | Public-domain diary sources, evocative quotes, event pairings |
 | [04-landmarks.md](04-landmarks.md) | Comprehensive landmark list (~70 majors + flavor POIs) |
 | [05-synthesis.md](05-synthesis.md) | Gap analysis vs. current game + proposed TODO additions |
+| [06-wagon-anatomy.md](06-wagon-anatomy.md) | Wagon body — prairie schooner vs Conestoga, hardware, side-of-wagon checklist (#156 research) |
+| [07-ox-team-harness.md](07-ox-team-harness.md) | Yokes + bows + chain layout, mule harness contrast, driver position (#170 research) |
+| [08-wagon-accessories-placement.md](08-wagon-accessories-placement.md) | Period-correct mounting points for tar bucket / water keg / butter pail / chicken coop / milk cow / etc. (#156 research) |
+| [09-canvas-and-wear-states.md](09-canvas-and-wear-states.md) | 5-stop wear progression for canvas + wagon body, game-state mapping (#156 research) |
+| [10-wagon-format-decision.md](10-wagon-format-decision.md) | Format-decision rationale: SVG + raster pattern fills wins over all-raster |
 
 ## Headline findings (for the impatient)
 

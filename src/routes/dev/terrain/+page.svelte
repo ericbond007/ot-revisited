@@ -80,7 +80,7 @@
             <FarLayer {terrain} {scrollX} horizonY={HORIZON_Y} />
             <LandmarkLayer {terrain} {scrollX} horizonY={HORIZON_Y} />
             <MidLayer {terrain} {scrollX} horizonY={HORIZON_Y} groundY={GROUND_Y} />
-            <GroundBand {terrain} groundY={GROUND_Y} h={SCENE_H - GROUND_Y} w={SCENE_W}
+            <GroundBand {terrain} {scrollX} groundY={GROUND_Y} h={SCENE_H - GROUND_Y} w={SCENE_W}
                         idPrefix="dev-{terrain}" />
             <NearLayer {terrain} {scrollX} groundY={GROUND_Y} />
             <PrecipOverlays {t} w={SCENE_W} h={SCENE_H} groundY={GROUND_Y}

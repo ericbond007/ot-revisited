@@ -24,6 +24,15 @@
   let oxCount = $state(4);
   let isMule = $state(false);
   let paused = $state(false);
+  let useBlenderDriver = $state(true);
+  let useBlenderBody = $state(true);
+  let useBlenderTeam = $state(true);
+  // Scene-placement tuning knobs (defaults match the production
+  // constants baked into WagonScene 2026-05-12 fit b). Slide to retune.
+  let wagonX = $state(905);
+  let wagonGroundOffset = $state(3.75);  // for prairie_schooner
+  let tongueBase = $state(10.5);
+  let tonguePerPair = $state(-12);
   // -1 → "auto" (no explicit override → BackdropPainting picks based on
   // weather → fallback random). 0..4 → forced variant.
   let variant = $state<number>(-1);
@@ -42,6 +51,7 @@
   const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
   const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
   const useGroundTex = $derived(page.url.searchParams.get('groundtex') === '1');
+  const useGroundStrip = $derived(page.url.searchParams.get('groundstrip') === '1');
 
   const previewState = $derived.by(() => {
     const base = createInitialState({
@@ -69,7 +79,7 @@
     };
   });
 
-  function toggleQueryFlag(flag: 'svg' | 'groundraster' | 'groundtex') {
+  function toggleQueryFlag(flag: 'svg' | 'groundraster' | 'groundtex' | 'groundstrip') {
     const url = new URL(window.location.href);
     const isOn = url.searchParams.get(flag) === '1';
     if (isOn) url.searchParams.delete(flag);
@@ -147,6 +157,21 @@
       <span>Pause animation</span>
     </label>
 
+    <label class="cb">
+      <input type="checkbox" bind:checked={useBlenderBody} />
+      <span>Blender wagon body + animated wheels</span>
+    </label>
+
+    <label class="cb">
+      <input type="checkbox" bind:checked={useBlenderTeam} />
+      <span>Blender ox team (animated frames)</span>
+    </label>
+
+    <label class="cb">
+      <input type="checkbox" bind:checked={useBlenderDriver} />
+      <span>Blender driver (cowboy PNG)</span>
+    </label>
+
     <button type="button" class="restart" onclick={restart}>↺ Restart</button>
 
     <label class="cb raster-toggle">
@@ -163,12 +188,44 @@
       <input type="checkbox" checked={useGroundTex} onchange={() => toggleQueryFlag('groundtex')} />
       <span>Textured ground (<code>?groundtex=1</code>) — seamless biome texture, scrolling pattern</span>
     </label>
+
+    <label class="cb raster-toggle">
+      <input type="checkbox" checked={useGroundStrip} onchange={() => toggleQueryFlag('groundstrip')} />
+      <span>Painted ground strip (<code>?groundstrip=1</code>) — SDXL+LoRA painted side-view trail, parallax-scrolled</span>
+    </label>
+  </section>
+
+  <section class="tuning">
+    <h2>Scene tuning</h2>
+    <label class="range">
+      <span>Wagon X</span>
+      <input type="range" min="600" max="1280" step="5" bind:value={wagonX} />
+      <span class="val">{wagonX}</span>
+    </label>
+    <label class="range">
+      <span>Wagon ground-offset</span>
+      <input type="range" min="0" max="24" step="0.25" bind:value={wagonGroundOffset} />
+      <span class="val">{wagonGroundOffset}</span>
+    </label>
+    <label class="range">
+      <span>Tongue base</span>
+      <input type="range" min="-30" max="30" step="0.5" bind:value={tongueBase} />
+      <span class="val">{tongueBase}</span>
+    </label>
+    <label class="range">
+      <span>Tongue per pair</span>
+      <input type="range" min="-25" max="0" step="0.5" bind:value={tonguePerPair} />
+      <span class="val">{tonguePerPair}</span>
+    </label>
+    <p class="hint-sm">Tongue tip wagon-X = {tongueBase} + {tonguePerPair} × {Math.ceil(oxCount/2)} pair(s) = <strong>{(tongueBase + tonguePerPair * Math.ceil(oxCount/2)).toFixed(1)}</strong></p>
   </section>
 
   <section class="stage">
     {#key restartKey}
       <WagonScene state={previewState} {timeOfDay} {paused}
-                  backdropVariant={variant === -1 ? undefined : variant} />
+                  backdropVariant={variant === -1 ? undefined : variant}
+                  addonsOverride={{ driver: useBlenderDriver }}
+                  tuning={{ wagonX, wagonGroundOffset, tongueBase, tonguePerPair }} />
     {/key}
   </section>
 
@@ -274,6 +331,46 @@
   }
   .stage {
     margin: 0.8em 0;
+  }
+  .tuning {
+    margin: 0.8em 0;
+    padding: 0.6em 0.8em;
+    background: var(--c-bg-raised, #2a1a08);
+    border: 1px solid var(--c-wood, #aa8a5a);
+    border-radius: 4px;
+  }
+  .tuning h2 {
+    margin: 0 0 0.4em 0;
+    font-size: 0.85em;
+    color: var(--c-wood, #aa8a5a);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .tuning label.range {
+    display: grid;
+    grid-template-columns: 11em 1fr 4em;
+    align-items: center;
+    gap: 0.6em;
+    font-size: 0.85em;
+    color: var(--c-tan, #e7d8b8);
+    text-transform: none;
+    letter-spacing: 0;
+    margin: 0.25em 0;
+  }
+  .tuning label.range .val {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--c-wood, #aa8a5a);
+  }
+  .tuning .hint-sm {
+    margin: 0.4em 0 0 0;
+    font-size: 0.8em;
+    color: var(--c-wood, #aa8a5a);
+    font-style: italic;
+  }
+  .tuning .hint-sm strong {
+    color: var(--c-tan, #e7d8b8);
+    font-style: normal;
   }
   footer .hint {
     text-align: center;

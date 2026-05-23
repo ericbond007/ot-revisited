@@ -60,9 +60,23 @@
     /** Backdrop variant 0..N-1; only used in raster mode. Defaults to a
      *  random pick at mount inside BackdropPainting if not provided. */
     backdropVariant?: number;
+    /** Dev-only: merge extra flags into the wagon addons (e.g.
+     *  useBlenderDriver). Lets the dev viewer toggle them without
+     *  touching game state. */
+    addonsOverride?: Partial<import('./wagon-svg/wagon-tokens').WagonAddons>;
+    /** Dev-only: override the scene-placement constants normally baked
+     *  into this component (wagon X, ground-offset for the rendered
+     *  wagon model, tongue-tip math). Lets /dev/wagon-view drive
+     *  sliders. Unset fields fall back to the production defaults. */
+    tuning?: {
+      wagonX?: number;
+      wagonGroundOffset?: number;
+      tongueBase?: number;
+      tonguePerPair?: number;
+    };
   }
 
-  let { state: gameState, timeOfDay = 'day', paused = false, backdropVariant }: Props = $props();
+  let { state: gameState, timeOfDay = 'day', paused = false, backdropVariant, addonsOverride, tuning }: Props = $props();
 
   // ---------- backdrop mode flags ----------
   // Default: BackdropPainting — single 3072×768 horizon-vista painting per
@@ -117,6 +131,18 @@
   const teamBob = $derived(
     paused ? 0 : Math.sin(gaitPhase * Math.PI * 2) * 0.08
   );
+  // Rough-terrain shudder for the wagon body specifically — independent
+  // of teamBob (which the ox team shares). Sum of three incommensurate
+  // sines gives a non-repeating jitter that reads as "rolling over rocks
+  // and ruts" rather than a clean cycle. Amplitudes tuned subtle —
+  // total ≤ 0.3 SVG units; bigger reads as cartoonishly bumpy.
+  const roughTerrainBounce = $derived(
+    paused
+      ? 0
+      : (Math.sin(tEff * 4.0 * Math.PI * 2) * 0.05
+        + Math.sin(tEff * 6.7 * Math.PI * 2) * 0.03
+        + Math.sin(tEff * 11.3 * Math.PI * 2) * 0.02)
+  );
 
   // ---------- weather mapping ----------
   // Engine has 8 states; the brief's visual vocabulary has 6. The
@@ -142,20 +168,24 @@
   // Wagon's local origin sits at center-bottom-of-wheels. Each model
   // has a different wheel-ground offset; bake a small lift so the
   // wheels touch GROUND_Y exactly. Visual revisit (#156) can refine.
-  const WAGON_GROUND_OFFSET: Record<WagonModelId, number> = {
+  // Tunables — current values are the "saved fit" from /dev/wagon-detail
+  // (2026-05-12). Previous values in parens for easy revert.
+  const DEFAULT_WAGON_GROUND_OFFSET: Record<WagonModelId, number> = {
     light: 9.2,
-    prairie_schooner: 12,
+    prairie_schooner: 3.75,  // was 12, briefly 13 — Dave's dialed-in fit 2026-05-12 b: drops the wagon flush with the textured-ground band
     heavy: 14.5
   };
-  const WAGON_X = 920;
+  const DEFAULT_WAGON_X = 905;   // was 920 / briefly 1170 — Dave's dialed-in fit 2026-05-12 b
   const SCENE_SCALE = 4;
 
-  const wagonRender = $derived(WAGON_RENDER[gameState.wagon.model]);
-  const wagonY = $derived(GROUND_Y - WAGON_GROUND_OFFSET[gameState.wagon.model] * SCENE_SCALE);
+  // Tuning overrides (set by /dev/wagon-view sliders) take precedence.
+  const WAGON_X = $derived(tuning?.wagonX ?? DEFAULT_WAGON_X);
+  const wagonGroundOffset = $derived(
+    tuning?.wagonGroundOffset ?? DEFAULT_WAGON_GROUND_OFFSET[gameState.wagon.model]
+  );
 
-  // Wagon tongue tip is at x ≈ -29 in wagon-local units (per brief);
-  // chain runs back to that point in scene coordinates.
-  const wagonTongueTipSceneX = $derived(WAGON_X + (-29) * SCENE_SCALE);
+  const wagonRender = $derived(WAGON_RENDER[gameState.wagon.model]);
+  const wagonY = $derived(GROUND_Y - wagonGroundOffset * SCENE_SCALE);
 
   // ---------- ox team placement ----------
   // OxTeam draws its pole tip at its own (0, -11.5). The wrapping
@@ -164,14 +194,30 @@
   // leftward (negative x). Origin convention changed in #158 — the
   // team no longer takes anchorX/wagonHookX, just wraps in a translate.
   const liveOxen = $derived(gameState.oxen.filter((o) => o.health > 0));
+  const deadCount = $derived(gameState.party.filter((m) => m.dead).length);
   const oxCount = $derived(Math.max(1, Math.min(6, liveOxen.length)));
   const isMule = $derived(liveOxen.length > 0 && liveOxen[0].kind === 'mule');
+
+  // Tongue tip in wagon-local X, computed from the dev-view "saved fit"
+  // (/dev/wagon-detail, 2026-05-12). The chain stretches with team size:
+  // each ox pair adds one TONGUE_PER_PAIR step to the lead anchor. For
+  // a 4-ox team (2 pairs) the tip lands at -36 — empirically the right
+  // spot to attach the rear pair to the wagon's painted tongue while
+  // the lead pair walks ahead.
+  const DEFAULT_TONGUE_BASE = 10.5;   // was -12 — Dave's dialed-in fit 2026-05-12 b
+  const DEFAULT_TONGUE_PER_PAIR = -12;
+  const tongueBase = $derived(tuning?.tongueBase ?? DEFAULT_TONGUE_BASE);
+  const tonguePerPair = $derived(tuning?.tonguePerPair ?? DEFAULT_TONGUE_PER_PAIR);
+  const numPairs = $derived(Math.ceil(oxCount / 2));
+  const wagonTongueTipWagonX = $derived(tongueBase + tonguePerPair * numPairs);
+  const wagonTongueTipSceneX = $derived(WAGON_X + wagonTongueTipWagonX * SCENE_SCALE);
 
   // ---------- addons ----------
   const addons = $derived({
     driver: true,
     kegs: wagonRender.defaultKegs,
-    coop: gameState.inventory.chicken ?? 0
+    coop: gameState.inventory.chicken ?? 0,
+    ...(addonsOverride ?? {})
   });
 
   const WagonComponent = $derived(wagonRender.Component);
@@ -252,31 +298,36 @@
            with a seamless biome texture; scrollX drives the pattern
            translate so the ground reads as moving with the wagon. -->
       <GroundBand terrain={gameState.location.terrain} groundY={GROUND_Y}
-                  h={SCENE_H - GROUND_Y} w={SCENE_W} {scrollX} idPrefix="ws" />
+                  h={SCENE_H - GROUND_Y} w={SCENE_W} {scrollX} idPrefix="ws"
+                  milesTraveled={gameState.location.milesTraveled}
+                  deathCount={deadCount} />
 
       {#if useSvgLayers}
         <!-- 8. near parallax — SVG mode only -->
         <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
       {/if}
 
-      <!-- 9. ox/mule team — pole tip lands at wagonTongueTipSceneX -->
+      <!-- 9. wagon — rides the team bob via a y-offset on the translate,
+           so it settles together with the hitched mass. Drawn BEFORE
+           the ox team so the rear oxen visually cover the tongue tip
+           and harness hitching where they overlap. -->
+      <g transform="translate({WAGON_X} {wagonY + teamBob * SCENE_SCALE}) scale({SCENE_SCALE})">
+        <WagonComponent
+          angle={wheelAngle}
+          bounce={roughTerrainBounce}
+          health={gameState.wagon.condition}
+          {addons}
+        />
+      </g>
+
+      <!-- 10. ox/mule team — pole tip lands at wagonTongueTipSceneX.
+           Drawn AFTER the wagon so the oxen sit on top of the tongue. -->
       <g transform="translate({wagonTongueTipSceneX} {GROUND_Y}) scale({SCENE_SCALE})">
         <OxTeam
           count={oxCount}
           {isMule}
           {gaitPhase}
           gait={paused ? 'stopped' : 'walking'}
-        />
-      </g>
-
-      <!-- 10. wagon — rides the team bob via a y-offset on the
-           translate, so it settles together with the hitched mass. -->
-      <g transform="translate({WAGON_X} {wagonY + teamBob * SCENE_SCALE}) scale({SCENE_SCALE})">
-        <WagonComponent
-          angle={wheelAngle}
-          bounce={0}
-          health={gameState.wagon.condition}
-          {addons}
         />
       </g>
 

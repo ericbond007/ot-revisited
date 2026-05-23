@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>wagon-bg asset gallery</title>
+<style>
+  body {
+    margin: 0;
+    background: #1a0a04;
+    color: #eeedeb;
+    font-family: -apple-system, system-ui, sans-serif;
+    padding: 1em 1.5em;
+  }
+  h1 { color: #990000; margin: 0 0 0.2em; font-size: 1.3em; }
+  h2 { color: #aa8a5a; font-size: 1.0em; margin: 1.6em 0 0.5em;
+       border-bottom: 1px solid #333; padding-bottom: 0.3em; }
+  .hint { font-size: 0.85em; color: #aa8a5a; font-style: italic; margin: 0 0 1em; }
+  nav { font-size: 0.85em; margin-bottom: 1em; }
+  nav a { color: #aa8a5a; margin-right: 1em; text-decoration: none; }
+  nav a:hover { color: #eeedeb; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.8em;
+  }
+  .grid.lg { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+  .grid.sm { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  figure { margin: 0; background: #2a1a08; padding: 0.5em; border-radius: 4px; }
+  figure img {
+    display: block; width: 100%; height: auto;
+    background:
+      linear-gradient(45deg, #444 25%, transparent 25%),
+      linear-gradient(-45deg, #444 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #444 75%),
+      linear-gradient(-45deg, transparent 75%, #444 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+  figcaption { font-size: 0.78em; color: #eeedeb; padding: 0.3em 0 0; }
+  figcaption strong { color: #aa8a5a; }
+</style>
+</head>
+<body>
+
+<h1>wagon-bg asset gallery</h1>
+<p class="hint">Survey of all generated wagon body / canvas / wheel / driver / texture assets under <code>static/wagon-bg/</code>. Refresh to pick up regenerations.</p>
+
+<nav>
+  <a href="#full">Full composites</a>
+  <a href="#body">Wagon bodies</a>
+  <a href="#canvas">Canvas</a>
+  <a href="#wheels">Wheels</a>
+  <a href="#blender">Blender renders</a>
+  <a href="#driver">Driver (cowboy)</a>
+  <a href="#frames">Walk frames</a>
+  <a href="#wheel-strip">Wheel strip</a>
+  <a href="#wheels-manifest-test">Manifest wheels</a>
+  <a href="#harness">Ox harness</a>
+  <a href="#textures">FLUX textures</a>
+  <a href="#ground-strip">Ground strips</a>
+  <a href="#ground-strip-flux">Ground strips (FLUX)</a>
+  <a href="#trail-debris">Trail debris (21)</a>
+</nav>
+
+<h2 id="full">Full composites</h2>
+<div class="grid lg">
+  <figure><img src="wagon-full/wagon-prairie-schooner.png" alt=""><figcaption><strong>prairie schooner</strong> — composite</figcaption></figure>
+  <figure><img src="wagon-full/wagon-heavy.png" alt=""><figcaption><strong>heavy freighter</strong> — composite</figcaption></figure>
+  <figure><img src="wagon-full/wagon-light.png" alt=""><figcaption><strong>light wagon</strong> — composite</figcaption></figure>
+</div>
+
+<h2 id="body">Wagon bodies (no wheels)</h2>
+<div class="grid">
+  <figure><img src="wagon-body/prairie-schooner--fresh.png" alt=""><figcaption><strong>prairie-schooner--fresh</strong></figcaption></figure>
+  <figure><img src="wagon-body/heavy--fresh.png" alt=""><figcaption><strong>heavy--fresh</strong></figcaption></figure>
+  <figure><img src="wagon-body/light--fresh.png" alt=""><figcaption><strong>light--fresh</strong></figcaption></figure>
+</div>
+
+<h2 id="canvas">Canvas</h2>
+<div class="grid">
+  <figure><img src="wagon-canvas/canvas-fresh.png" alt=""><figcaption><strong>canvas-fresh</strong></figcaption></figure>
+</div>
+
+<h2 id="wheels">Wheels (front / rear)</h2>
+<div class="grid">
+  <figure><img src="wagon-wheels/front--prairie-schooner.png" alt=""><figcaption><strong>schooner front</strong></figcaption></figure>
+  <figure><img src="wagon-wheels/rear--prairie-schooner.png" alt=""><figcaption><strong>schooner rear</strong></figcaption></figure>
+  <figure><img src="wagon-wheels/front--heavy.png" alt=""><figcaption><strong>heavy front</strong></figcaption></figure>
+  <figure><img src="wagon-wheels/rear--heavy.png" alt=""><figcaption><strong>heavy rear</strong></figcaption></figure>
+  <figure><img src="wagon-wheels/front--light.png" alt=""><figcaption><strong>light front</strong></figcaption></figure>
+  <figure><img src="wagon-wheels/rear--light.png" alt=""><figcaption><strong>light rear</strong></figcaption></figure>
+</div>
+
+<h2 id="blender">Blender renders</h2>
+<div class="grid">
+  <figure><img src="wagon-blender/conestoga--fresh.png" alt=""><figcaption><strong>conestoga--fresh</strong></figcaption></figure>
+  <figure><img src="wagon-blender/conestoga-body--nowheels.png" alt=""><figcaption><strong>conestoga body (no wheels)</strong></figcaption></figure>
+  <figure><img src="wagon-blender/conestoga-body--stylized.png" alt=""><figcaption><strong>conestoga body — stylized</strong></figcaption></figure>
+  <figure><img src="wagon-blender/prairie-schooner--fresh.png" alt=""><figcaption><strong>prairie-schooner--fresh</strong></figcaption></figure>
+  <figure><img src="wagon-blender/prairie-schooner-body--nowheels.png" alt=""><figcaption><strong>prairie-schooner body (no wheels)</strong></figcaption></figure>
+  <figure><img src="wagon-blender/light-body--nowheels.png" alt=""><figcaption><strong>light body (no wheels)</strong></figcaption></figure>
+  <figure><img src="wagon-blender/covered-wagon--fresh.png" alt=""><figcaption><strong>covered-wagon--fresh</strong></figcaption></figure>
+  <figure><img src="wagon-blender/ox--walk.png" alt=""><figcaption><strong>ox--walk</strong></figcaption></figure>
+</div>
+
+<h2 id="driver">Driver (cowboy) renders</h2>
+<div class="grid">
+  <figure><img src="wagon-blender/driver/cowboy--seated.png" alt=""><figcaption><strong>cowboy--seated</strong></figcaption></figure>
+  <figure><img src="wagon-blender/driver/cowboy--seated-trim.png" alt=""><figcaption><strong>cowboy--seated-trim</strong></figcaption></figure>
+  <figure><img src="wagon-blender/driver/cowboy--00.png" alt=""><figcaption><strong>cowboy--00</strong></figcaption></figure>
+  <figure><img src="wagon-blender/driver/cowboy--upper.png" alt=""><figcaption><strong>cowboy--upper</strong></figcaption></figure>
+  <figure><img src="wagon-blender/driver/cowboy--upper-trim.png" alt=""><figcaption><strong>cowboy--upper-trim</strong></figcaption></figure>
+  <figure><img src="wagon-blender/driver/cowboy--head-torso.png" alt=""><figcaption><strong>cowboy--head-torso</strong></figcaption></figure>
+  <figure>
+    <img src="/wagon-figures/cowboy-driver-side.png" alt="">
+    <figcaption><strong>/wagon-figures/cowboy-driver-side</strong> — current pose used by Driver.svelte</figcaption>
+  </figure>
+</div>
+
+<h2 id="wheel-baseline">Wheel baseline (no rotation, no filter — raw mesh as authored)</h2>
+<p class="hint">Reference for what the model's actual wheel looks like before any filtering or animation. Count spokes here to confirm what the model has.</p>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+  <figure style="margin:0"><img src="wagon-blender/wheel-baseline-front.png" style="width:100%;display:block;background:#222"><figcaption style="font-size:0.8em;text-align:center;color:#aaa">front (raw, no rotation)</figcaption></figure>
+  <figure style="margin:0"><img src="wagon-blender/wheel-baseline-rear.png" style="width:100%;display:block;background:#222"><figcaption style="font-size:0.8em;text-align:center;color:#aaa">rear (raw, no rotation)</figcaption></figure>
+</div>
+
+<h2 id="wheel-strip">Wheel rotation frame-by-frame (12 frames per cycle)</h2>
+<p class="hint">Front wheel (top row) and rear wheel (bottom row). Inspect each spoke position; gap or missing spoke = filter rejected a wheel part.</p>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="front-strip"></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px;" id="rear-strip"></div>
+<script>
+  for (let i = 0; i < 12; i++) {
+    const ii = String(i).padStart(2, '0');
+    document.getElementById('front-strip').insertAdjacentHTML('beforeend',
+      `<figure style="margin:0;"><img src="wagon-blender/wheel-frame-strip/front-${ii}.png?v=2" style="width:100%;display:block;background:#222"><figcaption style="font-size:0.7em;text-align:center;color:#aaa">f${ii}</figcaption></figure>`);
+    document.getElementById('rear-strip').insertAdjacentHTML('beforeend',
+      `<figure style="margin:0;"><img src="wagon-blender/wheel-frame-strip/rear-${ii}.png?v=2" style="width:100%;display:block;background:#222"><figcaption style="font-size:0.7em;text-align:center;color:#aaa">r${ii}</figcaption></figure>`);
+  }
+</script>
+
+<h2 id="wheels-manifest-test">Wheel cycle — LABEL_MANIFEST vs heuristic (side-by-side)</h2>
+<p class="hint">Left = current production (heuristic filtering in <code>render_wheels.py</code>). Right = <code>label_wagon_parts.py</code> manifest (40 FL + 40 FR + 45 RL + 45 RR parts rotate; 40 brake hidden; 433 chassis stationary). Both cycle at 6 fps. Look for: stuck spokes, hardware orbiting with the wheel, missing spokes.</p>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+  <figure style="margin:0">
+    <img class="cycle" data-base="wagon-blender/prairie-schooner-wheels-frames/wheel--" style="width:100%;display:block;background:#222" alt="">
+    <figcaption style="font-size:0.78em;text-align:center;color:#aa8a5a"><strong>heuristic</strong> (current production)</figcaption>
+  </figure>
+  <figure style="margin:0">
+    <img class="cycle" data-base="wagon-blender/wheels-manifest-test/wheel--" style="width:100%;display:block;background:#222" alt="">
+    <figcaption style="font-size:0.78em;text-align:center;color:#aa8a5a"><strong>manifest</strong> (option 3)</figcaption>
+  </figure>
+</div>
+<details style="margin-top:0.5em">
+  <summary style="cursor:pointer;color:#aa8a5a;font-size:0.85em">All 12 manifest frames (strip)</summary>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:0.5em;" id="manifest-strip"></div>
+</details>
+<script>
+  for (let i = 0; i < 12; i++) {
+    const ii = String(i).padStart(2, '0');
+    document.getElementById('manifest-strip').insertAdjacentHTML('beforeend',
+      `<figure style="margin:0;"><img src="wagon-blender/wheels-manifest-test/wheel--${ii}.png?v=1" style="width:100%;display:block;background:#222"><figcaption style="font-size:0.7em;text-align:center;color:#aaa">m${ii}</figcaption></figure>`);
+  }
+</script>
+
+<h2 id="frames">Walk-cycle frames (first 3 of each)</h2>
+<div class="grid sm">
+  <figure><img src="wagon-blender/ox-walk-frames/team--00.png" alt=""><figcaption>team 00</figcaption></figure>
+  <figure><img src="wagon-blender/ox-walk-frames/team--01.png" alt=""><figcaption>team 01</figcaption></figure>
+  <figure><img src="wagon-blender/ox-walk-frames/team--02.png" alt=""><figcaption>team 02</figcaption></figure>
+  <figure><img src="wagon-blender/ox-team-frames/team--00.png" alt=""><figcaption>ox-team 00</figcaption></figure>
+  <figure><img src="wagon-blender/conestoga-wheels-frames/wheel--00.png" alt=""><figcaption>conestoga wheel 00</figcaption></figure>
+  <figure><img src="wagon-blender/prairie-schooner-wheels-frames/wheel--00.png" alt=""><figcaption>schooner wheel 00</figcaption></figure>
+</div>
+
+<h2 id="harness">Ox harness — split into 3 parts (12-frame walk cycles)</h2>
+<p class="hint">Each row is one part of the harness, animating through its 12-frame walk cycle.</p>
+<div class="grid lg">
+  <figure>
+    <img class="cycle" data-base="wagon-blender/ox-yoke-only-frames/yoke--" alt="">
+    <figcaption><strong>yoke</strong> — wooden frame over necks (<code>fakeret + Torus + csti_krom.001</code>), aspect 1.63</figcaption>
+  </figure>
+  <figure>
+    <img class="cycle" data-base="wagon-blender/ox-rope-only-frames/rope--" alt="">
+    <figcaption><strong>rope</strong> — black leather strap (<code>csati_bor</code>), aspect 6.06</figcaption>
+  </figure>
+  <figure>
+    <img class="cycle" data-base="wagon-blender/ox-beam-only-frames/beam--" alt="">
+    <figcaption><strong>beam</strong> — long brown wooden pole (<code>csati_huzo</code>), aspect 9.32</figcaption>
+  </figure>
+  <figure>
+    <img class="cycle" data-base="wagon-blender/ox-pair-yoke-frames/pair-yoke--" alt="">
+    <figcaption><strong>yoked pair (current)</strong> — two oxen + yoke at -30° 3/4 view (front-side angle), no rings, fakeret intact</figcaption>
+  </figure>
+  <figure>
+    <img class="cycle" data-base="wagon-blender/ox-pair-yoke-prev-frames/pair-yoke-prev--" alt="">
+    <figcaption><strong>yoked pair (PREV)</strong> — +30° 3/4 view, fakeret z&lt;1.5 cut applied</figcaption>
+  </figure>
+  <figure>
+    <img class="cycle" data-base="wagon-blender/ox-yoke-wide-frames/yoke-wide--" alt="">
+    <figcaption><strong>widened yoke (current)</strong> — single ox side profile, YOKE_Y_SCALE=1.25, UV_COMP_BOOST=2.0, no rings, fakeret intact</figcaption>
+  </figure>
+  <figure>
+    <img class="cycle" data-base="wagon-blender/ox-yoke-wide-prev-frames/yoke-wide-prev--" alt="">
+    <figcaption><strong>widened yoke (PREV)</strong> — fakeret z&lt;1.5 cut applied (too aggressive)</figcaption>
+  </figure>
+</div>
+<script>
+  // Cycle through 12 frames at ~6 fps for each .cycle img
+  document.querySelectorAll('img.cycle').forEach(img => {
+    let i = 0;
+    const base = img.dataset.base;
+    const tick = () => {
+      img.src = `${base}${String(i).padStart(2, '0')}.png?t=${Date.now()}`;
+      i = (i + 1) % 12;
+    };
+    tick();
+    setInterval(tick, 167);
+  });
+</script>
+
+<h2 id="ground-strip">Painted ground strips (SDXL + ht_landscape v2_2000)</h2>
+<p class="hint">3072×512 source per biome. The LoRA paints vista compositions despite "no sky, no horizon" prompting (top ~40% is sky/horizon); production crops bottom ~60% via <code>preserveAspectRatio="xMidYMax slice"</code> in <code>GroundPainting.svelte</code>. Below: full source + bottom-cropped preview side-by-side. View composed at <a href="/dev/wagon-view?groundstrip=1" style="color:#eeedeb">/dev/wagon-view?groundstrip=1</a>.</p>
+<div class="grid lg">
+  <figure>
+    <img src="ground_strip-prairie.webp?v=3" alt="">
+    <figcaption><strong>prairie</strong> — full 3072×512 source (vista painted at top, trail at bottom)</figcaption>
+  </figure>
+  <figure>
+    <div style="height:120px;overflow:hidden;display:flex;align-items:flex-end;background:#222">
+      <img src="ground_strip-prairie.webp?v=3" alt="" style="width:100%;display:block;margin-top:auto">
+    </div>
+    <figcaption><strong>prairie</strong> — bottom-cropped preview (production look)</figcaption>
+  </figure>
+  <figure>
+    <img src="ground_strip-forest.webp?v=3" alt="">
+    <figcaption><strong>forest</strong> — full source</figcaption>
+  </figure>
+  <figure>
+    <div style="height:120px;overflow:hidden;display:flex;align-items:flex-end;background:#222">
+      <img src="ground_strip-forest.webp?v=3" alt="" style="width:100%;display:block;margin-top:auto">
+    </div>
+    <figcaption><strong>forest</strong> — bottom-cropped preview</figcaption>
+  </figure>
+  <figure>
+    <img src="ground_strip-desert.webp?v=3" alt="">
+    <figcaption><strong>desert</strong> — full source</figcaption>
+  </figure>
+  <figure>
+    <div style="height:120px;overflow:hidden;display:flex;align-items:flex-end;background:#222">
+      <img src="ground_strip-desert.webp?v=3" alt="" style="width:100%;display:block;margin-top:auto">
+    </div>
+    <figcaption><strong>desert</strong> — bottom-cropped preview</figcaption>
+  </figure>
+  <figure>
+    <img src="ground_strip-mountains.webp?v=3" alt="">
+    <figcaption><strong>mountains</strong> — full source</figcaption>
+  </figure>
+  <figure>
+    <div style="height:120px;overflow:hidden;display:flex;align-items:flex-end;background:#222">
+      <img src="ground_strip-mountains.webp?v=3" alt="" style="width:100%;display:block;margin-top:auto">
+    </div>
+    <figcaption><strong>mountains</strong> — bottom-cropped preview</figcaption>
+  </figure>
+</div>
+
+<h2 id="ground-strip-flux">Painted ground strip — universal trail (FLUX.1-dev FP8)</h2>
+<p class="hint">4096×384 source (1.57MP, ~10.7:1 aspect). Single biome-neutral trail tile shared across all backdrops; biome differentiation lives in <code>BackdropPainting</code> rather than the ground layer. Composition: 2D side-scroller game tile, camera off to the side looking sideways across the trail; two horizontal wagon-wheel ruts; debris scattered between. View composed at <a href="/dev/wagon-view?groundstrip=1" style="color:#eeedeb">/dev/wagon-view?groundstrip=1</a>.</p>
+
+<h3 style="color:#aa8a5a;font-size:0.9em;margin:0.4em 0">1. Full raw FLUX source (4096×384, before alpha post-process)</h3>
+<p class="hint">This is what FLUX actually painted. Use this to spot composition issues (rut counts, edge artifacts, color cast, etc).</p>
+<figure style="background:#2a1a08;padding:0.5em;border-radius:4px;margin-bottom:1em">
+  <img src="ground_strip-trail-raw.png?v=27" alt="" style="width:100%;display:block;background:#222">
+  <figcaption style="font-size:0.78em;color:#eeedeb;padding:0.3em 0 0">
+    <strong>raw FLUX output</strong> — current rut analysis: ONE dark rut at y=124 (32% from top, lum=103). NO clear second rut detected in the lower half (y=140-384 is uniformly bright dirt). The "line/barrier" effect comes from this single high rut having no companion below.
+  </figcaption>
+</figure>
+
+<h3 style="color:#aa8a5a;font-size:0.9em;margin:0.4em 0">2. After alpha post-process (top fade applied)</h3>
+<p class="hint">The version actually loaded into <code>GroundPainting.svelte</code>. Top 20% is alpha-faded so the painted backdrop shows through there.</p>
+<div class="grid lg">
+  <figure>
+    <img src="ground_strip-trail.webp?v=28" alt="">
+    <figcaption><strong>trail (alpha-faded)</strong> — full 4096×384 source with top fade</figcaption>
+  </figure>
+  <figure>
+    <div style="height:120px;overflow:hidden;display:flex;align-items:flex-end;background:#222">
+      <img src="ground_strip-trail.webp?v=28" alt="" style="width:100%;display:block;margin-top:auto">
+    </div>
+    <figcaption><strong>trail</strong> — bottom-cropped preview (production look)</figcaption>
+  </figure>
+</div>
+
+<h2 id="trail-debris">Trail debris sprites — 21, 4 categories</h2>
+<p class="hint">Individual FLUX-painted items at 1024², rembg-matted to transparent. Composited into <code>GroundPainting.svelte</code> by the deterministic <code>debris-field.ts</code> field (terrain + trail-progress + Fort-Laramie spike + graves∝deathCount). <strong>Quality gate per spec:</strong> the three <code>grave-*</code> sprites must read <em>somber</em>, not comical. Total payload ≈ 612 KB.</p>
+
+<h3 style="color:#aa8a5a;font-size:0.9em;margin:0.4em 0">natural (7) — everywhere; buffalo-chips weighted to treeless plains</h3>
+<div class="grid sm">
+  <figure style="background:#3a2d18"><img src="trail-debris/pebble-gray.webp?v=1" alt=""><figcaption><strong>pebble-gray</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/pebble-tan.webp?v=1" alt=""><figcaption><strong>pebble-tan</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/pebble-rust.webp?v=1" alt=""><figcaption><strong>pebble-rust</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/rock-cluster.webp?v=1" alt=""><figcaption><strong>rock-cluster</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/stick-short.webp?v=1" alt=""><figcaption><strong>stick-short</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/stick-curved.webp?v=1" alt=""><figcaption><strong>stick-curved</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/buffalo-chips.webp?v=1" alt=""><figcaption><strong>buffalo-chips</strong></figcaption></figure>
+</div>
+
+<h3 style="color:#aa8a5a;font-size:0.9em;margin:0.4em 0">bones (5) — mid-trail onward, ×1.5 on plains, ×0.6 in forest/mountains</h3>
+<div class="grid sm">
+  <figure style="background:#3a2d18"><img src="trail-debris/bison-skull.webp?v=1" alt=""><figcaption><strong>bison-skull</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/pronghorn-skull.webp?v=1" alt=""><figcaption><strong>pronghorn-skull</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/ox-skull.webp?v=1" alt=""><figcaption><strong>ox-skull</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/rib-cage.webp?v=1" alt=""><figcaption><strong>rib-cage</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/long-bones.webp?v=1" alt=""><figcaption><strong>long-bones</strong></figcaption></figure>
+</div>
+
+<h3 style="color:#aa8a5a;font-size:0.9em;margin:0.4em 0">junk (6) — ramps late + Camp-Sacrifice spike (Gaussian σ=0.05) at Fort Laramie</h3>
+<div class="grid sm">
+  <figure style="background:#3a2d18"><img src="trail-debris/broken-wheel.webp?v=1" alt=""><figcaption><strong>broken-wheel</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/discarded-barrel.webp?v=1" alt=""><figcaption><strong>discarded-barrel</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/abandoned-trunk.webp?v=1" alt=""><figcaption><strong>abandoned-trunk</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/cook-stove.webp?v=1" alt=""><figcaption><strong>cook-stove</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/anvil.webp?v=1" alt=""><figcaption><strong>anvil</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/bacon-heap.webp?v=1" alt=""><figcaption><strong>bacon-heap</strong></figcaption></figure>
+</div>
+
+<h3 style="color:#aa8a5a;font-size:0.9em;margin:0.4em 0">graves (3) — sparse, scaled by run's actual deathCount (capped at 0.6) — <em>somber gate</em></h3>
+<div class="grid sm">
+  <figure style="background:#3a2d18"><img src="trail-debris/grave-mound.webp?v=1" alt=""><figcaption><strong>grave-mound</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/grave-marker.webp?v=1" alt=""><figcaption><strong>grave-marker</strong></figcaption></figure>
+  <figure style="background:#3a2d18"><img src="trail-debris/grave-wolfdug.webp?v=1" alt=""><figcaption><strong>grave-wolfdug</strong></figcaption></figure>
+</div>
+
+<h2 id="textures">FLUX-generated textures</h2>
+<div class="grid sm">
+  <figure><img src="wagon-tex-flux/weathered-wood.png" alt=""><figcaption><strong>weathered-wood</strong></figcaption></figure>
+  <figure><img src="wagon-tex-flux/rust-iron.png" alt=""><figcaption><strong>rust-iron</strong></figcaption></figure>
+  <figure><img src="wagon-tex-flux/canvas-weave.png" alt=""><figcaption><strong>canvas-weave</strong></figcaption></figure>
+  <figure><img src="wagon-tex-flux/leather-harness.png" alt=""><figcaption><strong>leather-harness</strong></figcaption></figure>
+  <figure><img src="wagon-tex-flux/blue-paint.png" alt=""><figcaption><strong>blue-paint</strong></figcaption></figure>
+</div>
+
+</body>
+</html>
