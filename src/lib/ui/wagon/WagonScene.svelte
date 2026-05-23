@@ -316,6 +316,7 @@
           angle={wheelAngle}
           bounce={roughTerrainBounce}
           health={gameState.wagon.condition}
+          t={tEff}
           {addons}
         />
       </g>
@@ -328,6 +329,7 @@
           {isMule}
           {gaitPhase}
           gait={paused ? 'stopped' : 'walking'}
+          useBlenderTeam={addons.useBlenderTeam}
         />
       </g>
 

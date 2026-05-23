@@ -30,6 +30,7 @@
     W_INK,
     W_IRON,
     W_RUST,
+    W_WOOD,
     W_WOOD_DARK,
     W_WOOD_LIGHT,
     W_CANVAS_PATCH,
@@ -40,6 +41,7 @@
   import Driver from './Driver.svelte';
   import WaterKeg from './WaterKeg.svelte';
   import ChickenCoop from './ChickenCoop.svelte';
+  import CoopFeathers from './CoopFeathers.svelte';
 
   interface Props {
     angle?: number;
@@ -52,6 +54,12 @@
     /** Render the canvas top? Defaults true. The dev viewer turns it
      *  off so you can see what's inside the wagon (water kegs etc). */
     showCanvas?: boolean;
+    /** Use the FLUX-rendered painterly raster body instead of the
+     *  hand-authored SVG bed+canvas+wheels. Hybrid+ approach: maximum
+     *  visual fidelity for the wagon body, with SVG overlays handling
+     *  the animated parts (butter pail swing, coop feathers, ox team).
+     *  Defaults false (legacy SVG path) for fallback compatibility. */
+    useFluxBody?: boolean;
   }
 
   let {
@@ -60,12 +68,13 @@
     health = 100,
     addons = {},
     t = 0,
-    showCanvas = true
+    showCanvas = true,
+    useFluxBody = false
   }: Props = $props();
 
   const dmg = $derived(healthToDamage(health));
-  const painted = $derived(false);
-  const tarBucketOn = $derived(false);
+  const painted = $derived(addons.painted === true);
+  const tarBucketOn = $derived(addons.tarBucket !== false);
 
   // Pattern sizes in user-space SVG units. Smaller = more visible tiling
   // but more readable features per tile; larger = less obvious tiling
@@ -196,6 +205,15 @@
      l0 1.7 l-30 0 z`
   );
 
+  // Butter pail anchor — slung between axles, hung on a rope from
+  // the bed underside. Sits in the narrow gap between bed bottom and
+  // ground. churnPailY is the pail's TOP (rope ends there). With
+  // bedBotY=6 and wheel bottom at 12, position pail at y≈7..8.5
+  // (just below bed, well above ground).
+  const churnX = $derived(bedX + bedW * 0.5);
+  const churnTopY = $derived(bedBotY + 0.1);
+  const churnPailY = $derived(bedBotY + 1.0);
+
   // Tar bucket anchor — hung from the rear axle stub by a short chain
   // (~6 inch / 0.8 SVG units). The bucket sits AT axle level (wheelY),
   // not dangling far below — period photos show it close to the axle
@@ -204,11 +222,109 @@
   const tarTopY = $derived(wheelY - 0.4);
   const tarBucketY = $derived(wheelY + 0.2);
 
+  // Butter pail swing — the wagon's motion churns the milk into butter
+  // by rocking the pail from side to side. Pendulum motion, slow period
+  // (~1.6s), small amplitude (~6°). Driven by the parent's `t` tick.
+  // Frozen when paused (t doesn't advance).
+  const churnSwingDeg = $derived(Math.sin(t * Math.PI * 1.25) * 6);
 
+  // Milk-cow anchor (placeholder rect — to be replaced by MilkCow.svelte).
+  const cowX = $derived(bedTopR + 6.5);
+  const cowY = $derived(wheelY + 1.0);
 </script>
 
 <g transform="translate(0 {bounce})">
+{#if addons.useBlenderBody}
+  <!-- BLENDER BODY MODE — render Blender-rendered body PNG (no wheels)
+       and overlay an animated wheel-frame PNG on top. 12 wheel frames
+       cycle through one rotation; selected by `angle` (0-360°). -->
+  {#if addons.showGroundShadow !== false}
+    <ellipse cx="0" cy="11.8" rx={bedW / 2 + 6} ry="1.6" fill={W_INK} opacity="0.32" />
+  {/if}
+  <!-- 24 wheel frames cover a full 360° rotation (15°/frame). Wrap is
+       lossless (frame 24 = frame 0 exact rotation) so there's no
+       symmetry-based loop snap. Union 1430×571 (aspect 2.50).
+       ?v=5 cache-bust — bump on re-renders. -->
+  <image href="/wagon-bg/wagon-blender/prairie-schooner-body--nowheels.png?v=5"
+         x="-32" y="-13" width="65" height="26.0"
+         preserveAspectRatio="xMidYMid meet" />
+  {#if addons.showWheels !== false}
+    {@const wheelFrame = String(Math.floor(((angle % 360 + 360) % 360) / 360 * 24) % 24).padStart(2, '0')}
+    <image href="/wagon-bg/wagon-blender/prairie-schooner-wheels-frames/wheel--{wheelFrame}.png?v=5"
+           x="-32" y="-13" width="65" height="26.0"
+           preserveAspectRatio="xMidYMid meet" />
+  {/if}
+  {#if addons.driver}
+    <!-- Blender-driver default offsets (dialed in 2026-05-07): the
+         cowboy PNG's hip anchor lands ~20 wagon-units ahead and ~2.6
+         above bedTopL/bedTopY, scaled 1.8× for human-to-wagon ratio.
+         Override via addons.driverDx/Dy/Scale. -->
+    <Driver x={bedTopL - 2} y={bedTopY - 0.2} variant="schooner"
+            useBlender={addons.useBlenderDriver}
+            dx={addons.driverDx ?? (addons.useBlenderDriver ? 19.7 : 0)}
+            dy={addons.driverDy ?? (addons.useBlenderDriver ? -2.6 : 0)}
+            scale={addons.driverScale ?? (addons.useBlenderDriver ? 1.8 : 1)} />
+  {/if}
+{:else if useFluxBody}
+  <!-- HYBRID+ FLUX BODY MODE — painterly raster sprite covers the wagon
+       bed, canvas, wheels, tongue, and doubletree. Animated overlays
+       (butter pail, coop feathers) and game-state-driven addons (driver,
+       chicken coop, milk cow) still render as SVG ON TOP of this image. -->
+  <ellipse cx="0" cy="11.8" rx={bedW / 2 + 6} ry="1.6" fill={W_INK} opacity="0.32" />
 
+  <!-- The FLUX body sprite is 1536×640 (2.4:1). Composited at width=50,
+       height=21 to roughly match the wagon's full horizontal span (tongue
+       tip to rear) and vertical span (canvas top to wheel bottom).
+       preserveAspectRatio="xMidYMid meet" preserves the painted aspect
+       within those bounds. -->
+  <image href="/wagon-bg/wagon-body/prairie-schooner--fresh.png"
+         x="-32" y="-10" width="50" height="22"
+         preserveAspectRatio="xMidYMid meet" />
+
+  <!-- Butter pail swing — SVG overlay so the swing animation works. -->
+  {#if (addons.butterChurn ?? 0) > 0}
+    <g transform="rotate({churnSwingDeg} {churnX} {churnTopY})">
+      <line x1={churnX - 0.6} y1={churnTopY} x2={churnX - 0.6} y2={churnPailY - 0.2}
+            stroke={W_WOOD_DARK} stroke-width="0.18" />
+      <line x1={churnX + 0.6} y1={churnTopY} x2={churnX + 0.6} y2={churnPailY - 0.2}
+            stroke={W_WOOD_DARK} stroke-width="0.18" />
+      <rect x={churnX - 1.0} y={churnPailY - 0.2} width="2.0" height="1.7"
+            fill="url(#ps-wood-sm)" stroke={W_INK} stroke-width="0.3" rx="0.15" />
+      <line x1={churnX - 1.0} y1={churnPailY + 0.1} x2={churnX + 1.0} y2={churnPailY + 0.1}
+            stroke={W_IRON} stroke-width="0.18" />
+      <line x1={churnX - 1.0} y1={churnPailY + 1.2} x2={churnX + 1.0} y2={churnPailY + 1.2}
+            stroke={W_IRON} stroke-width="0.18" />
+      <rect x={churnX - 1.05} y={churnPailY - 0.45} width="2.1" height="0.35"
+            fill={W_WOOD_DARK} stroke={W_INK} stroke-width="0.2" />
+      <rect x={churnX - 1.0} y={churnPailY - 0.2} width="2.0" height="1.7"
+            fill="url(#ps-pail-shade)" rx="0.15" />
+    </g>
+  {/if}
+
+  <!-- Chicken coop + feathers (game-state visible) -->
+  {#if (addons.coop ?? 0) > 0}
+    <ChickenCoop x={bedX + bedW + 4.0} y={bedBotY - 0.5} size="md"
+                 chickens={Math.min(5, addons.coop ?? 0)} />
+    <CoopFeathers x={bedX + bedW + 4.0} y={bedBotY - 0.5 - 3.5} {t}
+                  chickens={addons.coop ?? 0} />
+  {/if}
+
+  <!-- Milk cow placeholder -->
+  {#if (addons.milkCow ?? 0) > 0}
+    <g>
+      <rect x={cowX - 2.5} y={cowY - 1.5} width="5" height="3"
+            fill="#7a4a2a" stroke={W_INK} stroke-width="0.3" rx="0.4" />
+      <circle cx={cowX - 2.8} cy={cowY - 1.0} r="1.0"
+              fill="#7a4a2a" stroke={W_INK} stroke-width="0.3" />
+      <line x1={cowX - 1.5} y1={cowY + 1.5} x2={cowX - 1.5} y2={cowY + 3.5}
+            stroke={W_INK} stroke-width="0.5" />
+      <line x1={cowX + 1.5} y1={cowY + 1.5} x2={cowX + 1.5} y2={cowY + 3.5}
+            stroke={W_INK} stroke-width="0.5" />
+      <line x1={bedTopR + 0.5} y1={bedBotY + 0.2} x2={cowX - 2.0} y2={cowY - 0.5}
+            stroke="#8a6a3a" stroke-width="0.2" />
+    </g>
+  {/if}
+{:else}
   <defs>
     <!-- Painterly pattern fills. PNG sources at static/wagon-bg/wagon-tex-flux/. -->
     <pattern id="ps-blue-paint" patternUnits="userSpaceOnUse"
@@ -308,6 +424,38 @@
        obscured by the deep bed extending down to nearly axle level.
        Earlier renders drew both as horizontal lines between the wheels
        which looked like a car driveshaft — wagons didn't have those.) -->
+
+  <!-- BUTTER PAIL — slung underneath between axles (period detail; doc
+       08 §5). Rendered HERE so the wheel & bed sit on top of the rope.
+       Visible only when butterChurn > 0 (the player has the item). -->
+  {#if (addons.butterChurn ?? 0) > 0}
+    <!-- The whole pail+ropes group rotates around the anchor at
+         (churnX, churnTopY) — that's where the rope attaches to the
+         bed underside. Pendulum swing churns the milk into butter
+         (period "wagon-churned butter trick"). -->
+    <g transform="rotate({churnSwingDeg} {churnX} {churnTopY})">
+      <!-- rope -->
+      <line x1={churnX - 0.6} y1={churnTopY} x2={churnX - 0.6} y2={churnPailY - 0.2}
+            stroke={W_WOOD_DARK} stroke-width="0.18" />
+      <line x1={churnX + 0.6} y1={churnTopY} x2={churnX + 0.6} y2={churnPailY - 0.2}
+            stroke={W_WOOD_DARK} stroke-width="0.18" />
+      <!-- pail body (covered, ~1.6 wide × 1.5 tall) -->
+      <rect x={churnX - 1.0} y={churnPailY - 0.2} width="2.0" height="1.7"
+            fill="url(#ps-wood-sm)" stroke={W_INK} stroke-width="0.3"
+            rx="0.15" />
+      <!-- iron hoops -->
+      <line x1={churnX - 1.0} y1={churnPailY + 0.1} x2={churnX + 1.0} y2={churnPailY + 0.1}
+            stroke={W_IRON} stroke-width="0.18" />
+      <line x1={churnX - 1.0} y1={churnPailY + 1.2} x2={churnX + 1.0} y2={churnPailY + 1.2}
+            stroke={W_IRON} stroke-width="0.18" />
+      <!-- lid (the period covered-pail trick) -->
+      <rect x={churnX - 1.05} y={churnPailY - 0.45} width="2.1" height="0.35"
+            fill={W_WOOD_DARK} stroke={W_INK} stroke-width="0.2" />
+      <!-- side shading -->
+      <rect x={churnX - 1.0} y={churnPailY - 0.2} width="2.0" height="1.7"
+            fill="url(#ps-pail-shade)" rx="0.15" />
+    </g>
+  {/if}
 
   <!-- TAR BUCKET — dangling on a chain from the rear axle, between/behind
        the rear wheels. Iconic period detail (doc 08 §2). Always rendered
@@ -505,7 +653,11 @@
         - driver: on the bench seat at the front
    -->
   {#if addons.driver}
-    <Driver x={bedTopL - 2} y={bedTopY - 0.2} variant="schooner" />
+    <Driver x={bedTopL - 2} y={bedTopY - 0.2} variant="schooner"
+            useBlender={addons.useBlenderDriver}
+            dx={addons.driverDx ?? (addons.useBlenderDriver ? 19.7 : 0)}
+            dy={addons.driverDy ?? (addons.useBlenderDriver ? -2.6 : 0)}
+            scale={addons.driverScale ?? (addons.useBlenderDriver ? 1.8 : 1)} />
   {/if}
   {#if (addons.kegs ?? 0) >= 1}
     <!-- Water kegs sit INSIDE the wagon's cargo area, on top of stacked
@@ -539,6 +691,11 @@
     <line x1={bedX + bedW - 0.2} y1={bedTopY + 3.0}
           x2={bedX + bedW + 2.5} y2={bedTopY + 3.5}
           stroke="#8a6a3a" stroke-width="0.25" />
+    <!-- Feathers emit from the coop top center — now clearly behind
+         the canvas overhang so they read as coming out of the COOP,
+         not out from under the wagon's bonnet. -->
+    <CoopFeathers x={bedX + bedW + 4.0} y={bedBotY - 0.5 - 3.5} {t}
+                  chickens={addons.coop ?? 0} />
   {/if}
 
   <!-- CANVAS TOP — drawn LAST so its overhang sits in front of bed top.
@@ -558,6 +715,31 @@
                    spokes={10} broken={dmg.wheelFront} />
   <HistoricalWheel cx={bedX + bedW - 5} cy={wheelY} r={wheelBackR} {angle}
                    spokes={12} broken={dmg.wheelBack} />
+
+  <!-- MILK COW ANCHOR — placeholder rect tied to the rear of the wagon.
+       Gets replaced by a dedicated MilkCow.svelte component later; the
+       wagon component is responsible only for the anchor coords + the
+       tether rope from rear of bed back to her halter. (doc 08 §7) -->
+  {#if (addons.milkCow ?? 0) > 0}
+    <g>
+      <!-- tether rope from bed rear to cow head -->
+      <path d={`M${bedX + bedW + 0.5} ${bedTopY + 2.6}
+                Q${bedX + bedW + 3.5} ${bedTopY + 3.5} ${cowX - 1.6} ${cowY - 1.5}`}
+            stroke={W_WOOD_DARK} stroke-width="0.22" fill="none" stroke-linecap="round" />
+      <!-- placeholder cow body — to be replaced by MilkCow.svelte:
+           a brown rounded rect roughly the silhouette of a small heifer,
+           ~3.2 wide × 2.0 tall. Walks BEHIND the wagon at rope's end. -->
+      <rect x={cowX - 1.6} y={cowY - 1.5} width="3.2" height="2.0"
+            rx="0.4" fill={W_WOOD} stroke={W_INK} stroke-width="0.4" opacity="0.7" />
+      <!-- placeholder head -->
+      <circle cx={cowX - 1.9} cy={cowY - 1.2} r="0.7" fill={W_WOOD} stroke={W_INK} stroke-width="0.3" opacity="0.7" />
+      <!-- placeholder legs -->
+      <line x1={cowX - 1.2} y1={cowY + 0.5} x2={cowX - 1.2} y2={cowY + 2.5}
+            stroke={W_INK} stroke-width="0.3" />
+      <line x1={cowX + 1.0} y1={cowY + 0.5} x2={cowX + 1.0} y2={cowY + 2.5}
+            stroke={W_INK} stroke-width="0.3" />
+    </g>
+  {/if}
 
   <!-- ============================================================
        WEAR-OVERLAY GROUP — runs LAST so it stamps on top of the
@@ -596,4 +778,5 @@
             opacity="0.45" stroke-linecap="round" />
     {/each}
   </g>
+{/if}
 </g>

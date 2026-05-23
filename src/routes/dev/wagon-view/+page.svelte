@@ -224,7 +224,7 @@
     {#key restartKey}
       <WagonScene state={previewState} {timeOfDay} {paused}
                   backdropVariant={variant === -1 ? undefined : variant}
-                  addonsOverride={{ driver: useBlenderDriver }}
+                  addonsOverride={{ driver: useBlenderDriver, useBlenderDriver, useBlenderBody, useBlenderTeam }}
                   tuning={{ wagonX, wagonGroundOffset, tongueBase, tonguePerPair }} />
     {/key}
   </section>
