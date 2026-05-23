@@ -283,6 +283,11 @@ export interface WagonTrain {
     mode: CompanyRestMode;
     blockStartDay: number;
     dissentChoice?: 'abide' | 'override' | 'lobby_ok' | 'lobby_fail' | 'press_on';
+    /** #910 — once-per-block dedup for `applyTrainShare`. Set after
+     *  a generous NPC successfully transfers food to the player wagon
+     *  during this lay-by block; reset implicitly when C2's
+     *  `isNewBlock` stamps a fresh companyDecisionBlock. */
+    sharedThisBlock?: boolean;
   };
 }
 

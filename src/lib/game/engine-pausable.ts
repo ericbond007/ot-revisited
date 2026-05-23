@@ -23,6 +23,7 @@ import { isSunday } from './utils/calendar';
 import { hasLivePreacher } from './professions/predicates';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyDailyRecovery } from './systems/travel-recovery';
+import { applyTrainShare } from './systems/train-share';
 import { applyHolidays } from './systems/holidays';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
@@ -219,6 +220,11 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // because on a dissent day "did we move" is only known after the
   // player's choice — applyCompanyDissent applies it for that path.
   s = applyDailyRecovery(s, companyMode === 'travel');
+  // #910 — generous-driven food sharing at company camp. The system
+  // self-gates (no-op unless block.mode is sabbath/maintenance_layby
+  // and sharedThisBlock is still false), so it's safe to call every
+  // day; only fires once per lay-by block.
+  s = applyTrainShare(s, rng);
 
   // #300 — capture miles before travel so advanceTrain can drive the
   // NPC axle-grease consumption cycle off the same daily delta.
@@ -405,6 +411,11 @@ export function applyCompanyDissent(
   const dc = s.wagonTrain?.companyDecisionBlock?.dissentChoice;
   const travels = !s.wagonTrain || dc === 'override' || dc === 'lobby_ok';
   s = applyDailyRecovery(s, travels);
+  // #910 — generous-driven food sharing at company camp. Self-gates;
+  // on a press-on/override (travels=true) the block is travel and the
+  // system no-ops, on an abide/lobby_fail the block stays a lay-by
+  // and the share may fire (once per block).
+  s = applyTrainShare(s, rng);
   if (travels) s = applyTravel(s, rng);
   s = attemptFire(s, rng);
   s = reapDead(s, rng);

@@ -58,6 +58,14 @@ export interface PersonaForesight {
   safetyFactor: number;
 }
 
+/** #910 — share order returned by `Persona.shouldShareWithTrain`. The
+ *  item id is a string (ItemId-typed at the engine consumer side; kept
+ *  loose here to avoid pulling content types into the AI surface). */
+export interface ShareOrder {
+  item: string;
+  qty: number;
+}
+
 export interface Persona {
   id: PersonaId;
   /** #934 — Foresight identity, see PersonaForesight. */
@@ -77,6 +85,17 @@ export interface Persona {
    *  return 'abide' for travel. The bot-player path maps 'lobby' to
    *  the captain-override when the bot itself is captain. */
   shouldDissent(state: GameState, decision: CompanyRestDecision, rng: Rng): 'abide' | 'lobby' | 'press_on';
+  /** #910 — Generous-driven food sharing at company camp. Called by
+   *  `applyTrainShare` for each NPC companion wagon on a sabbath /
+   *  maintenance lay-by block (once per block, dedup'd by the engine).
+   *  Returns the share order (item id + qty) or null to skip. Only
+   *  consulted in a lay-by block; the engine handles the outer gating
+   *  (lay-by mode, block dedup, train present). The persona answers
+   *  the inner question: given I COULD share now, do I want to and
+   *  what? Generous returns a flour share when tended + reserve ample;
+   *  all other personas default to null (hoarder explicitly, others
+   *  by no spontaneous-giving in their character). */
+  shouldShareWithTrain(state: GameState, rng: Rng): ShareOrder | null;
   /** Should the party hunt? Returns true when food is low + ammo available. */
   shouldHunt(state: GameState, rng: Rng): boolean;
   /** Pick a river-crossing method. `native_ferry` is preferred when the
