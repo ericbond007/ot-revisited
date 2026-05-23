@@ -20,6 +20,16 @@ export interface WagonRender {
     bounce?: number;
     health?: number;
     addons?: WagonAddons;
+    /** Animation tick in seconds. Drives feather emission off the
+     *  chicken coop and any other time-driven detail. Optional;
+     *  defaults to 0 for static snapshots. */
+    t?: number;
+    /** Render the canvas top? Defaults true. Dev viewer turns it off
+     *  to inspect cargo interior (water kegs, etc). */
+    showCanvas?: boolean;
+    /** Use the FLUX-rendered painterly raster body (Hybrid+ approach)
+     *  instead of the SVG composite. Defaults false. */
+    useFluxBody?: boolean;
   }>;
   defaultKegs: number;
   defaultCoop: number;

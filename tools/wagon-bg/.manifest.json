@@ -67,5 +67,9 @@
   "ground-desert.webp": "86428e8b8b92a2ef",
   "ground-forest.webp": "d475173ef45f86fb",
   "ground-mountains.webp": "93e2dcd6cb9c7e53",
-  "ground-prairie.webp": "c822f6e1a4a9c2f6"
+  "ground-prairie.webp": "c822f6e1a4a9c2f6",
+  "ground_strip-desert.webp": "a1b5d3acde821615",
+  "ground_strip-forest.webp": "a8e829c820a517a6",
+  "ground_strip-mountains.webp": "febd6a2765af53b1",
+  "ground_strip-prairie.webp": "ac4f86aa9998aeeb"
 }

@@ -61,6 +61,13 @@
     /** Render mules instead of oxen — passes through to SingleOx via
      *  the legacy fallback rendering. */
     isMule?: boolean;
+    /** Dev-only: skip per-ox SingleOx composer and render a single
+     *  Blender-rendered team frame cycling through ox-team-frames/. */
+    useBlenderTeam?: boolean;
+    /** Dev-only: per-ox sprite alignment + scale tweaks (Blender mode). */
+    oxDx?: number;
+    oxDy?: number;
+    oxScale?: number;
   }
 
   let {
@@ -68,8 +75,19 @@
     gait = 'walking',
     gaitPhase = 0,
     showPole = true,
-    isMule = false
+    isMule = false,
+    useBlenderTeam = false,
+    oxDx = 0,
+    oxDy = 0,
+    oxScale = 1,
   }: Props = $props();
+
+  // Blender frame index: 12 frames over one gait cycle. The
+  // ox-walk-only-frames set is the ox body alone — no harness, since
+  // harness is rendered once between wagon and lead pair.
+  const blenderFrame = $derived(
+    String(Math.floor(((gaitPhase % 1) + 1) % 1 * 12) % 12).padStart(2, '0')
+  );
 
   const stopped = $derived(gait === 'stopped');
   const numPairs = $derived(Math.max(1, Math.ceil(count / 2)));
@@ -196,6 +214,21 @@
 <!-- Everything hitched together — pole, yokes, chains, oxen — bobs as
      a single mass. teamBob is also exposed via data-team-bob so
      WagonScene can apply the same y-translate to the wagon. -->
+{#if useBlenderTeam}
+  <!-- BLENDER TEAM MODE — ox + yoke per pair (side profile). Each
+       sprite is one ox with the wooden yoke attached at the neck;
+       the rope/beam is hidden so multi-pair tiling stays clean.
+       Yoke shape was tuned in render-yoke-set.sh — see that file for
+       the YOKE_Y_SCALE/UV_COMP_BOOST/YOKE_BOW_STRETCH/YOKE_PEG_SCALE
+       parameters. Cropped sprite aspect ≈ 1.246. -->
+  {#each pairs as pair}
+    {@const w = PAIR_SPACE * oxScale}
+    {@const h = PAIR_SPACE / 1.246 * oxScale}
+    <image href="/wagon-bg/wagon-blender/ox-yoke-wide-frames/yoke-wide--{blenderFrame}.png"
+           x={pair.px - w / 2 + oxDx} y={-10 + oxDy} width={w} height={h}
+           preserveAspectRatio="xMidYMid meet" />
+  {/each}
+{:else}
 <g transform="translate(0 {teamBob})" data-team-bob={teamBob.toFixed(4)}>
   {#if showPole}
     <g transform="translate({frontPolePx} 0)">
@@ -246,3 +279,4 @@
     </g>
   {/each}
 </g>
+{/if}

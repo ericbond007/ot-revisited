@@ -14,9 +14,26 @@
     bounce?: number;
     health?: number;
     addons?: WagonAddons;
+    /** Animation tick in seconds. Currently unused on this variant
+     *  (no feathers wired yet); accepted to satisfy the WagonRender
+     *  Component contract. */
+    t?: number;
+    /** Render canvas top? Currently unused on this variant; accepted
+     *  to satisfy the WagonRender Component contract. */
+    showCanvas?: boolean;
+    /** Use FLUX painterly body? Currently unused on this variant. */
+    useFluxBody?: boolean;
   }
 
-  let { angle = 0, bounce = 0, health = 100, addons = {} }: Props = $props();
+  let {
+    angle = 0,
+    bounce = 0,
+    health = 100,
+    addons = {},
+    t: _t = 0,
+    showCanvas: _showCanvas = true,
+    useFluxBody: _useFluxBody = false
+  }: Props = $props();
 
   const dmg = $derived(healthToDamage(health));
   const bedW = 36;
@@ -79,7 +96,7 @@
 
   <!-- addons -->
   {#if addons.driver}
-    <Driver x={bedX + 3} y={bedY - 1.5} variant="conestoga" />
+    <Driver x={bedX + 3} y={bedY} variant="conestoga" useBlender={addons.useBlenderDriver} />
   {/if}
   {#if (addons.kegs ?? 0) >= 1}
     <WaterKeg x={bedX + bedW * 0.45} y={bedY + 1.5} large />

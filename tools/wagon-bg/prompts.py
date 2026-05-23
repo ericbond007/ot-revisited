@@ -16,12 +16,18 @@ match the LoRA's training caption pattern.
 from dataclasses import dataclass
 from typing import Literal
 
-Layer = Literal["backdrop", "ground"]
+Layer = Literal["backdrop", "ground", "ground_strip"]
 Terrain = Literal["prairie", "forest", "desert", "mountains", "river"]
 
 DIMS: dict[Layer, tuple[int, int]] = {
-    "backdrop": (3072, 768),
-    "ground":   (1024, 512),
+    "backdrop":     (3072, 768),
+    "ground":       (1024, 512),
+    # ground_strip — side-view ground band, designed to tile horizontally
+    # and scroll with the wagon (parallax-faster than the backdrop). 3072
+    # wide matches the backdrop's horizontal repeat math; 512 tall gives
+    # room for the trail surface + grass-line top edge. Wagon planted on
+    # this band at runtime per /dev/wagon-view's `?groundstrip=1` toggle.
+    "ground_strip": (3072, 512),
 }
 
 NEGATIVE_PROMPT = (
@@ -35,6 +41,21 @@ NEGATIVE_PROMPT = (
     "large foreground tree, framing tree, specimen tree, gnarled tree, "
     "oak tree in foreground, maple tree in foreground, close-up tree"
 )
+
+# Layer-specific negative prompt EXTENSION. generate.py concatenates this
+# to NEGATIVE_PROMPT for matching layers. Keeps the shared base negative
+# (good for backdrops) intact while ruling out vista/perspective grammar
+# that the ground_strip layer specifically must avoid.
+NEGATIVE_PROMPT_BY_LAYER: dict[str, str] = {
+    "ground_strip": (
+        ", perspective view, vanishing point, depth of field, "
+        "receding trail, trail going into distance, road perspective, "
+        "one-point perspective, three-quarter view, landscape vista, "
+        "panoramic view, distant landscape, mountain range, hills, "
+        "horizon, sky, clouds, atmospheric perspective, aerial view, "
+        "top-down view, overhead view, satellite view"
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -243,14 +264,64 @@ PROMPTS: list[TilePrompt] = [
        "packed earth, gravel and stones on both sides, looking straight down, no sky, no horizon,"
        " no panorama, no snow, ground only, painterly cartoon adventure game art"),
 
+    # ============================================================
+    # GROUND_STRIP — flat 2D side-scrolling game ground tile. NOT a
+    # landscape painting. Think 2D platformer cross-section: viewer
+    # stands at ground level looking sideways, the trail runs L→R as
+    # a horizontal band, no vanishing point, no depth, no horizon.
+    #
+    # ht_landscape LoRA was tried first and forced vista compositions
+    # (predictable: it's trained on Hudson River / Whittredge plains
+    # paintings where horizon is the central grammar). Dropped here —
+    # DEFAULT_LORAS_BY_LAYER sets ground_strip to no LoRA, and the
+    # trigger word "ht_landscape" is removed from these prompts. Style
+    # cue is "side scrolling game" framing, which steers SDXL toward
+    # flat 2D compositions even without a custom LoRA.
+    #
+    # Composition rules baked into every prompt:
+    #   - flat 2D side view, orthographic projection
+    #   - top edge: grass / leaf-litter / sage line (transition zone)
+    #   - body: dirt / pebbles / trail texture as a horizontal band
+    #   - two ruts run parallel L→R across the entire frame
+    #   - NO sky, NO horizon, NO distance, NO depth cues
+    # ============================================================
+    _t("ground_strip", "prairie", 710001,
+       "flat 2D side scrolling game ground tile, orthographic side view, no perspective, no depth, "
+       "horizontal cross-section of prairie trail, two parallel wagon wheel ruts in packed dirt "
+       "running straight horizontally left to right across the entire frame, packed earth trail "
+       "surface with scattered pebbles and crushed grass between the ruts, narrow band of dense "
+       "tall prairie grass with wildflowers along the very top edge of the frame, ground band only, "
+       "flat horizontal composition, painterly illustration"),
+    _t("ground_strip", "forest", 710002,
+       "flat 2D side scrolling game ground tile, orthographic side view, no perspective, no depth, "
+       "horizontal cross-section of forest trail, two parallel wagon wheel ruts in packed earth "
+       "running straight horizontally left to right across the entire frame, dirt trail surface "
+       "with fallen leaves and twigs between the ruts, narrow band of ferns and moss along the "
+       "very top edge of the frame, ground band only, flat horizontal composition, painterly "
+       "illustration"),
+    _t("ground_strip", "desert", 710003,
+       "flat 2D side scrolling game ground tile, orthographic side view, no perspective, no depth, "
+       "horizontal cross-section of desert trail, two parallel wagon wheel ruts in dry cracked "
+       "dirt running straight horizontally left to right across the entire frame, sandy trail "
+       "surface with scattered small rocks between the ruts, sparse sage brush tufts along the "
+       "very top edge of the frame, ground band only, flat horizontal composition, painterly "
+       "illustration"),
+    _t("ground_strip", "mountains", 710004,
+       "flat 2D side scrolling game ground tile, orthographic side view, no perspective, no depth, "
+       "horizontal cross-section of mountain trail, two parallel wagon wheel ruts in packed earth "
+       "running straight horizontally left to right across the entire frame, gravelly trail surface "
+       "with scattered stones between the ruts, low alpine grass and small wildflowers along the "
+       "very top edge of the frame, ground band only, flat horizontal composition, painterly "
+       "illustration"),
 ]
 
 
 if __name__ == "__main__":
-    # Smoke check: 24 entries — 20 backdrop + 4 ground. Unique filenames + seeds.
-    assert len(PROMPTS) == 24, f"expected 24 prompts, got {len(PROMPTS)}"
-    assert len({p.filename for p in PROMPTS}) == 24, "duplicate filenames"
-    assert len({p.seed for p in PROMPTS}) == 24, "duplicate seeds"
+    # Smoke check: 28 entries — 20 backdrop + 4 ground + 4 ground_strip.
+    expected = 28
+    assert len(PROMPTS) == expected, f"expected {expected} prompts, got {len(PROMPTS)}"
+    assert len({p.filename for p in PROMPTS}) == expected, "duplicate filenames"
+    assert len({p.seed for p in PROMPTS}) == expected, "duplicate seeds"
     for p in PROMPTS:
         print(f"{p.filename:32s} seed={p.seed} {p.width}x{p.height}")
     print(f"OK: {len(PROMPTS)} tiles, no duplicates")

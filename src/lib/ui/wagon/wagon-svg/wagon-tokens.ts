@@ -47,8 +47,50 @@ export function healthToDamage(health: number): WagonDamage {
 /** Common addon flags. Wagon components gate addon rendering off these. */
 export interface WagonAddons {
   driver?: boolean;
+  /** Dev-only: swap the SVG driver for the Blender-rendered cowboy PNG. */
+  useBlenderDriver?: boolean;
+  /** Dev-only: swap the SVG/FLUX wagon body for the Blender-rendered
+   *  prairie-schooner body PNG with animated wheel frame overlays. */
+  useBlenderBody?: boolean;
+  /** Dev-only: swap the per-ox SingleOx composer for an animated team
+   *  PNG cycling through Blender-rendered ox-team-frames. */
+  useBlenderTeam?: boolean;
+  /** Dev-only: hide the wheel-frame overlay so the body PNG is shown
+   *  alone (used to debug wheel-residue baked into the body render). */
+  showWheels?: boolean;
+  /** Dev-only: hide the SVG ground-shadow ellipse under the wagon. */
+  showGroundShadow?: boolean;
+  /** Dev-only: nudge the driver in wagon-local SVG units. */
+  driverDx?: number;
+  driverDy?: number;
+  /** Dev-only: scale factor for the Blender driver sprite. 1 = default. */
+  driverScale?: number;
   /** Number of water kegs (0–2). Bound to the wagon model, not inventory. */
   kegs?: number;
   /** Number of chickens; if > 0, a coop is rendered. */
   coop?: number;
+  /**
+   * If > 0, a covered milk pail is slung beneath the wagon between the
+   * axles (period-correct wagon-churned butter). See doc 08 §5.
+   */
+  butterChurn?: number;
+  /**
+   * If > 0, a milk cow (or small cluster of cows) is rendered tied
+   * behind the wagon. The cow figure itself is a placeholder until a
+   * dedicated MilkCow.svelte exists; the wagon component just exposes
+   * the anchor coords here.
+   */
+  milkCow?: number;
+  /**
+   * If true, the bed is rendered painted (Colonial Blue 1840s schooner).
+   * Default false = bare unfinished wood (also period-correct, many
+   * wagons left unpainted to save weight + cost).
+   */
+  painted?: boolean;
+  /**
+   * If false, suppresses the rear-axle tar bucket. Defaults true: every
+   * operational wagon carried one. Provided as an override (e.g. for a
+   * "broke down" silhouette).
+   */
+  tarBucket?: boolean;
 }
