@@ -87,6 +87,49 @@ def copy_opaque_to_webp(src_png: Path, dst_webp: Path, *, quality: int = 85) -> 
     src_img.save(dst_webp, format="WEBP", quality=quality, method=6)
 
 
+def copy_with_top_fade_to_webp(
+    src_png: Path,
+    dst_webp: Path,
+    *,
+    cut_frac: float,
+    fade_frac: float = 0.04,
+    quality: int = 85,
+) -> None:
+    """Save src_png as a WebP with the top portion alpha-faded to transparent.
+    No rembg pass — used when the source painting is already clean and we
+    just want the top N percent to disappear so a backdrop shows through.
+
+    The alpha envelope is:
+      y in [0, cut_y - fade_px)     → alpha = 0  (fully transparent)
+      y in [cut_y - fade_px, cut_y) → alpha = linear ramp 0 → 1
+      y in [cut_y, height)          → alpha = 1  (fully opaque)
+
+    `cut_frac` is the fraction of source height that should be transparent at
+    the top (e.g. 0.18 = top 18% goes transparent, rest stays opaque).
+    `fade_frac` controls the soft transition band (default 4% of height).
+    """
+    src_img = Image.open(src_png).convert("RGBA")
+    arr = np.array(src_img)
+    h = arr.shape[0]
+
+    cut_y = int(h * cut_frac)
+    fade_px = max(1, int(h * fade_frac))
+
+    envelope = np.ones(h, dtype=np.float32)
+    envelope[: max(0, cut_y - fade_px)] = 0.0
+    fade_start = max(0, cut_y - fade_px)
+    fade_end = cut_y
+    if fade_end > fade_start:
+        envelope[fade_start:fade_end] = np.linspace(0.0, 1.0, fade_end - fade_start)
+
+    alpha = arr[:, :, 3].astype(np.float32) * envelope[:, np.newaxis]
+    arr[:, :, 3] = np.clip(alpha, 0, 255).astype(np.uint8)
+
+    out = Image.fromarray(arr)
+    dst_webp.parent.mkdir(parents=True, exist_ok=True)
+    out.save(dst_webp, format="WEBP", quality=quality, method=6)
+
+
 if __name__ == "__main__":
     # Smoke check: takes a sample SDXL output (the smoke test from earlier
     # sessions if present) and confirms it processes without error.

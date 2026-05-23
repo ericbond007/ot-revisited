@@ -14,7 +14,7 @@ from pathlib import Path
 
 from alpha import copy_opaque_to_webp
 from comfy_client import CHECKPOINT, generate_to, ping
-from prompts import NEGATIVE_PROMPT, PROMPTS, TilePrompt
+from prompts import NEGATIVE_PROMPT, NEGATIVE_PROMPT_BY_LAYER, PROMPTS, TilePrompt
 
 THIS_DIR = Path(__file__).parent
 RAW_DIR = THIS_DIR / "raw"
@@ -32,8 +32,14 @@ MANIFEST = THIS_DIR / ".manifest.json"
 # suffixes (`--<key>@<weight>.webp`) so experimental output doesn't clobber
 # the canonical tiles.
 DEFAULT_LORAS_BY_LAYER: dict[str, list[tuple[str, float]]] = {
-    "backdrop": [("ht_landscape_v2_2000.safetensors", 1.0)],
-    "ground":   [],
+    "backdrop":     [("ht_landscape_v2_2000.safetensors", 1.0)],
+    "ground":       [],
+    # ground_strip: no LoRA. ht_landscape was tried first and forced
+    # vista compositions (predictable: trained exclusively on landscape
+    # paintings with horizons). Plain SDXL with anti-perspective prompt
+    # framing ("flat 2D side scrolling game ground tile") gets closer
+    # to the orthographic side-view we need. See prompts.py.
+    "ground_strip": [],
 }
 
 # Known LoRAs we can stack via `--lora <key>` (or `--lora a,b` for stacks).
@@ -62,12 +68,18 @@ LORA_REGISTRY: dict[str, tuple[str, float, str]] = {
 }
 
 
+def _resolve_negative(layer: str) -> str:
+    """Concatenate the shared negative with any layer-specific extension."""
+    extension = NEGATIVE_PROMPT_BY_LAYER.get(layer, "")
+    return NEGATIVE_PROMPT + extension
+
+
 def _signature(p: TilePrompt, loras: list[tuple[str, float]]) -> str:
     """Hash of everything that affects the output: checkpoint + prompt + neg + dims + seed + LoRA stack."""
     h = hashlib.sha256()
     h.update(CHECKPOINT.encode())
     h.update(p.full_prompt.encode())
-    h.update(NEGATIVE_PROMPT.encode())
+    h.update(_resolve_negative(p.layer).encode())
     h.update(f"{p.width}x{p.height}".encode())
     h.update(str(p.seed).encode())
     for name, weight in loras:
@@ -204,14 +216,15 @@ def main() -> None:
         print(f"[{i}/{len(selection)}] {out_filename}  ({p.width}x{p.height}, seed={p.seed})", flush=True)
         t0 = time.monotonic()
         raw_path = RAW_DIR / f"{p.layer}-{p.terrain}{lora_suffix}.png"
-        # Backdrop tiles parallax-scroll horizontally → seamless x-axis
-        # tiling so adjacent copies have invisible seams. Ground tiles
-        # are static (no horizontal scroll) → non-seamless.
-        is_parallax_layer = p.layer == "backdrop"
+        # Both backdrop and ground_strip layers parallax-scroll
+        # horizontally (3-tile copies cycled by scrollX), so both need
+        # seamless x-axis tiling. The legacy "ground" layer is static
+        # (no horizontal scroll) → non-seamless.
+        is_parallax_layer = p.layer in ("backdrop", "ground_strip")
         generate_to(
             raw_path,
             f"{lora_triggers}{p.full_prompt}",
-            NEGATIVE_PROMPT,
+            _resolve_negative(p.layer),
             p.width,
             p.height,
             p.seed,

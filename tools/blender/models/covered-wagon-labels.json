@@ -1,0 +1,7101 @@
+{
+  "hubs": {
+    "FL": [
+      -1.121000051498413,
+      -0.7739999890327454,
+      0.49000000953674316
+    ],
+    "FR": [
+      -1.1230000257492065,
+      0.7739999890327454,
+      0.49000000953674316
+    ],
+    "RL": [
+      1.0089999437332153,
+      -0.7789999842643738,
+      0.5730000138282776
+    ],
+    "RR": [
+      1.0099999904632568,
+      0.7789999842643738,
+      0.5730000138282776
+    ]
+  },
+  "wheel_radius": 0.65,
+  "wheel_material": "1011",
+  "parts": [
+    {
+      "name": "Object_4",
+      "centroid": [
+        -1.1225,
+        0.7209,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0914,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.001",
+      "centroid": [
+        -1.1225,
+        -0.7209,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0914,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.002",
+      "centroid": [
+        1.0093,
+        0.7272,
+        0.5732
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0914,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.003",
+      "centroid": [
+        1.0093,
+        -0.7272,
+        0.5732
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0914,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.004",
+      "centroid": [
+        -1.1207,
+        -0.9067,
+        0.4743
+      ],
+      "axial_extent": 0.0101,
+      "z_extent": 0.0321,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.005",
+      "centroid": [
+        -1.1225,
+        0.9067,
+        0.4743
+      ],
+      "axial_extent": 0.0101,
+      "z_extent": 0.0321,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.006",
+      "centroid": [
+        1.0099,
+        0.9117,
+        0.5733
+      ],
+      "axial_extent": 0.0101,
+      "z_extent": 0.0321,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.007",
+      "centroid": [
+        1.0095,
+        -0.9117,
+        0.5733
+      ],
+      "axial_extent": 0.0101,
+      "z_extent": 0.0321,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.008",
+      "centroid": [
+        -1.1086,
+        0.0,
+        0.4775
+      ],
+      "axial_extent": 0.6224,
+      "z_extent": 0.109,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.009",
+      "centroid": [
+        -1.1363,
+        0.0,
+        0.4775
+      ],
+      "axial_extent": 0.6224,
+      "z_extent": 0.109,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.010",
+      "centroid": [
+        -1.1401,
+        0.4065,
+        0.4772
+      ],
+      "axial_extent": 0.1909,
+      "z_extent": 0.111,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.011",
+      "centroid": [
+        -1.104,
+        0.4065,
+        0.4771
+      ],
+      "axial_extent": 0.1909,
+      "z_extent": 0.1111,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.012",
+      "centroid": [
+        -1.1401,
+        -0.4065,
+        0.4772
+      ],
+      "axial_extent": 0.1909,
+      "z_extent": 0.111,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.013",
+      "centroid": [
+        -1.104,
+        -0.4065,
+        0.4771
+      ],
+      "axial_extent": 0.1909,
+      "z_extent": 0.1111,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.014",
+      "centroid": [
+        -1.1207,
+        -0.8334,
+        0.4744
+      ],
+      "axial_extent": 0.0569,
+      "z_extent": 0.2264,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.015",
+      "centroid": [
+        -1.1207,
+        -0.631,
+        0.4744
+      ],
+      "axial_extent": 0.0517,
+      "z_extent": 0.1792,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.016",
+      "centroid": [
+        -1.1207,
+        -0.805,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2384,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.017",
+      "centroid": [
+        -1.1207,
+        -0.7785,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2483,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.018",
+      "centroid": [
+        -1.1207,
+        -0.6887,
+        0.4744
+      ],
+      "axial_extent": 0.0636,
+      "z_extent": 0.2364,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.019",
+      "centroid": [
+        -1.1207,
+        -0.775,
+        0.4744
+      ],
+      "axial_extent": 0.0069,
+      "z_extent": 0.2363,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.020",
+      "centroid": [
+        -1.1207,
+        -0.7236,
+        0.4744
+      ],
+      "axial_extent": 0.0062,
+      "z_extent": 0.2364,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.021",
+      "centroid": [
+        -1.1207,
+        -0.7491,
+        0.4744
+      ],
+      "axial_extent": 0.0449,
+      "z_extent": 0.1934,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.022",
+      "centroid": [
+        -1.1207,
+        -0.8835,
+        0.4744
+      ],
+      "axial_extent": 0.0433,
+      "z_extent": 0.1621,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.023",
+      "centroid": [
+        -1.1207,
+        -0.8922,
+        0.4744
+      ],
+      "axial_extent": 0.0262,
+      "z_extent": 0.1492,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.024",
+      "centroid": [
+        -1.1207,
+        -0.8861,
+        0.4744
+      ],
+      "axial_extent": 0.0141,
+      "z_extent": 0.077,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.025",
+      "centroid": [
+        -1.1207,
+        -0.605,
+        0.4744
+      ],
+      "axial_extent": 0.0002,
+      "z_extent": 0.1791,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.026",
+      "centroid": [
+        -1.1207,
+        -0.7917,
+        0.4744
+      ],
+      "axial_extent": 0.0265,
+      "z_extent": 0.2483,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.027",
+      "centroid": [
+        -1.1207,
+        -0.7738,
+        0.4744
+      ],
+      "axial_extent": 0.0705,
+      "z_extent": 0.9248,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.028",
+      "centroid": [
+        -1.1207,
+        -0.7738,
+        0.4744
+      ],
+      "axial_extent": 0.0705,
+      "z_extent": 0.9487,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.029",
+      "centroid": [
+        -1.1207,
+        -0.7385,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.9487,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.030",
+      "centroid": [
+        -1.1207,
+        -0.809,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.9487,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.031",
+      "centroid": [
+        -1.1225,
+        0.8334,
+        0.4744
+      ],
+      "axial_extent": 0.0569,
+      "z_extent": 0.2264,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.032",
+      "centroid": [
+        -1.1225,
+        0.631,
+        0.4744
+      ],
+      "axial_extent": 0.0517,
+      "z_extent": 0.1792,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.033",
+      "centroid": [
+        -1.1225,
+        0.805,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2384,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.034",
+      "centroid": [
+        -1.1225,
+        0.7785,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2483,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.035",
+      "centroid": [
+        -1.1225,
+        0.6887,
+        0.4744
+      ],
+      "axial_extent": 0.0636,
+      "z_extent": 0.2364,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.036",
+      "centroid": [
+        -1.1225,
+        0.775,
+        0.4744
+      ],
+      "axial_extent": 0.0069,
+      "z_extent": 0.2363,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.037",
+      "centroid": [
+        -1.1225,
+        0.7236,
+        0.4744
+      ],
+      "axial_extent": 0.0062,
+      "z_extent": 0.2364,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.038",
+      "centroid": [
+        -1.1225,
+        0.7491,
+        0.4744
+      ],
+      "axial_extent": 0.0449,
+      "z_extent": 0.1934,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.039",
+      "centroid": [
+        -1.1225,
+        0.8835,
+        0.4744
+      ],
+      "axial_extent": 0.0433,
+      "z_extent": 0.1621,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.040",
+      "centroid": [
+        -1.1225,
+        0.8922,
+        0.4744
+      ],
+      "axial_extent": 0.0262,
+      "z_extent": 0.1492,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.041",
+      "centroid": [
+        -1.1225,
+        0.8861,
+        0.4744
+      ],
+      "axial_extent": 0.0141,
+      "z_extent": 0.077,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.042",
+      "centroid": [
+        -1.1225,
+        0.605,
+        0.4744
+      ],
+      "axial_extent": 0.0002,
+      "z_extent": 0.1791,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.043",
+      "centroid": [
+        -1.1225,
+        0.7917,
+        0.4744
+      ],
+      "axial_extent": 0.0265,
+      "z_extent": 0.2483,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.044",
+      "centroid": [
+        -1.1225,
+        0.7738,
+        0.4744
+      ],
+      "axial_extent": 0.0705,
+      "z_extent": 0.9248,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.045",
+      "centroid": [
+        -1.1225,
+        0.7738,
+        0.4744
+      ],
+      "axial_extent": 0.0705,
+      "z_extent": 0.9487,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.046",
+      "centroid": [
+        -1.1225,
+        0.7385,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.9487,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.047",
+      "centroid": [
+        -1.1225,
+        0.809,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.9487,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.048",
+      "centroid": [
+        -0.024,
+        -0.0,
+        0.6781
+      ],
+      "axial_extent": 0.1662,
+      "z_extent": 0.01,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.049",
+      "centroid": [
+        -0.024,
+        -0.0,
+        0.6831
+      ],
+      "axial_extent": 0.1662,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.050",
+      "centroid": [
+        0.0749,
+        -0.0,
+        0.6781
+      ],
+      "axial_extent": 0.1662,
+      "z_extent": 0.01,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.051",
+      "centroid": [
+        1.0152,
+        -0.0,
+        0.5756
+      ],
+      "axial_extent": 0.6404,
+      "z_extent": 0.109,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.052",
+      "centroid": [
+        0.9967,
+        -0.0,
+        0.5743
+      ],
+      "axial_extent": 0.6404,
+      "z_extent": 0.1064,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.053",
+      "centroid": [
+        0.9921,
+        0.4127,
+        0.5753
+      ],
+      "axial_extent": 0.1853,
+      "z_extent": 0.1111,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.054",
+      "centroid": [
+        1.0281,
+        0.4127,
+        0.5753
+      ],
+      "axial_extent": 0.1853,
+      "z_extent": 0.1111,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.055",
+      "centroid": [
+        0.9921,
+        -0.4127,
+        0.5753
+      ],
+      "axial_extent": 0.1853,
+      "z_extent": 0.1111,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.056",
+      "centroid": [
+        1.0281,
+        -0.4127,
+        0.5753
+      ],
+      "axial_extent": 0.1853,
+      "z_extent": 0.1111,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.057",
+      "centroid": [
+        1.0099,
+        0.7788,
+        0.5733
+      ],
+      "axial_extent": 0.0705,
+      "z_extent": 1.1261,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.058",
+      "centroid": [
+        1.0099,
+        0.7788,
+        0.5733
+      ],
+      "axial_extent": 0.0705,
+      "z_extent": 1.1467,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.059",
+      "centroid": [
+        1.0099,
+        0.7435,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 1.1467,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.060",
+      "centroid": [
+        1.0099,
+        0.814,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 1.1467,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.061",
+      "centroid": [
+        1.0095,
+        -0.8384,
+        0.5733
+      ],
+      "axial_extent": 0.0569,
+      "z_extent": 0.2264,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.062",
+      "centroid": [
+        1.0095,
+        -0.636,
+        0.5733
+      ],
+      "axial_extent": 0.0517,
+      "z_extent": 0.1792,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.063",
+      "centroid": [
+        1.0095,
+        -0.81,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2384,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.064",
+      "centroid": [
+        1.0095,
+        -0.7835,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2483,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.065",
+      "centroid": [
+        1.0095,
+        -0.6937,
+        0.5733
+      ],
+      "axial_extent": 0.0636,
+      "z_extent": 0.2364,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.066",
+      "centroid": [
+        1.0095,
+        -0.78,
+        0.5733
+      ],
+      "axial_extent": 0.0069,
+      "z_extent": 0.2363,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.067",
+      "centroid": [
+        1.0095,
+        -0.7285,
+        0.5733
+      ],
+      "axial_extent": 0.0062,
+      "z_extent": 0.2364,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.068",
+      "centroid": [
+        1.0095,
+        -0.7541,
+        0.5733
+      ],
+      "axial_extent": 0.0449,
+      "z_extent": 0.1934,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.069",
+      "centroid": [
+        1.0095,
+        -0.8885,
+        0.5733
+      ],
+      "axial_extent": 0.0433,
+      "z_extent": 0.1621,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.070",
+      "centroid": [
+        1.0095,
+        -0.8972,
+        0.5733
+      ],
+      "axial_extent": 0.0262,
+      "z_extent": 0.1492,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.071",
+      "centroid": [
+        1.0095,
+        -0.8911,
+        0.5733
+      ],
+      "axial_extent": 0.0141,
+      "z_extent": 0.077,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.072",
+      "centroid": [
+        1.0095,
+        -0.61,
+        0.5733
+      ],
+      "axial_extent": 0.0002,
+      "z_extent": 0.1791,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.073",
+      "centroid": [
+        1.0095,
+        -0.7967,
+        0.5733
+      ],
+      "axial_extent": 0.0265,
+      "z_extent": 0.2483,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.074",
+      "centroid": [
+        1.0094,
+        -0.7788,
+        0.5733
+      ],
+      "axial_extent": 0.0705,
+      "z_extent": 1.1261,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.075",
+      "centroid": [
+        1.0094,
+        -0.7788,
+        0.5733
+      ],
+      "axial_extent": 0.0705,
+      "z_extent": 1.1467,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.076",
+      "centroid": [
+        1.0094,
+        -0.7435,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 1.1467,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.077",
+      "centroid": [
+        1.0094,
+        -0.814,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 1.1467,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.078",
+      "centroid": [
+        -0.6428,
+        -0.0,
+        0.5988
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.079",
+      "centroid": [
+        -0.5477,
+        -0.0,
+        0.5996
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0067,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.080",
+      "centroid": [
+        -0.7376,
+        -0.0,
+        0.5914
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0067,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.081",
+      "centroid": [
+        -0.6427,
+        0.025,
+        0.5955
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0149,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.082",
+      "centroid": [
+        -0.6427,
+        -0.025,
+        0.5955
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0149,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.083",
+      "centroid": [
+        -0.4526,
+        -0.0,
+        0.5462
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0082,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.084",
+      "centroid": [
+        -0.5477,
+        -0.0,
+        0.5454
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0067,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.085",
+      "centroid": [
+        -0.3578,
+        -0.0,
+        0.5536
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0067,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.086",
+      "centroid": [
+        -0.4527,
+        0.025,
+        0.5495
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0149,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.087",
+      "centroid": [
+        -0.4527,
+        -0.025,
+        0.5495
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0149,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.088",
+      "centroid": [
+        -0.4529,
+        -0.0,
+        0.5528
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0082,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.089",
+      "centroid": [
+        -0.6425,
+        -0.0,
+        0.5922
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.090",
+      "centroid": [
+        -0.0503,
+        -0.0455,
+        0.5461
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.091",
+      "centroid": [
+        -0.0761,
+        -0.0,
+        0.5461
+      ],
+      "axial_extent": 0.091,
+      "z_extent": 0.05,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.092",
+      "centroid": [
+        -0.0503,
+        0.0,
+        0.5711
+      ],
+      "axial_extent": 0.091,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.093",
+      "centroid": [
+        -0.0503,
+        -0.0,
+        0.5211
+      ],
+      "axial_extent": 0.091,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.094",
+      "centroid": [
+        -0.0503,
+        0.0455,
+        0.5461
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.095",
+      "centroid": [
+        -0.0244,
+        -0.0,
+        0.5461
+      ],
+      "axial_extent": 0.091,
+      "z_extent": 0.05,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.096",
+      "centroid": [
+        -1.089,
+        0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0194,
+      "z_extent": 0.0213,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.097",
+      "centroid": [
+        -1.0858,
+        0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0194,
+      "z_extent": 0.0213,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.098",
+      "centroid": [
+        -1.1548,
+        0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0212,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.099",
+      "centroid": [
+        -1.158,
+        0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0212,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.100",
+      "centroid": [
+        -1.089,
+        -0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0194,
+      "z_extent": 0.0213,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.101",
+      "centroid": [
+        -1.0858,
+        -0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0194,
+      "z_extent": 0.0213,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.102",
+      "centroid": [
+        -1.1548,
+        -0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0212,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.103",
+      "centroid": [
+        -1.158,
+        -0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0212,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.104",
+      "centroid": [
+        -1.1216,
+        0.0,
+        0.7769
+      ],
+      "axial_extent": 1.2792,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.105",
+      "centroid": [
+        -1.1216,
+        -0.0,
+        0.7155
+      ],
+      "axial_extent": 1.2793,
+      "z_extent": 0.1228,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.106",
+      "centroid": [
+        -1.0722,
+        -0.0,
+        0.7155
+      ],
+      "axial_extent": 1.2793,
+      "z_extent": 0.1228,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.107",
+      "centroid": [
+        -1.171,
+        -0.0,
+        0.7155
+      ],
+      "axial_extent": 1.2793,
+      "z_extent": 0.1228,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.108",
+      "centroid": [
+        0.985,
+        0.5516,
+        0.8586
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.168,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.109",
+      "centroid": [
+        1.01,
+        0.5806,
+        0.8586
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.168,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.110",
+      "centroid": [
+        1.035,
+        0.5516,
+        0.8586
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.168,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.111",
+      "centroid": [
+        1.01,
+        0.5227,
+        0.8586
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.168,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.112",
+      "centroid": [
+        1.01,
+        0.5516,
+        0.9426
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.113",
+      "centroid": [
+        0.985,
+        -0.5516,
+        0.8586
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.168,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.114",
+      "centroid": [
+        1.01,
+        -0.5806,
+        0.8586
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.168,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.115",
+      "centroid": [
+        1.035,
+        -0.5516,
+        0.8586
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.168,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.116",
+      "centroid": [
+        1.01,
+        -0.5227,
+        0.8586
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.168,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.117",
+      "centroid": [
+        1.01,
+        -0.5516,
+        0.9426
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.118",
+      "centroid": [
+        1.0099,
+        0.8384,
+        0.5733
+      ],
+      "axial_extent": 0.0569,
+      "z_extent": 0.2264,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.119",
+      "centroid": [
+        1.0099,
+        0.636,
+        0.5733
+      ],
+      "axial_extent": 0.0517,
+      "z_extent": 0.1792,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.120",
+      "centroid": [
+        1.0099,
+        0.81,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2384,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.121",
+      "centroid": [
+        1.0099,
+        0.7835,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2483,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.122",
+      "centroid": [
+        1.0099,
+        0.6937,
+        0.5733
+      ],
+      "axial_extent": 0.0636,
+      "z_extent": 0.2364,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.123",
+      "centroid": [
+        1.0099,
+        0.78,
+        0.5733
+      ],
+      "axial_extent": 0.0069,
+      "z_extent": 0.2363,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.124",
+      "centroid": [
+        1.0099,
+        0.7285,
+        0.5733
+      ],
+      "axial_extent": 0.0062,
+      "z_extent": 0.2364,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.125",
+      "centroid": [
+        1.0099,
+        0.7541,
+        0.5733
+      ],
+      "axial_extent": 0.0449,
+      "z_extent": 0.1934,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.126",
+      "centroid": [
+        1.0099,
+        0.8885,
+        0.5733
+      ],
+      "axial_extent": 0.0433,
+      "z_extent": 0.1621,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.127",
+      "centroid": [
+        1.0099,
+        0.8972,
+        0.5733
+      ],
+      "axial_extent": 0.0262,
+      "z_extent": 0.1492,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.128",
+      "centroid": [
+        1.0099,
+        0.8911,
+        0.5733
+      ],
+      "axial_extent": 0.0141,
+      "z_extent": 0.077,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.129",
+      "centroid": [
+        1.0099,
+        0.61,
+        0.5733
+      ],
+      "axial_extent": 0.0002,
+      "z_extent": 0.1791,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.130",
+      "centroid": [
+        1.0099,
+        0.7967,
+        0.5733
+      ],
+      "axial_extent": 0.0265,
+      "z_extent": 0.2483,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.131",
+      "centroid": [
+        -1.1225,
+        0.4958,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1248,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.132",
+      "centroid": [
+        -1.1225,
+        0.5048,
+        0.4744
+      ],
+      "axial_extent": 0.0179,
+      "z_extent": 0.1248,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.133",
+      "centroid": [
+        -1.1225,
+        0.5137,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1248,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.134",
+      "centroid": [
+        -1.1225,
+        0.6173,
+        0.4744
+      ],
+      "axial_extent": 0.2072,
+      "z_extent": 0.1023,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.135",
+      "centroid": [
+        -1.1225,
+        -0.4958,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1248,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.136",
+      "centroid": [
+        -1.1225,
+        -0.5048,
+        0.4744
+      ],
+      "axial_extent": 0.0179,
+      "z_extent": 0.1248,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.137",
+      "centroid": [
+        -1.1225,
+        -0.5137,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1248,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.138",
+      "centroid": [
+        -1.1225,
+        -0.6173,
+        0.4744
+      ],
+      "axial_extent": 0.2072,
+      "z_extent": 0.1023,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.139",
+      "centroid": [
+        -1.1396,
+        0.3311,
+        0.4222
+      ],
+      "axial_extent": 0.0478,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.140",
+      "centroid": [
+        -1.1227,
+        0.345,
+        0.4192
+      ],
+      "axial_extent": 0.0756,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.141",
+      "centroid": [
+        -1.1058,
+        0.3589,
+        0.4222
+      ],
+      "axial_extent": 0.0478,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.142",
+      "centroid": [
+        -1.1227,
+        0.345,
+        0.4252
+      ],
+      "axial_extent": 0.0754,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.143",
+      "centroid": [
+        -1.1404,
+        0.2083,
+        0.4222
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.144",
+      "centroid": [
+        -1.1227,
+        0.2083,
+        0.4192
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.145",
+      "centroid": [
+        -1.105,
+        0.2083,
+        0.4222
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.146",
+      "centroid": [
+        -1.1227,
+        0.2083,
+        0.4252
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.147",
+      "centroid": [
+        -1.1396,
+        -0.3311,
+        0.4222
+      ],
+      "axial_extent": 0.0478,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.148",
+      "centroid": [
+        -1.1227,
+        -0.345,
+        0.4192
+      ],
+      "axial_extent": 0.0756,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.149",
+      "centroid": [
+        -1.1058,
+        -0.3589,
+        0.4222
+      ],
+      "axial_extent": 0.0478,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.150",
+      "centroid": [
+        -1.1227,
+        -0.345,
+        0.4252
+      ],
+      "axial_extent": 0.0754,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.151",
+      "centroid": [
+        -1.1404,
+        -0.2083,
+        0.4222
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.152",
+      "centroid": [
+        -1.1227,
+        -0.2083,
+        0.4192
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.153",
+      "centroid": [
+        -1.105,
+        -0.2083,
+        0.4222
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.154",
+      "centroid": [
+        -1.1227,
+        -0.2083,
+        0.4252
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.155",
+      "centroid": [
+        -1.1216,
+        -0.0,
+        0.5966
+      ],
+      "axial_extent": 1.2173,
+      "z_extent": 0.0759,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.156",
+      "centroid": [
+        -1.1664,
+        -0.0,
+        0.5966
+      ],
+      "axial_extent": 1.2173,
+      "z_extent": 0.0759,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.157",
+      "centroid": [
+        -1.0768,
+        -0.0,
+        0.5966
+      ],
+      "axial_extent": 1.2173,
+      "z_extent": 0.0759,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.158",
+      "centroid": [
+        -1.1207,
+        -0.7737,
+        0.4744
+      ],
+      "axial_extent": 0.0527,
+      "z_extent": 0.8317,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.159",
+      "centroid": [
+        -1.1207,
+        -0.8037,
+        0.4744
+      ],
+      "axial_extent": 0.0073,
+      "z_extent": 0.9351,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.160",
+      "centroid": [
+        -1.1207,
+        -0.7438,
+        0.4744
+      ],
+      "axial_extent": 0.0071,
+      "z_extent": 0.9351,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.161",
+      "centroid": [
+        -1.0957,
+        -0.8959,
+        0.4744
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.05,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.162",
+      "centroid": [
+        -1.1207,
+        -0.9034,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.163",
+      "centroid": [
+        -1.1457,
+        -0.8959,
+        0.4744
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.05,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.164",
+      "centroid": [
+        -1.1207,
+        -0.8884,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.165",
+      "centroid": [
+        -1.1207,
+        -0.8959,
+        0.4494
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.166",
+      "centroid": [
+        -1.1207,
+        -0.8959,
+        0.4994
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.167",
+      "centroid": [
+        -1.1225,
+        0.7737,
+        0.4744
+      ],
+      "axial_extent": 0.0527,
+      "z_extent": 0.8317,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.168",
+      "centroid": [
+        -1.1225,
+        0.8037,
+        0.4744
+      ],
+      "axial_extent": 0.0073,
+      "z_extent": 0.9351,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.169",
+      "centroid": [
+        -1.1225,
+        0.7438,
+        0.4744
+      ],
+      "axial_extent": 0.0071,
+      "z_extent": 0.9351,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.170",
+      "centroid": [
+        0.9849,
+        0.9009,
+        0.5733
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.05,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.171",
+      "centroid": [
+        1.0099,
+        0.9084,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.172",
+      "centroid": [
+        1.0349,
+        0.9009,
+        0.5733
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.05,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.173",
+      "centroid": [
+        1.0099,
+        0.8934,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.174",
+      "centroid": [
+        1.0099,
+        0.9009,
+        0.5483
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.175",
+      "centroid": [
+        1.0099,
+        0.9009,
+        0.5983
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.176",
+      "centroid": [
+        1.0093,
+        0.4931,
+        0.5731
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1248,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.177",
+      "centroid": [
+        1.0093,
+        0.502,
+        0.5731
+      ],
+      "axial_extent": 0.0179,
+      "z_extent": 0.1248,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.178",
+      "centroid": [
+        1.0093,
+        0.511,
+        0.5731
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1248,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.179",
+      "centroid": [
+        1.0093,
+        0.6191,
+        0.5732
+      ],
+      "axial_extent": 0.2162,
+      "z_extent": 0.1023,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.180",
+      "centroid": [
+        1.0093,
+        -0.4931,
+        0.5731
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1248,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.181",
+      "centroid": [
+        1.0093,
+        -0.502,
+        0.5731
+      ],
+      "axial_extent": 0.0179,
+      "z_extent": 0.1248,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.182",
+      "centroid": [
+        1.0093,
+        -0.511,
+        0.5731
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1248,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.183",
+      "centroid": [
+        1.0093,
+        -0.6191,
+        0.5732
+      ],
+      "axial_extent": 0.2162,
+      "z_extent": 0.1023,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.184",
+      "centroid": [
+        0.867,
+        -0.1781,
+        0.5576
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0916,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.185",
+      "centroid": [
+        0.9317,
+        -0.1917,
+        0.5515
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0794,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.186",
+      "centroid": [
+        1.0268,
+        -0.1726,
+        0.5184
+      ],
+      "axial_extent": 0.0035,
+      "z_extent": 0.0132,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.187",
+      "centroid": [
+        0.8673,
+        -0.2064,
+        0.5576
+      ],
+      "axial_extent": 0.0124,
+      "z_extent": 0.0916,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.188",
+      "centroid": [
+        1.0268,
+        -0.2109,
+        0.5184
+      ],
+      "axial_extent": 0.0035,
+      "z_extent": 0.0132,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.189",
+      "centroid": [
+        0.9338,
+        -0.1917,
+        0.5631
+      ],
+      "axial_extent": 0.0418,
+      "z_extent": 0.0806,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.190",
+      "centroid": [
+        1.0913,
+        -0.1917,
+        0.5195
+      ],
+      "axial_extent": 0.0347,
+      "z_extent": 0.011,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.191",
+      "centroid": [
+        0.73,
+        -0.2205,
+        0.6053
+      ],
+      "axial_extent": 0.0406,
+      "z_extent": 0.0284,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.192",
+      "centroid": [
+        0.7241,
+        -0.2131,
+        0.6016
+      ],
+      "axial_extent": 0.0555,
+      "z_extent": 0.0211,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.193",
+      "centroid": [
+        0.7262,
+        -0.2068,
+        0.6053
+      ],
+      "axial_extent": 0.0429,
+      "z_extent": 0.0283,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.194",
+      "centroid": [
+        0.8684,
+        0.3444,
+        0.566
+      ],
+      "axial_extent": 0.1278,
+      "z_extent": 0.1085,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.195",
+      "centroid": [
+        0.7266,
+        -0.2131,
+        0.6114
+      ],
+      "axial_extent": 0.0555,
+      "z_extent": 0.0161,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.196",
+      "centroid": [
+        0.8733,
+        0.3243,
+        0.5715
+      ],
+      "axial_extent": 0.1676,
+      "z_extent": 0.0975,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.197",
+      "centroid": [
+        0.8736,
+        0.3244,
+        0.5627
+      ],
+      "axial_extent": 0.1678,
+      "z_extent": 0.1018,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.198",
+      "centroid": [
+        0.8796,
+        0.3067,
+        0.566
+      ],
+      "axial_extent": 0.1324,
+      "z_extent": 0.1085,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.199",
+      "centroid": [
+        1.0888,
+        0.3893,
+        0.5195
+      ],
+      "axial_extent": 0.0333,
+      "z_extent": 0.011,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.200",
+      "centroid": [
+        0.6006,
+        -0.2173,
+        0.6162
+      ],
+      "axial_extent": 0.0342,
+      "z_extent": 0.0081,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.201",
+      "centroid": [
+        0.5982,
+        -0.2319,
+        0.6199
+      ],
+      "axial_extent": 0.0634,
+      "z_extent": 0.0008,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.202",
+      "centroid": [
+        0.5982,
+        -0.2519,
+        0.6162
+      ],
+      "axial_extent": 0.0233,
+      "z_extent": 0.0082,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.203",
+      "centroid": [
+        0.5981,
+        -0.2318,
+        0.6129
+      ],
+      "axial_extent": 0.0633,
+      "z_extent": 0.0015,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.204",
+      "centroid": [
+        0.5194,
+        -0.2202,
+        0.6169
+      ],
+      "axial_extent": 0.0401,
+      "z_extent": 0.0067,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.205",
+      "centroid": [
+        0.6588,
+        0.2605,
+        0.6169
+      ],
+      "axial_extent": 0.04,
+      "z_extent": 0.0067,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.206",
+      "centroid": [
+        0.9867,
+        -0.3607,
+        0.5183
+      ],
+      "axial_extent": 0.0778,
+      "z_extent": 0.0139,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.207",
+      "centroid": [
+        1.0094,
+        -0.3655,
+        0.5125
+      ],
+      "axial_extent": 0.0874,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.208",
+      "centroid": [
+        1.0168,
+        -0.3655,
+        0.5183
+      ],
+      "axial_extent": 0.0874,
+      "z_extent": 0.0139,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.209",
+      "centroid": [
+        1.0094,
+        -0.3655,
+        0.5242
+      ],
+      "axial_extent": 0.087,
+      "z_extent": 0.0022,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.210",
+      "centroid": [
+        -0.0877,
+        0.0636,
+        0.6848
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0093,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.211",
+      "centroid": [
+        -0.0877,
+        0.0636,
+        0.6895
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.212",
+      "centroid": [
+        0.0422,
+        0.0636,
+        0.6848
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0093,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.213",
+      "centroid": [
+        0.0422,
+        0.0636,
+        0.6895
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.214",
+      "centroid": [
+        -0.0877,
+        -0.0636,
+        0.6053
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0087,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.215",
+      "centroid": [
+        -0.0877,
+        -0.0636,
+        0.5953
+      ],
+      "axial_extent": 0.0156,
+      "z_extent": 0.0113,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.216",
+      "centroid": [
+        -0.0877,
+        -0.0636,
+        0.601
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.217",
+      "centroid": [
+        -0.0877,
+        -0.0636,
+        0.5897
+      ],
+      "axial_extent": 0.0156,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.218",
+      "centroid": [
+        -0.0877,
+        -0.0636,
+        0.6848
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0093,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.219",
+      "centroid": [
+        -0.0877,
+        -0.0636,
+        0.6895
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.220",
+      "centroid": [
+        0.0422,
+        -0.0636,
+        0.6053
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0087,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.221",
+      "centroid": [
+        0.0422,
+        -0.0636,
+        0.5953
+      ],
+      "axial_extent": 0.0156,
+      "z_extent": 0.0113,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.222",
+      "centroid": [
+        0.0422,
+        -0.0636,
+        0.601
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.223",
+      "centroid": [
+        0.0422,
+        -0.0636,
+        0.5897
+      ],
+      "axial_extent": 0.0156,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.224",
+      "centroid": [
+        0.0422,
+        -0.0636,
+        0.6848
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0093,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.225",
+      "centroid": [
+        0.0422,
+        -0.0636,
+        0.6895
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.226",
+      "centroid": [
+        -0.0497,
+        -0.0,
+        0.5213
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.011,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.227",
+      "centroid": [
+        -0.0497,
+        -0.0,
+        0.6762
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0221,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.228",
+      "centroid": [
+        -0.0497,
+        -0.0,
+        0.6882
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.002,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.229",
+      "centroid": [
+        -0.0497,
+        -0.0,
+        0.5148
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.002,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.230",
+      "centroid": [
+        1.0099,
+        0.7787,
+        0.5733
+      ],
+      "axial_extent": 0.0527,
+      "z_extent": 1.0297,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.231",
+      "centroid": [
+        1.0099,
+        0.8087,
+        0.5734
+      ],
+      "axial_extent": 0.0073,
+      "z_extent": 1.1396,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.232",
+      "centroid": [
+        1.0099,
+        0.7488,
+        0.5734
+      ],
+      "axial_extent": 0.0071,
+      "z_extent": 1.1396,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.233",
+      "centroid": [
+        1.0345,
+        -0.9009,
+        0.5733
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.05,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.234",
+      "centroid": [
+        1.0095,
+        -0.9084,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.235",
+      "centroid": [
+        0.9845,
+        -0.9009,
+        0.5733
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.05,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.236",
+      "centroid": [
+        1.0095,
+        -0.8934,
+        0.5733
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.237",
+      "centroid": [
+        1.0095,
+        -0.9009,
+        0.5483
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.238",
+      "centroid": [
+        1.0095,
+        -0.9009,
+        0.5983
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.239",
+      "centroid": [
+        1.0094,
+        -0.7787,
+        0.5733
+      ],
+      "axial_extent": 0.0527,
+      "z_extent": 1.0297,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.240",
+      "centroid": [
+        1.0094,
+        -0.8087,
+        0.5734
+      ],
+      "axial_extent": 0.0073,
+      "z_extent": 1.1393,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.241",
+      "centroid": [
+        1.0094,
+        -0.7488,
+        0.5734
+      ],
+      "axial_extent": 0.0071,
+      "z_extent": 1.1393,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.242",
+      "centroid": [
+        -1.1216,
+        0.5466,
+        0.8745
+      ],
+      "axial_extent": 0.1985,
+      "z_extent": 0.1964,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.243",
+      "centroid": [
+        -1.1216,
+        0.5806,
+        0.7806
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0083,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.244",
+      "centroid": [
+        -1.0968,
+        0.5508,
+        0.8786
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2047,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.245",
+      "centroid": [
+        -1.1216,
+        0.5508,
+        0.8787
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2045,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.246",
+      "centroid": [
+        -1.1216,
+        0.4473,
+        0.7804
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0083,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.247",
+      "centroid": [
+        -1.1216,
+        -0.5466,
+        0.8745
+      ],
+      "axial_extent": 0.1985,
+      "z_extent": 0.1964,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.248",
+      "centroid": [
+        -1.1216,
+        -0.5806,
+        0.7806
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0083,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.249",
+      "centroid": [
+        -1.0968,
+        -0.5508,
+        0.8786
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2047,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.250",
+      "centroid": [
+        -1.1216,
+        -0.5508,
+        0.8787
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2045,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.251",
+      "centroid": [
+        -1.1216,
+        -0.4473,
+        0.7804
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0083,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.252",
+      "centroid": [
+        -1.1464,
+        0.5508,
+        0.8786
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2047,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.253",
+      "centroid": [
+        -1.1464,
+        -0.5508,
+        0.8786
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2047,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.254",
+      "centroid": [
+        1.01,
+        0.0,
+        0.7769
+      ],
+      "axial_extent": 1.2792,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.255",
+      "centroid": [
+        1.01,
+        -0.0,
+        0.719
+      ],
+      "axial_extent": 1.2793,
+      "z_extent": 0.1159,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.256",
+      "centroid": [
+        0.9606,
+        -0.0,
+        0.719
+      ],
+      "axial_extent": 1.2793,
+      "z_extent": 0.1159,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.257",
+      "centroid": [
+        1.0594,
+        -0.0,
+        0.719
+      ],
+      "axial_extent": 1.2793,
+      "z_extent": 0.1159,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.258",
+      "centroid": [
+        -1.1475,
+        0.8959,
+        0.4744
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.05,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.259",
+      "centroid": [
+        -1.1225,
+        0.9034,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.260",
+      "centroid": [
+        -1.0975,
+        0.8959,
+        0.4744
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.05,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.261",
+      "centroid": [
+        -1.1225,
+        0.8884,
+        0.4744
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.05,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.262",
+      "centroid": [
+        -1.1225,
+        0.8959,
+        0.4494
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.263",
+      "centroid": [
+        -1.1225,
+        0.8959,
+        0.4994
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.264",
+      "centroid": [
+        -1.1227,
+        0.5313,
+        0.478
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.1152,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.265",
+      "centroid": [
+        -1.1779,
+        0.2085,
+        0.4777
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.1132,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.266",
+      "centroid": [
+        -1.0664,
+        0.2085,
+        0.478
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.1125,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.267",
+      "centroid": [
+        -1.1216,
+        0.2085,
+        0.5276
+      ],
+      "axial_extent": 0.014,
+      "z_extent": 0.0133,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.268",
+      "centroid": [
+        -1.1227,
+        -0.5313,
+        0.478
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.1152,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.269",
+      "centroid": [
+        -1.1779,
+        -0.2085,
+        0.4777
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.1132,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.270",
+      "centroid": [
+        -1.0664,
+        -0.2085,
+        0.478
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.1125,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.271",
+      "centroid": [
+        -1.1216,
+        -0.2085,
+        0.5276
+      ],
+      "axial_extent": 0.014,
+      "z_extent": 0.0133,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.272",
+      "centroid": [
+        -1.1643,
+        0.0,
+        0.6384
+      ],
+      "axial_extent": 0.7786,
+      "z_extent": 0.0108,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.273",
+      "centroid": [
+        -1.1216,
+        -0.3892,
+        0.6384
+      ],
+      "axial_extent": 0.0002,
+      "z_extent": 0.0108,
+      "label": "brake"
+    },
+    {
+      "name": "Object_4.274",
+      "centroid": [
+        -1.1216,
+        0.3892,
+        0.6384
+      ],
+      "axial_extent": 0.0003,
+      "z_extent": 0.0108,
+      "label": "brake"
+    },
+    {
+      "name": "Object_4.275",
+      "centroid": [
+        -1.0789,
+        0.0,
+        0.6384
+      ],
+      "axial_extent": 0.7786,
+      "z_extent": 0.0108,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.276",
+      "centroid": [
+        -1.1216,
+        -0.0,
+        0.6439
+      ],
+      "axial_extent": 0.7781,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.277",
+      "centroid": [
+        -1.1208,
+        -0.7563,
+        0.7296
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.326,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.278",
+      "centroid": [
+        -0.9018,
+        -0.7563,
+        0.5986
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1946,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.279",
+      "centroid": [
+        -0.9017,
+        -0.7563,
+        0.3503
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1946,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.280",
+      "centroid": [
+        -1.1206,
+        -0.7563,
+        0.2192
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.326,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.281",
+      "centroid": [
+        -1.3397,
+        -0.7563,
+        0.3501
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1946,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.282",
+      "centroid": [
+        -1.3398,
+        -0.7563,
+        0.5984
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1946,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.283",
+      "centroid": [
+        -1.1224,
+        0.7563,
+        0.7296
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.326,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.284",
+      "centroid": [
+        -1.3414,
+        0.7563,
+        0.5986
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1946,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.285",
+      "centroid": [
+        -1.3416,
+        0.7563,
+        0.3503
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1946,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.286",
+      "centroid": [
+        -1.1226,
+        0.7563,
+        0.2192
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.326,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.287",
+      "centroid": [
+        -0.9036,
+        0.7563,
+        0.3501
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1946,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.288",
+      "centroid": [
+        -0.9034,
+        0.7563,
+        0.5984
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1946,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.289",
+      "centroid": [
+        1.0089,
+        0.5313,
+        0.5759
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.1167,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.290",
+      "centroid": [
+        1.0684,
+        0.3839,
+        0.6442
+      ],
+      "axial_extent": 0.0146,
+      "z_extent": 0.2447,
+      "label": "brake"
+    },
+    {
+      "name": "Object_4.291",
+      "centroid": [
+        0.9494,
+        0.3475,
+        0.6442
+      ],
+      "axial_extent": 0.0148,
+      "z_extent": 0.2447,
+      "label": "brake"
+    },
+    {
+      "name": "Object_4.292",
+      "centroid": [
+        1.0089,
+        0.3657,
+        0.7754
+      ],
+      "axial_extent": 0.0512,
+      "z_extent": 0.0176,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.293",
+      "centroid": [
+        1.0089,
+        -0.5313,
+        0.5759
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.1167,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.294",
+      "centroid": [
+        1.0674,
+        -0.3832,
+        0.6514
+      ],
+      "axial_extent": 0.016,
+      "z_extent": 0.2592,
+      "label": "brake"
+    },
+    {
+      "name": "Object_4.295",
+      "centroid": [
+        0.9508,
+        -0.3485,
+        0.6516
+      ],
+      "axial_extent": 0.0169,
+      "z_extent": 0.2596,
+      "label": "brake"
+    },
+    {
+      "name": "Object_4.296",
+      "centroid": [
+        1.0093,
+        -0.366,
+        0.7792
+      ],
+      "axial_extent": 0.0463,
+      "z_extent": 0.01,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.297",
+      "centroid": [
+        1.0089,
+        -0.1919,
+        0.6524
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.2636,
+      "label": "brake"
+    },
+    {
+      "name": "Object_4.298",
+      "centroid": [
+        1.01,
+        0.7613,
+        0.8802
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4294,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.299",
+      "centroid": [
+        0.7725,
+        0.7613,
+        0.7617
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.2963,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.300",
+      "centroid": [
+        0.7116,
+        0.7613,
+        0.509
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1312,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.301",
+      "centroid": [
+        0.8802,
+        0.7613,
+        0.2986
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4027,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.302",
+      "centroid": [
+        1.1394,
+        0.7613,
+        0.2985
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4027,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.303",
+      "centroid": [
+        1.3082,
+        0.7613,
+        0.5088
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1311,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.304",
+      "centroid": [
+        1.2474,
+        0.7613,
+        0.7615
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.2963,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.305",
+      "centroid": [
+        1.0093,
+        -0.7613,
+        0.8802
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4294,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.306",
+      "centroid": [
+        1.2468,
+        -0.7613,
+        0.7617
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.2963,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.307",
+      "centroid": [
+        1.3078,
+        -0.7613,
+        0.509
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1312,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.308",
+      "centroid": [
+        1.1391,
+        -0.7613,
+        0.2986
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4027,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.309",
+      "centroid": [
+        0.88,
+        -0.7613,
+        0.2985
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4027,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.310",
+      "centroid": [
+        0.7112,
+        -0.7613,
+        0.5088
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1311,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.311",
+      "centroid": [
+        0.7719,
+        -0.7613,
+        0.7615
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.2963,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.312",
+      "centroid": [
+        1.2786,
+        -0.0,
+        0.6499
+      ],
+      "axial_extent": 0.0986,
+      "z_extent": 0.05,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.313",
+      "centroid": [
+        0.0493,
+        0.0493,
+        0.5984
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1528,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.314",
+      "centroid": [
+        0.0504,
+        -0.0,
+        0.5735
+      ],
+      "axial_extent": 0.0986,
+      "z_extent": 0.1028,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.315",
+      "centroid": [
+        0.0483,
+        -0.0,
+        0.6234
+      ],
+      "axial_extent": 0.0986,
+      "z_extent": 0.1028,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.316",
+      "centroid": [
+        0.0493,
+        -0.0493,
+        0.5984
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.1528,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.317",
+      "centroid": [
+        -1.18,
+        -0.0,
+        0.547
+      ],
+      "axial_extent": 0.0986,
+      "z_extent": 0.05,
+      "label": "brake"
+    },
+    {
+      "name": "Object_4.318",
+      "centroid": [
+        -1.082,
+        -0.5765,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.319",
+      "centroid": [
+        -1.0792,
+        -0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.320",
+      "centroid": [
+        -1.082,
+        -0.5265,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.321",
+      "centroid": [
+        -1.0698,
+        -0.5515,
+        0.7115
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.322",
+      "centroid": [
+        -1.0849,
+        -0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.323",
+      "centroid": [
+        -1.0941,
+        -0.5515,
+        0.9211
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.324",
+      "centroid": [
+        -1.1612,
+        -0.5765,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.325",
+      "centroid": [
+        -1.164,
+        -0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.326",
+      "centroid": [
+        -1.1612,
+        -0.5265,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.327",
+      "centroid": [
+        -1.1734,
+        -0.5515,
+        0.7115
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.328",
+      "centroid": [
+        -1.1584,
+        -0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.329",
+      "centroid": [
+        -1.1491,
+        -0.5515,
+        0.9211
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.330",
+      "centroid": [
+        -1.125,
+        0.5967,
+        0.7872
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0078,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.331",
+      "centroid": [
+        -1.125,
+        0.5967,
+        0.7912
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.332",
+      "centroid": [
+        -1.125,
+        -0.5967,
+        0.7872
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0078,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.333",
+      "centroid": [
+        -1.125,
+        -0.5967,
+        0.7912
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.334",
+      "centroid": [
+        1.0496,
+        -0.5765,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.335",
+      "centroid": [
+        1.0524,
+        -0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.336",
+      "centroid": [
+        1.0496,
+        -0.5265,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.337",
+      "centroid": [
+        1.0618,
+        -0.5515,
+        0.7115
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.338",
+      "centroid": [
+        1.0467,
+        -0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.339",
+      "centroid": [
+        1.0375,
+        -0.5515,
+        0.9211
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.340",
+      "centroid": [
+        0.9704,
+        -0.5765,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.341",
+      "centroid": [
+        0.9676,
+        -0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.342",
+      "centroid": [
+        0.9704,
+        -0.5265,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.343",
+      "centroid": [
+        0.9582,
+        -0.5515,
+        0.7115
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.344",
+      "centroid": [
+        0.9732,
+        -0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.345",
+      "centroid": [
+        0.9824,
+        -0.5515,
+        0.9211
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.346",
+      "centroid": [
+        -1.082,
+        0.5765,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.347",
+      "centroid": [
+        -1.0792,
+        0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.348",
+      "centroid": [
+        -1.082,
+        0.5265,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.349",
+      "centroid": [
+        -1.0698,
+        0.5515,
+        0.7115
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.350",
+      "centroid": [
+        -1.0849,
+        0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.351",
+      "centroid": [
+        -1.0941,
+        0.5515,
+        0.9211
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.352",
+      "centroid": [
+        -1.1612,
+        0.5765,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.353",
+      "centroid": [
+        -1.164,
+        0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.354",
+      "centroid": [
+        -1.1612,
+        0.5265,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.355",
+      "centroid": [
+        -1.1734,
+        0.5515,
+        0.7115
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.356",
+      "centroid": [
+        -1.1584,
+        0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.357",
+      "centroid": [
+        -1.1491,
+        0.5515,
+        0.9211
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.358",
+      "centroid": [
+        1.0496,
+        0.5765,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.359",
+      "centroid": [
+        1.0524,
+        0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.360",
+      "centroid": [
+        1.0496,
+        0.5265,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.361",
+      "centroid": [
+        1.0618,
+        0.5515,
+        0.7115
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.362",
+      "centroid": [
+        1.0467,
+        0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.363",
+      "centroid": [
+        1.0375,
+        0.5515,
+        0.9211
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.364",
+      "centroid": [
+        0.9704,
+        0.5765,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.365",
+      "centroid": [
+        0.9676,
+        0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.366",
+      "centroid": [
+        0.9704,
+        0.5265,
+        0.8163
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.2096,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.367",
+      "centroid": [
+        0.9582,
+        0.5515,
+        0.7115
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.368",
+      "centroid": [
+        0.9732,
+        0.5515,
+        0.8163
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.2096,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.369",
+      "centroid": [
+        0.9824,
+        0.5515,
+        0.9211
+      ],
+      "axial_extent": 0.05,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.370",
+      "centroid": [
+        -1.1849,
+        0.5313,
+        0.4137
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0089,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.371",
+      "centroid": [
+        -1.1849,
+        0.5313,
+        0.4033
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.372",
+      "centroid": [
+        -1.1849,
+        0.5313,
+        0.409
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.373",
+      "centroid": [
+        -1.0604,
+        0.5313,
+        0.4141
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0089,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.374",
+      "centroid": [
+        -1.0604,
+        0.5313,
+        0.4038
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.375",
+      "centroid": [
+        -1.0604,
+        0.5313,
+        0.4094
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.376",
+      "centroid": [
+        -1.1849,
+        0.5313,
+        0.3979
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.377",
+      "centroid": [
+        -1.1834,
+        0.3315,
+        0.4162
+      ],
+      "axial_extent": 0.0237,
+      "z_extent": 0.0086,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.378",
+      "centroid": [
+        -1.1834,
+        0.3315,
+        0.4059
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.379",
+      "centroid": [
+        -1.1834,
+        0.3315,
+        0.4116
+      ],
+      "axial_extent": 0.0237,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.380",
+      "centroid": [
+        -1.062,
+        0.3589,
+        0.4166
+      ],
+      "axial_extent": 0.021,
+      "z_extent": 0.0094,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.381",
+      "centroid": [
+        -1.062,
+        0.3589,
+        0.4059
+      ],
+      "axial_extent": 0.0133,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.382",
+      "centroid": [
+        -1.062,
+        0.3589,
+        0.4116
+      ],
+      "axial_extent": 0.021,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.383",
+      "centroid": [
+        -1.1849,
+        0.2085,
+        0.4078
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.384",
+      "centroid": [
+        -1.1849,
+        0.2085,
+        0.4171
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0068,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.385",
+      "centroid": [
+        -1.1849,
+        0.2085,
+        0.4134
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.386",
+      "centroid": [
+        -1.0604,
+        0.2085,
+        0.4073
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.387",
+      "centroid": [
+        -1.0604,
+        0.2085,
+        0.4172
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.008,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.388",
+      "centroid": [
+        -1.0604,
+        0.2085,
+        0.4129
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.389",
+      "centroid": [
+        -1.1834,
+        0.3315,
+        0.4005
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.390",
+      "centroid": [
+        -1.0604,
+        0.5313,
+        0.3984
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.391",
+      "centroid": [
+        -1.062,
+        0.3589,
+        0.4005
+      ],
+      "axial_extent": 0.0133,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.392",
+      "centroid": [
+        -1.1849,
+        0.2085,
+        0.4024
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.393",
+      "centroid": [
+        -1.0604,
+        0.2085,
+        0.4019
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.394",
+      "centroid": [
+        -1.1849,
+        -0.5313,
+        0.4137
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0089,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.395",
+      "centroid": [
+        -1.1849,
+        -0.5313,
+        0.4033
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.396",
+      "centroid": [
+        -1.1849,
+        -0.5313,
+        0.409
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.397",
+      "centroid": [
+        -1.0604,
+        -0.5313,
+        0.4141
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0089,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.398",
+      "centroid": [
+        -1.0604,
+        -0.5313,
+        0.4038
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.399",
+      "centroid": [
+        -1.0604,
+        -0.5313,
+        0.4094
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.400",
+      "centroid": [
+        -1.1849,
+        -0.5313,
+        0.3979
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.401",
+      "centroid": [
+        -1.1834,
+        -0.3315,
+        0.4162
+      ],
+      "axial_extent": 0.0237,
+      "z_extent": 0.0086,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.402",
+      "centroid": [
+        -1.1834,
+        -0.3315,
+        0.4059
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.403",
+      "centroid": [
+        -1.1834,
+        -0.3315,
+        0.4116
+      ],
+      "axial_extent": 0.0237,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.404",
+      "centroid": [
+        -1.062,
+        -0.3589,
+        0.4166
+      ],
+      "axial_extent": 0.021,
+      "z_extent": 0.0094,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.405",
+      "centroid": [
+        -1.062,
+        -0.3589,
+        0.4059
+      ],
+      "axial_extent": 0.0133,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.406",
+      "centroid": [
+        -1.062,
+        -0.3589,
+        0.4116
+      ],
+      "axial_extent": 0.021,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.407",
+      "centroid": [
+        -1.1849,
+        -0.2085,
+        0.4078
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.408",
+      "centroid": [
+        -1.1849,
+        -0.2085,
+        0.4171
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0068,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.409",
+      "centroid": [
+        -1.1849,
+        -0.2085,
+        0.4134
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.410",
+      "centroid": [
+        -1.0604,
+        -0.2085,
+        0.4073
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.411",
+      "centroid": [
+        -1.0604,
+        -0.2085,
+        0.4172
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.008,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.412",
+      "centroid": [
+        -1.0604,
+        -0.2085,
+        0.4129
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.413",
+      "centroid": [
+        -1.1834,
+        -0.3315,
+        0.4005
+      ],
+      "axial_extent": 0.015,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.414",
+      "centroid": [
+        -1.0604,
+        -0.5313,
+        0.3984
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.415",
+      "centroid": [
+        -1.062,
+        -0.3589,
+        0.4005
+      ],
+      "axial_extent": 0.0133,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.416",
+      "centroid": [
+        -1.1849,
+        -0.2085,
+        0.4024
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.417",
+      "centroid": [
+        -1.0604,
+        -0.2085,
+        0.4019
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.418",
+      "centroid": [
+        -0.9967,
+        -0.7563,
+        0.6934
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.3005,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.419",
+      "centroid": [
+        -0.8655,
+        -0.7563,
+        0.4745
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.0445,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.420",
+      "centroid": [
+        -0.9965,
+        -0.7563,
+        0.2554
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.3005,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.421",
+      "centroid": [
+        -1.2448,
+        -0.7563,
+        0.2553
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.3005,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.422",
+      "centroid": [
+        -1.3759,
+        -0.7563,
+        0.4743
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.0445,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.423",
+      "centroid": [
+        -1.245,
+        -0.7563,
+        0.6933
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.3005,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.424",
+      "centroid": [
+        -1.2465,
+        0.7563,
+        0.6934
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.3005,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.425",
+      "centroid": [
+        -1.3777,
+        0.7563,
+        0.4745
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.0445,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.426",
+      "centroid": [
+        -1.2468,
+        0.7563,
+        0.2554
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.3005,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.427",
+      "centroid": [
+        -0.9985,
+        0.7563,
+        0.2553
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.3005,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.428",
+      "centroid": [
+        -0.8673,
+        0.7563,
+        0.4743
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.0445,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.429",
+      "centroid": [
+        -0.9982,
+        0.7563,
+        0.6933
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.3005,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.430",
+      "centroid": [
+        0.9467,
+        0.5313,
+        0.5046
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0088,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.431",
+      "centroid": [
+        0.9467,
+        0.5313,
+        0.4943
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.432",
+      "centroid": [
+        0.9467,
+        0.5313,
+        0.5
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.433",
+      "centroid": [
+        1.0712,
+        0.5313,
+        0.5046
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0088,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.434",
+      "centroid": [
+        1.0712,
+        0.5313,
+        0.4943
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.435",
+      "centroid": [
+        1.0712,
+        0.5313,
+        0.5
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.436",
+      "centroid": [
+        0.9467,
+        0.5313,
+        0.4889
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.437",
+      "centroid": [
+        0.9494,
+        0.3475,
+        0.5108
+      ],
+      "axial_extent": 0.0233,
+      "z_extent": 0.0088,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.438",
+      "centroid": [
+        0.9494,
+        0.3475,
+        0.5004
+      ],
+      "axial_extent": 0.0148,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.439",
+      "centroid": [
+        0.9494,
+        0.3475,
+        0.5061
+      ],
+      "axial_extent": 0.0233,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.440",
+      "centroid": [
+        1.0684,
+        0.3839,
+        0.5108
+      ],
+      "axial_extent": 0.0231,
+      "z_extent": 0.0088,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.441",
+      "centroid": [
+        1.0684,
+        0.3839,
+        0.5004
+      ],
+      "axial_extent": 0.0146,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.442",
+      "centroid": [
+        1.0684,
+        0.3839,
+        0.5061
+      ],
+      "axial_extent": 0.0231,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.443",
+      "centroid": [
+        0.9494,
+        0.3475,
+        0.495
+      ],
+      "axial_extent": 0.0148,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.444",
+      "centroid": [
+        1.0712,
+        0.5313,
+        0.4889
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.445",
+      "centroid": [
+        1.0684,
+        0.3839,
+        0.495
+      ],
+      "axial_extent": 0.0146,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.446",
+      "centroid": [
+        0.5535,
+        0.2677,
+        0.6465
+      ],
+      "axial_extent": 0.3578,
+      "z_extent": 0.0534,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.447",
+      "centroid": [
+        0.5249,
+        0.2433,
+        0.6731
+      ],
+      "axial_extent": 0.4065,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.448",
+      "centroid": [
+        0.5249,
+        0.2433,
+        0.6198
+      ],
+      "axial_extent": 0.4065,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.449",
+      "centroid": [
+        1.1653,
+        0.4123,
+        0.6465
+      ],
+      "axial_extent": 0.0684,
+      "z_extent": 0.0534,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.450",
+      "centroid": [
+        0.628,
+        0.2132,
+        0.6465
+      ],
+      "axial_extent": 0.3298,
+      "z_extent": 0.0533,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.451",
+      "centroid": [
+        -0.0869,
+        -0.0,
+        0.6465
+      ],
+      "axial_extent": 0.1776,
+      "z_extent": 0.0534,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.452",
+      "centroid": [
+        -0.0234,
+        -0.0,
+        0.6198
+      ],
+      "axial_extent": 0.0967,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.453",
+      "centroid": [
+        -0.0234,
+        -0.0,
+        0.6731
+      ],
+      "axial_extent": 0.0967,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.454",
+      "centroid": [
+        0.5535,
+        -0.2677,
+        0.6465
+      ],
+      "axial_extent": 0.3578,
+      "z_extent": 0.0534,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.455",
+      "centroid": [
+        0.5249,
+        -0.2433,
+        0.6731
+      ],
+      "axial_extent": 0.4065,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.456",
+      "centroid": [
+        0.5249,
+        -0.2433,
+        0.6198
+      ],
+      "axial_extent": 0.4065,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.457",
+      "centroid": [
+        1.1653,
+        -0.4123,
+        0.6465
+      ],
+      "axial_extent": 0.0684,
+      "z_extent": 0.0534,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.458",
+      "centroid": [
+        0.628,
+        -0.2132,
+        0.6465
+      ],
+      "axial_extent": 0.3298,
+      "z_extent": 0.0533,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.459",
+      "centroid": [
+        0.0796,
+        -0.0,
+        0.6465
+      ],
+      "axial_extent": 0.0967,
+      "z_extent": 0.0533,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.460",
+      "centroid": [
+        0.8804,
+        0.7613,
+        0.8482
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4027,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.461",
+      "centroid": [
+        0.7116,
+        0.7613,
+        0.6379
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1311,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.462",
+      "centroid": [
+        0.7724,
+        0.7613,
+        0.3852
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.2963,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.463",
+      "centroid": [
+        1.0098,
+        0.7613,
+        0.2665
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4294,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.464",
+      "centroid": [
+        1.2473,
+        0.7613,
+        0.385
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.2962,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.465",
+      "centroid": [
+        1.3082,
+        0.7613,
+        0.6377
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1312,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.466",
+      "centroid": [
+        1.1395,
+        0.7613,
+        0.8481
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4027,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.467",
+      "centroid": [
+        1.1389,
+        -0.7613,
+        0.8482
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4027,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.468",
+      "centroid": [
+        1.3077,
+        -0.7613,
+        0.6379
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1311,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.469",
+      "centroid": [
+        1.247,
+        -0.7613,
+        0.3852
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.2963,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.470",
+      "centroid": [
+        1.0096,
+        -0.7613,
+        0.2665
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4294,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.471",
+      "centroid": [
+        0.772,
+        -0.7613,
+        0.385
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.2962,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.472",
+      "centroid": [
+        0.7111,
+        -0.7613,
+        0.6377
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.1312,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.473",
+      "centroid": [
+        0.8798,
+        -0.7613,
+        0.8481
+      ],
+      "axial_extent": 0.0618,
+      "z_extent": 0.4027,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.474",
+      "centroid": [
+        -1.1466,
+        0.5516,
+        0.8586
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.168,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.475",
+      "centroid": [
+        -1.1216,
+        0.5806,
+        0.8586
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.168,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.476",
+      "centroid": [
+        -1.0966,
+        0.5516,
+        0.8586
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.168,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.477",
+      "centroid": [
+        -1.1216,
+        0.5227,
+        0.8586
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.168,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.478",
+      "centroid": [
+        -1.1216,
+        0.5516,
+        0.9426
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.0,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.479",
+      "centroid": [
+        -1.1466,
+        -0.5516,
+        0.8586
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.168,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.480",
+      "centroid": [
+        -1.1216,
+        -0.5806,
+        0.8586
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.168,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.481",
+      "centroid": [
+        -1.0966,
+        -0.5516,
+        0.8586
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.168,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.482",
+      "centroid": [
+        -1.1216,
+        -0.5227,
+        0.8586
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.168,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.483",
+      "centroid": [
+        -1.1216,
+        -0.5516,
+        0.9426
+      ],
+      "axial_extent": 0.0579,
+      "z_extent": 0.0,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.484",
+      "centroid": [
+        -1.065,
+        0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.485",
+      "centroid": [
+        -1.0619,
+        0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.486",
+      "centroid": [
+        -1.1794,
+        0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.487",
+      "centroid": [
+        -1.1828,
+        0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_FR"
+    },
+    {
+      "name": "Object_4.488",
+      "centroid": [
+        -1.065,
+        -0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.489",
+      "centroid": [
+        -1.0619,
+        -0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.490",
+      "centroid": [
+        -1.1791,
+        -0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.491",
+      "centroid": [
+        -1.1828,
+        -0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_FL"
+    },
+    {
+      "name": "Object_4.492",
+      "centroid": [
+        -1.1629,
+        0.0,
+        0.6493
+      ],
+      "axial_extent": 0.3971,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.493",
+      "centroid": [
+        -1.0803,
+        0.0,
+        0.6493
+      ],
+      "axial_extent": 0.3971,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.494",
+      "centroid": [
+        -1.1216,
+        -0.1985,
+        0.6493
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.495",
+      "centroid": [
+        -1.1216,
+        0.1985,
+        0.6493
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.496",
+      "centroid": [
+        1.01,
+        0.5466,
+        0.8745
+      ],
+      "axial_extent": 0.1985,
+      "z_extent": 0.1964,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.497",
+      "centroid": [
+        1.01,
+        0.5806,
+        0.7806
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0083,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.498",
+      "centroid": [
+        1.0348,
+        0.5508,
+        0.8786
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2047,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.499",
+      "centroid": [
+        1.01,
+        0.5508,
+        0.8787
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2045,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.500",
+      "centroid": [
+        1.01,
+        0.4473,
+        0.7804
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0083,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.501",
+      "centroid": [
+        1.01,
+        -0.5466,
+        0.8745
+      ],
+      "axial_extent": 0.1985,
+      "z_extent": 0.1964,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.502",
+      "centroid": [
+        1.01,
+        -0.5806,
+        0.7806
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0083,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.503",
+      "centroid": [
+        1.0348,
+        -0.5508,
+        0.8786
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2047,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.504",
+      "centroid": [
+        1.01,
+        -0.5508,
+        0.8787
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2045,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.505",
+      "centroid": [
+        1.01,
+        -0.4473,
+        0.7804
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0083,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.506",
+      "centroid": [
+        0.9852,
+        0.5508,
+        0.8786
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2047,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.507",
+      "centroid": [
+        0.9852,
+        -0.5508,
+        0.8786
+      ],
+      "axial_extent": 0.2069,
+      "z_extent": 0.2047,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.508",
+      "centroid": [
+        1.0666,
+        0.5477,
+        0.7486
+      ],
+      "axial_extent": 0.0098,
+      "z_extent": 0.0041,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.509",
+      "centroid": [
+        1.0666,
+        0.5549,
+        0.7315
+      ],
+      "axial_extent": 0.0098,
+      "z_extent": 0.0041,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.510",
+      "centroid": [
+        1.0666,
+        0.5457,
+        0.7327
+      ],
+      "axial_extent": 0.0085,
+      "z_extent": 0.0064,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.511",
+      "centroid": [
+        1.0666,
+        0.5422,
+        0.7412
+      ],
+      "axial_extent": 0.0013,
+      "z_extent": 0.0106,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.512",
+      "centroid": [
+        1.0666,
+        0.5569,
+        0.7474
+      ],
+      "axial_extent": 0.0085,
+      "z_extent": 0.0064,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.513",
+      "centroid": [
+        1.0697,
+        0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.514",
+      "centroid": [
+        1.0666,
+        0.5605,
+        0.7389
+      ],
+      "axial_extent": 0.0013,
+      "z_extent": 0.0106,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.515",
+      "centroid": [
+        0.9523,
+        0.5569,
+        0.7474
+      ],
+      "axial_extent": 0.0085,
+      "z_extent": 0.0064,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.516",
+      "centroid": [
+        0.9523,
+        0.5422,
+        0.7412
+      ],
+      "axial_extent": 0.0013,
+      "z_extent": 0.0106,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.517",
+      "centroid": [
+        0.9523,
+        0.5549,
+        0.7315
+      ],
+      "axial_extent": 0.0098,
+      "z_extent": 0.0041,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.518",
+      "centroid": [
+        0.9523,
+        0.5605,
+        0.7389
+      ],
+      "axial_extent": 0.0013,
+      "z_extent": 0.0106,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.519",
+      "centroid": [
+        0.9523,
+        0.5478,
+        0.7486
+      ],
+      "axial_extent": 0.0098,
+      "z_extent": 0.0041,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.520",
+      "centroid": [
+        0.9523,
+        0.5458,
+        0.7327
+      ],
+      "axial_extent": 0.0085,
+      "z_extent": 0.0064,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.521",
+      "centroid": [
+        0.9488,
+        0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.522",
+      "centroid": [
+        1.0426,
+        0.5566,
+        0.9014
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0061,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.523",
+      "centroid": [
+        1.0426,
+        0.546,
+        0.8862
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0061,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.524",
+      "centroid": [
+        1.0426,
+        0.5421,
+        0.8946
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0106,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.525",
+      "centroid": [
+        1.0426,
+        0.5474,
+        0.9022
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0045,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.526",
+      "centroid": [
+        1.0426,
+        0.5605,
+        0.893
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0106,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.527",
+      "centroid": [
+        1.0457,
+        0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0194,
+      "z_extent": 0.0213,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.528",
+      "centroid": [
+        1.0426,
+        0.5552,
+        0.8854
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0045,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.529",
+      "centroid": [
+        0.9772,
+        0.5605,
+        0.893
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0106,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.530",
+      "centroid": [
+        0.9772,
+        0.5474,
+        0.9022
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0045,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.531",
+      "centroid": [
+        0.9772,
+        0.546,
+        0.8862
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0061,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.532",
+      "centroid": [
+        0.9772,
+        0.5552,
+        0.8854
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0045,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.533",
+      "centroid": [
+        0.9772,
+        0.5566,
+        0.9014
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0061,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.534",
+      "centroid": [
+        0.9772,
+        0.5421,
+        0.8946
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0106,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.535",
+      "centroid": [
+        0.9736,
+        0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0212,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.536",
+      "centroid": [
+        1.0666,
+        -0.5477,
+        0.7486
+      ],
+      "axial_extent": 0.0098,
+      "z_extent": 0.0041,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.537",
+      "centroid": [
+        1.0666,
+        -0.5549,
+        0.7315
+      ],
+      "axial_extent": 0.0098,
+      "z_extent": 0.0041,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.538",
+      "centroid": [
+        1.0666,
+        -0.5457,
+        0.7327
+      ],
+      "axial_extent": 0.0085,
+      "z_extent": 0.0064,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.539",
+      "centroid": [
+        1.0666,
+        -0.5422,
+        0.7412
+      ],
+      "axial_extent": 0.0013,
+      "z_extent": 0.0106,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.540",
+      "centroid": [
+        1.0666,
+        -0.5569,
+        0.7474
+      ],
+      "axial_extent": 0.0085,
+      "z_extent": 0.0064,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.541",
+      "centroid": [
+        1.0697,
+        -0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.542",
+      "centroid": [
+        1.0666,
+        -0.5605,
+        0.7389
+      ],
+      "axial_extent": 0.0013,
+      "z_extent": 0.0106,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.543",
+      "centroid": [
+        0.9528,
+        -0.5569,
+        0.7474
+      ],
+      "axial_extent": 0.0085,
+      "z_extent": 0.0064,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.544",
+      "centroid": [
+        0.9528,
+        -0.5422,
+        0.7412
+      ],
+      "axial_extent": 0.0013,
+      "z_extent": 0.0106,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.545",
+      "centroid": [
+        0.9528,
+        -0.5549,
+        0.7315
+      ],
+      "axial_extent": 0.0098,
+      "z_extent": 0.0041,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.546",
+      "centroid": [
+        0.9528,
+        -0.5605,
+        0.7389
+      ],
+      "axial_extent": 0.0013,
+      "z_extent": 0.0106,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.547",
+      "centroid": [
+        0.9528,
+        -0.5478,
+        0.7486
+      ],
+      "axial_extent": 0.0098,
+      "z_extent": 0.0041,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.548",
+      "centroid": [
+        0.9528,
+        -0.5458,
+        0.7327
+      ],
+      "axial_extent": 0.0085,
+      "z_extent": 0.0064,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.549",
+      "centroid": [
+        0.9488,
+        -0.5513,
+        0.7401
+      ],
+      "axial_extent": 0.0197,
+      "z_extent": 0.0212,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.550",
+      "centroid": [
+        1.0426,
+        -0.5566,
+        0.9014
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0061,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.551",
+      "centroid": [
+        1.0426,
+        -0.546,
+        0.8862
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0061,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.552",
+      "centroid": [
+        1.0426,
+        -0.5421,
+        0.8946
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0106,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.553",
+      "centroid": [
+        1.0426,
+        -0.5474,
+        0.9022
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0045,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.554",
+      "centroid": [
+        1.0426,
+        -0.5605,
+        0.893
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0106,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.555",
+      "centroid": [
+        1.0457,
+        -0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0194,
+      "z_extent": 0.0213,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.556",
+      "centroid": [
+        1.0426,
+        -0.5552,
+        0.8854
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0045,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.557",
+      "centroid": [
+        0.9771,
+        -0.5605,
+        0.893
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0106,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.558",
+      "centroid": [
+        0.9771,
+        -0.5474,
+        0.9022
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0045,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.559",
+      "centroid": [
+        0.9771,
+        -0.546,
+        0.8862
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0061,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.560",
+      "centroid": [
+        0.9771,
+        -0.5552,
+        0.8854
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0045,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.561",
+      "centroid": [
+        0.9771,
+        -0.5566,
+        0.9014
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0061,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.562",
+      "centroid": [
+        0.9771,
+        -0.5421,
+        0.8946
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0106,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.563",
+      "centroid": [
+        0.9736,
+        -0.5513,
+        0.8938
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0212,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.564",
+      "centroid": [
+        -1.1756,
+        0.3335,
+        0.5392
+      ],
+      "axial_extent": 0.019,
+      "z_extent": 0.2364,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.565",
+      "centroid": [
+        -1.1217,
+        0.3454,
+        0.6508
+      ],
+      "axial_extent": 0.0322,
+      "z_extent": 0.0133,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.566",
+      "centroid": [
+        -1.0684,
+        0.3567,
+        0.5396
+      ],
+      "axial_extent": 0.0177,
+      "z_extent": 0.2356,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.567",
+      "centroid": [
+        -1.1756,
+        -0.3335,
+        0.5392
+      ],
+      "axial_extent": 0.019,
+      "z_extent": 0.2364,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.568",
+      "centroid": [
+        -1.1217,
+        -0.3454,
+        0.6508
+      ],
+      "axial_extent": 0.0322,
+      "z_extent": 0.0133,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.569",
+      "centroid": [
+        -1.0684,
+        -0.3567,
+        0.5396
+      ],
+      "axial_extent": 0.0177,
+      "z_extent": 0.2356,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.570",
+      "centroid": [
+        0.9494,
+        -0.3475,
+        0.5108
+      ],
+      "axial_extent": 0.0233,
+      "z_extent": 0.0088,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.571",
+      "centroid": [
+        0.9494,
+        -0.3475,
+        0.5004
+      ],
+      "axial_extent": 0.0148,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.572",
+      "centroid": [
+        0.9494,
+        -0.3475,
+        0.5061
+      ],
+      "axial_extent": 0.0233,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.573",
+      "centroid": [
+        1.0684,
+        -0.3839,
+        0.5108
+      ],
+      "axial_extent": 0.0231,
+      "z_extent": 0.0088,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.574",
+      "centroid": [
+        1.0684,
+        -0.3839,
+        0.5004
+      ],
+      "axial_extent": 0.0146,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.575",
+      "centroid": [
+        1.0684,
+        -0.3839,
+        0.5061
+      ],
+      "axial_extent": 0.0231,
+      "z_extent": 0.0005,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.576",
+      "centroid": [
+        0.9494,
+        -0.3475,
+        0.495
+      ],
+      "axial_extent": 0.0148,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.577",
+      "centroid": [
+        1.0684,
+        -0.3839,
+        0.495
+      ],
+      "axial_extent": 0.0146,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.578",
+      "centroid": [
+        -0.1182,
+        -0.0643,
+        0.6134
+      ],
+      "axial_extent": 0.0293,
+      "z_extent": 0.0127,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.579",
+      "centroid": [
+        -0.0316,
+        -0.0789,
+        0.6135
+      ],
+      "axial_extent": 0.0001,
+      "z_extent": 0.0129,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.580",
+      "centroid": [
+        -0.0316,
+        -0.0643,
+        0.6198
+      ],
+      "axial_extent": 0.0293,
+      "z_extent": 0.0002,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.581",
+      "centroid": [
+        -0.0316,
+        -0.0643,
+        0.6072
+      ],
+      "axial_extent": 0.0292,
+      "z_extent": 0.0004,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.582",
+      "centroid": [
+        -0.0316,
+        -0.0497,
+        0.6134
+      ],
+      "axial_extent": 0.0003,
+      "z_extent": 0.0127,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.583",
+      "centroid": [
+        1.0862,
+        -0.5304,
+        0.5135
+      ],
+      "axial_extent": 0.0381,
+      "z_extent": 0.0127,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.584",
+      "centroid": [
+        0.4655,
+        -0.2732,
+        0.5663
+      ],
+      "axial_extent": 0.4472,
+      "z_extent": 0.1068,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.585",
+      "centroid": [
+        0.4655,
+        -0.2847,
+        0.5725
+      ],
+      "axial_extent": 0.4703,
+      "z_extent": 0.0949,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.586",
+      "centroid": [
+        0.9771,
+        -0.5231,
+        0.5102
+      ],
+      "axial_extent": 0.0527,
+      "z_extent": 0.0061,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.587",
+      "centroid": [
+        0.9773,
+        -0.5231,
+        0.5226
+      ],
+      "axial_extent": 0.0527,
+      "z_extent": 0.0055,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.588",
+      "centroid": [
+        0.9771,
+        -0.5347,
+        0.5162
+      ],
+      "axial_extent": 0.0297,
+      "z_extent": 0.0182,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.589",
+      "centroid": [
+        0.9809,
+        -0.5041,
+        0.5161
+      ],
+      "axial_extent": 0.0146,
+      "z_extent": 0.0179,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.590",
+      "centroid": [
+        0.4652,
+        -0.2849,
+        0.5602
+      ],
+      "axial_extent": 0.47,
+      "z_extent": 0.0945,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.591",
+      "centroid": [
+        0.4617,
+        -0.2993,
+        0.5666
+      ],
+      "axial_extent": 0.4411,
+      "z_extent": 0.1067,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.592",
+      "centroid": [
+        0.9467,
+        -0.1919,
+        0.503
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.593",
+      "centroid": [
+        0.9467,
+        -0.1919,
+        0.5123
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0079,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.594",
+      "centroid": [
+        0.9467,
+        -0.1919,
+        0.5084
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.595",
+      "centroid": [
+        1.0712,
+        -0.1919,
+        0.503
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.596",
+      "centroid": [
+        1.0712,
+        -0.1919,
+        0.5123
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0079,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.597",
+      "centroid": [
+        1.0712,
+        -0.1919,
+        0.5084
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.598",
+      "centroid": [
+        0.9467,
+        -0.1919,
+        0.4976
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.599",
+      "centroid": [
+        1.0712,
+        -0.1919,
+        0.4976
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.600",
+      "centroid": [
+        -0.0877,
+        0.0636,
+        0.6053
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0087,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.601",
+      "centroid": [
+        -0.0877,
+        0.0636,
+        0.5953
+      ],
+      "axial_extent": 0.0156,
+      "z_extent": 0.0113,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.602",
+      "centroid": [
+        -0.0877,
+        0.0636,
+        0.601
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.603",
+      "centroid": [
+        -0.0877,
+        0.0636,
+        0.5897
+      ],
+      "axial_extent": 0.0156,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.604",
+      "centroid": [
+        0.0422,
+        0.0636,
+        0.6053
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0087,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.605",
+      "centroid": [
+        0.0422,
+        0.0636,
+        0.5953
+      ],
+      "axial_extent": 0.0156,
+      "z_extent": 0.0113,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.606",
+      "centroid": [
+        0.0422,
+        0.0636,
+        0.601
+      ],
+      "axial_extent": 0.0247,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.607",
+      "centroid": [
+        0.0422,
+        0.0636,
+        0.5897
+      ],
+      "axial_extent": 0.0156,
+      "z_extent": 0.0,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.608",
+      "centroid": [
+        1.0057,
+        0.6059,
+        0.7872
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0078,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.609",
+      "centroid": [
+        1.0149,
+        0.5928,
+        0.7872
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0078,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.610",
+      "centroid": [
+        0.999,
+        0.5914,
+        0.7872
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0078,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.611",
+      "centroid": [
+        0.9982,
+        0.6006,
+        0.7872
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0078,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.612",
+      "centroid": [
+        1.0141,
+        0.602,
+        0.7872
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0078,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.613",
+      "centroid": [
+        1.0074,
+        0.5875,
+        0.7872
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0078,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.614",
+      "centroid": [
+        1.0066,
+        0.5967,
+        0.7912
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.615",
+      "centroid": [
+        1.0057,
+        -0.6059,
+        0.7872
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0078,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.616",
+      "centroid": [
+        1.0149,
+        -0.5928,
+        0.7872
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0078,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.617",
+      "centroid": [
+        0.999,
+        -0.5914,
+        0.7872
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0078,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.618",
+      "centroid": [
+        0.9982,
+        -0.6006,
+        0.7872
+      ],
+      "axial_extent": 0.0097,
+      "z_extent": 0.0078,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.619",
+      "centroid": [
+        1.0141,
+        -0.602,
+        0.7872
+      ],
+      "axial_extent": 0.0087,
+      "z_extent": 0.0078,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.620",
+      "centroid": [
+        1.0074,
+        -0.5875,
+        0.7872
+      ],
+      "axial_extent": 0.0009,
+      "z_extent": 0.0078,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.621",
+      "centroid": [
+        1.0066,
+        -0.5967,
+        0.7912
+      ],
+      "axial_extent": 0.0193,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.622",
+      "centroid": [
+        0.9467,
+        -0.5313,
+        0.5046
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0088,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.623",
+      "centroid": [
+        0.9467,
+        -0.5313,
+        0.4943
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.624",
+      "centroid": [
+        0.9467,
+        -0.5313,
+        0.5
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.625",
+      "centroid": [
+        1.0712,
+        -0.5313,
+        0.5046
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0088,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.626",
+      "centroid": [
+        1.0712,
+        -0.5313,
+        0.4943
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0108,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.627",
+      "centroid": [
+        1.0712,
+        -0.5313,
+        0.5
+      ],
+      "axial_extent": 0.0229,
+      "z_extent": 0.0005,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.628",
+      "centroid": [
+        0.9467,
+        -0.5313,
+        0.4889
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.629",
+      "centroid": [
+        1.0712,
+        -0.5313,
+        0.4889
+      ],
+      "axial_extent": 0.0145,
+      "z_extent": 0.0,
+      "label": "wheel_RL"
+    },
+    {
+      "name": "Object_4.630",
+      "centroid": [
+        -0.1182,
+        0.0643,
+        0.6134
+      ],
+      "axial_extent": 0.0293,
+      "z_extent": 0.0127,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.631",
+      "centroid": [
+        -0.0316,
+        0.0789,
+        0.6135
+      ],
+      "axial_extent": 0.0001,
+      "z_extent": 0.0129,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.632",
+      "centroid": [
+        -0.0316,
+        0.0643,
+        0.6198
+      ],
+      "axial_extent": 0.0293,
+      "z_extent": 0.0002,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.633",
+      "centroid": [
+        -0.0316,
+        0.0643,
+        0.6072
+      ],
+      "axial_extent": 0.0292,
+      "z_extent": 0.0004,
+      "label": "chassis"
+    },
+    {
+      "name": "Object_4.634",
+      "centroid": [
+        0.4095,
+        0.2805,
+        0.5634
+      ],
+      "axial_extent": 0.4618,
+      "z_extent": 0.1126,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.635",
+      "centroid": [
+        1.0862,
+        0.5304,
+        0.5135
+      ],
+      "axial_extent": 0.0381,
+      "z_extent": 0.0127,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.636",
+      "centroid": [
+        0.496,
+        0.2995,
+        0.5699
+      ],
+      "axial_extent": 0.4999,
+      "z_extent": 0.1001,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.637",
+      "centroid": [
+        1.0116,
+        0.5304,
+        0.5071
+      ],
+      "axial_extent": 0.0381,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.638",
+      "centroid": [
+        1.0117,
+        0.5304,
+        0.5198
+      ],
+      "axial_extent": 0.0381,
+      "z_extent": 0.0,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.639",
+      "centroid": [
+        1.0116,
+        0.5495,
+        0.5135
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0127,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.640",
+      "centroid": [
+        1.0117,
+        0.5114,
+        0.5135
+      ],
+      "axial_extent": 0.0,
+      "z_extent": 0.0127,
+      "label": "wheel_RR"
+    },
+    {
+      "name": "Object_4.641",
+      "centroid": [
+        0.496,
+        0.2997,
+        0.5573
+      ],
+      "axial_extent": 0.4996,
+      "z_extent": 0.1003,
+      "label": "hub_attachment"
+    },
+    {
+      "name": "Object_4.642",
+      "centroid": [
+        0.496,
+        0.3141,
+        0.5635
+      ],
+      "axial_extent": 0.4707,
+      "z_extent": 0.1128,
+      "label": "hub_attachment"
+    }
+  ]
+}

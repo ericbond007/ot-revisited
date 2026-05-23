@@ -4,28 +4,15 @@ services:
     build: .
     container_name: ot-revisited
     restart: unless-stopped
-    # Do NOT publish a host port — traefik reaches the container over the
-    # shared docker network below. If you're running without traefik, add:
-    #   ports: ["3020:3000"]
+    # Bind to loopback only. The reverse proxy (bare-metal traefik on wanda,
+    # or any other front) routes the public hostname to this port. Never
+    # expose 3020 publicly — the container is reachable only via the proxy.
+    # If you're self-hosting WITHOUT a reverse proxy, drop the 127.0.0.1
+    # prefix so the port is reachable on the LAN.
+    ports:
+      - "127.0.0.1:3020:3000"
     volumes:
       - ot-data:/data
-    networks:
-      - traefik
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
-      # HTTP -> HTTPS redirect (optional; remove if your traefik global config
-      # already handles it).
-      # Replace <your-domain> with your hostname before deploying.
-      - "traefik.http.routers.ot-revisited.rule=Host(`<your-domain>`)"
-      - "traefik.http.routers.ot-revisited.entrypoints=websecure"
-      - "traefik.http.routers.ot-revisited.tls=true"
-      - "traefik.http.routers.ot-revisited.tls.certresolver=letsencrypt"
-      - "traefik.http.services.ot-revisited.loadbalancer.server.port=3000"
-
-networks:
-  traefik:
-    external: true
 
 volumes:
   ot-data:
