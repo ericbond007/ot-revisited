@@ -214,6 +214,13 @@
 
   // ---------- addons ----------
   const addons = $derived({
+    // Blender-rendered wagon body / driver / ox-team are the production
+    // default (matches /dev/wagon-view's checkbox defaults). The dev
+    // viewer can still toggle them off via addonsOverride for SVG-mode
+    // debugging.
+    useBlenderBody: true,
+    useBlenderDriver: true,
+    useBlenderTeam: true,
     driver: true,
     kegs: wagonRender.defaultKegs,
     coop: gameState.inventory.chicken ?? 0,
