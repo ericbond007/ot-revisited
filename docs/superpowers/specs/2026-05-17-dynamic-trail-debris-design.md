@@ -69,8 +69,12 @@ reference from the script docstring (this spec replaces it).
 | `junk` | broken-wheel, discarded-barrel, abandoned-trunk, cook-stove, **anvil**, **bacon-heap** |
 | `graves` | grave-mound (low unmarked dirt mound), grave-marker (crude wooden headboard/cross), grave-wolfdug (mound dug into) |
 
-≤22 sprites; each rembg-matted webp ≲20 KB; total <~400 KB. 1024²
-generation retained (detail survives the hard scene downscale).
+≤22 sprites; per-sprite rembg-matted webp ~15–45 KB depending on
+subject complexity; total **≈ 620 KB** for the actual 21 (revised up
+from the initial <~400 KB estimate after generation — fidelity won,
+budget grew; still trivially small for the Z-Fold target on a one-time
+cached load). 1024² generation retained (detail survives the hard
+scene downscale).
 
 ### 2. Weighting — new pure module `src/lib/ui/wagon/terrain/debris-field.ts`
 

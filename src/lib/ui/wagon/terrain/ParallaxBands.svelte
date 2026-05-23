@@ -9,6 +9,12 @@
   // Caller supplies `scrollX` (driven by the scene tick) and the
   // scene constants (`horizonY`, `groundY`, `w`, `h`). All movement
   // derives from `scrollX` — no CSS animations.
+  //
+  // Status: dev/legacy path. The production WagonScene composes
+  // GroundBand directly; this composite is currently only re-exported
+  // from `terrain/index.ts` and not imported by any consumer. The
+  // miles/deaths prop-threading below mirrors what GroundBand expects
+  // so this stays drop-in if a future page brings it back into use.
   import type { Terrain } from '$lib/game/types';
   import { HORIZON_Y, GROUND_Y, SCENE_W, SCENE_H } from './terrain-tokens';
   import FarLayer from './FarLayer.svelte';
