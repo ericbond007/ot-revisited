@@ -153,22 +153,27 @@ describe('#1046B — engine pause + applyCompanyDissent continuation', () => {
     expect(state.location.milesTraveled).toBe(s.location.milesTraveled);
     expect(state.day).toBe(s.day);
   });
-  it('applyCompanyDissent(override) → travels, day+1, ONE day food drain', () => {
+  it('applyCompanyDissent(override) → travels, day+1, no DECREASE in food (no double-drain)', () => {
     const paused = tickDayPausable(forcedLayby()).state;
     const f = foodLb(paused);
     const after = applyCompanyDissent(paused, 'override', makeRng('x'));
     expect(after.location.milesTraveled).toBeGreaterThan(paused.location.milesTraveled);
     expect(after.day).toBe(paused.day + 1);
-    expect(foodLb(after)).toBe(f); // consumption already happened pre-pause; NOT re-run
+    // #910 — generous NPC may share flour at layby/dissent → food can
+    // INCREASE; what this test guards is "consumption not re-applied"
+    // (no DECREASE in the continuation).
+    expect(foodLb(after)).toBeGreaterThanOrEqual(f);
     expect(after.wagonTrain!.companyDecisionBlock!.dissentChoice).toBe('override');
   });
-  it('applyCompanyDissent(abide) → no miles, day+1, ONE day food drain', () => {
+  it('applyCompanyDissent(abide) → no miles, day+1, no DECREASE in food (no double-drain)', () => {
     const paused = tickDayPausable(forcedLayby()).state;
     const f = foodLb(paused);
     const after = applyCompanyDissent(paused, 'abide', makeRng('x'));
     expect(after.location.milesTraveled).toBe(paused.location.milesTraveled);
     expect(after.day).toBe(paused.day + 1);
-    expect(foodLb(after)).toBe(f);
+    // #910 — same as override: layby + generous NPC may add food via
+    // train-share; the no-double-drain invariant is "no DECREASE."
+    expect(foodLb(after)).toBeGreaterThanOrEqual(f);
   });
   it('applyCompanyDissent(press_on) → train left, travels solo, day+1, cooldown set', () => {
     const paused = tickDayPausable(forcedLayby()).state;

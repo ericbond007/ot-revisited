@@ -4,7 +4,7 @@
 // tick, future encountered-train wagon AI). Add new decision modules
 // here as they're extracted.
 
-export type { FordMethod, Persona, PersonaId } from './types';
+export type { FordMethod, Persona, PersonaId, ShareOrder } from './types';
 export {
   PERSONAS,
   cautiousPersona,

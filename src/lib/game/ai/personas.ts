@@ -35,6 +35,7 @@ import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor 
 import { warmthFor } from '../systems/warmth';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
 import type { BarterDisposition } from './types';
+import { careLevel } from '../systems/care';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
@@ -752,7 +753,8 @@ export const cautiousPersona: Persona = {
       'cornmeal', 'wheel', 'axle', 'tongue', 'canvas'
     ];
   },
-  shouldDissent() { return 'abide'; }
+  shouldDissent() { return 'abide'; },
+  shouldShareWithTrain() { return null; }
 };
 
 export const balancedPersona: Persona = {
@@ -906,6 +908,11 @@ export const balancedPersona: Persona = {
   shouldDissent() {
     // Trust the chartered company; never break off over a rest call.
     return 'abide';
+  },
+  shouldShareWithTrain() {
+    // Balanced keeps its own stores; no spontaneous handoff. Generous
+    // is the only persona that overrides this with a share order.
+    return null;
   }
 };
 
@@ -1119,6 +1126,10 @@ export const aggressivePersona: Persona = {
   shouldDissent(_state, decision) {
     // #921r identity: push. Split from a forced lay-by, reclaim the day.
     return decision.mode === 'travel' ? 'abide' : 'press_on';
+  },
+  shouldShareWithTrain() {
+    // Aggressive runs lean and pushes hard; no spontaneous food gifts.
+    return null;
   }
 };
 
@@ -1266,6 +1277,11 @@ export const chaosPersona: Persona = {
   shouldDissent(_state, decision, rng) {
     if (decision.mode === 'travel') return 'abide';
     return rng.chance(0.5) ? 'press_on' : 'abide';
+  },
+  shouldShareWithTrain() {
+    // Chaos is unpredictable in choices, but spontaneous food gifts
+    // were never part of the noise model — keep the wire null for v1.
+    return null;
   }
 };
 
@@ -1481,8 +1497,23 @@ export const generousPersona: Persona = {
       'feather_mattress', 'flour', 'beans', 'cornmeal',
       'china_tea_set', 'silver_tea_service'
     ];
+  },
+  shouldShareWithTrain(state, rng) {
+    // #910 — Donner archetype: at company camp, redistribute a small
+    // flour ration to the train. Gated on `tended` careLevel (you
+    // can't share what you don't have) and a 60lb flour reserve so
+    // sharing never strips the giver below own-survival baseline.
+    // 60% per-block roll keeps the share occasional, not certain.
+    if (careLevel(state) === 'untended') return null;
+    if ((state.inventory.flour ?? 0) < SHARE_FLOUR_RESERVE) return null;
+    if (!rng.chance(SHARE_CHANCE)) return null;
+    return { item: 'flour', qty: SHARE_FLOUR_QTY };
   }
 };
+
+const SHARE_FLOUR_RESERVE = 60;
+const SHARE_FLOUR_QTY = 10;
+const SHARE_CHANCE = 0.6;
 
 /** faithful — Sundays off (like sunday_rester) AND prefers prayer-flavored
  *  event choices. Period: Sager family under Whitman protection; Catherine
