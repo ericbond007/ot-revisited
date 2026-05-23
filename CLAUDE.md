@@ -59,9 +59,8 @@ GitHub still works normally — `jj git push` / `jj git fetch` round-trip to `or
 
 ### Caveats specific to this project
 
-- **There is a sibling git worktree at `/home/eric/projects/hoosierTrail-wagon-bg/`** that holds the painted-backdrop generation tooling (`tools/wagon-bg/lora-train/` is ~2.5GB of LoRA training data) and historical experiment outputs. It was set up before jj adoption. Either path is a valid working copy of the same repo; jj operations from either path affect the same `.jj/` store (which lives at this repo, not in the worktree).
-- **Same bookmark can't be checked out at two paths simultaneously** (git's rule, jj inherits it). If `feat/wagon-view-raster` is checked out at wagon-bg and you want to work on it from here, either remove the wagon-bg worktree (`git worktree remove ../hoosierTrail-wagon-bg`) or use `jj workspace add` (jj's worktree equivalent) for a fresh path.
-- **Vite dev server**: from this repo, `npm run dev` defaults to port 5173. The wagon-bg worktree may already be using 5173 — pass `--port 5174` if so.
+- **Single-folder layout (consolidated 2026-05-23).** All work happens in this one repo path. A `hoosierTrail-wagon-bg/` sibling worktree was retired because its stale fork-point hid semantic conflicts at merge time (the `WagonAddons` drift post-mortem). The LoRA training data that used to justify the sibling now lives at `~/datasets/ot-revisited/lora-train/` (~2.5 GB, gitignored-by-virtue-of-being-outside-the-repo; needed only when retraining the `ht_landscape` LoRA — see the `hoosiertrail-render-pipeline` skill).
+- **Vite dev server**: `npm run dev` defaults to port 5173 from this repo.
 
 ### Common workflows
 
