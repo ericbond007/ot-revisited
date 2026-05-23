@@ -51,6 +51,7 @@
   const useSvgLayers = $derived(page.url.searchParams.get('svg') === '1');
   const useGroundRaster = $derived(page.url.searchParams.get('groundraster') === '1');
   const useGroundTex = $derived(page.url.searchParams.get('groundtex') === '1');
+  const useGroundStrip = $derived(page.url.searchParams.get('groundstrip') === '1');
 
   const previewState = $derived.by(() => {
     const base = createInitialState({
@@ -78,7 +79,7 @@
     };
   });
 
-  function toggleQueryFlag(flag: 'svg' | 'groundraster' | 'groundtex') {
+  function toggleQueryFlag(flag: 'svg' | 'groundraster' | 'groundtex' | 'groundstrip') {
     const url = new URL(window.location.href);
     const isOn = url.searchParams.get(flag) === '1';
     if (isOn) url.searchParams.delete(flag);
@@ -187,6 +188,11 @@
       <input type="checkbox" checked={useGroundTex} onchange={() => toggleQueryFlag('groundtex')} />
       <span>Textured ground (<code>?groundtex=1</code>) — seamless biome texture, scrolling pattern</span>
     </label>
+
+    <label class="cb raster-toggle">
+      <input type="checkbox" checked={useGroundStrip} onchange={() => toggleQueryFlag('groundstrip')} />
+      <span>Painted ground strip (<code>?groundstrip=1</code>) — SDXL+LoRA painted side-view trail, parallax-scrolled</span>
+    </label>
   </section>
 
   <section class="tuning">
@@ -218,7 +224,7 @@
     {#key restartKey}
       <WagonScene state={previewState} {timeOfDay} {paused}
                   backdropVariant={variant === -1 ? undefined : variant}
-                  addonsOverride={{ useBlenderDriver, useBlenderBody, useBlenderTeam }}
+                  addonsOverride={{ driver: useBlenderDriver }}
                   tuning={{ wagonX, wagonGroundOffset, tongueBase, tonguePerPair }} />
     {/key}
   </section>
