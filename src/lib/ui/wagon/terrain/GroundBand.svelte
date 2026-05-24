@@ -43,7 +43,11 @@
 
   const useRaster = $derived(page.url.searchParams.get('groundraster') === '1');
   const useGroundtex = $derived(page.url.searchParams.get('groundtex') === '1');
-  const useGroundstrip = $derived(page.url.searchParams.get('groundstrip') === '1');
+  // groundstrip is the PRODUCTION DEFAULT (painted dirt+ruts+debris). Opt
+  // out with ?groundstrip=0 to see the SVG-gradient fallback. The other
+  // dev modes (?groundtex=1, ?groundraster=1) take priority over groundstrip
+  // when set, so dev override still works without also disabling strip.
+  const useGroundstrip = $derived(page.url.searchParams.get('groundstrip') !== '0');
 
   // Match BackdropPainting's river → prairie fallback. River terrain is
   // landmark-only (river crossings); LandmarkStage takes over there. If
@@ -99,12 +103,7 @@
 </script>
 
 <g>
-  {#if useGroundstrip}
-    <!-- Painted ground strip from FLUX (single trail tile, biome-neutral).
-         Plays UNDER the wagon/ox composite and OVER the backdrop's
-         horizon-vista painting. -->
-    <GroundPainting {scrollX} {terrain} {milesTraveled} {deathCount} />
-  {:else if useGroundtex}
+  {#if useGroundtex}
     <defs>
       <!-- Painterly noise filter — feTurbulence + colormatrix tints
            the noise to a brown haze, blended at low alpha over the
@@ -173,6 +172,11 @@
       height={h}
       preserveAspectRatio="xMidYMax slice"
     />
+  {:else if useGroundstrip}
+    <!-- Production default: painted dirt + ruts + dynamic debris field.
+         Plays UNDER the wagon/ox composite and OVER the backdrop's
+         horizon-vista painting. -->
+    <GroundPainting {scrollX} {terrain} {milesTraveled} {deathCount} />
   {:else}
     <defs>
       <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
