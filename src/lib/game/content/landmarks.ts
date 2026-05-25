@@ -37,6 +37,13 @@ export interface Landmark {
   name: string;
   milesFromPrevious: number;
   terrain: Terrain;
+  /** #1019 — Optional altitude in feet for the continuous temperature
+   *  model. When undefined, `systems/temperature.ts` falls back to a
+   *  terrain default (prairie 1500, forest 2500, desert 3500,
+   *  mountains 6500, river 1000). Override only where the landmark is
+   *  meaningfully off-baseline (South Pass 7400, Independence Rock
+   *  6000, Walla Walla 700, Oregon City 50, etc.). */
+  elevationFt?: number;
   kind: 'start' | 'trading_post' | 'landmark' | 'river' | 'end';
   // Present on river-kind landmarks. Per-river depth/current vary realistically
   // and drive Ford modal display + ford-action risk.
@@ -235,7 +242,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'gunpowder', 'lead_balls', 'percussion_caps', 'bandages',
       'rope', 'tobacco', 'whiskey'
     ] },
-  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 112, terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 112, terrain: 'prairie',   elevationFt: 2200, kind: 'trading_post',
     // U.S. Army post. Quartermaster-issue basics — no luxuries.
     // Historical note: Army quartermasters issued to soldiers; they did
     // not buy goods from emigrants. Kearny is sell-only (for the player).
@@ -273,7 +280,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 30, terrain: 'river', kind: 'river',
     river: { depthFt: 2.5, currentMph: 2, ferryPrice: 4 } },
   { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 27, terrain: 'prairie', kind: 'landmark' },
-  { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 20,  terrain: 'prairie',   elevationFt: 4200, kind: 'landmark' },
   { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'robidoux_post',       name: 'Robidoux Trading Post', milesFromPrevious: 6, terrain: 'prairie',  kind: 'trading_post',
     // Joseph Robidoux's post at Robidoux Pass, just south of Scotts Bluff.
@@ -295,7 +302,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // Robidoux was a fur trader — kept the small trinkets in stock.
       'mirror', 'awl', 'thimble', 'pocket_knife'
     ] },
-  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 132,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 132,  terrain: 'prairie',   elevationFt: 4300, kind: 'trading_post',
     // Fur-trade origin turned emigrant hub. The broadest selection on the
     // trail — and famously the highest prices.
     postKind: 'frontier',
@@ -359,7 +366,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 8, terrain: 'river', kind: 'river',
     river: { depthFt: 4.0, currentMph: 3, ferryPrice: 5 } },
   { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 4,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 3,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 3,  terrain: 'prairie',   elevationFt: 6000, kind: 'landmark' },
   { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
   { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 10, terrain: 'river',    kind: 'river',
     river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
@@ -385,7 +392,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // — wagons rolled through, not over. Treat as prairie for travel
   // pacing despite the elevation. Same for the rolling sage country
   // out to Fort Bridger.
-  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 35,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 35,  terrain: 'prairie',   elevationFt: 7400, kind: 'landmark' },
   { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
   { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 7,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 50, terrain: 'river',    kind: 'river',
@@ -401,7 +408,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // seen." Ox-fatigue / wagon-damage descent mechanic is a follow-up;
   // for now, scenic landmark only.
   { id: 'big_hill',            name: 'Big Hill',            milesFromPrevious: 35,  terrain: 'mountains', kind: 'landmark' },
-  { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 30,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 30,  terrain: 'prairie',   elevationFt: 6700, kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
     stockScale: 0.45,
@@ -447,13 +454,13 @@ export const LANDMARKS: readonly Landmark[] = [
     excludeBuyCategories: ['wagon_part', 'tool'] },
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 10,  terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
-  { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   elevationFt: 5800, kind: 'landmark' },
   // #250 — Massacre Rocks (mile ~1290, ID). Pre-1862 just "Gate of
   // Death" — a narrow basalt gap on the Snake where ambushes were
   // feared. After the 1862 Shoshone-Bannock attacks killed 10
   // emigrants the name stuck. Year-aware ambush flavor is a follow-up.
   { id: 'massacre_rocks',      name: 'Massacre Rocks',      milesFromPrevious: 100,   terrain: 'mountains', kind: 'landmark' },
-  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 45,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 45,  terrain: 'prairie',   elevationFt: 4500, kind: 'trading_post',
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
     // wool blankets, manufactured goods). California Trail splits here.
@@ -517,7 +524,7 @@ export const LANDMARKS: readonly Landmark[] = [
       // tobacco — pricier than the Green because the Snake is wider.
       nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 4, blurb: 'Bannock-Shoshone raft — 4 strings of beads' }
     } },
-  { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 160, terrain: 'desert',    kind: 'trading_post',
+  { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 160, terrain: 'desert',    elevationFt: 2100, kind: 'trading_post',
     // Small HBC station. Modest stock, not a major resupply.
     postKind: 'hbc',
     stockScale: 0.6,
@@ -561,7 +568,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // in the November 1847 massacre — abandonedAfterYear gates the post
   // mode and triggers ruin styling for later parties. Sparse on dry
   // goods and ammunition — the Whitmans were missionaries, not traders.
-  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 85,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 85,  terrain: 'prairie',   elevationFt: 800, kind: 'trading_post',
     postKind: 'mission',
     abandonedAfterYear: 1847,
     stockScale: 0.5,
@@ -596,7 +603,7 @@ export const LANDMARKS: readonly Landmark[] = [
     ] },
   // Fort Walla Walla sat ~25 mi west of the mission, on the Columbia
   // (the HBC post, not the later Army fort of the same name).
-  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 25,  terrain: 'prairie',   kind: 'trading_post',
+  { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 25,  terrain: 'prairie',   elevationFt: 700, kind: 'trading_post',
     // HBC river post. Basic but reliable stock. Native trade goods are a
     // specialty here (Walla Walla / Cayuse trade networks).
     postKind: 'hbc',
@@ -610,7 +617,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'canvas', 'tongue', 'grain',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
-  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 95, terrain: 'prairie',   kind: 'trading_post',
+  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 95, terrain: 'prairie',   elevationFt: 100, kind: 'trading_post',
     // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
@@ -639,7 +646,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // stretch. Reclassed mountain → forest so the terrain descriptor
   // matches the visual + the forest mult (0.85) gives it bite.
   { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 60,  terrain: 'forest',    kind: 'landmark' },
-  { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 140,  terrain: 'forest',    kind: 'end' }
+  { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 140,  terrain: 'forest',    elevationFt: 50, kind: 'end' }
 ];
 
 export function getLandmark(id: string): Landmark {
