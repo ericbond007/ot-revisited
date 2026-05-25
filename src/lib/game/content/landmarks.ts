@@ -525,9 +525,19 @@ export const LANDMARKS: readonly Landmark[] = [
       nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 4, blurb: 'Bannock-Shoshone raft — 4 strings of beads' }
     } },
   { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 160, terrain: 'desert',    elevationFt: 2100, kind: 'trading_post',
-    // Small HBC station. Modest stock, not a major resupply.
+    // Small HBC station. Modest stock, not a major resupply. HBC abandoned
+    // it in 1855 after 1853 floods badly damaged the adobe walls + 1854
+    // Ward Massacre (~20 emigrants killed nearby by Bannock) made operations
+    // untenable. Parties arriving 1856+ find no post — handled per the
+    // standard `abandonedAfterYear` gate (same pattern as Hall / Whitman).
+    // Historical refs: docs/historical-pass/13-landmark-visual-references/ft_boise.md.
     postKind: 'hbc',
+    abandonedAfterYear: 1855,
     stockScale: 0.6,
+    // #276 — typedef advertises Boise at 1.2 (sparse HBC tier between
+    // mid-trail 1.0 and Bridger's 1.5 gouge) but the data row was
+    // missing it. Landing per the typedef contract.
+    priceMultiplier: 1.2,
     services: ['gossip', 'blacksmith'],
     // #915 — HBC at Boise prized buffalo robes for the eastbound run
     // (Carpenter 1857: "got 50 lb flour for one prime robe"). Fresh
@@ -604,9 +614,17 @@ export const LANDMARKS: readonly Landmark[] = [
   // Fort Walla Walla sat ~25 mi west of the mission, on the Columbia
   // (the HBC post, not the later Army fort of the same name).
   { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 25,  terrain: 'prairie',   elevationFt: 700, kind: 'trading_post',
-    // HBC river post. Basic but reliable stock. Native trade goods are a
-    // specialty here (Walla Walla / Cayuse trade networks).
+    // HBC river post (Wallula, on the Columbia at the Walla Walla mouth).
+    // Basic but reliable stock. Native trade goods are a specialty here
+    // (Walla Walla / Cayuse trade networks). HBC abandoned the adobe fort
+    // in November 1855 during the Yakima War — the structure was burned
+    // (sources differ on whether by retreating HBC or by Yakama warriors).
+    // The US Army "Fort Walla Walla" 1857+ at modern Walla Walla city is a
+    // separate post 30 mi east and gets its own landmark later. For now,
+    // parties arriving 1856+ find no post — same pattern as Hall / Whitman.
+    // Historical refs: docs/historical-pass/13-landmark-visual-references/ft_walla_walla.md.
     postKind: 'hbc',
+    abandonedAfterYear: 1855,
     stockScale: 0.7,
     services: ['gossip', 'blacksmith'],
     blurb: 'A lonely HBC outpost by the Columbia. Basic but reliable stock, and a specialty in Native trade goods — Walla Walla and Cayuse networks run through here.',
