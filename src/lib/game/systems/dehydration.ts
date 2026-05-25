@@ -2,9 +2,18 @@ import type { GameState } from '../types';
 
 // Dehydration — the party dying of thirst on a short clock.
 //
-// Trigger: end-of-tick water == 0. The dehydration counter (stored on
-// `flags._dehydrationDays`) climbs by one each dry day. Any drop of
-// water on a subsequent tick resets it to zero.
+// Trigger: end-of-tick water (clean + dirty) == 0. The dehydration counter
+// (stored on `flags._dehydrationDays`) climbs by one each dry day. Any
+// drop of water on a subsequent tick resets it to zero.
+//
+// #1136 — dirty water counts as not-dry. applyDailyConsumption draws
+// clean first, then dirty as fallback (consumption.ts:191) — the party
+// IS drinking dirty water, just at disease risk. Dehydration is the
+// no-water-at-all emergency; dirty-water disease is a separate channel
+// via applyDirtyWaterRisk. Pre-fix the counter ticked on any day clean
+// hit 0, so a pre-1854 party using find_water (which fills dirtyWater)
+// without a doctor would die of "dehydration" with a wagon full of
+// water.
 //
 // Damage curve (per adult, scaled by terrain):
 //   dry-day 1: morale −10, health  0
@@ -41,7 +50,10 @@ function moraleHit(days: number): number {
 }
 
 export function applyDehydration(state: GameState): GameState {
-  const dry = state.resources.water <= 0;
+  // #1136 — dirty water counts as not-dry; party drinks it via
+  // applyDailyConsumption's dirty-fallback path.
+  const totalWater = state.resources.water + (state.resources.dirtyWater ?? 0);
+  const dry = totalWater <= 0;
   const prior = typeof state.flags._dehydrationDays === 'number'
     ? (state.flags._dehydrationDays as number)
     : 0;
