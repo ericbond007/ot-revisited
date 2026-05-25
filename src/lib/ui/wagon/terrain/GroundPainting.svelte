@@ -16,6 +16,7 @@
   import { trailProgress } from './trail-progress';
   import {
     categoryWeights,
+    computeWorldStart,
     debrisAt,
     LARAMIE_PROGRESS,
     SLOT_PITCH,
@@ -74,9 +75,12 @@
     }),
   );
 
-  // Visible absolute-world span, swept slot by slot.
+  // Visible absolute-world span, swept slot by slot. #1075 — anchor to
+  // milesTraveled so the slot identity at any visible position is keyed
+  // to absolute trail coord (mile X looks like mile X across remounts);
+  // the scroll-time term adds parallax-locked within-leg drift.
   const debris = $derived.by(() => {
-    const worldStart = scrollX * DEBRIS_SCROLL;
+    const worldStart = computeWorldStart(milesTraveled, scrollX, DEBRIS_SCROLL);
     // Guard of 1 is sufficient: max visible overhang =
     // (MAX_JITTER + MAX_SPRITE/2) / SLOT_PITCH ≈ 1.17 slots.
     const i0 = Math.floor(worldStart / SLOT_PITCH) - 1;

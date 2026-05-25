@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEBRIS_CATALOG, hash32, hashFloats, categoryWeights, fortLaramieProgress, LARAMIE_PROGRESS, debrisAt, SLOT_PITCH } from '../src/lib/ui/wagon/terrain/debris-field';
+import { DEBRIS_CATALOG, hash32, hashFloats, categoryWeights, fortLaramieProgress, LARAMIE_PROGRESS, debrisAt, SLOT_PITCH, SCENE_UNITS_PER_MILE, computeWorldStart } from '../src/lib/ui/wagon/terrain/debris-field';
 
 describe('debris catalog', () => {
   it('has 21 sprites across 4 categories', () => {
@@ -137,6 +137,47 @@ describe('debrisAt', () => {
       const d = debrisAt(i, noGraves);
       if (d) expect(d.sprite).toMatch(/pebble|stick|rock|buffalo/);
     }
+  });
+});
+
+describe('computeWorldStart (#1075 mile anchor)', () => {
+  const DEBRIS_SCROLL = 0.6;
+
+  it('at mount (scrollX=0), worldStart is pure function of milesTraveled', () => {
+    expect(computeWorldStart(0, 0, DEBRIS_SCROLL)).toBe(0);
+    expect(computeWorldStart(100, 0, DEBRIS_SCROLL)).toBe(100 * SCENE_UNITS_PER_MILE);
+    expect(computeWorldStart(547.3, 0, DEBRIS_SCROLL)).toBeCloseTo(547.3 * SCENE_UNITS_PER_MILE, 6);
+  });
+
+  it('same milesTraveled at mount → same worldStart (mile X looks like mile X)', () => {
+    // Two independent "mount moments" at the same trail position must
+    // agree, regardless of whether the user got there via remount, save
+    // restore, or pause/resume — this is the spec property the original
+    // scroll-only formula was failing.
+    expect(computeWorldStart(412, 0, DEBRIS_SCROLL))
+      .toBe(computeWorldStart(412, 0, DEBRIS_SCROLL));
+  });
+
+  it('different milesTraveled at mount → different worldStart (slot identity shifts)', () => {
+    const a = computeWorldStart(100, 0, DEBRIS_SCROLL);
+    const b = computeWorldStart(101, 0, DEBRIS_SCROLL);
+    expect(b - a).toBe(SCENE_UNITS_PER_MILE);
+  });
+
+  it('scrollX adds the parallax-locked within-leg drift on top of the mile anchor', () => {
+    const anchorOnly = computeWorldStart(50, 0, DEBRIS_SCROLL);
+    const withDrift = computeWorldStart(50, -100, DEBRIS_SCROLL);
+    expect(withDrift - anchorOnly).toBeCloseTo(-100 * DEBRIS_SCROLL, 6);
+  });
+
+  it('mile anchor dominates typical within-leg drift over a day-tick window', () => {
+    // ~15 mi advance per day-tick → anchor jump = 15 * SCENE_UNITS_PER_MILE.
+    // A real session's scrollX drift between mounts is ~|scrollX|≤~600
+    // (10s of animation at 60u/s) → drift term ≤ 360. Anchor jump must
+    // exceed that or the spec property dissolves into noise.
+    const anchorJump = 15 * SCENE_UNITS_PER_MILE;
+    const typicalDrift = Math.abs(-600 * DEBRIS_SCROLL);
+    expect(anchorJump).toBeGreaterThan(typicalDrift);
   });
 });
 

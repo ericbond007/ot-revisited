@@ -129,6 +129,26 @@ export interface DebrisInstance {
 /** Scene-x units between candidate debris slots. */
 export const SLOT_PITCH = 26;
 
+/** Scene-x units per game mile — anchors the debris field to absolute
+ *  trail position so mile X always looks like mile X across remounts,
+ *  saves/loads, and pause/resume. One slot per mile is dense enough that
+ *  a typical day-tick (~15 mi) advances the visible scatter by ~30% of
+ *  the screen width (visible motion) without aliasing into the same
+ *  slots within one screen. */
+export const SCENE_UNITS_PER_MILE = SLOT_PITCH;
+
+/** Compose the absolute world-x window the debris field samples.
+ *  Mile anchor dominates (spec: pure function of trail position); the
+ *  scroll-time drift contribution rides parallax-locked with the dirt
+ *  and rut layers between mile ticks. */
+export function computeWorldStart(
+  milesTraveled: number,
+  scrollX: number,
+  debrisScroll: number,
+): number {
+  return milesTraveled * SCENE_UNITS_PER_MILE + scrollX * debrisScroll;
+}
+
 export function debrisAt(slotIndex: number, w: CategoryWeights): DebrisInstance | null {
   const f = hashFloats(slotIndex + 1, 8);
   const total = w.natural + w.bones + w.junk + w.graves;
