@@ -1,6 +1,7 @@
 import type { GameState, Terrain, Weather } from '../types';
 import type { Rng } from '../rng';
 import { exposureMult } from './warmth';
+import { nightTempF } from './temperature';
 
 // Nightly fire. Wood is the gate — historically, emigrants with dry
 // fuel and a flint could light a fire; the real daily problem was
@@ -89,34 +90,38 @@ const WET_GATHER_LOG_THRESHOLD = 0.3;
 const COLD_NIGHT_HEALTH_HIT = 3;
 const COLD_NIGHT_MORALE_HIT = 2;
 
-function isColdNight(state: GameState): boolean {
-  // #1017 — weather signals first (period reality: Bryant 1846 July
-  // hailstorm "men shivered in their coats"; Frizzell 1852 August
-  // Sweetwater frost "the canvas was stiff at dawn"). A storm or
-  // frost or snow night reads cold ANYWHERE — including a July
-  // prairie that the terrain+month rule would call warm.
-  const w = state.weather;
-  if (w === 'frost' || w === 'snow' || w === 'storm') return true;
-  // Mountains always bite — even in clear July, alpine nights drop
-  // to 30-40°F at altitude. Marcy 1859: South Pass 7400 ft, "the
-  // nights cold from June through August on the high passes."
-  if (state.location.terrain === 'mountains') return true;
-  // Winter months (Nov–Feb) bite everywhere on a clear-weather day
-  // by virtue of season alone.
-  const m = state.date.month;
-  return m === 11 || m === 12 || m === 1 || m === 2;
-  // #1019 (deferred): replace this binary predicate with a continuous
-  // night-temperature model (terrain × elevation × month × weather).
-  // The binary captures the load-bearing cases (mountain, storm,
-  // frost, winter) for now.
+/** #1019 — Below this nightTempF the camp is "cold-camp grade":
+ *  burn rate switches to COLD_NIGHT_BURN and applyColdPenalty fires.
+ *  Calibrated to preserve the binary's *deadly* cases (mountain
+ *  frost, winter, sustained sub-freezing) while narrowing its
+ *  overclaim on summer storms (Bryant 1846 "shivered but bore it"). */
+const COLD_NIGHT_TEMP_THRESHOLD_F = 40;
+
+/** #1073 — Per-degree-below-threshold intensity, clamped at ×3.
+ *  40°F borderline = ×0 (no penalty), 32°F freezing = ×1 (binary
+ *  baseline), 16°F mountain = ×3 (cap). */
+const COLD_INTENSITY_DEGREE_STEP = 8;
+const COLD_INTENSITY_MAX = 3;
+
+function coldIntensity(state: GameState): number {
+  const t = nightTempF(state);
+  if (t >= COLD_NIGHT_TEMP_THRESHOLD_F) return 0;
+  const scaled = (COLD_NIGHT_TEMP_THRESHOLD_F - t) / COLD_INTENSITY_DEGREE_STEP;
+  return Math.min(COLD_INTENSITY_MAX, scaled);
 }
 
 function applyColdPenalty(state: GameState): GameState {
-  const cold = isColdNight(state);
+  const intensity = coldIntensity(state); // #1019 + #1073
+  const cold = intensity > 0;
   // Clothing takes the edge off a cold camp — a fully-kitted party loses
   // ~20% of the health hit, a bare-shirt one takes the full dose.
   const exp = exposureMult(state);
-  const hit = Math.max(1, Math.round(COLD_NIGHT_HEALTH_HIT * exp));
+  // #1073 — scale base hit by continuous intensity, then by clothing exp mult.
+  // 40°F borderline → intensity=0 → no penalty branch above
+  // 32°F → ×1 (binary baseline)
+  // 16°F mountain frost → ×3
+  const baseHit = COLD_NIGHT_HEALTH_HIT * intensity;
+  const hit = Math.max(1, Math.round(baseHit * exp));
   const party = cold
     ? state.party.map((m) =>
         m.dead ? m : { ...m, health: Math.max(0, m.health - hit) }
@@ -127,9 +132,10 @@ function applyColdPenalty(state: GameState): GameState {
   // hit unchanged — clothing is what mitigates the cold itself; the tent
   // is the morale layer.
   const hasTent = (state.inventory.tent ?? 0) > 0;
+  const baseMorale = COLD_NIGHT_MORALE_HIT * intensity;
   const moraleHit = hasTent
-    ? Math.max(1, Math.round(COLD_NIGHT_MORALE_HIT / 2))
-    : COLD_NIGHT_MORALE_HIT;
+    ? Math.max(1, Math.round(baseMorale / 2))
+    : Math.max(1, Math.round(baseMorale));
   return {
     ...state,
     morale: Math.max(0, state.morale - moraleHit),
@@ -143,7 +149,7 @@ export function attemptFire(state: GameState, _rng: Rng): GameState {
   // prairie nights consume just the cookfire-equivalent (2 lb);
   // cold mountain / storm / frost nights consume the sustained-warmth
   // fire rate (5 lb). Pre-#1017 every night burned 5 lb unconditionally.
-  const cold = isColdNight(state);
+  const cold = nightTempF(state) < COLD_NIGHT_TEMP_THRESHOLD_F; // #1019
   const burn = cold ? COLD_NIGHT_BURN : WARM_NIGHT_BURN;
 
   // Not enough wood for tonight's fire → cold camp.
