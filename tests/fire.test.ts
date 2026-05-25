@@ -6,6 +6,7 @@ import {
 } from '../src/lib/game/systems/fire';
 import { makeRng } from '../src/lib/game/rng';
 import { createInitialState } from '../src/lib/game/engine';
+import type { GameState } from '../src/lib/game/types';
 
 function newGame() {
   return createInitialState({
@@ -72,7 +73,11 @@ describe('attemptFire', () => {
     const before = s.party.filter((m) => !m.dead).reduce((a, m) => a + m.health, 0);
     const after = next.party.filter((m) => !m.dead).reduce((a, m) => a + m.health, 0);
     expect(after).toBe(before); // no health drop in warm terrain
-    expect(next.morale).toBe(s.morale - 2);
+    // #1019/#1073 — was -2 under the binary (any no-fire night = full hit).
+    // Continuous narrows this: July prairie ~72°F night → intensity=0, so
+    // only the Math.max(1, ...) floor applies — the camp still wakes a
+    // bit sour without a fire, but no longer takes the full cold-night dose.
+    expect(next.morale).toBe(s.morale - 1);
   });
 });
 
@@ -157,5 +162,90 @@ describe('gatherFirewoodOnTravel', () => {
     // Clear day in a forest should yield well above the wet threshold —
     // no log line.
     expect(out.eventLog).toEqual([]);
+  });
+});
+
+describe('#1019 + #1073 — continuous cold-camp scaling', () => {
+  // Build a no-firewood state at a chosen landmark/terrain/month/weather.
+  // Pins party health at 80 so HP-hit assertions have headroom.
+  function stateWithNight(opts: {
+    landmarkId?: string;
+    terrain?: GameState['location']['terrain'];
+    month?: number;
+    weather?: GameState['weather'];
+    miles?: number;
+  }): GameState {
+    const s = createInitialState({
+      seed: 't1019fire',
+      leader: { name: 'L', profession: 'farmer' },
+      companions: [{ name: 'C', profession: 'farmer' }],
+      startDate: { year: 1849, month: opts.month ?? 7, day: 15 }
+    });
+    return {
+      ...s,
+      date: { ...s.date, month: opts.month ?? s.date.month },
+      weather: opts.weather ?? 'clear',
+      resources: { ...s.resources, firewood: 0 }, // forces cold-camp branch
+      location: {
+        ...s.location,
+        previousLandmarkId: null,
+        nextLandmarkId: opts.landmarkId ?? 'ft_kearny',
+        milesTraveled: opts.miles ?? 0,
+        terrain: opts.terrain ?? 'prairie'
+      },
+      party: s.party.map((m) => ({ ...m, health: 80 }))
+    };
+  }
+
+  const rng = makeRng('t');
+
+  it('borderline night (≈59°F) → no cold-camp HP penalty (coldIntensity=0)', () => {
+    // Prairie ft_kearny May clear → mid ≈ 70−6+5 = 69; night = 69−10 = 59°F.
+    // Well above the 40°F threshold → intensity=0 → no HP hit on the party.
+    const s = stateWithNight({ landmarkId: 'ft_kearny', terrain: 'prairie', month: 5, weather: 'clear' });
+    const before = s.party[0].health;
+    const after = attemptFire(s, rng);
+    expect(after.party[0].health).toBe(before);
+  });
+
+  it('cool night (≈34°F) → HP hit ≈ ×0.75 of binary baseline (0 < hit ≤ 3)', () => {
+    // Mountains terrain at ft_kearny (elev 2200), November clear, miles=0:
+    // mid = 70−6−0−15+0 = 49; mountains nightSwing 15 → night = 34°F.
+    // intensity = (40−34)/8 = 0.75 → baseHit = 2.25 × exp ≈ 1-3 HP.
+    const s = stateWithNight({ landmarkId: 'ft_kearny', terrain: 'mountains', month: 11, weather: 'clear' });
+    const before = s.party[0].health;
+    const after = attemptFire(s, rng);
+    expect(after.party[0].health).toBeLessThan(before);
+    expect(after.party[0].health).toBeGreaterThanOrEqual(before - 3);
+  });
+
+  it('deep mountain winter (< 20°F) → near-max HP hit (well below baseline)', () => {
+    // Mountains south_pass (elev 7400), January clear, mid-trail miles 970:
+    // elevDelta=32, latDelta≈2.65, monthDelta(1)=-25 → mid ≈ 10.4;
+    // night ≈ -4.6°F. intensity capped at 3 → baseHit = 9 → -9 HP.
+    const s = stateWithNight({ landmarkId: 'south_pass', terrain: 'mountains', month: 1, weather: 'frost', miles: 970 });
+    const before = s.party[0].health;
+    const after = attemptFire(s, rng);
+    expect(after.party[0].health).toBeLessThan(before - 4);
+  });
+
+  it('warm summer prairie storm → NO HP hit (Bryant 1846 "shivered but bore it")', () => {
+    // July prairie ft_kearny storm: mid = 70−6+15−10 = 69; night = 59°F.
+    // The binary's overclaim ("storm = always cold") no longer takes the
+    // full -3 HP dose on a summer-warm storm night.
+    const s = stateWithNight({ landmarkId: 'ft_kearny', terrain: 'prairie', month: 7, weather: 'storm' });
+    const before = s.party[0].health;
+    const after = attemptFire(s, rng);
+    expect(after.party[0].health).toBe(before);
+  });
+
+  it('frost weather caps nightTempF at 32°F → triggers cold-camp HP penalty', () => {
+    // July prairie frost: bare-deltas mid would be 64°F, night 54°F (warm).
+    // The frost weather-name floor caps nightTempF at 32°F regardless of
+    // season — so frost ALWAYS reads as cold-camp.
+    const s = stateWithNight({ landmarkId: 'ft_kearny', terrain: 'prairie', month: 7, weather: 'frost' });
+    const before = s.party[0].health;
+    const after = attemptFire(s, rng);
+    expect(after.party[0].health).toBeLessThan(before);
   });
 });

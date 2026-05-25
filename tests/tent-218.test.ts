@@ -94,9 +94,14 @@ describe('#218 tent — cold-camp morale mitigation', () => {
     const tentedDrop = baseline.morale - tented.morale;
 
     expect(tentedDrop).toBeLessThan(withoutDrop);
-    // Specifically: 2 → 1.
-    expect(withoutDrop).toBe(2);
-    expect(tentedDrop).toBe(1);
+    // #1019/#1073 — was 2/1 under the binary (every cold night = same hit).
+    // Continuous now scales by coldIntensity: December mountains
+    // (~5°F night) clamps at ×3, so baseMorale = 2 × 3 = 6 →
+    // tent halves it to 3. The "halves the hit" property is what
+    // this test guards; the specific magnitudes track the intensity
+    // and will shift as scenarios get milder.
+    expect(withoutDrop).toBe(6);
+    expect(tentedDrop).toBe(3);
   });
 
   it('does not apply when there is fire on hand (no cold-camp event)', () => {
