@@ -107,11 +107,12 @@ export function weatherTravelMult(weather: Weather | undefined): number {
   }
 }
 
-/** Multiplier on water consumption — heat doubles it, cool overcast
- *  trims slightly. Read by waterConsumedToday. */
+/** Multiplier on water consumption from damp-cool weather (overcast/
+ *  rain → modest reduction). #1074 — the heat branch moved to the
+ *  continuous `tempWaterMult` in consumption.ts which reads dayTempF
+ *  directly. Don't double-count heat here. */
 export function weatherWaterMult(weather: Weather | undefined): number {
   switch (weather) {
-    case 'heat':     return 2.0;
     case 'overcast':
     case 'rain':     return 0.9;
     default:         return 1.0;

@@ -66,11 +66,17 @@ describe('#303e — npcWaterConsumedToday', () => {
       + Math.ceil(wagon.party.filter((m) => !m.dead && m.kind === 'child').length * 0.5));
   });
 
-  it('doubles consumption on heat days', () => {
+  it('weather-only delta (heat no longer doubles here — #1074 moved to engine tick)', () => {
+    // The continuous day-temperature multiplier (tempWaterMult) is
+    // engine-state-dependent and lives in the live tick path
+    // (applyDailyConsumption via wagon-synth). This helper only sees
+    // the wagon + weather, so it can't compute dayTempF — it now
+    // reports the weather-only base. NPC parity with the player is
+    // preserved by the live path, not by this projection helper.
     const wagon = freshTrain().companions[0];
     const cool = npcWaterConsumedToday(wagon, 'clear');
     const hot = npcWaterConsumedToday(wagon, 'heat');
-    expect(hot).toBe(Math.ceil(cool * 2));
+    expect(hot).toBe(cool);
   });
 
   it('returns 0 for a wiped wagon (no alive eaters)', () => {

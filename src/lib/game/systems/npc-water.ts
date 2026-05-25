@@ -32,8 +32,16 @@ function moraleHit(days: number): number {
   return MORALE_PER_DRY_DAY[Math.min(days, MORALE_PER_DRY_DAY.length - 1)];
 }
 
-/** Total water gallons the wagon's alive party would draw today.
- *  Adult full ration + child 0.7× × weather mult. */
+/** Total water gallons the wagon's alive party would draw today —
+ *  query helper for "projected draw without running full tick."
+ *
+ *  #1074 — this returns only the WEATHER component (overcast/rain
+ *  damp-cool trim). The CONTINUOUS day-temperature multiplier
+ *  (`tempWaterMult(state)`) is engine-state-dependent and applied in
+ *  the live tick path via `applyDailyConsumption` (NPC water draw runs
+ *  through engine via wagon-synth — see #939c). Callers that need the
+ *  precise figure should drive the live consumption path; this helper
+ *  is fine for rough "keg-days remaining at current weather" UI math. */
 export function npcWaterConsumedToday(wagon: NpcWagonState, weather: Weather | undefined): number {
   const alive = wagon.party.filter((m) => !m.dead);
   const adults = alive.filter((m) => m.kind === 'adult').length;
