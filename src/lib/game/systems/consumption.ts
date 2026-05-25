@@ -4,6 +4,7 @@ import { foodItemIds } from '../content/items';
 import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
 import { weatherWaterMult } from './weather';
 import { waterborneDiseaseModifier } from './water-purity';
+import { dayTempF } from './temperature';
 
 // Food → nutrition group mapping for the varied-diet bonus (#110).
 // Drawing from ≥2 of these groups in one day = +1 morale that day.
@@ -99,12 +100,28 @@ export function foodConsumedToday(state: GameState): number {
   return hasLiveFarmer(state) ? Math.floor(adjusted * FARMER_FOOD_MULT) : adjusted;
 }
 
+/** #1074 — Continuous heat multiplier on water draw. Period: Marcy 1859
+ *  (Prairie Traveler) — working ox team needs 20-30 gal/day at temperate
+ *  weather, up to 40-50 gal in hot. Replaces the binary
+ *  `weather === 'heat' → ×2` that lived in weatherWaterMult.
+ *
+ *    70°F  → ×1.0  (baseline)
+ *    85°F  → ×1.5
+ *   100°F  → ×2.0  (matches the old binary)
+ *   130°F  → ×3.0  (cap)
+ */
+function tempWaterMult(state: GameState): number {
+  const t = dayTempF(state);
+  return Math.max(1, 1 + (t - 70) / 30);
+}
+
 export function waterConsumedToday(state: GameState): number {
   const adults = aliveAdultCount(state);
   const children = aliveChildCount(state);
   const base = adults * WATER_PER_ADULT_GAL + Math.ceil(children * WATER_PER_ADULT_GAL * CHILD_WATER_MULT);
-  // Weather (#153) — heat doubles water needs, overcast/rain trims a bit.
-  return Math.ceil(base * weatherWaterMult(state.weather));
+  // Weather (#153) trims for damp-cool (overcast/rain); temperature
+  // (#1074) scales continuously up from 70°F to a ×3 cap.
+  return Math.ceil(base * weatherWaterMult(state.weather) * tempWaterMult(state));
 }
 
 /** #926 — passive ambient water refill on travel days. Period reality:

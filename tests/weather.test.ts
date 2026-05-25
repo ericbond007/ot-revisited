@@ -49,8 +49,11 @@ describe('weather travel multiplier', () => {
 });
 
 describe('weather water multiplier', () => {
-  it('heat doubles water consumption', () => {
-    expect(weatherWaterMult('heat')).toBe(2.0);
+  // #1074 — heat is no longer a binary ×2 here; the continuous tempWaterMult
+  // in consumption.ts owns the temperature signal directly via dayTempF.
+  // weatherWaterMult now only carries the damp-cool (overcast/rain) trim.
+  it('heat is now neutral here (moved to continuous tempWaterMult in consumption.ts)', () => {
+    expect(weatherWaterMult('heat')).toBe(1.0);
   });
   it('overcast and rain trim water consumption', () => {
     expect(weatherWaterMult('overcast')).toBeLessThan(1.0);
