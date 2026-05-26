@@ -24,6 +24,7 @@
 // 1400+ tests stable while NPCs come alive.
 
 import type { Rng } from '../rng';
+import { makeRng } from '../rng';
 import type {
   CompanyRestMode,
   GameDate,
@@ -35,6 +36,8 @@ import type {
   Weather
 } from '../types';
 import { getPersona } from '../ai/personas';
+import { bundleCampActions } from '../ai/bundle';
+import { CAMP_ACTIONS_BY_ID } from '../actions/camp-actions';
 import { applySpoilage, applyHeatSpoilage } from './spoilage';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
 import { applyDailyRecovery } from './travel-recovery';
@@ -364,6 +367,51 @@ export function tickNpcWagon(
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
+
+  // 2b. #927 — On non-travel days, run the persona's camp bundle on the
+  // synth. Mirrors the player-bot's restWithBundle (#927 slice 2): same
+  // bundleCampActions dispatcher, same camp-action apply loop.
+  //
+  // Slice-3 opt-in gate is WEIGHTS-ONLY (overrides ignored on NPC
+  // engine). Player-bot still honours faithful's override for its
+  // slice-2 gain; NPC engine sees overrides as inert until per-persona
+  // tuning (#927c) ships safe NPC weights. Currently no default persona
+  // has non-zero weights, so NPC bundling is wired-but-inert at master
+  // parity.
+  if (!traveled) {
+    const w = persona.bundleWeights;
+    const optsIn = w.survival > 0 || w.food > 0 || w.maintenance > 0
+      || w.hygiene > 0 || w.morale > 0;
+    if (optsIn) {
+      // Use a derived sub-rng so camp-action rolls (find_water yield,
+      // gather_firewood amount, etc.) do NOT advance the main NPC tick
+      // rng stream. Without this, every rest day for any bundling NPC
+      // shifts every downstream system's rng across the whole train —
+      // diverging the deterministic outcome of unrelated wagons + the
+      // player. Sub-seed: day + wagon name + persona is sufficient to
+      // stay deterministic without polluting the main stream.
+      const bundleRng = makeRng(`bundle:${env.day}:${next.name}:${persona.id}`);
+      const synth = synthesizeWagonState(next, env);
+      try {
+        const bundle = bundleCampActions(persona, synth, null, bundleRng);
+        if (bundle.campActions.length > 0) {
+          let s = synth;
+          for (const id of bundle.campActions) {
+            const action = CAMP_ACTIONS_BY_ID[id];
+            if (!action.availability(s).available) continue;
+            s = action.apply(s, bundleRng);
+          }
+          next = projectWagonDeltas(s, next);
+          for (const entry of s.eventLog.slice(synth.eventLog.length)) {
+            playerLogs.push(`${entry.text} (${next.name})`);
+          }
+        }
+      } catch {
+        // Defensive: race between availability and apply on synth state.
+        // Keep wagon unchanged.
+      }
     }
   }
 
