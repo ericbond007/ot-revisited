@@ -98,3 +98,44 @@ user.name  = "Eric Bond"
 user.email = "ericbond007@gmail.com"
 ```
 Set globally via `jj config set --user`. Already configured on flattop.
+
+## jj workspace discipline — concurrent Claude sessions
+
+This project frequently has multiple Claude Code sessions running at the same
+time (one fixing a bug, one doing visual work, etc.). They all share one `.jj/`
+store. The **default** workspace at `/home/eric/projects/hoosierTrail/` is the
+one with `.git/` colocated — and every session inside it shares the same `@`.
+When one session runs `jj edit <bookmark>` or `jj new <commit>`, the on-disk
+files swap out from under the others. In-progress edits silently revert. This
+has burned hours.
+
+**Rule: before any code-edit work, spawn your own workspace.**
+
+```
+cd /home/eric/projects/hoosierTrail
+jj workspace add ../hoosierTrail-<task-name> -r <base-bookmark-or-master>
+cd ../hoosierTrail-<task-name>
+# Edit, npm run dev, verify, push, PR. Each workspace has its own @.
+```
+
+Cleanup when the branch lands:
+
+```
+jj workspace forget <task-name>
+rm -rf /home/eric/projects/hoosierTrail-<task-name>
+```
+
+A PreToolUse hook at `.claude/hooks/block-default-workspace-edits.sh` enforces
+this — `Edit` / `Write` / `MultiEdit` fail in the default workspace with a
+reminder. Override (you really mean to edit the shared default): export
+`CLAUDE_ALLOW_DEFAULT_WS=1`.
+
+### Existing long-lived workspaces — do not disturb
+
+- `hoosierTrail-research/` — landmark research corpus, anchored to bookmark
+  `research-stable-2026-05-25`. Stores ~7 MB of gitignored CDL excerpts under
+  `docs/historical-pass/sources/` that can NOT be restored from git history if
+  swapped out.
+- `hoosierTrail-wagon-bg/` — git-only sibling worktree (NOT a jj workspace,
+  no `.jj/`). Holds the large blender models + LoRA training data outside the
+  jj snapshot ceiling.

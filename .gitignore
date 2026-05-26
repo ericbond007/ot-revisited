@@ -50,3 +50,9 @@ tools/wagon-bg/lora-train/
 static/wagon-bg/*--cottagecore@*.webp
 static/wagon-bg/*--ht_*@*.webp
 static/wagon-bg/*--v2_*@*.webp
+
+# Claude Code per-user / runtime state — NOT shared across machines or users.
+# settings.local.json holds per-host permission overrides; scheduled_tasks.lock
+# is a runtime singleton owned by the local CC daemon.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
