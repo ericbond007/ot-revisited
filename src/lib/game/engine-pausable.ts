@@ -110,21 +110,12 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     s = { ...s, flags: cleared };
   }
 
-  // Sabbath-breaking morale debit (#224). Religious diaries from
-  // Catherine Sager to the Reed family record the guilt of traveling
-  // Sundays; pragmatic captains argued miles over scripture. -2 morale
-  // per Sunday Travel (-3 with a live Preacher — they amplify both
-  // directions of the choice). The +morale bump for choosing the lay-
-  // by lives in actions/sunday-lay-by.ts; this debit fires only when
-  // the player presses Travel on a Sabbath.
-  if (isSunday(s.date)) {
-    const debit = hasLivePreacher(s) ? 3 : 2;
-    s = {
-      ...s,
-      morale: Math.max(0, s.morale - debit),
-      eventLog: [...s.eventLog, { day: s.day, text: `Traveled on the Sabbath. Morale −${debit}.` }]
-    };
-  }
+  // #1055 — Sabbath debit moved out of this slot. It used to fire
+  // unconditionally on Sundays, BEFORE the company-rest decision was
+  // computed — which penalised devout companies that lay-by on the
+  // Sabbath (the entire point of the devout doctrine). Now gated on
+  // companyMode === 'travel' and applied after the decision is known
+  // (search for "Sabbath-breaking morale debit" below).
 
   s = progressConditions(s, rng);
   // Eggs lay at dawn so today's yield is available for today's meal.
@@ -225,6 +216,25 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // and sharedThisBlock is still false), so it's safe to call every
   // day; only fires once per lay-by block.
   s = applyTrainShare(s, rng);
+
+  // #1055 — Sabbath-breaking morale debit, gated on companyMode==='travel'.
+  // Religious diaries from Catherine Sager to the Reed family record the
+  // guilt of traveling Sundays; pragmatic captains argued miles over
+  // scripture. -2 morale per Sunday Travel (-3 with a live Preacher —
+  // they amplify both directions of the choice). The +morale bump for
+  // choosing the lay-by lives in actions/sunday-lay-by.ts; this debit
+  // fires only when the company actually pushed through a Sabbath.
+  // Solo wagons keep companyMode='travel' as the default so behavior is
+  // unchanged for them; devout companies that lay-by on Sunday now
+  // correctly skip the debit (the entire point of the devout doctrine).
+  if (isSunday(s.date) && companyMode === 'travel') {
+    const debit = hasLivePreacher(s) ? 3 : 2;
+    s = {
+      ...s,
+      morale: Math.max(0, s.morale - debit),
+      eventLog: [...s.eventLog, { day: s.day, text: `Traveled on the Sabbath. Morale suffers.` }]
+    };
+  }
 
   // #300 — capture miles before travel so advanceTrain can drive the
   // NPC axle-grease consumption cycle off the same daily delta.
