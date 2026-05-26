@@ -31,6 +31,7 @@ import { getWagon } from '../content/wagons';
 import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
+import { chaosBundle, faithfulBundle } from './bundle';
 import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor } from './foresight';
 import { warmthFor } from '../systems/warmth';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
@@ -754,7 +755,8 @@ export const cautiousPersona: Persona = {
     ];
   },
   shouldDissent() { return 'abide'; },
-  shouldShareWithTrain() { return null; }
+  shouldShareWithTrain() { return null; },
+  bundleWeights: { survival: 2, food: 2, maintenance: 2, hygiene: 1, morale: 1 }
 };
 
 export const balancedPersona: Persona = {
@@ -913,7 +915,8 @@ export const balancedPersona: Persona = {
     // Balanced keeps its own stores; no spontaneous handoff. Generous
     // is the only persona that overrides this with a share order.
     return null;
-  }
+  },
+  bundleWeights: { survival: 1, food: 1, maintenance: 1, hygiene: 1, morale: 1 }
 };
 
 export const aggressivePersona: Persona = {
@@ -1130,7 +1133,8 @@ export const aggressivePersona: Persona = {
   shouldShareWithTrain() {
     // Aggressive runs lean and pushes hard; no spontaneous food gifts.
     return null;
-  }
+  },
+  bundleWeights: { survival: 2, food: 1, maintenance: 2, hygiene: 0, morale: 0 }
 };
 
 // `chaos` makes seeded-random choices — the "dumbass tourist" mode.
@@ -1282,7 +1286,9 @@ export const chaosPersona: Persona = {
     // Chaos is unpredictable in choices, but spontaneous food gifts
     // were never part of the noise model — keep the wire null for v1.
     return null;
-  }
+  },
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 },
+  bundleCampActions: chaosBundle
 };
 
 // === #287b — named-profile variants ===
@@ -1300,7 +1306,8 @@ export const sundayResterPersona: Persona = {
   shouldRest(state, rng) {
     if (isSunday(state.date)) return true;
     return balancedPersona.shouldRest(state, rng);
-  }
+  },
+  bundleWeights: { survival: 2, food: 2, maintenance: 1, hygiene: 1, morale: 1 }
 };
 
 /** pace_pusher — grueling when healthy. Period: James Reed pushed for
@@ -1390,7 +1397,8 @@ export const pacePusherPersona: Persona = {
   },
   shouldDissent(_state, decision) {
     return decision.mode === 'travel' ? 'abide' : 'press_on';
-  }
+  },
+  bundleWeights: { survival: 2, food: 1, maintenance: 1, hygiene: 0, morale: 0 }
 };
 
 /** hoarder — supply-stockpiler. Deep saleratus reserves, spare
@@ -1454,7 +1462,8 @@ export const hoarderPersona: Persona = {
       'printing_press', 'iron_strongbox', 'plow', 'wheel', 'axle',
       'tongue', 'canvas', 'flour', 'beans', 'cornmeal'
     ];
-  }
+  },
+  bundleWeights: { survival: 1, food: 2, maintenance: 1, hygiene: 1, morale: 1 }
 };
 
 /** generous — invests in the team and the wagon. Period: George Donner,
@@ -1508,7 +1517,8 @@ export const generousPersona: Persona = {
     if ((state.inventory.flour ?? 0) < SHARE_FLOUR_RESERVE) return null;
     if (!rng.chance(SHARE_CHANCE)) return null;
     return { item: 'flour', qty: SHARE_FLOUR_QTY };
-  }
+  },
+  bundleWeights: { survival: 1, food: 2, maintenance: 1, hygiene: 1, morale: 2 }
 };
 
 const SHARE_FLOUR_RESERVE = 60;
@@ -1552,7 +1562,9 @@ export const faithfulPersona: Persona = {
       'iron_strongbox', 'plow', 'printing_press', 'wheel', 'axle',
       'tongue', 'canvas', 'flour', 'beans', 'cornmeal', 'bible'
     ];
-  }
+  },
+  bundleWeights: { survival: 2, food: 2, maintenance: 2, hygiene: 1, morale: 2 },
+  bundleCampActions: faithfulBundle
 };
 
 /** drinker — prefers whiskey-flavored choices, lingers at posts with inns.
@@ -1608,7 +1620,8 @@ export const drinkerPersona: Persona = {
       'printing_press', 'iron_strongbox', 'wheel', 'axle', 'tongue',
       'canvas', 'flour', 'beans', 'cornmeal', 'whiskey'
     ];
-  }
+  },
+  bundleWeights: { survival: 1, food: 0, maintenance: 0, hygiene: 0, morale: 1 }
 };
 
 export const PERSONAS: Record<PersonaId, Persona> = {

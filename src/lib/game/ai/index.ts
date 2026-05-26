@@ -39,3 +39,18 @@ export {
 export { pickHuntTarget } from './hunt';
 export { defaultCompanions, COMPANION_PRIORITY } from './party';
 export { pickRestCampChain, type CampActionId } from './rest';
+// #927 — bundle camp actions on every rest day (foundation slice).
+export {
+  bundleCampActions,
+  defaultBundleCampActions,
+  chaosBundle,
+  faithfulBundle,
+  urgency,
+  pickHunters,
+  shuffleRng,
+  BUNDLEABLE_ACTIONS,
+  CATEGORY_OF,
+  HUNT_HOURS,
+  TIME_BUDGET_HOURS
+} from './bundle';
+export type { BundleableActionId, BundleWeights, RestBundle } from './bundle';
