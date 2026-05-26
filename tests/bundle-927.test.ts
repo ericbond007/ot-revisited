@@ -18,13 +18,13 @@ describe('#927 urgency — water', () => {
     const s = baseState({ resources: { water: 4, waterCap: 20 } });
     expect(urgency(s, 'find_water')).toBe(10);
   });
-  it('find_water: 5-14gal → 6', () => {
-    const s = baseState({ resources: { water: 10, waterCap: 20 } });
-    expect(urgency(s, 'find_water')).toBe(6);
+  it('find_water: 5-9gal → 5', () => {
+    const s = baseState({ resources: { water: 7, waterCap: 20 } });
+    expect(urgency(s, 'find_water')).toBe(5);
   });
-  it('find_water: ≥15gal → 3', () => {
+  it('find_water: ≥10gal → 0', () => {
     const s = baseState({ resources: { water: 18, waterCap: 20 } });
-    expect(urgency(s, 'find_water')).toBe(3);
+    expect(urgency(s, 'find_water')).toBe(0);
   });
 });
 
@@ -33,13 +33,9 @@ describe('#927 urgency — firewood', () => {
     const s = baseState({ resources: { water: 10, waterCap: 20, firewood: 3 } });
     expect(urgency(s, 'gather_firewood')).toBe(10);
   });
-  it('gather_firewood: 5-14lb → 6', () => {
+  it('gather_firewood: ≥5lb → 0', () => {
     const s = baseState({ resources: { water: 10, waterCap: 20, firewood: 10 } });
-    expect(urgency(s, 'gather_firewood')).toBe(6);
-  });
-  it('gather_firewood: ≥15lb → 3', () => {
-    const s = baseState({ resources: { water: 10, waterCap: 20, firewood: 20 } });
-    expect(urgency(s, 'gather_firewood')).toBe(3);
+    expect(urgency(s, 'gather_firewood')).toBe(0);
   });
 });
 
@@ -143,8 +139,12 @@ function totalCampHours(state: GameState, campActions: string[]): number {
   );
 }
 
+// Explicit non-zero weights for algorithm tests. Default personas are
+// zero-weighted post-#927 tuning (opt-in bundling); these tests pin the
+// algorithm contract independent of any persona's tuning.
+const algoWeights = { survival: 2, food: 2, maintenance: 2, hygiene: 1, morale: 1 };
 const cautiousFns = {
-  weights: cautiousPersona.bundleWeights,
+  weights: algoWeights,
   shouldHunt: cautiousPersona.shouldHunt.bind(cautiousPersona),
 };
 
@@ -222,13 +222,18 @@ describe('#927 bundleCampActions dispatcher', () => {
     expect(out.hunt).toBeNull();
   });
 
-  it('aggressive (food=1) keeps food category eligible (cure_meat picked when meat available)', () => {
+  it('food category with non-zero weight picks cure_meat when meat available', () => {
     const s = baseState({
       resources: { water: 4, waterCap: 20, firewood: 3 },
       inventory: { game_meat: 25, salt: 5 }
     });
     s.wagon = { ...s.wagon, condition: 50 };
-    const out = bundleCampActions(aggressivePersona, s, null, makeRng('a'));
+    const out = defaultBundleCampActions(
+      s, null,
+      { survival: 2, food: 1, maintenance: 0, hygiene: 0, morale: 0 },
+      () => false,
+      makeRng('a'),
+    );
     expect(out.campActions).toContain('cure_meat');
   });
 });

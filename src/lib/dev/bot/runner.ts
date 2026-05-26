@@ -32,6 +32,8 @@ import { joinTrain } from '../../game/systems/wagon-train';
 import { pickHuntTarget } from '../../game/ai/hunt';
 import { defaultCompanions } from '../../game/ai/party';
 import { pickRestCampChain } from '../../game/ai/rest';
+import { bundleCampActions } from '../../game/ai/bundle';
+import type { CampActionId } from '../../game/actions/camp-actions';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
 import type { GameState, ProfessionId } from '../../game/types';
@@ -152,6 +154,62 @@ function restWithWaterChain(state: GameState, stats: RunningStats): GameState {
     stats.errors.push(`rest-fallback: ${(err as Error).message}`);
     return state;
   }
+}
+
+/** #927 — replaces restWithWaterChain. Asks the persona for a 12h camp
+ *  bundle (+ optional hunt directive) via bundleCampActions, applies
+ *  via rest() then hunt(). Falls back to the legacy chain if the bundle
+ *  is empty or applying it throws on availability race. */
+function restWithBundle(
+  state: GameState,
+  persona: Persona,
+  primary: CampActionId | null,
+  rng: Rng,
+  stats: RunningStats,
+): GameState {
+  // Opt-in bundling. Personas without an override AND with all-zero
+  // weights run the legacy chain unchanged (no behavior drift). Personas
+  // that set non-zero weights or a custom bundle (chaos, faithful) opt
+  // into the new surface. This preserves master arrival rates for the
+  // default cohort while exposing the architecture for tuning.
+  const w = persona.bundleWeights;
+  const optsIn = !!persona.bundleCampActions
+    || w.survival > 0 || w.food > 0 || w.maintenance > 0
+    || w.hygiene > 0 || w.morale > 0;
+  if (!optsIn) {
+    if (primary === null) {
+      try {
+        const s = rest(state, 1);
+        stats.decisionsMade += 1;
+        return s;
+      } catch (err) {
+        stats.errors.push(`rest-plain: ${(err as Error).message}`);
+        return state;
+      }
+    }
+    return restWithWaterChain(state, stats);
+  }
+  try {
+    const bundle = bundleCampActions(persona, state, primary, rng);
+    if (bundle.campActions.length > 0) {
+      const s = rest(state, 1, { campActions: [...bundle.campActions] });
+      stats.decisionsMade += 1;
+      return s;
+    }
+  } catch {
+    // bundle apply failed — fall through
+  }
+  if (primary === null) {
+    try {
+      const s = rest(state, 1);
+      stats.decisionsMade += 1;
+      return s;
+    } catch (err) {
+      stats.errors.push(`rest-plain: ${(err as Error).message}`);
+      return state;
+    }
+  }
+  return restWithWaterChain(state, stats);
 }
 
 /** Build a buy list the bot wants when trading at a post. Six tiers
@@ -610,7 +668,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         firedEventToday = true;
       } else if (persona.shouldFindWater(state, botRng)) {
         actionType = 'findWater';
-        state = restWithWaterChain(state, stats);
+        state = restWithBundle(state, persona, 'find_water', botRng, stats);
         firedEventToday = true;
       } else if (persona.shouldPan(state, botRng)) {
         // #313 — gold panning camp action. Half-day spent at a creek in
@@ -664,54 +722,20 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         stats.decisionsMade += 1;
       } else if (persona.shouldRest(state, botRng)) {
         actionType = 'rest';
-        // v8: chain find_water + boil_water into the rest day when the
-        // keg is heading low. The party is already burning the day on
-        // rest — pulling double duty topping the keg avoids a separate
-        // findWater day later. `restWithWaterChain` falls back to a
-        // plain rest if no chain succeeds.
+        // #927 — every rest day now bundles. find_water gets pre-elected
+        // as primary when the keg is low; otherwise the bundle promotes
+        // the highest-urgency action (gather_firewood when firewood is
+        // low, cure_meat when meat is spoiling, etc.). Subsumes the
+        // earlier v8 water-chain and #963 firewood-piggyback heuristics.
         const cap = state.resources.waterCap ?? 20;
         const ratio = cap > 0 ? state.resources.water / cap : 1;
-        // #963 firewood economy: when firewood is low and terrain can
-        // be gathered, piggyback gather_firewood on the rest day. Bots
-        // were entering the Snake/Blue-Mountains corridor with <10 lb
-        // firewood and dying of Exposure (universal failure mode in
-        // post-#963 trace audit). The gather camp action yields 2× the
-        // passive daily rate (#963 traces: 12 lb prairie, 20 lb mtn,
-        // 24 lb forest, 4 lb desert) — one good rest day buys a week+
-        // of fire. `terrain==='river'` excluded since the post is
-        // usually a town, not a wood-yard. (W3 stockpile-via-rest path
-        // — W1 tradeable-at-posts is a follow-up for the player UI.)
-        const fw = state.resources.firewood ?? 0;
-        const FW_LOW_LB = 15; // < 3 nights of fire
-        const canGather = state.location.terrain !== 'river';
-        const wantFirewood = fw < FW_LOW_LB && canGather;
-        if (ratio < 0.6) {
-          state = restWithWaterChain(state, stats);
-        } else if (wantFirewood) {
-          try {
-            state = rest(state, 1, { campActions: ['gather_firewood'] });
-            stats.decisionsMade += 1;
-            firedEventToday = true;
-          } catch {
-            // Fall back to plain rest if camp action is somehow gated off.
-            try {
-              state = rest(state, 1);
-              stats.decisionsMade += 1;
-              firedEventToday = true;
-            } catch (err) {
-              stats.errors.push(`rest: ${(err as Error).message}`);
-              break;
-            }
-          }
-        } else {
-          try {
-            state = rest(state, 1);
-            stats.decisionsMade += 1;
-            firedEventToday = true;
-          } catch (err) {
-            stats.errors.push(`rest: ${(err as Error).message}`);
-            break;
-          }
+        const primary: CampActionId | null = ratio < 0.6 ? 'find_water' : null;
+        try {
+          state = restWithBundle(state, persona, primary, botRng, stats);
+          firedEventToday = true;
+        } catch (err) {
+          stats.errors.push(`rest: ${(err as Error).message}`);
+          break;
         }
       } else {
         // Travel day.

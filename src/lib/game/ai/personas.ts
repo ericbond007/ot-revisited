@@ -756,7 +756,7 @@ export const cautiousPersona: Persona = {
   },
   shouldDissent() { return 'abide'; },
   shouldShareWithTrain() { return null; },
-  bundleWeights: { survival: 2, food: 2, maintenance: 2, hygiene: 1, morale: 1 }
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 export const balancedPersona: Persona = {
@@ -916,7 +916,7 @@ export const balancedPersona: Persona = {
     // is the only persona that overrides this with a share order.
     return null;
   },
-  bundleWeights: { survival: 1, food: 1, maintenance: 1, hygiene: 1, morale: 1 }
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 export const aggressivePersona: Persona = {
@@ -1134,7 +1134,7 @@ export const aggressivePersona: Persona = {
     // Aggressive runs lean and pushes hard; no spontaneous food gifts.
     return null;
   },
-  bundleWeights: { survival: 2, food: 1, maintenance: 2, hygiene: 0, morale: 0 }
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 // `chaos` makes seeded-random choices — the "dumbass tourist" mode.
@@ -1307,7 +1307,7 @@ export const sundayResterPersona: Persona = {
     if (isSunday(state.date)) return true;
     return balancedPersona.shouldRest(state, rng);
   },
-  bundleWeights: { survival: 2, food: 2, maintenance: 1, hygiene: 1, morale: 1 }
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 /** pace_pusher — grueling when healthy. Period: James Reed pushed for
@@ -1398,7 +1398,7 @@ export const pacePusherPersona: Persona = {
   shouldDissent(_state, decision) {
     return decision.mode === 'travel' ? 'abide' : 'press_on';
   },
-  bundleWeights: { survival: 2, food: 1, maintenance: 1, hygiene: 0, morale: 0 }
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 /** hoarder — supply-stockpiler. Deep saleratus reserves, spare
@@ -1463,7 +1463,7 @@ export const hoarderPersona: Persona = {
       'tongue', 'canvas', 'flour', 'beans', 'cornmeal'
     ];
   },
-  bundleWeights: { survival: 1, food: 2, maintenance: 1, hygiene: 1, morale: 1 }
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 /** generous — invests in the team and the wagon. Period: George Donner,
@@ -1518,7 +1518,7 @@ export const generousPersona: Persona = {
     if (!rng.chance(SHARE_CHANCE)) return null;
     return { item: 'flour', qty: SHARE_FLOUR_QTY };
   },
-  bundleWeights: { survival: 1, food: 2, maintenance: 1, hygiene: 1, morale: 2 }
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 const SHARE_FLOUR_RESERVE = 60;
@@ -1621,7 +1621,7 @@ export const drinkerPersona: Persona = {
       'canvas', 'flour', 'beans', 'cornmeal', 'whiskey'
     ];
   },
-  bundleWeights: { survival: 1, food: 0, maintenance: 0, hygiene: 0, morale: 1 }
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 export const PERSONAS: Record<PersonaId, Persona> = {
