@@ -7,14 +7,23 @@ export interface RiverStats {
   // #238 Optional native-run ferry. If present and the named tribe is
   // friendly enough (attitude ≥ NATIVE_FERRY_MIN_ATTITUDE), the ford
   // modal offers a 5th method: bull-boat / raft across for `priceQty`
-  // of `priceItem`. Period reality: Shoshone bull-boats (three buffalo
-  // hides sewn over a willow frame) are well-documented from the
-  // 1820s+ fur trade era on the Green and Snake — paid for in beads
-  // or a knife. The earlier diary citations here (Frizzell 1852 /
-  // Sage 1846) were garbled: Frizzell's journal ends at Pacific Springs
-  // before the Green; Sage's Rocky Mountain Life covers 1841–43, not
-  // 1846. Treat the mechanic as historically attested for Shoshone
-  // craft on these rivers, no single citation needed.
+  // of `priceItem`.
+  //
+  // Period reality (#1146): bull-boat construction — three or more
+  // buffalo hides sewn together and stretched over a willow frame —
+  // is attested by Sgt. Nathaniel Pryor's Lewis & Clark-era description
+  // (1806, hide drawn over crossed willow ribs, ~7'×16", one-person
+  // portable). Shoshone presence at the Green River crossings during
+  // emigration season is documented in John Mathias's diary
+  // (1850-06-02, "Saw a few Indians" at the Green). Alfred Jacob
+  // Miller's 1837 rendezvous sketches depict bull-boats in use in this
+  // same valley. Bead payment reflects the period bead-trade economy.
+  //
+  // Confidence: moderate. The general Shoshone river-assistance
+  // pattern + bull-boat design are well-documented; what's NOT
+  // verifiable is a specific named diary saying "we crossed the Green
+  // in a Shoshone bull-boat." See docs/historical-pass/13-landmark-
+  // visual-references/green_river.md for full sourcing.
   nativeFerry?: {
     tribeId: string;
     priceItem: string;
