@@ -60,6 +60,17 @@
     day = p.day;
   }
 
+  // #1137 — roll a random period name that ISN'T the current one. Sex-aware:
+  // pulls from the gender's pool. Clicking the dice never returns the same
+  // name twice in a row (avoids the "did anything happen?" UX dud).
+  function rollName(i: number) {
+    const m = members[i];
+    const pool = m.sex === 'female' ? FEMALE_NAMES : MALE_NAMES;
+    const candidates = pool.filter((n) => n !== m.name);
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    m.name = pick;
+  }
+
   function addMember() {
     if (members.length >= 6) return;
     const nextSex = members.length % 2 === 0 ? 'male' : 'female';
@@ -123,6 +134,13 @@
         <div class="panel member-card">
           <div class="member-head">
             <input type="text" name="member_{i}_name" bind:value={m.name} placeholder="Name" class="name-input" />
+            <button
+              type="button"
+              class="name-dice"
+              onclick={() => rollName(i)}
+              title="Roll a random period name"
+              aria-label="Roll a random name"
+            >🎲</button>
             <input type="hidden" name="member_{i}_sex" value={m.sex} />
             <div class="sex-toggle" role="radiogroup" aria-label="Sex">
               <button
@@ -512,6 +530,24 @@
     padding: 0.3em 0.7em;
     background: var(--c-bg-raised);
     border: 2px solid var(--c-wood);
+  }
+  /* #1137 — Roll-a-name dice. Visual sibling of .sex-btn but standalone. */
+  .name-dice {
+    padding: 0.25em 0.5em;
+    background: var(--c-bg-raised);
+    border: 2px solid var(--c-wood);
+    border-radius: 3px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.1s;
+    line-height: 1;
+  }
+  .name-dice:hover {
+    background: var(--c-panel);
+    transform: rotate(-15deg);
+  }
+  .name-dice:active {
+    transform: rotate(15deg) scale(0.95);
   }
   .required-tag {
     font-size: 0.7em;
