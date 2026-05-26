@@ -118,6 +118,7 @@ describe('#927 urgency — morale-gated', () => {
 import {
   defaultBundleCampActions,
   bundleCampActions,
+  chaosBundle,
   TIME_BUDGET_HOURS,
   HUNT_HOURS,
 } from '../src/lib/game/ai/bundle';
@@ -127,7 +128,6 @@ import {
   cautiousPersona,
   aggressivePersona,
   drinkerPersona,
-  chaosPersona,
   faithfulPersona,
 } from '../src/lib/game/ai/personas';
 
@@ -238,21 +238,33 @@ describe('#927 bundleCampActions dispatcher', () => {
   });
 });
 
-describe('#927 chaos override — random shuffle', () => {
-  it('produces variance across seeds (not deterministically frozen)', () => {
+describe('#927 chaosBundle (exported, unwired after #1153)', () => {
+  // Wiring removed in #1153 — chaosPersona opt-out of bundling after
+  // 4/0 wipe rate hit 80%. The function stays exported for future
+  // tuning/re-enable. Tests pin algorithm contract.
+
+  it('produces variance across seeds', () => {
     const s = baseState({ resources: { water: 4, waterCap: 20, firewood: 3 } });
     const bundles = new Set<string>();
     for (let i = 0; i < 30; i++) {
-      const out = bundleCampActions(chaosPersona, s, null, makeRng(`c-${i}`));
+      const out = chaosBundle(s, null, makeRng(`c-${i}`));
       bundles.add(JSON.stringify(out.campActions));
     }
     expect(bundles.size).toBeGreaterThan(5);
   });
 
+  it('caps at 2 actions per rest day (CHAOS_MAX_ACTIONS)', () => {
+    for (let i = 0; i < 10; i++) {
+      const s = baseState({ resources: { water: 4, waterCap: 20, firewood: 3 } });
+      const out = chaosBundle(s, null, makeRng(`c-${i}`));
+      expect(out.campActions.length).toBeLessThanOrEqual(2);
+    }
+  });
+
   it('respects 12h budget invariant', () => {
     for (let i = 0; i < 20; i++) {
       const s = baseState({ resources: { water: 4, waterCap: 20, firewood: 3 } });
-      const out = bundleCampActions(chaosPersona, s, null, makeRng(`c-${i}`));
+      const out = chaosBundle(s, null, makeRng(`c-${i}`));
       const used = totalCampHours(s, out.campActions);
       const huntUsed = out.hunt ? HUNT_HOURS : 0;
       expect(used + huntUsed).toBeLessThanOrEqual(TIME_BUDGET_HOURS);
@@ -261,8 +273,8 @@ describe('#927 chaos override — random shuffle', () => {
 
   it('determinism: same seed yields identical bundle', () => {
     const s = baseState({ resources: { water: 4, waterCap: 20, firewood: 3 } });
-    const a = bundleCampActions(chaosPersona, s, null, makeRng('same'));
-    const b = bundleCampActions(chaosPersona, s, null, makeRng('same'));
+    const a = chaosBundle(s, null, makeRng('same'));
+    const b = chaosBundle(s, null, makeRng('same'));
     expect(a).toEqual(b);
   });
 });
