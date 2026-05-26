@@ -265,6 +265,10 @@
 
   .stats {
     display: flex;
+    /* #1147 — push cash to the left edge, water to the right edge so the
+     *  row fills the container instead of bunching to the left with a big
+     *  empty right margin (visible especially on small screens / Z Fold 4). */
+    justify-content: space-between;
     gap: 0.8em;
     font-size: 0.82em;
     color: var(--c-tan-bright);
