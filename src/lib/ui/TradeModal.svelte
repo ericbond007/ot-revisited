@@ -75,23 +75,32 @@
     Array.from(new Set([...stockIds, ...ownedIds])).filter((id) => ITEMS[id] && PRICES[id])
   );
 
-  // Per-item qty state. buyQty > 0 = buying. sellQty > 0 = selling. An item
-  // with both > 0 is rare but allowed (defensive — totals math still works).
-  let buyQty = $state<Record<string, number>>(
+  // #1134 — Signed per-item state. Positive = buying that many; negative =
+  // selling that many; 0 = no trade. Replaces the prior pair of buyQty /
+  // sellQty state objects + their two stacked steppers per row. Buy and
+  // sell are derived for the totals/weight math via Math.max(0, ±v).
+  let tradeQty = $state<Record<string, number>>(
     Object.fromEntries(allIdsInitial.map((id) => [id, 0]))
   );
-  let sellQty = $state<Record<string, number>>(
-    Object.fromEntries(allIdsInitial.map((id) => [id, 0]))
-  );
-  // Keep qty dicts in sync with derived lists — stock / inventory can shift
+  // Keep qty dict in sync with derived lists — stock / inventory can shift
   // mid-modal (shouldn't, but be defensive; NumberStepper bindings break on
   // undefined keys).
   $effect(() => {
     for (const id of allIds) {
-      if (buyQty[id] === undefined) buyQty[id] = 0;
-      if (sellQty[id] === undefined) sellQty[id] = 0;
+      if (tradeQty[id] === undefined) tradeQty[id] = 0;
     }
   });
+  // Derived buy/sell views for downstream math (totals, weight, live panel).
+  const buyQty = $derived(
+    Object.fromEntries(
+      Object.entries(tradeQty).map(([id, v]) => [id, Math.max(0, v)])
+    )
+  );
+  const sellQty = $derived(
+    Object.fromEntries(
+      Object.entries(tradeQty).map(([id, v]) => [id, Math.max(0, -v)])
+    )
+  );
 
   // Group ids by item category so the list reads like a store shelf rather
   // than a flat alphabetical dump.
@@ -354,41 +363,32 @@
                       </div>
                     </div>
                     <div class="item-controls">
-                      {#if inStock}
+                      {#if inStock || canSell}
                         {@const wagonCap = id === 'chicken' ? chickenRoom : (isBulkCat ? 999 : 99)}
-                        {@const buyMax = Math.min(wagonCap, stockLeft)}
+                        {@const buyMax = inStock ? Math.min(wagonCap, stockLeft) : 0}
+                        {@const sellMax = canSell ? owned : 0}
+                        {@const v = tradeQty[id] ?? 0}
                         <div class="control-col">
-                          <span class="control-tag buy">BUY</span>
+                          <span class="control-tag" class:buy={v > 0} class:sell={v < 0}>
+                            {v > 0 ? 'BUY' : v < 0 ? 'SELL' : (buyMax > 0 && sellMax > 0 ? 'TRADE' : buyMax > 0 ? 'BUY' : 'SELL')}
+                          </span>
                           <NumberStepper
-                            name="buy_{id}"
-                            bind:value={buyQty[id]}
-                            min={0}
+                            bind:value={tradeQty[id]}
+                            min={-sellMax}
                             max={buyMax}
-                            bulkSteps={isBulkCat ? [10, 50] : []}
-                            ariaLabel="Buy {ITEMS[id].name}"
+                            bulkSteps={isBulkCat && buyMax >= 10 ? [10, 50] : []}
+                            ariaLabel="{ITEMS[id].name}: negative sells, positive buys"
                             hideValue
                             displayValue={afterOwned}
-                            addedValue={buying}
+                            addedValue={v !== 0 ? v : undefined}
                           />
-                          {#if id === 'chicken' && chickenRoom === 0}
+                          {#if id === 'chicken' && chickenRoom === 0 && v >= 0}
                             <span class="coop-full">coop full</span>
                           {/if}
-                        </div>
-                      {/if}
-                      {#if canSell}
-                        <div class="control-col">
-                          <span class="control-tag sell">SELL</span>
-                          <NumberStepper
-                            name="sell_{id}"
-                            bind:value={sellQty[id]}
-                            min={0}
-                            max={owned}
-                            bulkSteps={isBulkCat && owned >= 10 ? [10, 50] : []}
-                            ariaLabel="Sell {ITEMS[id].name}"
-                            hideValue
-                            displayValue={afterOwned}
-                            addedValue={-selling}
-                          />
+                          <!-- #1134 — server reads buy_/sell_ prefixed form
+                               fields; emit both, derived from signed value. -->
+                          <input type="hidden" name="buy_{id}" value={Math.max(0, v)} />
+                          <input type="hidden" name="sell_{id}" value={Math.max(0, -v)} />
                         </div>
                       {/if}
                     </div>

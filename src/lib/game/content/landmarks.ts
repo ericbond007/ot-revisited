@@ -7,9 +7,14 @@ export interface RiverStats {
   // #238 Optional native-run ferry. If present and the named tribe is
   // friendly enough (attitude ≥ NATIVE_FERRY_MIN_ATTITUDE), the ford
   // modal offers a 5th method: bull-boat / raft across for `priceQty`
-  // of `priceItem`. Period reality: Frizzell 1852 / Sage 1846 record
-  // Shoshone bull-boats on the Green River — three buffalo hides sewn
-  // over a willow frame, paid for in beads or a knife.
+  // of `priceItem`. Period reality: Shoshone bull-boats (three buffalo
+  // hides sewn over a willow frame) are well-documented from the
+  // 1820s+ fur trade era on the Green and Snake — paid for in beads
+  // or a knife. The earlier diary citations here (Frizzell 1852 /
+  // Sage 1846) were garbled: Frizzell's journal ends at Pacific Springs
+  // before the Green; Sage's Rocky Mountain Life covers 1841–43, not
+  // 1846. Treat the mechanic as historically attested for Shoshone
+  // craft on these rivers, no single citation needed.
   nativeFerry?: {
     tribeId: string;
     priceItem: string;
@@ -209,16 +214,23 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 2,   terrain: 'river',     kind: 'river',
     river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
   { id: 'hollenberg_ranch',    name: 'Hollenberg Ranch',    milesFromPrevious: 30,  terrain: 'prairie',   kind: 'trading_post',
-    // Private road ranch on Cottonwood Creek. Small sod-and-timber store
-    // run by a German emigrant (Gerat Hollenberg). Mail stop later — for
-    // now, just a handful of prairie staples and a few luxuries.
+    // Private road ranch built 1857 on Cottonwood Creek at the junction
+    // of the Independence and St. Joseph roads. Long frame building on a
+    // stone foundation — store, kitchen, family quarters, post office,
+    // traveler bunk loft all under one roof (HABS KS-59 documents the
+    // intact original building). Pony Express home station 1860-61. Run
+    // by Gerat Hollenberg (German emigrant) and his wife Sophia. Pre-1857
+    // parties see open prairie — same `abandonedBeforeYear` pattern as
+    // rock_creek_station. Historical refs:
+    // docs/historical-pass/13-landmark-visual-references/hollenberg_ranch.md.
     postKind: 'frontier',
+    abandonedBeforeYear: 1857,
     stockScale: 0.5,
     // Road ranch — sells food, lodging, simple supplies. Doesn't deal
     // in fur-trade specialty.
     excludeBuyCategories: ['native_trade'],
     services: ['gossip', 'inn', 'gambling', 'brothel'],
-    blurb: "A sod-and-timber road ranch on Cottonwood Creek. A private store run by a German emigrant — prairie staples, a little whiskey, and whatever the last train didn't buy.",
+    blurb: "A long frame building on a stone foundation at the junction of the Independence and St. Joseph roads. Gerat Hollenberg and his wife Sophia run the whole operation — flour and bacon, hot meals, a bar, a loft that sleeps a dozen. Everything happens under one roof.",
     stock: [
       'flour', 'beans', 'bacon', 'hardtack',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bandages',
@@ -276,17 +288,30 @@ export const LANDMARKS: readonly Landmark[] = [
   // marker that still stands. The most-photographed grave on the
   // trail. Year-gated arrival event with the cholera vignette is a
   // follow-up; for now just a passing landmark.
-  { id: 'rachel_pattison_grave', name: "Rachel Pattison's Grave", milesFromPrevious: 2, terrain: 'prairie', kind: 'landmark' },
+  // The grave was dug June 19, 1849 (Rachel Pattison, age 19, died of
+  // cholera nine days into her party's journey). Pre-1849 parties see
+  // open prairie at this mile — no headstone yet. Standard
+  // `abandonedBeforeYear` gate pattern (treated by isLandmarkAbandoned
+  // as "not yet built/dug"). Historical refs:
+  // docs/historical-pass/13-landmark-visual-references/ash_hollow.md.
+  { id: 'rachel_pattison_grave', name: "Rachel Pattison's Grave", milesFromPrevious: 2, terrain: 'prairie', kind: 'landmark',
+    abandonedBeforeYear: 1849 },
   { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 30, terrain: 'river', kind: 'river',
     river: { depthFt: 2.5, currentMph: 2, ferryPrice: 4 } },
   { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 27, terrain: 'prairie', kind: 'landmark' },
   { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 20,  terrain: 'prairie',   elevationFt: 4200, kind: 'landmark' },
   { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'robidoux_post',       name: 'Robidoux Trading Post', milesFromPrevious: 6, terrain: 'prairie',  kind: 'trading_post',
-    // Joseph Robidoux's post at Robidoux Pass, just south of Scotts Bluff.
-    // A small fur-trader outfit — blacksmith services, moccasins, beads,
-    // and whatever furs he's willing to spare.
+    // Joseph E. Robidoux's small log shanty at Robidoux Pass, just south
+    // of Scotts Bluff. Forge-end + grog-end under one roof (Stansbury 1849,
+    // 75¢/hour blacksmith). Narrow historical window: built ~1849 for
+    // gold-rush traffic; traffic shifted permanently to Mitchell Pass
+    // after 1851 when it was opened, post unviable by 1852 (NPS/Mattes).
+    // 1853+ parties find no post — same `abandonedAfterYear` pattern as
+    // Hall / Whitman / Boise. Historical refs:
+    // docs/historical-pass/13-landmark-visual-references/robidoux_post.md.
     postKind: 'mountain',
+    abandonedAfterYear: 1852,
     stockScale: 0.4,
     // #276 Mountain trader — 30% above mid-trail tier.
     priceMultiplier: 1.3,
@@ -525,9 +550,19 @@ export const LANDMARKS: readonly Landmark[] = [
       nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 4, blurb: 'Bannock-Shoshone raft — 4 strings of beads' }
     } },
   { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 160, terrain: 'desert',    elevationFt: 2100, kind: 'trading_post',
-    // Small HBC station. Modest stock, not a major resupply.
+    // Small HBC station. Modest stock, not a major resupply. HBC abandoned
+    // it in 1855 after 1853 floods damaged the adobe walls + 1854 Ward
+    // Massacre (~20 emigrants killed nearby by Bannock) made operations
+    // untenable. 1856+ parties find no post — standard `abandonedAfterYear`
+    // pattern (same as Hall / Whitman). Historical refs:
+    // docs/historical-pass/13-landmark-visual-references/ft_boise.md.
     postKind: 'hbc',
+    abandonedAfterYear: 1855,
     stockScale: 0.6,
+    // #276 — typedef advertises Boise at 1.2 (sparse HBC tier between
+    // mid-trail 1.0 and Bridger's 1.5 gouge) but the data row was
+    // missing it. Landing per the typedef contract.
+    priceMultiplier: 1.2,
     services: ['gossip', 'blacksmith'],
     // #915 — HBC at Boise prized buffalo robes for the eastbound run
     // (Carpenter 1857: "got 50 lb flour for one prime robe"). Fresh
@@ -604,9 +639,17 @@ export const LANDMARKS: readonly Landmark[] = [
   // Fort Walla Walla sat ~25 mi west of the mission, on the Columbia
   // (the HBC post, not the later Army fort of the same name).
   { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 25,  terrain: 'prairie',   elevationFt: 700, kind: 'trading_post',
-    // HBC river post. Basic but reliable stock. Native trade goods are a
-    // specialty here (Walla Walla / Cayuse trade networks).
+    // HBC river post (Wallula, on the Columbia at the Walla Walla mouth).
+    // Basic but reliable stock. Native trade goods specialty here. HBC
+    // abandoned the adobe fort November 1855 during the Yakima War — the
+    // structure was burned (sources differ on whether by retreating HBC
+    // or by Yakama warriors). The US Army "Fort Walla Walla" 1857+ at
+    // modern Walla Walla city is a separate post 30 mi east; gets its
+    // own landmark later. 1856+ parties find no post — standard
+    // `abandonedAfterYear` pattern. Historical refs:
+    // docs/historical-pass/13-landmark-visual-references/ft_walla_walla.md.
     postKind: 'hbc',
+    abandonedAfterYear: 1855,
     stockScale: 0.7,
     services: ['gossip', 'blacksmith'],
     blurb: 'A lonely HBC outpost by the Columbia. Basic but reliable stock, and a specialty in Native trade goods — Walla Walla and Cayuse networks run through here.',
