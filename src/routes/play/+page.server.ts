@@ -219,7 +219,23 @@ export const actions: Actions = {
     const plannedFromForm = Math.max(1, Math.min(7, parseInt(fd.get('plannedDays')?.toString() ?? '1', 10)));
     const planned = plannedFromFlag ?? plannedFromForm;
     const sofarBefore = (state.flags._campDaysSoFar as number | undefined) ?? 0;
-    state = rest(state, 1, campActions.length > 0 ? { campActions } : {});
+    // Defensive filter — drop camp actions that aren't available against
+    // the CURRENT state. Otherwise rest() throws (rest.ts:213-215) and the
+    // POST returns 500. Race conditions where the user checked an action
+    // when it was available, then state changed before submit (auto-spoilage,
+    // a prior action consuming the input, etc.), would otherwise kill the
+    // request. Log the drop for observability; the dropped action's effect
+    // simply doesn't fire.
+    const droppedCampActions: CampActionId[] = [];
+    const filteredCampActions = campActions.filter((id) => {
+      const available = CAMP_ACTIONS_BY_ID[id].availability(state).available;
+      if (!available) droppedCampActions.push(id);
+      return available;
+    });
+    if (droppedCampActions.length > 0) {
+      console.warn(`[rest] dropped unavailable camp actions: ${droppedCampActions.join(', ')}`);
+    }
+    state = rest(state, 1, filteredCampActions.length > 0 ? { campActions: filteredCampActions } : {});
     const sofarAfter = sofarBefore + 1;
     const flags: typeof state.flags = { ...state.flags };
     if (sofarAfter >= planned) {

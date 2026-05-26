@@ -47,6 +47,22 @@
     picked = [];
   });
 
+  // Drop any picks that have become unavailable since selection — e.g.,
+  // the player picked cure_meat when game_meat was on hand, then a fresh
+  // game_meat spoilage tick took it to 0. Without this filter the
+  // selection sticks, the form submits campAction=cure_meat, and rest()
+  // throws on the unavailable action. Server has a defensive filter too,
+  // but the UI should never let the player carry a stale, un-applicable
+  // pick into the next submit.
+  $effect(() => {
+    const unavailable = new Set(
+      picked.filter((id) => !CAMP_ACTIONS.find((a) => a.id === id)?.availability(gameState).available)
+    );
+    if (unavailable.size > 0) {
+      picked = picked.filter((id) => !unavailable.has(id));
+    }
+  });
+
   const actionRows = $derived(
     CAMP_ACTIONS
       // Hidden actions (cannibalism, etc.) drop out of the grid entirely
