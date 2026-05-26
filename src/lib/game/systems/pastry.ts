@@ -106,7 +106,7 @@ export function applyPastryQuality(state: GameState, rng?: Rng): PastryQualityRe
         morale: Math.max(0, state.morale - NO_COOKWARE_MORALE_HIT),
         eventLog: [
           ...state.eventLog,
-          { day: state.day, text: 'No cookware — ate paste again. Morale −2.' }
+          { day: state.day, text: 'No cookware — ate paste again. Morale suffers.' }
         ]
       },
       outcome: 'no-cookware'
@@ -122,7 +122,7 @@ export function applyPastryQuality(state: GameState, rng?: Rng): PastryQualityRe
         morale: Math.max(0, state.morale - NO_SALERATUS_MORALE_HIT),
         eventLog: [
           ...state.eventLog,
-          { day: state.day, text: 'No saleratus — biscuits sat heavy in the belly. Morale −1.' }
+          { day: state.day, text: 'No saleratus — biscuits sat heavy in the belly. Morale suffers.' }
         ]
       },
       outcome: 'no-saleratus'
