@@ -20,11 +20,30 @@
   } = $props();
 
   const HOVER_DELAY_MS = 250;
+  // #1133 — flip threshold: when the trigger's top is within this many
+  // pixels of the viewport top, the tooltip renders below the trigger
+  // instead of above. Matches the rendered card max-height ballpark
+  // (title + subtitle + 3-4 lines of description + meta + padding).
+  const FLIP_THRESHOLD_PX = 200;
+
   let hovered = $state(false);
   let pinned = $state(false);
+  let placement = $state<'top' | 'bottom'>('top');
+  let wrapEl = $state<HTMLElement | null>(null);
   let showTimer: ReturnType<typeof setTimeout> | null = null;
 
   const shown = $derived(!disabled && (pinned || hovered));
+
+  // When the tooltip is about to show (or pin), measure available
+  // headroom and flip placement when the trigger sits in the top band
+  // of the viewport. Without this, the top row of a profession picker
+  // (or any grid hugging the top of the screen) renders the tooltip
+  // off-canvas where it gets clipped (#1133).
+  $effect(() => {
+    if (!shown || !wrapEl) return;
+    const rect = wrapEl.getBoundingClientRect();
+    placement = rect.top < FLIP_THRESHOLD_PX ? 'bottom' : 'top';
+  });
 
   function onEnter() {
     if (disabled || pinned) return;
@@ -51,6 +70,7 @@
 </script>
 
 <span
+  bind:this={wrapEl}
   class="tt-wrap"
   class:pinned
   role="button"
@@ -65,7 +85,7 @@
   {@render children()}
 
   {#if shown}
-    <span class="tt-card" class:pinned role="tooltip">
+    <span class="tt-card" class:pinned class:below={placement === 'bottom'} role="tooltip">
       <span class="tt-title">{title}</span>
       {#if subtitle}
         <span class="tt-subtitle">{subtitle}</span>
@@ -131,6 +151,23 @@
     border-top-color: var(--c-rust);
   }
   .tt-card.pinned::after { border-top-color: var(--c-rust-dark); }
+
+  /* #1133 — flip placement: render below the trigger when there's no
+   *  headroom (top row of a profession picker, sticky-header context,
+   *  etc.). Arrow points up instead of down. */
+  .tt-card.below {
+    bottom: auto;
+    top: calc(100% + 6px);
+  }
+  .tt-card.below::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: var(--c-rust);
+  }
+  .tt-card.below.pinned::after {
+    border-bottom-color: var(--c-rust-dark);
+  }
 
   .tt-title {
     font-weight: 700;
