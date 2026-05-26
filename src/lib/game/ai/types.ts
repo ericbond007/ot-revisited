@@ -14,6 +14,8 @@ import type { GameState, CompanyRestDecision } from '../types';
 import type { GameEvent } from '../content/events';
 import type { Landmark } from '../content/landmarks';
 import type { Rng } from '../rng';
+import type { CampActionId } from '../actions/camp-actions';
+import type { BundleWeights, RestBundle } from './bundle';
 
 // Re-export the engine's canonical FordMethod so consumers get one
 // source of truth instead of a parallel string union.
@@ -212,6 +214,18 @@ export interface Persona {
    *  via NPC mud handling (`npc-engine.ts`) and the bot runner — the
    *  player path goes through MudAbandonModal instead. */
   mudAbandonmentPriority?(): readonly string[];
+
+  /** #927 — Per-category priority weights for the default bundle algorithm.
+   *  Each weight in {0, 1, 2}: 0 = skip category entirely, 1 = include by
+   *  urgency, 2 = include first when budget tight. Multiplied against
+   *  per-action urgency to rank candidates. Weight=0 always loses. */
+  bundleWeights: BundleWeights;
+  /** #927 — Optional escape hatch: replace the default bundle algorithm
+   *  entirely. When omitted, bundle.ts's defaultBundleCampActions runs
+   *  with this persona's bundleWeights. Used by chaos (random pick) and
+   *  faithful (Sabbath-sequenced). Override MUST respect TIME_BUDGET_HOURS
+   *  (otherwise rest() throws on apply). */
+  bundleCampActions?(state: GameState, primary: CampActionId | null, rng: Rng): RestBundle;
 }
 
 /** #915 — A single barter offer-pair the bot wants to make. */
