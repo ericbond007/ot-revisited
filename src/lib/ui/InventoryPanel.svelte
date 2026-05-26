@@ -207,7 +207,7 @@
             {@const perItemIcon = (ICON.inventory_items as Record<string, string>)[e.id]}
             <div class="row">
               <span class="row-name">{#if perItemIcon}<span class="row-icon">{perItemIcon}</span>{/if}{e.name}</span>
-              <span class="row-qty">×{e.qty}</span>
+              <span class="row-qty">×{Number.isInteger(e.qty) ? e.qty : e.qty.toFixed(2).replace(/\.?0+$/, '')}</span>
             </div>
           {/each}
         </div>
