@@ -133,7 +133,11 @@ export function applyPastryQuality(state: GameState, rng?: Rng): PastryQualityRe
   // Round up to ensure progress so that a properly-budgeted starter kit
   // still depletes on schedule for any seed.
   const consumed = Math.max(0.01, drawnLb * SALERATUS_LB_PER_PASTRY_LB);
-  const remaining = Math.max(0, saleratusOnHand - consumed);
+  // #1135 — round to 0.01 lb so the stored value doesn't accumulate JS
+  // float garbage (e.g., 3.420423048). Smallest meaningful saleratus
+  // quantity is well below 0.01 lb; 2-decimal precision is more than
+  // enough for the design (1 unit = 0.5 lb, daily consumption ≈ 0.03 lb).
+  const remaining = Math.max(0, Math.round((saleratusOnHand - consumed) * 100) / 100);
   return {
     state: {
       ...state,
