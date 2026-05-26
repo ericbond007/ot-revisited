@@ -31,7 +31,7 @@ import { getWagon } from '../content/wagons';
 import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
-import { chaosBundle, faithfulBundle } from './bundle';
+import { faithfulBundle } from './bundle';
 import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor } from './foresight';
 import { warmthFor } from '../systems/warmth';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
@@ -1287,8 +1287,13 @@ export const chaosPersona: Persona = {
     // were never part of the noise model — keep the wire null for v1.
     return null;
   },
-  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 },
-  bundleCampActions: chaosBundle
+  // #1153 — chaosBundle override removed. Activating chaosBundle on
+  // 4/0 dropped arrival from ~50% to 0% (random camp-action picks drained
+  // rations + ammo before reaching Oregon). Chaos's persona flavour
+  // still rides on shouldRaid / shouldSteal / shouldHunt (rng.chance)
+  // and the random pace/ration pickers — opt-out of rest-day bundling
+  // keeps the rest-day cadence stable while randomness lives elsewhere.
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 // === #287b — named-profile variants ===

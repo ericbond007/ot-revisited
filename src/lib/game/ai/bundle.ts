@@ -299,8 +299,14 @@ export function bundleCampActions(
   );
 }
 
-/** #927 — chaos override. Random shuffle pick to fill the 12h budget,
- *  no scoring. Deterministic via seeded rng — same seed → same bundle. */
+/** #927 — chaos override. Random shuffle pick to fill the budget — but
+ *  CAPPED at 2 actions max so the persona doesn't drain rations on every
+ *  rest day. Deterministic via seeded rng — same seed → same bundle.
+ *
+ *  Pre-tuning (#1153) chaos picked 4-6 actions per rest day, dragging
+ *  4/0 arrival to 0%. Capping at 2 makes chaos feel random without
+ *  cascading resource exhaustion. */
+const CHAOS_MAX_ACTIONS = 2;
 export function chaosBundle(
   state: GameState,
   primary: CampActionId | null,
@@ -318,6 +324,7 @@ export function chaosBundle(
     remaining -= hourCostFor(CAMP_ACTIONS_BY_ID[seed], state);
   }
   for (const id of shuffled) {
+    if (campActions.length >= CHAOS_MAX_ACTIONS) break;
     if (id === seed) continue;
     const h = hourCostFor(CAMP_ACTIONS_BY_ID[id], state);
     if (h <= remaining) {
@@ -325,9 +332,11 @@ export function chaosBundle(
       remaining -= h;
     }
   }
-  // Chaos rolls 40% on hunting whenever budget allows.
+  // Hunt directive computed but not applied at slice-2 layer (#927); kept
+  // for slice-3 NPC parity and future re-enable. Tightened from 40% → 15%
+  // to align with capped action count once hunt application returns.
   let huntDirective: RestBundle['hunt'] = null;
-  if (remaining >= HUNT_HOURS && rng.next() < 0.4) {
+  if (remaining >= HUNT_HOURS && rng.next() < 0.15) {
     const tgt = pickHuntTarget(state);
     huntDirective = { target: tgt.target, ammo: tgt.ammo, hunters: pickHunters(state) };
   }
@@ -344,9 +353,14 @@ export function faithfulBundle(
   primary: CampActionId | null,
   rng: Rng,
 ): RestBundle {
+  // Tuned (#1153): pre-tuning weights pulled 4-6 actions per rest day,
+  // dropping faithful 4/0 arrival from 50% to 23%. Trimmed to favour
+  // survival (water/firewood) on weekdays with light morale/maintenance
+  // accents, and survival+morale-only on Sundays. Sabbath still skips
+  // maintenance entirely; weekdays allow it as a low-weight tier 1.
   const weights: BundleWeights = isSunday(state.date)
-    ? { survival: 2, food: 2, maintenance: 0, hygiene: 1, morale: 2 }
-    : { survival: 2, food: 2, maintenance: 2, hygiene: 1, morale: 2 };
+    ? { survival: 2, food: 0, maintenance: 0, hygiene: 0, morale: 1 }
+    : { survival: 2, food: 0, maintenance: 1, hygiene: 0, morale: 1 };
   // Faithful hunts: emigrant practice allowed "necessary labor for
   // sustenance" on the Sabbath. Sunday threshold tighter — only when
   // food critically low; weekday at normal threshold.
