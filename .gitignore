@@ -50,3 +50,23 @@ tools/wagon-bg/lora-train/
 static/wagon-bg/*--cottagecore@*.webp
 static/wagon-bg/*--ht_*@*.webp
 static/wagon-bg/*--v2_*@*.webp
+
+# In-copyright Archive.org CDL book excerpts — LOCAL RESEARCH ONLY, gitignored.
+# Volume exceeds fair-use for redistribution; lives on dev machine for grep.
+docs/historical-pass/sources/bruff_excerpts/
+docs/historical-pass/sources/mattes_excerpts/
+docs/historical-pass/sources/gowans_excerpts/
+docs/historical-pass/sources/_borrowed_book_excerpts/
+
+# Blender source 3D models — large binaries, render pipeline source not repo content
+tools/blender/models/*.glb
+tools/blender/models/*.fbx
+tools/blender/scratch/
+tools/wagon-bg/wagon-refs/*.png
+
+# Generated FLUX/Blender raster outputs that are too large for git
+static/wagon-bg/wagon-blender/*--fresh.png
+static/wagon-bg/wagon-blender/*--stylized.png
+static/wagon-bg/wagon-tex-flux/
+static/wagon-bg/wagon-wheels/front--prairie-schooner.png
+static/wagon-bg/ground_strip-trail-raw.png
