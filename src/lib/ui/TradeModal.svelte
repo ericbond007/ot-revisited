@@ -6,6 +6,7 @@
   import { getProfession } from '$lib/game/content/professions';
   import { getWagon } from '$lib/game/content/wagons';
   import { postRemainingQty } from '$lib/game/systems/post-stock';
+  import { findBarterableItems, quoteBarter, BARTER_RATE_FLOOR } from '$lib/game/systems/barter';
   import { ICON } from '$lib/data/icon-dictionary';
   import { POST_THEME } from '$lib/data/post-theme';
   import ItemTooltip from './ItemTooltip.svelte';
@@ -196,6 +197,71 @@
   // Leader name + profession chip for the header.
   const leader = $derived(gameState.party[0]);
   const leaderProf = $derived(leader?.profession ? getProfession(leader.profession) : null);
+
+  // #1001 — barter mode. Default screen is the cash trade. When the
+  // user flips to barter, the buy/sell pane swaps for a give/receive
+  // pair with live quote feedback.
+  type Mode = 'trade' | 'barter';
+  let mode = $state<Mode>('trade');
+  const barterEnabled = $derived(here?.barterEnabled !== false);
+  const barterables = $derived(here ? findBarterableItems(gameState, here) : []);
+  const preferredSet = $derived(new Set(here?.barterPreferred ?? []));
+  const refusedSet = $derived(new Set(here?.barterRefused ?? []));
+
+  let giveItem = $state<string>('');
+  let giveQty = $state<number>(1);
+  let receiveItem = $state<string>('');
+  let receiveQty = $state<number>(1);
+
+  // Default give/receive selections when the user lands on the barter pane
+  // (top trade-value item player owns + first preferred-or-stock item).
+  $effect(() => {
+    if (mode !== 'barter') return;
+    if (!giveItem && barterables.length > 0) giveItem = barterables[0].item;
+    if (!receiveItem && stockIds.length > 0) receiveItem = stockIds[0];
+  });
+
+  const giveOwned = $derived(gameState.inventory[giveItem] ?? 0);
+  const giveStepperMax = $derived(Math.min(giveOwned, 999));
+  const receiveStockLeft = $derived(
+    receiveItem && here ? postRemainingQty(gameState, here, receiveItem) : 0
+  );
+  const receiveStepperMax = $derived(Math.min(receiveStockLeft, 999));
+
+  const barterQuote = $derived(
+    giveItem && receiveItem && giveQty > 0 && receiveQty > 0
+      ? quoteBarter(gameState, { item: giveItem, qty: giveQty }, { item: receiveItem, qty: receiveQty })
+      : null
+  );
+
+  // Refused-item flavor — first refused item the player owns drives the
+  // "trader shakes his head" line, post-specific where useful.
+  const POST_REFUSAL_FLAVOR: Record<string, string> = {
+    fort_bridger: "Bridger waves it off — \"take that to Hall, friend.\"",
+    fort_hall: "The factor declines — \"trade that downriver, not here.\"",
+    whitman_mission: "The reverend won't barter for that here.",
+    fort_laramie: "The post refuses that line — try Bridger.",
+  };
+  const refusalHint = $derived(
+    refusedSet.has(giveItem)
+      ? (POST_REFUSAL_FLAVOR[hereId ?? ''] ?? 'The trader shakes his head at this offer.')
+      : null
+  );
+
+  // Hint for preferred items (auto-generated from the post's
+  // barterPreferred list, using item display names).
+  const preferredHint = $derived(() => {
+    const items = (here?.barterPreferred ?? [])
+      .map((id) => ITEMS[id]?.name ?? id.replace(/_/g, ' '))
+      .filter(Boolean);
+    if (items.length === 0) return null;
+    const list = items.length === 1
+      ? items[0]
+      : items.length === 2
+        ? `${items[0]} and ${items[1]}`
+        : `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+    return `${postName} prefers ${list} — best rate when you trade those.`;
+  });
 </script>
 
 <div class="trade-backdrop" onclick={onclose} role="presentation">
@@ -278,8 +344,35 @@
           {#if leader}<strong>{leader.name}</strong>{#if leaderProf}, <span class="lede-prof">{leaderProf.name}</span>{/if} at the counter. {/if}
           Pick what to take, what to leave.
         </p>
+        <!-- #1001 — mode toggle. Cash trade is the default; barter swaps in
+             a give/receive view when the post permits it. -->
+        {#if barterEnabled}
+          <div class="mode-tabs" role="tablist" aria-label="Trade mode">
+            <button
+              type="button"
+              class="mode-tab"
+              class:active={mode === 'trade'}
+              role="tab"
+              aria-selected={mode === 'trade'}
+              onclick={() => (mode = 'trade')}
+            >
+              Buy &amp; Sell
+            </button>
+            <button
+              type="button"
+              class="mode-tab"
+              class:active={mode === 'barter'}
+              role="tab"
+              aria-selected={mode === 'barter'}
+              onclick={() => (mode = 'barter')}
+            >
+              Barter
+            </button>
+          </div>
+        {/if}
       </header>
 
+    {#if mode === 'trade'}
       <!-- Sticky totals bar -->
       <div class="totals-bar panel" class:overdraw={!canAfford}>
         <div class="total-cell">
@@ -410,6 +503,118 @@
           {/if}
         </div>
       </form>
+    {:else}
+      <!-- #1001 — Barter pane. Item-for-item trade with live quote. -->
+      <form method="POST" action="?/barter&slot={qp}" class="barter-form">
+        <div class="barter-grid">
+          <!-- GIVE column -->
+          <section class="barter-col">
+            <h3 class="barter-col-head">You give</h3>
+            {#if barterables.length === 0}
+              <p class="empty">Nothing here the {postName} trader will take.</p>
+            {:else}
+              <select name="giveItem" bind:value={giveItem} class="barter-select">
+                {#each barterables as b}
+                  {@const meta = ITEMS[b.item]}
+                  {@const preferred = preferredSet.has(b.item)}
+                  {@const refused = refusedSet.has(b.item)}
+                  <option value={b.item}>
+                    {meta?.name ?? b.item} ({b.qty})
+                    {#if preferred}· preferred{/if}
+                    {#if refused}· refused{/if}
+                  </option>
+                {/each}
+              </select>
+              <div class="barter-qty-row">
+                <label for="give-qty">qty</label>
+                <NumberStepper
+                  bind:value={giveQty}
+                  min={1}
+                  max={giveStepperMax}
+                  ariaLabel="Give quantity"
+                />
+                <span class="barter-have">of {giveOwned}</span>
+              </div>
+              <input type="hidden" name="giveQty" value={giveQty} />
+            {/if}
+          </section>
+
+          <!-- RECEIVE column -->
+          <section class="barter-col">
+            <h3 class="barter-col-head">You receive</h3>
+            {#if stockIds.length === 0}
+              <p class="empty">No stock to barter for.</p>
+            {:else}
+              <select name="receiveItem" bind:value={receiveItem} class="barter-select">
+                {#each stockIds as id}
+                  {@const meta = ITEMS[id]}
+                  {@const left = here ? postRemainingQty(gameState, here, id) : 0}
+                  <option value={id} disabled={left === 0}>
+                    {meta?.name ?? id} ({left} left)
+                  </option>
+                {/each}
+              </select>
+              <div class="barter-qty-row">
+                <label for="receive-qty">qty</label>
+                <NumberStepper
+                  bind:value={receiveQty}
+                  min={1}
+                  max={receiveStepperMax}
+                  ariaLabel="Receive quantity"
+                />
+                <span class="barter-have">of {receiveStockLeft} left</span>
+              </div>
+              <input type="hidden" name="receiveQty" value={receiveQty} />
+            {/if}
+          </section>
+        </div>
+
+        <!-- Quote readout -->
+        {#if barterQuote}
+          {@const r = barterQuote.rate}
+          {@const tone = !barterQuote.fair ? 'bad' : r >= 0.9 ? 'good' : 'mid'}
+          <div class="barter-quote panel quote-{tone}">
+            <div class="quote-rate">
+              <span class="quote-rate-label">Rate</span>
+              <span class="quote-rate-val">{r.toFixed(2)}×</span>
+            </div>
+            <div class="quote-status">
+              {#if !barterQuote.fair}
+                {#if r < BARTER_RATE_FLOOR}
+                  Trader refuses — you're giving too little.
+                {:else if r > 1.05}
+                  You'd be paying through the nose. Walk away.
+                {:else}
+                  This post won't accept that trade.
+                {/if}
+              {:else if r >= 0.95}
+                Fair trade.
+              {:else}
+                Trader's terms — still fair.
+              {/if}
+            </div>
+          </div>
+        {/if}
+
+        {#if refusalHint}
+          <p class="barter-flavor refused">{refusalHint}</p>
+        {/if}
+        {#if preferredHint()}
+          <p class="barter-flavor preferred">{preferredHint()}</p>
+        {/if}
+
+        <div class="action-bar panel">
+          <button
+            type="submit"
+            class="confirm"
+            disabled={!barterQuote?.fair || giveQty <= 0 || receiveQty <= 0 || giveQty > giveOwned || receiveQty > receiveStockLeft}
+          >
+            Trade
+          </button>
+          <button type="button" class="cancel" onclick={onclose}>Cancel</button>
+        </div>
+      </form>
+    {/if}
     </div>
   </div>
 </div>
@@ -802,5 +1007,143 @@
     }
     .side-rail { overflow-y: visible; }
     .scroll-area { overflow-y: visible; }
+  }
+
+  /* #1001 — mode tabs + barter pane */
+  .mode-tabs {
+    display: flex;
+    gap: 0.3em;
+    margin-top: 0.5em;
+  }
+  .mode-tab {
+    flex: 1;
+    padding: 0.5em 0.8em;
+    background: var(--c-bg-raised);
+    color: var(--c-tan);
+    border: 2px solid var(--c-wood);
+    border-radius: 3px;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .mode-tab:hover:not(.active) {
+    background: var(--c-panel);
+    border-color: var(--c-rust);
+  }
+  .mode-tab.active {
+    background: var(--c-rust);
+    color: var(--c-tan-bright);
+    border-color: var(--c-ink);
+  }
+
+  .barter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
+    padding: 0.8em;
+  }
+  .barter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8em;
+  }
+  .barter-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    padding: 0.7em;
+    background: var(--c-panel);
+    border: 1px solid var(--c-wood);
+    border-radius: 3px;
+  }
+  .barter-col-head {
+    margin: 0;
+    font-size: 0.85em;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-rust);
+  }
+  .barter-select {
+    width: 100%;
+    padding: 0.4em 0.5em;
+    background: var(--c-bg-raised);
+    color: var(--c-tan);
+    border: 2px solid var(--c-wood);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.9em;
+  }
+  .barter-qty-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  .barter-qty-row label {
+    font-size: 0.75em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-wood);
+  }
+  .barter-have {
+    font-size: 0.78em;
+    color: var(--c-wood);
+  }
+  .empty {
+    margin: 0;
+    color: var(--c-wood);
+    font-style: italic;
+    font-size: 0.85em;
+  }
+
+  .barter-quote {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8em;
+    padding: 0.6em 0.9em;
+    border-width: 2px;
+  }
+  .quote-rate {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+  }
+  .quote-rate-label {
+    font-size: 0.7em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-wood);
+  }
+  .quote-rate-val {
+    font-size: 1.3em;
+    font-weight: 700;
+  }
+  .quote-status { font-size: 0.85em; }
+  .quote-good { border-color: #8bb96a; }
+  .quote-good .quote-rate-val { color: #8bb96a; }
+  .quote-mid { border-color: #f5c96a; }
+  .quote-mid .quote-rate-val { color: #f5c96a; }
+  .quote-bad { border-color: #e85a4a; }
+  .quote-bad .quote-rate-val { color: #e85a4a; }
+
+  .barter-flavor {
+    margin: 0;
+    padding: 0.4em 0.7em;
+    font-size: 0.82em;
+    font-style: italic;
+    color: var(--c-tan);
+    background: var(--c-panel);
+    border-left: 3px solid var(--c-wood);
+    border-radius: 0 3px 3px 0;
+  }
+  .barter-flavor.preferred { border-left-color: #8bb96a; }
+  .barter-flavor.refused { border-left-color: #e85a4a; }
+
+  @media (max-width: 900px) {
+    .barter-grid { grid-template-columns: 1fr; }
   }
 </style>
