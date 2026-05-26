@@ -38,25 +38,31 @@ describe('#224 calendar helpers', () => {
 
 describe('#224 Sabbath morale debit on Sunday Travel', () => {
   it('-2 morale on a Sunday travel tick (no preacher)', () => {
-    const before: GameState = { ...newGame(), morale: 50 };
-    const result = tickDayPausable(before);
-    // 50 - 2 (Sabbath) - 0 (no other moves) ≈ 48. Other systems can shift it
-    // a tiny bit; just verify the Sabbath debit landed.
-    const sabbathLog = result.state.eventLog.find((l) => /Sabbath/i.test(l.text));
+    // Compare Sunday vs Monday with the same starting state — the
+    // diet/wellness/hot-drinks +1s land identically on both days, so the
+    // delta isolates the Sabbath debit (#1055 — log line no longer
+    // carries the literal magnitude, so a regex test is gone).
+    const sun: GameState = { ...newGame(), morale: 50 };
+    const mon: GameState = { ...newGame(), morale: 50, date: { year: 1849, month: 4, day: 16 } };
+    const sunRes = tickDayPausable(sun);
+    const monRes = tickDayPausable(mon);
+    expect(sunRes.state.morale).toBe(monRes.state.morale - 2);
+    const sabbathLog = sunRes.state.eventLog.find((l) => /Sabbath/i.test(l.text));
     expect(sabbathLog).toBeDefined();
-    expect(sabbathLog!.text).toMatch(/2/);
   });
 
   it('-3 morale on a Sunday travel tick when a Preacher is in the party', () => {
-    const sWithPreacher = createInitialState({
+    const base = createInitialState({
       seed: 'preacher-sun',
       leader: { name: 'Reverend', profession: 'preacher' },
       companions: [{ name: 'Mary', profession: 'banker' }],
       startDate: { year: 1849, month: 4, day: 15 }
     });
-    const result = tickDayPausable(sWithPreacher);
-    const sabbathLog = result.state.eventLog.find((l) => /Sabbath/i.test(l.text));
-    expect(sabbathLog?.text).toMatch(/3/);
+    const sun = base;
+    const mon: GameState = { ...base, date: { year: 1849, month: 4, day: 16 } };
+    const sunRes = tickDayPausable(sun);
+    const monRes = tickDayPausable(mon);
+    expect(sunRes.state.morale).toBe(monRes.state.morale - 3);
   });
 
   it('no debit on a Monday travel tick', () => {
@@ -73,6 +79,38 @@ describe('#224 Sabbath morale debit on Sunday Travel', () => {
     const before: GameState = { ...newGame(), morale: 1 };
     const result = tickDayPausable(before);
     expect(result.state.morale).toBeGreaterThanOrEqual(0);
+  });
+
+  it('#1055 — devout company on Sunday: lay-by, no Sabbath debit', () => {
+    // A devout company's captain calls a Sabbath lay-by. companyRestDecision
+    // returns mode='sabbath_layby', so the Sabbath debit must NOT fire —
+    // the entire point of devout doctrine is observing the Sabbath. Before
+    // #1055 the debit ran unconditionally on Sundays and the company ate
+    // the penalty for doing exactly what its doctrine prescribed.
+    const base = newGame();
+    const devoutTrain = {
+      id: 'devout-1',
+      name: 'Devout Company',
+      doctrine: 'devout' as const,
+      leaderId: 'leader-devout',
+      companions: [],
+      events: [],
+      flags: {},
+      companyDecisionBlock: null,
+      reJoinCooldownUntilDay: 0
+    };
+    const sunInTrain: GameState = {
+      ...base,
+      morale: 50,
+      wagonTrain: devoutTrain as unknown as GameState['wagonTrain']
+    };
+    const result = tickDayPausable(sunInTrain);
+    // The company-decision system logs "lays by — Sabbath observance" — that's
+    // expected. The bug was that the TRAVEL debit ("Traveled on the Sabbath")
+    // also fired even though the company hadn't traveled. Assert that line
+    // is absent.
+    const travelDebitLog = result.state.eventLog.find((l) => /Traveled on the Sabbath/i.test(l.text));
+    expect(travelDebitLog).toBeUndefined();
   });
 });
 
