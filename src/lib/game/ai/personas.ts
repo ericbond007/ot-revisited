@@ -1568,7 +1568,11 @@ export const faithfulPersona: Persona = {
       'tongue', 'canvas', 'flour', 'beans', 'cornmeal', 'bible'
     ];
   },
-  bundleWeights: { survival: 2, food: 2, maintenance: 2, hygiene: 1, morale: 2 },
+  // #927 slice-3: persona.bundleWeights kept at zero so the NPC engine's
+  // weights-only opt-in gate skips faithful NPCs. The bundleCampActions
+  // override still drives player-bot behaviour (slice-2 gain intact);
+  // future #927c re-enables NPC opt-in by tuning weights here.
+  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 },
   bundleCampActions: faithfulBundle
 };
 
