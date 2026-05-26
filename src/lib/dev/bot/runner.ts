@@ -33,7 +33,7 @@ import { pickHuntTarget } from '../../game/ai/hunt';
 import { defaultCompanions } from '../../game/ai/party';
 import { pickRestCampChain } from '../../game/ai/rest';
 import { bundleCampActions } from '../../game/ai/bundle';
-import type { CampActionId } from '../../game/actions/camp-actions';
+import { CAMP_ACTIONS_BY_ID, hourCostFor, type CampActionId } from '../../game/actions/camp-actions';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
 import type { GameState, ProfessionId } from '../../game/types';
@@ -138,22 +138,60 @@ function recordOxDeaths(
 function restWithWaterChain(state: GameState, stats: RunningStats): GameState {
   for (const camp of pickRestCampChain(state)) {
     try {
-      const next = rest(state, 1, { campActions: [...camp] });
+      // #919 — piggyback free morale camp actions on every water-chain
+      // attempt. Helper no-ops when budget is full or gear is absent.
+      const camps = addMoraleCampPiggyback(state, [...camp]);
+      const next = rest(state, 1, { campActions: camps });
       stats.decisionsMade += 1;
       return next;
     } catch {
       // try next fallback
     }
   }
-  // All chains failed — passive rest, no camp actions.
+  // All chains failed — passive rest, no camp actions other than the
+  // morale piggyback (when gear permits).
   try {
-    const next = rest(state, 1);
+    const camps = addMoraleCampPiggyback(state, []);
+    const next = camps.length > 0
+      ? rest(state, 1, { campActions: camps })
+      : rest(state, 1);
     stats.decisionsMade += 1;
     return next;
   } catch (err) {
     stats.errors.push(`rest-fallback: ${(err as Error).message}`);
     return state;
   }
+}
+
+/** #919 — Free-morale piggyback on rest days. read_bible (1h) and
+ *  sing_along (2h) both add morale and cost nothing but time. When the
+ *  bot has the gear (bible / fiddle / harmonica) and the camp budget
+ *  has room after the bundle's primary picks, append them. Skip
+ *  pass_whiskey deliberately — it consumes whiskey and has a 15%
+ *  squabble downside, so it's a judgement call rather than a free pick.
+ *  Each action's own availability check is consulted defensively in
+ *  case a future gate (e.g. weather) blocks it. */
+const REST_BUDGET_HOURS = 12;
+function addMoraleCampPiggyback(
+  state: GameState,
+  existing: CampActionId[],
+): CampActionId[] {
+  const usedHours = existing.reduce(
+    (sum, id) => sum + hourCostFor(CAMP_ACTIONS_BY_ID[id], state),
+    0,
+  );
+  let remaining = REST_BUDGET_HOURS - usedHours;
+  const out: CampActionId[] = [...existing];
+  for (const id of ['read_bible', 'sing_along'] as const) {
+    if (out.includes(id)) continue;
+    const action = CAMP_ACTIONS_BY_ID[id];
+    const cost = hourCostFor(action, state);
+    if (cost > remaining) continue;
+    if (!action.availability(state).available) continue;
+    out.push(id);
+    remaining -= cost;
+  }
+  return out;
 }
 
 /** #927 — replaces restWithWaterChain. Asks the persona for a 12h camp
@@ -178,8 +216,15 @@ function restWithBundle(
     || w.hygiene > 0 || w.morale > 0;
   if (!optsIn) {
     if (primary === null) {
+      // #919 — even on a passive rest day, piggyback free morale camp
+      // actions when the bot has the gear (bible / fiddle / harmonica).
+      // Each adds morale at the cost of nothing but camp hours, which
+      // would otherwise go unused on a plain rest tick.
+      const camps = addMoraleCampPiggyback(state, []);
       try {
-        const s = rest(state, 1);
+        const s = camps.length > 0
+          ? rest(state, 1, { campActions: camps })
+          : rest(state, 1);
         stats.decisionsMade += 1;
         return s;
       } catch (err) {
@@ -192,7 +237,11 @@ function restWithBundle(
   try {
     const bundle = bundleCampActions(persona, state, primary, rng);
     if (bundle.campActions.length > 0) {
-      const s = rest(state, 1, { campActions: [...bundle.campActions] });
+      // #919 — augment the bundle with free morale piggyback within the
+      // shared 12h budget. If the bundle is already full the helper
+      // no-ops; otherwise read_bible / sing_along ride along.
+      const camps = addMoraleCampPiggyback(state, bundle.campActions);
+      const s = rest(state, 1, { campActions: camps });
       stats.decisionsMade += 1;
       return s;
     }
@@ -201,7 +250,10 @@ function restWithBundle(
   }
   if (primary === null) {
     try {
-      const s = rest(state, 1);
+      const camps = addMoraleCampPiggyback(state, []);
+      const s = camps.length > 0
+        ? rest(state, 1, { campActions: camps })
+        : rest(state, 1);
       stats.decisionsMade += 1;
       return s;
     } catch (err) {
