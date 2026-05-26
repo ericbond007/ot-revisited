@@ -212,16 +212,15 @@
             class:selected={r.selected}
             class:locked
             {disabled}
-            title={locked ? r.availability.reason : overflow ? 'Not enough hours left in the day' : ''}
+            title={locked
+              ? r.availability.reason
+              : overflow
+                ? 'Not enough hours left in the day'
+                : r.action.sub}
             onclick={() => toggle(r.action.id)}
           >
             <span class="card-icon">{r.action.icon}</span>
-            <span class="card-body">
-              <span class="card-label">{r.action.label}</span>
-              <span class="card-sub">
-                {#if locked}{r.availability.reason}{:else}{r.action.sub}{/if}
-              </span>
-            </span>
+            <span class="card-label">{r.action.label}</span>
             <span class="card-hours">{r.hours}h</span>
           </button>
         {/each}
@@ -274,7 +273,12 @@
     flex-direction: column;
     gap: 0.8em;
     padding: 1em 1.2em;
-    flex: 1;
+    /* #145 — weight 5 vs log-wrap's flex:1 so the camp panel gets 5/6
+     *  of the column height. With the compacted hero + activities grid
+     *  this is enough to fit 21 camp actions on 800px laptops without
+     *  inner scroll. min-height:0 keeps it shrinkable on very short
+     *  viewports; overflow-y:auto remains as a graceful fallback. */
+    flex: 5 1 auto;
     min-height: 0;
     overflow-y: auto;
     /* Warm night background to contrast with the daylit TrailMap. */
@@ -285,18 +289,20 @@
   }
 
   /* --- Hero / scene --- */
+  /* #145 — tightened: smaller scene + shorter prompt margins keep hero
+   *  under ~64px so the activities grid gets the height back. */
   .hero {
     display: flex;
-    align-items: flex-start;
-    gap: 1.2em;
-    padding-bottom: 0.3em;
+    align-items: center;
+    gap: 0.9em;
+    padding-bottom: 0.25em;
     border-bottom: 1px solid rgba(201, 106, 42, 0.3);
   }
   .scene {
     display: inline-flex;
     align-items: flex-end;
     gap: 0.1em;
-    font-size: 2.2em;
+    font-size: 1.6em;
     line-height: 1;
     flex-shrink: 0;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
@@ -326,14 +332,14 @@
   .title {
     margin: 0;
     color: var(--c-rust);
-    font-size: 1.4em;
+    font-size: 1.15em;
     letter-spacing: 0.04em;
   }
   .prompt {
-    margin: 0.3em 0 0;
+    margin: 0.15em 0 0;
     color: var(--c-tan);
-    font-size: 0.9em;
-    line-height: 1.5;
+    font-size: 0.78em;
+    line-height: 1.35;
     font-style: italic;
   }
 
@@ -414,17 +420,21 @@
   }
 
   /* --- Activities cards --- */
+  /* #145 — single-line compact cards; descriptive sub moved to title=
+   *  tooltip. Tighter grid (minmax 180px) + smaller hours pill keep
+   *  the whole activities block under ~250px even at 21 actions, so
+   *  the camp panel fits a 1280×800 laptop without inner scroll. */
   .activities { display: flex; flex-direction: column; gap: 0.4em; }
   .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 0.4em;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.35em;
   }
   .card {
     display: inline-flex;
-    align-items: flex-start;
-    gap: 0.55em;
-    padding: 0.6em 0.8em;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.35em 0.55em;
     background: var(--c-bg-raised);
     color: var(--c-tan);
     border: 2px solid var(--c-wood);
@@ -448,23 +458,21 @@
   }
   .card:disabled { opacity: 0.45; cursor: not-allowed; }
   .card.locked { opacity: 0.4; }
-  .card-icon { font-size: 1.7em; line-height: 1; flex-shrink: 0; }
-  .card-body { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; flex: 1; }
-  .card-label { font-size: 0.95em; }
-  .card-sub {
-    font-size: 0.78em;
-    font-weight: normal;
-    color: var(--c-wood);
-    letter-spacing: normal;
-    line-height: 1.3;
+  .card-icon { font-size: 1.3em; line-height: 1; flex-shrink: 0; }
+  .card-label {
+    font-size: 0.85em;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .card.selected .card-sub { color: var(--c-tan); }
   .card-hours {
-    font-size: 0.78em;
+    font-size: 0.72em;
     font-weight: 700;
     color: var(--c-wood);
     letter-spacing: 0.08em;
-    padding: 0.2em 0.5em;
+    padding: 0.15em 0.4em;
     background: var(--c-panel);
     border-radius: 3px;
     flex-shrink: 0;
