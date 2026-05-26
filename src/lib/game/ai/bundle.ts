@@ -19,6 +19,7 @@ import type { Persona } from './types';
 import { CAMP_ACTIONS_BY_ID, hourCostFor } from '../actions/camp-actions';
 import { pickHuntTarget } from './hunt';
 import { isSunday } from '../utils/calendar';
+import { canBoilWater } from '../systems/water-purity';
 
 /** Mirror of rest.ts's TIME_BUDGET_HOURS. Single source of truth lives
  *  here so callers don't bypass the cap. */
@@ -126,7 +127,9 @@ export function urgency(state: GameState, id: BundleableActionId): number {
   switch (id) {
     case 'find_water': {
       const w = state.resources.water ?? 0;
-      return w < 5 ? 10 : w < 15 ? 6 : 3;
+      // Tightened: only urgent at critical-low (<5 gal); otherwise primary
+      // selection still pulls it in when triggered upstream by ratio<0.6.
+      return w < 5 ? 10 : w < 10 ? 5 : 0;
     }
     case 'boil_water': {
       const dirty = state.resources.dirtyWater ?? 0;
@@ -134,7 +137,9 @@ export function urgency(state: GameState, id: BundleableActionId): number {
     }
     case 'gather_firewood': {
       const fw = state.resources.firewood ?? 0;
-      return fw < 5 ? 10 : fw < 15 ? 6 : 3;
+      // Tightened: gather only when truly low; matches restWithWaterChain
+      // gating which only piggybacked at fw<5.
+      return fw < 5 ? 10 : 0;
     }
     case 'dig_well': {
       const w = state.resources.water ?? 0;
@@ -247,6 +252,21 @@ export function defaultBundleCampActions(
     if (c.hours <= remaining) {
       campActions.push(c.id);
       remaining -= c.hours;
+    }
+  }
+
+  // 3b. If find_water is in the bundle and we can boil, auto-pair
+  //     boil_water so dirty water from non-river terrain gets cleaned
+  //     on the same rest day (matches restWithWaterChain semantics).
+  //     Without this, sickness cascade from dirty water tanks arrival.
+  if (campActions.includes('find_water')
+      && !campActions.includes('boil_water')
+      && canBoilWater(state)
+      && CAMP_ACTIONS_BY_ID.boil_water.availability(state).available) {
+    const boilHours = hourCostFor(CAMP_ACTIONS_BY_ID.boil_water, state);
+    if (boilHours <= remaining) {
+      campActions.push('boil_water');
+      remaining -= boilHours;
     }
   }
 
