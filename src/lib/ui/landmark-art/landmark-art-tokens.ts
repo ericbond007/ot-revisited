@@ -94,6 +94,7 @@ export type LandmarkId =
   | 'ft_hall'
   | 'snake_three_island'
   | 'ft_boise'
+  | 'burnt_river_canyon'
   | 'flagstaff_hill'
   | 'farewell_bend'
   | 'blue_mountains'
