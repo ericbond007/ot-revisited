@@ -1,7 +1,39 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import BrandLockup from '$lib/ui/BrandLockup.svelte';
-  let { data } = $props();
+  import NewJourneyWizard from '$lib/ui/NewJourneyWizard.svelte';
+  import { page } from '$app/stores';
+  let { data, form } = $props();
   const hasSaves = $derived(data.saves.length > 0);
+
+  // #1166 — wizard open state. Auto-opens when:
+  //   - user clicks the Start button (via openWizard())
+  //   - URL has ?start=1 (deep-link / redirect from /new)
+  //   - form action returned an error (so we re-show with the error message)
+  let wizardOpen = $state(false);
+  let formError = $state<string | null>(null);
+
+  $effect(() => {
+    if (form && 'error' in form && form.error) {
+      formError = form.error as string;
+      wizardOpen = true;
+    }
+  });
+
+  onMount(() => {
+    if (new URL(window.location.href).searchParams.get('start') === '1') {
+      wizardOpen = true;
+    }
+  });
+
+  function openWizard() {
+    formError = null;
+    wizardOpen = true;
+  }
+  function closeWizard() {
+    wizardOpen = false;
+    formError = null;
+  }
 </script>
 
 <div class="container landing">
@@ -12,9 +44,7 @@
   </p>
 
   <div class="cta-stack">
-    <a href="/new">
-      <button class="cta">Start a New Journey</button>
-    </a>
+    <button type="button" class="cta" onclick={openWizard}>Start a New Journey</button>
     <a href="/load" aria-disabled={!hasSaves}>
       <button class="cta btn-ghost" disabled={!hasSaves}>
         Load a Saved Game {hasSaves ? `(${data.saves.length})` : ''}
@@ -23,10 +53,16 @@
   </div>
 </div>
 
+{#if wizardOpen}
+  <NewJourneyWizard
+    professions={data.professions}
+    {formError}
+    onclose={closeWizard}
+  />
+{/if}
+
 <style>
-  .landing {
-    padding-top: 2em;
-  }
+  .landing { padding-top: 2em; }
   .brand {
     margin: 0 0 0.1em 0;
     color: var(--c-rust);
