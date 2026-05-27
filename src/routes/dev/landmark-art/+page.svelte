@@ -21,6 +21,7 @@
     'alcove_spring',
     'big_blue_river',
     'hollenberg_ranch',
+    'rock_creek_station',
     'ft_kearny',
     'windlass_hill',
     'ash_hollow',
