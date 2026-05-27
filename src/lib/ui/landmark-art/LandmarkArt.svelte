@@ -59,6 +59,7 @@
   import SodaSpringsArt from './SodaSpringsArt.svelte';
   import MassacreRocksArt from './MassacreRocksArt.svelte';
   import FortHallArt from './FortHallArt.svelte';
+  import SalmonFallsArt from './SalmonFallsArt.svelte';
   import ThreeIslandArt from './ThreeIslandArt.svelte';
   import FortBoiseArt from './FortBoiseArt.svelte';
   import BurntRiverCanyonArt from './BurntRiverCanyonArt.svelte';
@@ -123,6 +124,7 @@
     soda_springs: { Art: SodaSpringsArt, tone: 'cool' },
     massacre_rocks: { Art: MassacreRocksArt, tone: 'warm' },
     ft_hall: { Art: FortHallArt, tone: 'cool' },
+    salmon_falls: { Art: SalmonFallsArt, tone: 'cool' },
     snake_three_island: { Art: ThreeIslandArt, tone: 'warm' },
     ft_boise: { Art: FortBoiseArt, tone: 'cool' },
     burnt_river_canyon: { Art: BurntRiverCanyonArt, tone: 'warm' },

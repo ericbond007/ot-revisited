@@ -52,6 +52,7 @@
     'soda_springs',
     'massacre_rocks',
     'ft_hall',
+    'salmon_falls',
     'snake_three_island',
     'ft_boise',
     'burnt_river_canyon',
