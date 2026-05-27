@@ -196,7 +196,7 @@ export function isNativeCampHostile(
 // compensate) — emigrants ground through ~125 phantom mid-trail miles.
 // Landmark ORDER is unchanged here; the massacre_rocks/ft_hall and
 // north_platte_2/martins_cove geographic-sequence quirks are tracked
-// separately (#1040 follow-up) since re-ordering touches event anchors.
+// separately (#1161 follow-up) since re-ordering touches event anchors.
 export const LANDMARKS: readonly Landmark[] = [
   { id: 'independence_mo',     name: 'Independence, MO',    milesFromPrevious: 0,   terrain: 'prairie',   kind: 'start' },
   // #242 — Lone Elm Campground (mile ~40, KS). The first overnight
@@ -396,7 +396,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // landmark. Pre-1856 the cove was unremarkable open ground at the
   // Sweetwater's first bend; the MEANING as a sacred site postdates
   // the disaster. Year-gated cold-weather arrival vignette is a follow-up.
-  // (#1040 mile-sequencing fix — current cumulative is ~840, should
+  // (#1161 mile-sequencing fix — current cumulative is ~840, should
   // be ~855 — deferred to its own PR; needs downstream landmark
   // milesFromPrevious recalibration across the whole Sweetwater leg.)
   { id: 'martins_cove',        name: "Martin's Cove",       milesFromPrevious: 30,  terrain: 'mountains', kind: 'landmark',
