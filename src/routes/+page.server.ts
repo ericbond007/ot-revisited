@@ -78,6 +78,24 @@ export const actions: Actions = {
   },
 
   // #102/#1166 — premade-party submit (moved from /new).
+  // #1181 — anonymous in-game feedback. Capped body length, optional
+  // pageUrl + UA for triage context, no auth.
+  feedback: async ({ request, locals }) => {
+    const fd = await request.formData();
+    const body = (fd.get('body')?.toString() ?? '').trim();
+    if (!body) return fail(400, { error: 'Feedback body is required.' });
+    if (body.length > 4000) return fail(400, { error: 'Feedback body too long (max 4000 chars).' });
+    const pageUrl = fd.get('pageUrl')?.toString().slice(0, 500) || null;
+    const userAgent = request.headers.get('user-agent')?.slice(0, 500) || null;
+    await locals.repo.saveFeedback({
+      deviceId: locals.deviceId ?? null,
+      body,
+      pageUrl,
+      userAgent
+    });
+    return { ok: true };
+  },
+
   loadProfile: async ({ request, locals }) => {
     const fd = await request.formData();
     const profileId = fd.get('profileId')?.toString();

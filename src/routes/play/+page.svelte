@@ -33,6 +33,7 @@
   import StatPicker from '$lib/ui/StatPicker.svelte';
   import StatIcon from '$lib/ui/stat-icons/StatIcon.svelte';
   import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
+import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
   import { ICON, icon } from '$lib/data/icon-dictionary';
   import { weatherInfo } from '$lib/data/weather-info';
   import { getLandmark, LANDMARKS } from '$lib/game/content/landmarks';
@@ -107,6 +108,7 @@
     selectedMemberId ? gs.party.find((m) => m.id === selectedMemberId) ?? null : null
   );
   let menuOpen = $state(false);
+  let feedbackOpen = $state(false);
 
   // Delay the event modal's appearance so the wagon has time to slide +
   // the travel-summary log entry is visible before the modal covers things.
@@ -174,6 +176,12 @@
         <JourneyMenu bind:open={menuOpen} />
       </div>
       <h2 class="journey-title">{gs.party[0].name}'s Journey</h2>
+      <button
+        type="button"
+        class="feedback-btn"
+        onclick={() => (feedbackOpen = true)}
+        title="Send feedback"
+      >Feedback</button>
     </div>
     <div class="date-readout {dayFlash ? 'pulse' : ''}">
       <span class="stat" title="Current day of the journey">
@@ -291,6 +299,10 @@
   </div>
 </div>
 
+{#if feedbackOpen}
+  <FeedbackModal onclose={() => (feedbackOpen = false)} />
+{/if}
+
 {#if pendingEventId && modalReady}
   <EventModal
     eventId={pendingEventId}
@@ -394,6 +406,23 @@
     padding: 0.6em;
     height: 100vh;
     overflow: hidden;
+  }
+    .feedback-btn {
+    margin-left: auto;
+    padding: 0.35em 0.8em;
+    background: transparent;
+    border: 1px solid var(--c-wood);
+    border-radius: 4px;
+    color: var(--c-wood);
+    font-size: 0.78em;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: color 120ms, border-color 120ms, background 120ms;
+  }
+  .feedback-btn:hover {
+    color: var(--c-rust);
+    border-color: var(--c-rust);
+    background: rgba(201, 106, 42, 0.08);
   }
   .top-bar {
     display: flex;
