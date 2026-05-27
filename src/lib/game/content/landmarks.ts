@@ -393,8 +393,14 @@ export const LANDMARKS: readonly Landmark[] = [
   // #248 — Martin's Cove (mile ~855, WY). Site of the 1856 Mormon
   // handcart disaster — the Martin Company was caught by an October
   // blizzard and 56 of 576 died of exposure at the cove. Memorial
-  // landmark. Year-gated cold-weather arrival vignette is a follow-up.
-  { id: 'martins_cove',        name: "Martin's Cove",       milesFromPrevious: 30,  terrain: 'mountains', kind: 'landmark' },
+  // landmark. Pre-1856 the cove was unremarkable open ground at the
+  // Sweetwater's first bend; the MEANING as a sacred site postdates
+  // the disaster. Year-gated cold-weather arrival vignette is a follow-up.
+  // (#1040 mile-sequencing fix — current cumulative is ~840, should
+  // be ~855 — deferred to its own PR; needs downstream landmark
+  // milesFromPrevious recalibration across the whole Sweetwater leg.)
+  { id: 'martins_cove',        name: "Martin's Cove",       milesFromPrevious: 30,  terrain: 'mountains', kind: 'landmark',
+    abandonedBeforeYear: 1856 },
   // North Platte west crossing was at the Casper area; with ft_caspar
   // and Martin's Cove inserted, the remaining stretch is short.
   { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 8, terrain: 'river', kind: 'river',
@@ -428,12 +434,24 @@ export const LANDMARKS: readonly Landmark[] = [
   // out to Fort Bridger.
   { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 35,  terrain: 'prairie',   elevationFt: 7400, kind: 'landmark' },
   { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
-  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 7,  terrain: 'prairie',   kind: 'landmark' },
+  // Parting of the Ways — the fork where the Sublette/Greenwood Cutoff
+  // diverges from the main Fort Bridger road. The cutoff didn't exist
+  // before 1844 (Joseph Walker pioneered it that year, the Stevens-
+  // Townsend-Murphy party first wagon-tested it 1844). Pre-1844 parties
+  // see no fork — only the Fort Bridger road south. Standard
+  // `abandonedBeforeYear` gate. Historical refs:
+  // docs/historical-pass/13-landmark-visual-references/parting_of_ways.md.
+  { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 7,  terrain: 'prairie',   kind: 'landmark',
+    abandonedBeforeYear: 1844 },
   { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 50, terrain: 'river',    kind: 'river',
     river: {
       depthFt: 4.5, currentMph: 4, ferryPrice: 8,
-      // Shoshone bull-boat — Sage 1846, Frizzell 1852. Beads were the
-      // common currency on the Green; six strings was the going rate.
+      // Shoshone bull-boat at the Green. Bead trade is the period
+      // currency for native-run river assistance; six strings is the
+      // game's chosen rate (the underlying sourcing for bull-boat
+      // construction + Shoshone presence is on the RiverStats type
+      // above — Pryor 1806 for design, Mathias 1850 for presence,
+      // Miller 1837 for visual depictions).
       nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 6, blurb: 'Shoshone bull-boat — three hides on a willow frame, six strings of beads' }
     } },
   // #249 — Big Hill (mile ~1140, ID). The steep descent into Bear
@@ -489,11 +507,17 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 10,  terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
   { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   elevationFt: 5800, kind: 'landmark' },
-  // #250 — Massacre Rocks (mile ~1290, ID). Pre-1862 just "Gate of
-  // Death" — a narrow basalt gap on the Snake where ambushes were
-  // feared. After the 1862 Shoshone-Bannock attacks killed 10
-  // emigrants the name stuck. Year-aware ambush flavor is a follow-up.
-  { id: 'massacre_rocks',      name: 'Massacre Rocks',      milesFromPrevious: 100,   terrain: 'mountains', kind: 'landmark' },
+  // #250 — "Gate of Death" / later Massacre Rocks (mile ~1290, ID).
+  // During the 1843-1860 emigration window the narrow basalt gap on
+  // the Snake was known as "Gate of Death" — emigrants feared (and
+  // wrote about) ambushes there. The "Massacre Rocks" name only
+  // emerged AFTER the August 1862 Shoshone-Bannock attacks killed 10
+  // emigrants — anachronistic for our period. Display the period
+  // name; id stays `massacre_rocks` for stable cross-referencing.
+  // Year-aware ambush flavor + post-1862 name shift is a follow-up.
+  // Historical refs:
+  // docs/historical-pass/13-landmark-visual-references/massacre_rocks.md.
+  { id: 'massacre_rocks',      name: 'Gate of Death',       milesFromPrevious: 100,   terrain: 'mountains', kind: 'landmark' },
   { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 45,  terrain: 'prairie',   elevationFt: 4500, kind: 'trading_post',
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
@@ -553,9 +577,10 @@ export const LANDMARKS: readonly Landmark[] = [
     river: {
       depthFt: 5.0, currentMph: 3, ferryPrice: 6,
       // Bannock / Shoshone bands at the crossing helped emigrants float
-      // wagons. Period reality: Frizzell 1852 paid "a knife and a few
-      // strings of beads" for the lift; we settle on 4 beads + 1 lb
-      // tobacco — pricier than the Green because the Snake is wider.
+      // wagons across the Snake's three-island stretch (the trail's
+      // best ford). We settle on 4 beads — pricier than the Green
+      // because the Snake is wider, lined to the cross-river bead-trade
+      // economy attested on the RiverStats type above.
       nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 4, blurb: 'Bannock-Shoshone raft — 4 strings of beads' }
     } },
   { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 160, terrain: 'desert',    elevationFt: 2100, kind: 'trading_post',
@@ -691,13 +716,21 @@ export const LANDMARKS: readonly Landmark[] = [
     ] },
   // Barlow Road junction — the toll road south around Mt. Hood, the
   // overland alternative to rafting the Columbia. Sam Barlow opened it
-  // in 1846; this entry marks the trail decision point just past The
-  // Dalles. Laurel Hill is the steepest descent on the road itself.
-  { id: 'barlow_road',         name: 'Barlow Road',         milesFromPrevious: 20,  terrain: 'forest',    kind: 'landmark' },
+  // September 1846; this entry marks the trail decision point just past
+  // The Dalles. Pre-1846 there was no overland option — emigrants had
+  // to raft the Columbia from The Dalles (much more dangerous; many
+  // drownings). Laurel Hill is the steepest descent on the road itself.
+  // Standard `abandonedBeforeYear` gate. Historical refs:
+  // docs/historical-pass/13-landmark-visual-references/barlow_road.md.
+  { id: 'barlow_road',         name: 'Barlow Road',         milesFromPrevious: 20,  terrain: 'forest',    kind: 'landmark',
+    abandonedBeforeYear: 1846 },
   // Laurel Hill is dense Cascades forest — the Barlow Road's worst
   // stretch. Reclassed mountain → forest so the terrain descriptor
-  // matches the visual + the forest mult (0.85) gives it bite.
-  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 60,  terrain: 'forest',    kind: 'landmark' },
+  // matches the visual + the forest mult (0.85) gives it bite. Same
+  // year-gate as the road itself — pre-1846 the road (and this descent
+  // by extension) didn't exist.
+  { id: 'laurel_hill',         name: 'Laurel Hill',         milesFromPrevious: 60,  terrain: 'forest',    kind: 'landmark',
+    abandonedBeforeYear: 1846 },
   { id: 'oregon_city',         name: 'Oregon City',         milesFromPrevious: 140,  terrain: 'forest',    elevationFt: 50, kind: 'end' }
 ];
 
