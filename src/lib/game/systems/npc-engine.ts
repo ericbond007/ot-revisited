@@ -40,6 +40,10 @@ import { bundleCampActions } from '../ai/bundle';
 import { CAMP_ACTIONS_BY_ID } from '../actions/camp-actions';
 import { applySpoilage, applyHeatSpoilage } from './spoilage';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
+import { applySabbathTravelDebit } from './sabbath-travel';
+import { applyHolidays } from './holidays';
+import { rollStrayMorning } from './strays';
+import { applyNpcMoraleBaseline } from './npc-morale';
 import { applyDailyRecovery } from './travel-recovery';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './consumption';
 import { applyDietVariety, applyHotDrinks } from './diet';
@@ -340,6 +344,62 @@ export function tickNpcWagon(
     if (persona.shouldRest(restFauxState, rng)) {
       traveled = false;
     }
+  }
+
+  // 1e. #301 — Sabbath-travel morale debit on the NPC's synth. Mirrors
+  // the player's engine-pausable hook (also factored into
+  // applySabbathTravelDebit). -2 on Sunday travel, -3 with a live
+  // Preacher. companyMode=='sabbath_layby' already flipped `traveled`
+  // to false above, so this naturally skips lay-by days.
+  {
+    const synth = synthesizeWagonState(next, env);
+    const ticked = applySabbathTravelDebit(synth, traveled);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
+
+  // 1f. #301 — Holiday morale bumps on the NPC's synth (July 4 + Xmas).
+  // applyHolidays is idempotent within a year via per-wagon flags
+  // (_july4Year / _christmasYear), which the synth carries through
+  // npcFlagsFromWagon / projectWagonDeltas — each wagon gets the
+  // bump exactly once per holiday per calendar year.
+  {
+    const synth = synthesizeWagonState(next, env);
+    const ticked = applyHolidays(synth);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
+
+  // 1g. #301 — Stray-oxen morning roll on travel days. NPCs share the
+  // player's #220 mechanic: rare permanent loss of one ox when oxen
+  // wander overnight. Miles multiplier is irrelevant (the train
+  // governs distance), so we discard milesMult and only project the
+  // ox-state delta + the log line.
+  if (traveled) {
+    const synth = synthesizeWagonState(next, env);
+    const roll = rollStrayMorning(synth, rng);
+    if (roll.logLine) playerLogs.push(`${roll.logLine} (${next.name})`);
+    // Only project when ox state changed (permanent loss branch).
+    if (roll.state !== synth) {
+      next = projectWagonDeltas(roll.state, next);
+    }
+  }
+
+  // 1h. #301 — Daily morale baseline drift on travel days only. Small
+  // homeostasis pull toward 50 + alive-ratio nudge + preacher/hunter
+  // profession bonuses. Keeps NPC morale from staying frozen between
+  // events. Gated on `traveled` so a long lay-by stretch doesn't
+  // cascade into earlier dissent than today's behavior — the player's
+  // adjustMorale also runs only when the daily systems pipeline does,
+  // and that's traveled-coupled in practice.
+  if (traveled) {
+    const synth = synthesizeWagonState(next, env);
+    const ticked = applyNpcMoraleBaseline(synth);
+    next = projectWagonDeltas(ticked, next);
   }
 
   // 2 + 3. #939c — Food + water + pastry + diet + hot-drinks + dirty-
