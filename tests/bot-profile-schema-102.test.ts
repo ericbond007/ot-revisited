@@ -13,8 +13,8 @@ describe('#102 BotProfile schema additions', () => {
       expect(leaders.length, `${p.id} should have exactly one leader`).toBe(1);
     }
   });
-  it('Hastings is the only profile gated playerEligible:false', () => {
+  it('solo profiles + Hastings are gated playerEligible:false', () => {
     const gated = LAUNCH_PROFILES.filter((p) => !p.playerEligible);
-    expect(gated.map((p) => p.id)).toEqual(['lansford-hastings']);
+    expect(gated.map((p) => p.id)).toEqual(['joe-meek', 'tabitha-brown', 'joel-palmer', 'lansford-hastings']);
   });
 });

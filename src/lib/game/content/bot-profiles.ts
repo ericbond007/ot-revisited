@@ -92,7 +92,8 @@ export interface BotProfile {
   difficulty: 'easy' | 'normal' | 'hard' | 'legendary';
   /** Whether this profile is surfaced as a player option on /new.
    *  False = NPC-only (special-case data or not yet vetted for player
-   *  balance). #102 ships with Hastings as the only `playerEligible: false`;
+   *  balance). #102 ships with Joe Meek, Tabitha Brown, Joel Palmer, and Hastings as `playerEligible: false`
+   *  (Meek + Brown are solo profiles; engine requires 2 adults — see #1165);
    *  flip after his kit lands (#887). Note that `kit` absence alone does
    *  NOT block eligibility — kit-less profiles fall through to
    *  `generateNpcInventory`'s random fallback, which is acceptable for v1
@@ -246,7 +247,7 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     ],
     personaVariantHint: 'chaos',
     difficulty: 'easy',
-    playerEligible: true,
+    playerEligible: false,
     year: 1840,
     trait: 'Mountain man whose beaver-trade collapse drove him to Oregon. Later first U.S. Marshal of Oregon Territory.',
     source: 'https://en.wikipedia.org/wiki/Joe_Meek',
@@ -318,7 +319,7 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     ],
     personaVariantHint: 'cautious',
     difficulty: 'hard',
-    playerEligible: true,
+    playerEligible: false,
     year: 1846,
     trait: 'Crossed at age 66 on foot through the Umpqua Mountains. Founded what became Pacific University.',
     source: 'https://en.wikipedia.org/wiki/Tabitha_Brown'
@@ -371,7 +372,7 @@ export const LAUNCH_PROFILES: BotProfile[] = [
     ],
     personaVariantHint: 'balanced',
     difficulty: 'easy',
-    playerEligible: true,
+    playerEligible: false,
     year: 1845,
     trait: 'Surveyed the Barlow Road around Mt. Hood. His "Journal of Travels" became the standard 1840s emigrant guidebook.',
     source: 'https://en.wikipedia.org/wiki/Joel_Palmer'
