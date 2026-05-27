@@ -2,7 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { createInitialState } from '$lib/game/engine';
 import { PROFESSIONS } from '$lib/game/content/professions';
-import { getBotProfile, profileToNewGameOptions } from '$lib/game/content/bot-profiles';
+import { getBotProfile, profileToNewGameOptions, applyProfileKit } from '$lib/game/content/bot-profiles';
 import type { ProfessionId, Sex } from '$lib/game/types';
 
 export const load: PageServerLoad = async () => {
@@ -89,7 +89,8 @@ export const actions: Actions = {
 
     const seed = `${locals.deviceId}-${Date.now()}`;
     const opts = profileToNewGameOptions(profile, { year, month, day }, seed);
-    const state = createInitialState(opts);
+    let state = createInitialState(opts);
+    state = applyProfileKit(state, profile);
 
     const slotName = `Journey ${new Date().toLocaleDateString()}`;
     await locals.repo.save(locals.deviceId, slotName, state);

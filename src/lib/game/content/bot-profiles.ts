@@ -14,7 +14,7 @@
 // with composition / leader profession / fate / Wikipedia citations.
 
 import type { Rng } from '../rng';
-import type { ProfessionId } from '../types';
+import type { ProfessionId, GameState } from '../types';
 import type { WagonComposition } from './trains';
 import type { NewGameOptions, PartyPick } from '../engine';
 import type { GameDate } from '../types';
@@ -477,4 +477,26 @@ export function pickProfilesForRoster(
     [picks[i], picks[j]] = [picks[j], picks[i]];
   }
   return picks;
+}
+
+/** #102 — Apply a profile's `kit` to an already-constructed GameState
+ *  as the layer-0 inventory (parallel to generateNpcWagon's profile.kit
+ *  handling for NPCs). Mutates and returns the state for chaining.
+ *  No-op if `profile.kit` is undefined.
+ *
+ *  Cash lands on `state.cash` (top-level field). All other entries
+ *  land on `state.inventory[key]`, ADDED to whatever profession
+ *  starterGear left there (so hunter-led profiles still get their
+ *  bullet_mold + lead_pig from starterGear, layered with profile.kit). */
+export function applyProfileKit(state: GameState, profile: BotProfile): GameState {
+  if (!profile.kit) return state;
+  const next: GameState = { ...state, inventory: { ...state.inventory } };
+  for (const [key, qty] of Object.entries(profile.kit)) {
+    if (key === 'cash') {
+      next.cash = (next.cash ?? 0) + qty;
+    } else {
+      next.inventory[key] = (next.inventory[key] ?? 0) + qty;
+    }
+  }
+  return next;
 }

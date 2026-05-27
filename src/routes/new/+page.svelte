@@ -3,6 +3,8 @@
   import NumberStepper from '$lib/ui/NumberStepper.svelte';
   import ProfessionPicker from '$lib/ui/ProfessionPicker.svelte';
   import { ICON } from '$lib/data/icon-dictionary';
+  import { LAUNCH_PROFILES, type BotProfile } from '$lib/game/content/bot-profiles';
+  import ProfileCard from '$lib/ui/ProfileCard.svelte';
 
   let { data, form } = $props();
 
@@ -34,31 +36,28 @@
   let month = $state(4);
   let day = $state(15);
 
-  // Three historically-common Oregon Trail departures. Each was a peak-travel
-  // moment with distinct flavor; Plan 3b's year-gated events key off these years.
-  const presets = [
-    {
-      label: 'The Classic Trail',
-      year: 1848, month: 4, day: 15,
-      tagline: 'April 15, 1848 — pre-Gold Rush, grass is up, trail not yet crowded.'
-    },
-    {
-      label: 'Gold Rush Spring',
-      year: 1849, month: 4, day: 20,
-      tagline: 'April 20, 1849 — wagons thick with forty-niners; trail chaos, high prices.'
-    },
-    {
-      label: 'Peak Migration',
-      year: 1852, month: 5, day: 1,
-      tagline: 'May 1, 1852 — the heaviest travel year. Cholera stalks the wagons.'
-    }
-  ];
+  // #102 — cards-first state. 'custom' = build-your-own; any other string
+  // = a BotProfile.id. Default to 'custom' to preserve the v1 landing
+  // experience for first-time players unfamiliar with the historical names.
+  let selectedCardId = $state<string>('custom');
+  const playerProfiles: BotProfile[] = $derived(
+    LAUNCH_PROFILES.filter((p) => p.playerEligible)
+  );
+  const selectedProfile: BotProfile | null = $derived(
+    selectedCardId === 'custom' ? null : (LAUNCH_PROFILES.find((p) => p.id === selectedCardId) ?? null)
+  );
 
-  function applyPreset(p: typeof presets[number]) {
-    year = p.year;
-    month = p.month;
-    day = p.day;
-  }
+  // When a historical card is picked, auto-fill the date row to that
+  // profile's year (April 15 default). Stays editable.
+  $effect(() => {
+    if (selectedProfile) {
+      year = selectedProfile.year;
+      month = 4;
+      day = 15;
+    }
+  });
+
+  function selectCard(id: string) { selectedCardId = id; }
 
   // #1137 — roll a random period name that ISN'T the current one. Sex-aware:
   // pulls from the gender's pool. Clicking the dice never returns the same
@@ -127,79 +126,111 @@
     <div class="panel form-error">{form.error}</div>
   {/if}
 
-  <form method="POST" action="?/depart" class="new-form">
-    <div class="scroll-area">
-    <div style="display: flex; flex-direction: column; gap: 0.8em; margin-bottom: 1.5em;">
-      {#each members as m, i}
-        <div class="panel member-card">
-          <div class="member-head">
-            <input type="text" name="member_{i}_name" bind:value={m.name} placeholder="Name" class="name-input" />
-            <button
-              type="button"
-              class="name-dice"
-              onclick={() => rollName(i)}
-              title="Roll a random period name"
-              aria-label="Roll a random name"
-            >🎲</button>
-            <input type="hidden" name="member_{i}_sex" value={m.sex} />
-            <div class="sex-toggle" role="radiogroup" aria-label="Sex">
-              <button
-                type="button"
-                class="sex-btn"
-                class:selected={m.sex === 'male'}
-                onclick={() => setSex(i, 'male')}
-                title="Male"
-                aria-pressed={m.sex === 'male'}
-              >♂</button>
-              <button
-                type="button"
-                class="sex-btn"
-                class:selected={m.sex === 'female'}
-                onclick={() => setSex(i, 'female')}
-                title="Female"
-                aria-pressed={m.sex === 'female'}
-              >♀</button>
-            </div>
-            {#if i === 0}
-              <span class="required-tag" title="The party leader cannot be removed">{ICON.status.leader} LEADER</span>
-            {:else}
-              <button type="button" onclick={() => removeMember(i)} class="remove-btn" title="Remove companion">{ICON.status.close}</button>
-            {/if}
-          </div>
-          <ProfessionPicker
-            name="member_{i}_profession"
-            bind:value={m.profession}
-            professions={data.professions.filter((p) => !p.femaleOnly || m.sex === 'female')}
-          />
-        </div>
+  <section class="panel cards-panel">
+    <div class="panel-head">CHOOSE YOUR PARTY</div>
+    <div class="card-grid">
+      {#each playerProfiles as p}
+        <ProfileCard profile={p} selected={selectedCardId === p.id} onselect={() => selectCard(p.id)} />
       {/each}
+      <ProfileCard profile={null} selected={selectedCardId === 'custom'} onselect={() => selectCard('custom')} />
     </div>
+  </section>
 
-    {#if members.length < 6}
-      <button type="button" class="btn-ghost add-companion" onclick={addMember}>+ Add companion</button>
+  <form
+    method="POST"
+    action={selectedProfile ? '?/loadProfile' : '?/depart'}
+    class="new-form"
+  >
+    <div class="scroll-area">
+
+    {#if selectedProfile}
+      <section class="panel preview-panel">
+        <div class="panel-head">{selectedProfile.displayName.toUpperCase()}</div>
+        <ul class="preview-roster">
+          {#each selectedProfile.party as m}
+            <li>
+              <strong>{m.given}</strong> · {m.role === 'leader' ? selectedProfile.leaderProfession : m.role} · age {m.age} · {m.sex}
+            </li>
+          {/each}
+        </ul>
+        <p class="preview-trait">{selectedProfile.trait}</p>
+        <p class="preview-source"><a href={selectedProfile.source} target="_blank" rel="noopener">historical source</a></p>
+      </section>
+    {:else}
+      <!-- existing custom-party builder -->
+      <div style="display: flex; flex-direction: column; gap: 0.8em; margin-bottom: 1.5em;">
+        {#each members as m, i}
+          <div class="panel member-card">
+            <div class="member-head">
+              <input type="text" name="member_{i}_name" bind:value={m.name} placeholder="Name" class="name-input" />
+              <button
+                type="button"
+                class="name-dice"
+                onclick={() => rollName(i)}
+                title="Roll a random period name"
+                aria-label="Roll a random name"
+              >🎲</button>
+              <input type="hidden" name="member_{i}_sex" value={m.sex} />
+              <div class="sex-toggle" role="radiogroup" aria-label="Sex">
+                <button
+                  type="button"
+                  class="sex-btn"
+                  class:selected={m.sex === 'male'}
+                  onclick={() => setSex(i, 'male')}
+                  title="Male"
+                  aria-pressed={m.sex === 'male'}
+                >♂</button>
+                <button
+                  type="button"
+                  class="sex-btn"
+                  class:selected={m.sex === 'female'}
+                  onclick={() => setSex(i, 'female')}
+                  title="Female"
+                  aria-pressed={m.sex === 'female'}
+                >♀</button>
+              </div>
+              {#if i === 0}
+                <span class="required-tag" title="The party leader cannot be removed">{ICON.status.leader} LEADER</span>
+              {:else}
+                <button type="button" onclick={() => removeMember(i)} class="remove-btn" title="Remove companion">{ICON.status.close}</button>
+              {/if}
+            </div>
+            <ProfessionPicker
+              name="member_{i}_profession"
+              bind:value={m.profession}
+              professions={data.professions.filter((p) => !p.femaleOnly || m.sex === 'female')}
+            />
+          </div>
+        {/each}
+      </div>
+
+      {#if members.length < 6}
+        <button type="button" class="btn-ghost add-companion" onclick={addMember}>+ Add companion</button>
+      {/if}
+
+      <!-- #888b — starter-kit toggle. Default ON. Veterans who want to
+           provision themselves at the outfitter uncheck and get +$250
+           cash refund. -->
+      <label class="kit-toggle">
+        <input type="checkbox" name="include_starter_kit" checked />
+        <span class="kit-toggle-text">
+          <strong>Include starter kit</strong>
+          <small>
+            Food, medicine, rifle, tent, and clothing for the party.
+            Uncheck to start with $250 extra cash and provision yourself
+            at the outfitter.
+          </small>
+        </span>
+      </label>
     {/if}
 
+    <!-- Departure date row stays visible in BOTH branches -->
     <h2>When do we set out?</h2>
-
-    <div class="presets">
-      {#each presets as p}
-        {@const selected = year === p.year && month === p.month && day === p.day}
-        <button
-          type="button"
-          class="preset"
-          class:selected
-          onclick={() => applyPreset(p)}
-        >
-          <div class="preset-label">{p.label}</div>
-          <div class="preset-tagline">{p.tagline}</div>
-        </button>
-      {/each}
-    </div>
 
     <div class="date-pickers">
       <div class="field">
         <span class="field-label">Year</span>
-        <NumberStepper name="year" bind:value={year} min={1841} max={1869} ariaLabel="Year" />
+        <NumberStepper name="year" bind:value={year} min={1836} max={1869} ariaLabel="Year" />
       </div>
       <div class="field">
         <span class="field-label">Month</span>
@@ -216,20 +247,9 @@
       </div>
     </div>
 
-    <!-- #888b — starter-kit toggle. Default ON. Veterans who want to
-         provision themselves at the outfitter uncheck and get +$250
-         cash refund. -->
-    <label class="kit-toggle">
-      <input type="checkbox" name="include_starter_kit" checked />
-      <span class="kit-toggle-text">
-        <strong>Include starter kit</strong>
-        <small>
-          Food, medicine, rifle, tent, and clothing for the party.
-          Uncheck to start with $250 extra cash and provision yourself
-          at the outfitter.
-        </small>
-      </span>
-    </label>
+    {#if selectedProfile}
+      <input type="hidden" name="profileId" value={selectedProfile.id} />
+    {/if}
 
     </div><!-- /.scroll-area -->
 
@@ -369,6 +389,18 @@
     font-weight: 700;
   }
 
+  .cards-panel {
+    padding: 0.7em 0.9em;
+  }
+  .cards-panel .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.6rem;
+  }
+  @media (max-width: 884px) {
+    .cards-panel .card-grid { grid-template-columns: 1fr 1fr; }
+  }
+
   .new-form {
     display: flex;
     flex-direction: column;
@@ -406,56 +438,6 @@
       padding: 1em;
     }
     .side-rail, .scroll-area { overflow-y: visible; }
-  }
-
-  .presets {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.6em;
-    margin-bottom: 1.2em;
-  }
-  @media (max-width: 700px) {
-    .presets { grid-template-columns: 1fr; }
-  }
-
-  .preset {
-    /* Override default button chrome for these larger cards */
-    text-align: left;
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: normal;
-    padding: 0.8em 1em;
-    background: var(--c-panel);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .preset:hover {
-    border-color: var(--c-rust);
-    background: var(--c-bg-raised);
-  }
-  .preset.selected {
-    border-color: var(--c-rust);
-    background: var(--c-rust-dark);
-    color: var(--c-tan-bright);
-  }
-  .preset-label {
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--c-rust);
-    margin-bottom: 0.3em;
-  }
-  .preset.selected .preset-label {
-    color: var(--c-tan-bright);
-  }
-  .preset-tagline {
-    font-size: 0.85em;
-    line-height: 1.4;
-    color: var(--c-wood);
-  }
-  .preset.selected .preset-tagline {
-    color: var(--c-tan);
   }
 
   .date-pickers {
@@ -579,4 +561,21 @@
     background: var(--c-rust);
     color: var(--c-tan-bright);
   }
+
+  .preview-panel {
+    padding: 0.7em 0.9em;
+    margin-bottom: 0.5em;
+  }
+  .preview-panel .preview-roster {
+    list-style: none;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem 1rem;
+  }
+  .preview-panel .preview-roster li { font-size: 0.9em; }
+  .preview-trait { font-style: italic; margin: 0.5rem 0; color: #444; }
+  .preview-source { font-size: 0.8em; margin: 0; }
+  .preview-source a { color: #990000; }
 </style>
