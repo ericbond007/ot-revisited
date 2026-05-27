@@ -57,6 +57,7 @@
   import FortBridgerArt from './FortBridgerArt.svelte';
   import BearRiverArt from './BearRiverArt.svelte';
   import SodaSpringsArt from './SodaSpringsArt.svelte';
+  import MassacreRocksArt from './MassacreRocksArt.svelte';
   import FortHallArt from './FortHallArt.svelte';
   import ThreeIslandArt from './ThreeIslandArt.svelte';
   import FortBoiseArt from './FortBoiseArt.svelte';
@@ -119,6 +120,7 @@
     ft_bridger: { Art: FortBridgerArt, tone: 'warm' },
     bear_river: { Art: BearRiverArt, tone: 'cool' },
     soda_springs: { Art: SodaSpringsArt, tone: 'cool' },
+    massacre_rocks: { Art: MassacreRocksArt, tone: 'warm' },
     ft_hall: { Art: FortHallArt, tone: 'cool' },
     snake_three_island: { Art: ThreeIslandArt, tone: 'warm' },
     ft_boise: { Art: FortBoiseArt, tone: 'cool' },
