@@ -15,6 +15,7 @@
   // Trail order — mirrors the sequence in `LANDMARKS`.
   const ALL_IDS: LandmarkId[] = [
     'independence_mo',
+    'lone_elm_campground',
     'kansas_river',
     'alcove_spring',
     'big_blue_river',
