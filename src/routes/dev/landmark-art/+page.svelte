@@ -63,6 +63,7 @@
     'whitman_mission',
     'the_dalles',
     'barlow_road',
+    'laurel_hill',
     'oregon_city'
   ];
 

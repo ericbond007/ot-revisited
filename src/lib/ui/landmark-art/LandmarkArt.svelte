@@ -70,6 +70,7 @@
   import WhitmanMissionArt from './WhitmanMissionArt.svelte';
   import TheDallesArt from './TheDallesArt.svelte';
   import BarlowRoadArt from './BarlowRoadArt.svelte';
+  import LaurelHillArt from './LaurelHillArt.svelte';
   import OregonCityArt from './OregonCityArt.svelte';
 
   interface RegistryEntry {
@@ -133,6 +134,7 @@
     whitman_mission: { Art: WhitmanMissionArt, tone: 'warm' },
     the_dalles: { Art: TheDallesArt, tone: 'cool' },
     barlow_road: { Art: BarlowRoadArt, tone: 'gold' },
+    laurel_hill: { Art: LaurelHillArt, tone: 'cool' },
     oregon_city: { Art: OregonCityArt, tone: 'gold' }
   };
 
