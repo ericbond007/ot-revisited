@@ -139,3 +139,37 @@ reminder. Override (you really mean to edit the shared default): export
 - `hoosierTrail-wagon-bg/` — git-only sibling worktree (NOT a jj workspace,
   no `.jj/`). Holds the large blender models + LoRA training data outside the
   jj snapshot ceiling.
+
+## FLUX landmark backdrops — no SVG decorative overlay
+
+When a per-landmark FLUX backdrop ships at `static/wagon-bg/landmarks/<id>.webp`
+(via `tools/wagon-bg/render_landmark.py`), the matching `<Name>Art.svelte`
+component must contain ONLY the `<image href>` element. Strip every
+decorative `<path>`/`<g>`/`<text>` from the component.
+
+**Why:** the hand-drawn SVG vector layer (carved silhouettes, tiny
+wagons, italic captions) does not blend visually with the painterly
+oil-on-canvas raster. Side-by-side comparison at chimney_rock
+(PR #185 vs the SVG-stripped follow-up) was clear — the painted
+backdrop reads as finished period art on its own; the SVG over it
+looks like a vector mockup pasted on top of a painting.
+
+Pattern for a FLUX-backed component:
+
+```svelte
+<script lang="ts">
+  import { LMK_VIEW_W, LMK_VIEW_H } from './landmark-art-tokens';
+</script>
+
+<g>
+  <image
+    href="/wagon-bg/landmarks/<id>.webp?v=N"
+    x="0" y="0" width={LMK_VIEW_W} height={LMK_VIEW_H}
+    preserveAspectRatio="xMidYMid slice" />
+</g>
+```
+
+The decorative SVG remains valuable for landmarks WITHOUT a FLUX backdrop
+yet — strip only after the raster lands. The "show SVG overlay" toggle on
+`/dev/landmark-art` confirms the visual decision (uncheck to evaluate
+the raster standalone).
