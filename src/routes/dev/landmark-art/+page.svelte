@@ -20,6 +20,7 @@
     'big_blue_river',
     'hollenberg_ranch',
     'ft_kearny',
+    'windlass_hill',
     'ash_hollow',
     'rachel_pattison_grave',
     'north_platte_1',
