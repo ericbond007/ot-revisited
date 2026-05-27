@@ -8,11 +8,15 @@ import { createInitialState } from '../src/lib/game/engine';
 import type { GameState } from '../src/lib/game/types';
 
 function game(): GameState {
+  // #1163 — bumped from 1849 to 1858 so all road-ranch posts
+  // (hollenberg_ranch, rock_creek_station; both gated >=1857) are open
+  // for these "pure cumulative-mile" tests. The year-gating behavior
+  // is covered by tests/foresight-abandoned-1163.test.ts.
   return createInitialState({
     seed: 'r932',
     leader: { name: 'L', profession: 'farmer' },
     companions: [{ name: 'C', profession: 'doctor' }],
-    startDate: { year: 1849, month: 4, day: 15 }
+    startDate: { year: 1858, month: 4, day: 15 }
   });
 }
 
@@ -22,8 +26,11 @@ function atMile(s: GameState, miles: number): GameState {
 
 describe('#932 nextSupplyDistance', () => {
   // #1040 — historical mileage pass re-anchored supply-post cumulative
-  // miles: Hollenberg 180, Rock Creek 207, Kearny 319, Robidoux 518,
-  // The Dalles 1950, Oregon City (end) 2170.
+  // miles. Year 1858 open-supply sequence (post-#1163 year filter):
+  // Hollenberg 180, Rock Creek 207, Kearny 319, Ft Laramie 650
+  // (Robidoux gated >1852 — gone), Ft Caspar 773, The Dalles 1950,
+  // Oregon City (end) 2170. The Hall/Boise/Walla Walla cluster all
+  // closed by 1858 (each gated after-1855 or after-1856).
   it('at the start, reports distance to first supply post (Hollenberg Ranch, mi 180)', () => {
     const s = atMile(game(), 0);
     expect(nextSupplyDistance(s)).toBe(180);
@@ -34,14 +41,14 @@ describe('#932 nextSupplyDistance', () => {
     expect(nextSupplyDistance(s)).toBe(27);
   });
 
-  it('at Fort Kearny (mi 319), reports the gap to Robidoux (mi 518, gap 199)', () => {
+  it('at Fort Kearny (mi 319), reports gap to Ft Laramie (#1163: Robidoux >1852 gone in 1858, mi 650, gap 331)', () => {
     const s = atMile(game(), 319);
-    expect(nextSupplyDistance(s)).toBe(199);
+    expect(nextSupplyDistance(s)).toBe(331);
   });
 
-  it('mid-gap (mi 500, between Kearny and Robidoux), reports remaining 18 mi', () => {
+  it('mid-gap (mi 500, between Kearny and Laramie), reports remaining 150 mi to Laramie', () => {
     const s = atMile(game(), 500);
-    expect(nextSupplyDistance(s)).toBe(18);
+    expect(nextSupplyDistance(s)).toBe(150);
   });
 
   it('at The Dalles (mi 1950), reports 220 mi to Oregon City end', () => {
