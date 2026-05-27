@@ -11,15 +11,23 @@ import { getLandmark } from '../src/lib/game/content/landmarks';
 import type { GameState } from '../src/lib/game/types';
 
 function game(over: Partial<GameState> = {}): GameState {
+  // #1163 — year bumped from 1849 to 1858. At year 1849 ft_caspar
+  // (abandonedBeforeYear: 1855) and hollenberg_ranch / rock_creek_
+  // station (both >=1857) weren't built yet. Post-#1163 foresight
+  // correctly returns the much larger next-supply gap from those
+  // pre-built-period start states, triggering gap-aware boost and
+  // invalidating these BASE-threshold tests. The year-gating
+  // behavior itself is covered by foresight-abandoned-1163.test.ts.
   const s = createInitialState({
     seed: 'p',
     leader: { name: 'L', profession: 'farmer' },
     companions: [{ name: 'C', profession: 'doctor' }],
-    startDate: { year: 1849, month: 6, day: 15 }
+    startDate: { year: 1858, month: 6, day: 15 }
   });
-  // Position at Fort Laramie (cum mi 702) — next supply is Caspar at
-  // 810, only a 108-mi gap. Below the 150/200 bigGapMiles triggers
-  // for #934 ox-swap and #935 repair, so these tests isolate the
+  // Position 702 mi (52 mi past Laramie at cum 650 post-#1040,
+  // 68 mi before ft_caspar at cum 770). Year 1858: Caspar IS open,
+  // so next-supply gap is 68 mi — BELOW the 150/200 bigGapMiles
+  // triggers for #934 ox-swap and #935 repair, isolating the
   // persona's BASE thresholds (not the gap-aware boost).
   return {
     ...s,
@@ -115,23 +123,29 @@ describe('#303c — Persona.pickRepairBudget', () => {
     expect(cautiousPersona.pickRepairBudget(s, kearny)).toBeGreaterThan(0);
   });
 
-  // #935 / #1040 — at Fort Kearny (mi 319) the leg to Robidoux is now
-  // the historically-correct 199 mi (was an inflated 317). 199 ≥ 150
-  // so cautious/balanced gap-boost still fires (cond 80/70 → repair).
-  // Aggressive's gap threshold is 200 mi; 199 < 200 so it does NOT
-  // boost — aggressive only repairs when genuinely failing (<40). This
-  // is correct post-mileage-pass behavior, not a regression.
+  // #935 / #1040 — at Fort Kearny (mi 319) the leg to Robidoux is the
+  // historically-correct 199 mi. 199 ≥ 150 so cautious/balanced
+  // gap-boost still fires (cond 80/70 → repair). Aggressive's gap
+  // threshold is 200 mi; 199 < 200 so it does NOT boost — aggressive
+  // only repairs when genuinely failing (<40).
+  //
+  // #1163 — overrides year to 1850. The file-level default year 1858
+  // has Robidoux gated out (abandonedAfterYear: 1852), so foresight
+  // returns the 331-mi gap to Laramie instead of 199 to Robidoux,
+  // which trips aggressive's bigGapMiles=200 boost and breaks the
+  // "aggressive does not" assertion. 1850 has Robidoux still open.
   it('#935 — at Fort Kearny (mi 319), cautious/balanced gap-boost repair; aggressive does not', () => {
-    const atKearny = (cond: number) => game({
+    const baseAt1850 = (cond: number) => game({
+      date: { year: 1850, month: 6, day: 15 },
       location: { ...game().location, milesTraveled: 319 },
       wagon: { ...game().wagon, condition: cond }
     });
-    expect(cautiousPersona.pickRepairBudget(atKearny(80), kearny)).toBeGreaterThan(0);
-    expect(balancedPersona.pickRepairBudget(atKearny(70), kearny)).toBeGreaterThan(0);
+    expect(cautiousPersona.pickRepairBudget(baseAt1850(80), kearny)).toBeGreaterThan(0);
+    expect(balancedPersona.pickRepairBudget(baseAt1850(70), kearny)).toBeGreaterThan(0);
     // 199 < aggressive bigGapMiles 200 → no boost; cond 50 ≥ base 40 → skip.
-    expect(aggressivePersona.pickRepairBudget(atKearny(50), kearny)).toBe(0);
+    expect(aggressivePersona.pickRepairBudget(baseAt1850(50), kearny)).toBe(0);
     // But a genuinely failing wagon still triggers aggressive's base.
-    expect(aggressivePersona.pickRepairBudget(atKearny(35), kearny)).toBeGreaterThan(0);
+    expect(aggressivePersona.pickRepairBudget(baseAt1850(35), kearny)).toBeGreaterThan(0);
   });
 
   it('#935 — at a small-gap post (Laramie, 108 mi to Caspar), gap-aware boost does NOT fire', () => {

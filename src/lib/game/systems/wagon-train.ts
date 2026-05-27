@@ -677,6 +677,7 @@ export function applyNpcPostRestock(state: GameState): GameState {
       party: next.party,
       cash: next.cash,
       day: state.day,
+      date: state.date,  // #1163 — foresight.nextSupplyDistance now reads state.date.year
       location: state.location
     } as unknown as GameState;
     const tradeRng = makeRng(`${next.seed}:trade:${state.day}:${id}`);
@@ -739,6 +740,7 @@ export function applyNpcPostRestock(state: GameState): GameState {
         wagon: next.wagon,
         cash: next.cash,
         day: state.day,
+        date: state.date,  // #1163 — same reason as tradeFauxState above
         location: state.location
       } as unknown as GameState;
       const budget = persona.pickRepairBudget(repairFauxState, here);
@@ -757,7 +759,7 @@ export function applyNpcPostRestock(state: GameState): GameState {
     if (offersOxSwap && next.cash >= OX_SWAP_BARTER_BOOT_USD) {
       // #934 — include `location` so gap-aware pickOxSwapCount sees
       // the upcoming supply gap.
-      const oxFauxState = { wagon: next.wagon, oxen: next.oxen, location: state.location } as unknown as GameState;
+      const oxFauxState = { wagon: next.wagon, oxen: next.oxen, location: state.location, date: state.date } as unknown as GameState;
       // Per-wagon RNG keyed off the wagon seed + day so chaos picks
       // are deterministic per (wagon, day, post) but diverge across
       // wagons. Same pattern as the bot runner.
@@ -784,7 +786,7 @@ export function applyNpcPostRestock(state: GameState): GameState {
     // through one cull-from-tail loop so medicine (last priority)
     // gets dropped first when cash is tight — same shape the player
     // composeShoppingList uses.
-    const equipFauxState = { day: state.day } as unknown as GameState;
+    const equipFauxState = { day: state.day, date: state.date, location: state.location } as unknown as GameState;
     const equipOpts = persona.pickEquipmentRestockOpts(equipFauxState);
     const nonFoodBuys: BuyOrder[] = [
       ...pickWarmthRestock({ wagon: next, stock }),
@@ -816,6 +818,7 @@ export function applyNpcPostRestock(state: GameState): GameState {
         cash: next.cash,
         party: next.party,
         day: state.day,
+        date: state.date,  // #1163 — persona helpers reach foresight which needs date.year
         location: state.location
       } as unknown as GameState;
       const barterRng = makeRng(`${next.seed}:barter:${state.day}:${id}`);

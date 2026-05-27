@@ -8,7 +8,7 @@
 // bot, NPC restock, encountered-train wagons, and future #284
 // multiplayer fallback alike.
 
-import { LANDMARKS } from '../content/landmarks';
+import { LANDMARKS, isLandmarkAbandoned, type Landmark } from '../content/landmarks';
 import type { GameState } from '../types';
 
 /** A "supply post" for foresight purposes — somewhere the wagon can
@@ -20,22 +20,37 @@ function isSupplyStop(kind: string): boolean {
 }
 
 /** Cumulative miles to each landmark, computed once at module load.
- *  LANDMARKS is readonly + module-scope so we can safely memoize. */
-const CUM_MILES: readonly { id: string; kind: string; cum: number }[] = (() => {
+ *  LANDMARKS is readonly + module-scope so we can safely memoize.
+ *  Carries the full Landmark ref so callers can filter by year-gate
+ *  (#1163 — `isLandmarkAbandoned` check during supply-stop lookup). */
+const CUM_MILES: readonly { id: string; kind: string; cum: number; landmark: Landmark }[] = (() => {
   let cum = 0;
   return LANDMARKS.map((lm) => {
     cum += lm.milesFromPrevious;
-    return { id: lm.id, kind: lm.kind, cum };
+    return { id: lm.id, kind: lm.kind, cum, landmark: lm };
   });
 })();
 
 /** Miles from the wagon's current position to the next supply stop
  *  ahead on the trail. Returns 0 when no supply post lies ahead (past
  *  The Dalles, near Oregon City) — the wagon has already cleared the
- *  last gap. */
+ *  last gap.
+ *
+ *  #1163 — Filters out posts that are abandoned for the current year
+ *  (e.g. Fort Boise in 1857, gated `abandonedAfterYear: 1855`; Rock
+ *  Creek Station in 1850, gated `abandonedBeforeYear: 1857`). Without
+ *  this, gap-aware bots plan restock around posts that aren't actually
+ *  there — leaves Boise in 1857 expecting another supply leg ahead at
+ *  a Fort Hall that's been gone for a year, then stalls.  Sibling
+ *  fix to #1162 which gated NPC restock the same way. */
 export function nextSupplyDistance(state: GameState): number {
   const here = state.location.milesTraveled;
-  const next = CUM_MILES.find((lm) => isSupplyStop(lm.kind) && lm.cum > here);
+  const year = state.date.year;
+  const next = CUM_MILES.find((lm) =>
+    isSupplyStop(lm.kind) &&
+    lm.cum > here &&
+    !isLandmarkAbandoned(lm.landmark, year)
+  );
   return next ? next.cum - here : 0;
 }
 

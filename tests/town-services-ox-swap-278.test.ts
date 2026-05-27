@@ -17,6 +17,11 @@ import { makeRng } from '../src/lib/game/rng';
 import type { GameState } from '../src/lib/game/types';
 
 function game(over: Partial<GameState> = {}): GameState {
+  // #1163 — default year stays 1848 (gold-rush-era tests below depend
+  // on it). The `atLaramie` helper overrides to 1858 specifically so
+  // the gap-aware persona tests see ft_caspar as open. Tests that
+  // need 1848 (e.g. swapOxenCost gold-rush cost test) can still call
+  // game() with no override.
   const s = createInitialState({
     seed: 'ox-swap',
     leader: { name: 'L', profession: 'farmer' },
@@ -27,11 +32,15 @@ function game(over: Partial<GameState> = {}): GameState {
 }
 
 function atLaramie(over: Partial<GameState> = {}): GameState {
-  const s = game(over);
-  // Position miles at Laramie's actual cumulative mile (702). The
-  // next supply post is Caspar at mi 810 — only a 108-mi gap, which
-  // is BELOW #934's bigGapMiles=150 threshold for cautious/balanced,
-  // so persona healthFloors test their base values (not gap-boosted).
+  // #1163 — override year to 1858 so ft_caspar (gated >=1855) is open.
+  // At year 1848, Caspar didn't exist and post-#1163 foresight returns
+  // the 588-mi gap to ft_hall — triggering the gap-aware boost and
+  // breaking the "no-boost at small gap" test intent.
+  const s = game({ date: { year: 1858, month: 6, day: 15 }, ...over });
+  // Position 702 mi: 52 mi past Laramie (cum 650 post-#1040) and
+  // 68 mi before ft_caspar (cum 770). At year 1858 Caspar is OPEN,
+  // so next-supply gap is 68 mi — BELOW #934's bigGapMiles=150
+  // threshold for cautious/balanced.
   return {
     ...s,
     location: { ...s.location, atLandmarkId: 'ft_laramie', milesTraveled: 702 }
@@ -249,14 +258,20 @@ describe('#278 — Persona.pickOxSwapCount', () => {
     expect(aggressivePersona.pickOxSwapCount(atHall, farLandmark(), makeRng('p'))).toBeGreaterThan(0);
   });
 
-  it('#934 — at a small-gap post (Robidoux, 50 mi to Laramie), gap-aware boost does NOT fire', async () => {
-    // Robidoux→Laramie is 50 mi, below all three personas' bigGapMiles.
-    // So balanced at health 60 still skips (base floor 55).
+  it('#934 — at a small-gap post (past Laramie at mi 652, 118 mi to Caspar), gap-aware boost does NOT fire', async () => {
+    // Position 652 mi = 2 mi past Laramie (cum 650). Next forward
+    // supply at year 1856 is ft_caspar (770, open >=1855) — gap 118
+    // mi, below all three personas' bigGapMiles. So balanced at
+    // health 60 still skips (base floor 55).
+    //
+    // #1163 — overrides year to 1856. At year 1848 (default game()),
+    // ft_caspar didn't yet exist and foresight returns the 638-mi
+    // gap to ft_hall, breaking the no-boost intent.
     const { balancedPersona } = await import('../src/lib/game/ai');
-    const s = game();
+    const s = game({ date: { year: 1856, month: 6, day: 15 } });
     const atRobidoux = {
       ...s,
-      location: { ...s.location, atLandmarkId: 'robidoux_post', milesTraveled: 652 },
+      location: { ...s.location, atLandmarkId: 'ft_laramie', milesTraveled: 652 },
       oxen: s.oxen.map((o) => ({ ...o, health: 60 }))
     };
     expect(balancedPersona.pickOxSwapCount(atRobidoux, farLandmark(), makeRng('p'))).toBe(0);
