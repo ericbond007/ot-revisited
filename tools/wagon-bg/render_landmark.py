@@ -11,10 +11,11 @@ Usage:
     python render_landmark.py --all                 # render every entry below
     python render_landmark.py --regen chimney_rock  # force regenerate
 
-Dimensions: 3072×1024 per the umbrella #1078 rework spec — wider vertical
-extent than the biome backdrop (3072×768) to accommodate landmarks with
-significant vertical presence (Chimney Rock spire, Scotts Bluff face, the
-Devil's Gate cleft, Wind River Mountains on the horizon at Flagstaff Hill).
+Dimensions: 3072×1344 — matches LandmarkStage's `aspect-ratio: 16/7`
+(see `src/lib/ui/LandmarkStage.svelte`). The earlier 3072×1024 (3:1)
+got cropped top + bottom ~13% each by the in-game viewport, wasting
+generated pixels. 3072 × 7/16 = 1344 lands the render exactly in the
+visible frame.
 
 Output: `static/wagon-bg/landmarks/<id>.webp` (committed).
 """
@@ -35,7 +36,7 @@ STATIC_DIR = THIS_DIR.parent.parent / "static" / "wagon-bg" / "landmarks"
 # Same default LoRA as biome backdrops — ht_landscape v2_2000 at 1.0.
 # Trigger word "ht_landscape" is baked into each prompt below.
 DEFAULT_LORAS: list[tuple[str, float]] = [("ht_landscape_v2_2000.safetensors", 1.0)]
-WIDTH, HEIGHT = 3072, 1024
+WIDTH, HEIGHT = 3072, 1344
 
 # Per-landmark prompts. Each entry: { id, seed, prompt }. The prompt
 # bakes in "ht_landscape" trigger + "painterly oil on canvas" tail to
