@@ -48,6 +48,7 @@
     'green_river',
     'big_hill',
     'ft_bridger',
+    'shoshone_camp',
     'bear_river',
     'soda_springs',
     'massacre_rocks',
