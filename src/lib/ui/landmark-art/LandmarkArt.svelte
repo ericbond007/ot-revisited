@@ -27,6 +27,7 @@
   import BigBlueArt from './BigBlueArt.svelte';
   import HollenbergRanchArt from './HollenbergRanchArt.svelte';
   import FortKearnyArt from './FortKearnyArt.svelte';
+  import WindlassHillArt from './WindlassHillArt.svelte';
   import AshHollowArt from './AshHollowArt.svelte';
   import RachelPattisonGraveArt from './RachelPattisonGraveArt.svelte';
   import NorthPlatteEastArt from './NorthPlatteEastArt.svelte';
@@ -77,6 +78,7 @@
     big_blue_river: { Art: BigBlueArt, tone: 'warm' },
     hollenberg_ranch: { Art: HollenbergRanchArt, tone: 'warm' },
     ft_kearny: { Art: FortKearnyArt, tone: 'warm' },
+    windlass_hill: { Art: WindlassHillArt, tone: 'warm' },
     ash_hollow: { Art: AshHollowArt, tone: 'warm' },
     rachel_pattison_grave: { Art: RachelPattisonGraveArt, tone: 'warm' },
     // The new bundle ships these as `north-platte-east` and `north-platte-west`;
