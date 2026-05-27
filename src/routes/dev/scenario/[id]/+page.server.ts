@@ -1,25 +1,23 @@
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
-import { dev } from '$app/environment';
 import { getScenario, SCENARIOS } from '$lib/dev/scenarios';
 
 // #1173 — GET-based scenario perma URL. Mirrors the POST `loadScenario`
 // action on `/+page.server.ts` but lets a browser, curl, or an AI
 // design reviewer hit a stable link and land in a specific game state
-// without a form submit. Same dev-gate; same `dev-<id>` slot; same
-// redirect target. Hitting the URL twice in a row deterministically
-// rebuilds the slot from the scenario's `build()`, so a fresh repro
-// is one reload away.
+// without a form submit.
+//
+// Hitting the URL twice rebuilds the slot from the scenario's `build()`,
+// so a fresh repro is one reload away.
 //
 // URL form: `/dev/scenario/at_kearny` → `/play?slot=dev-at_kearny`.
 //
-// Use cases (from the ticket):
-//   - bug reports with a one-link repro
-//   - design review (Claude Design visits, screenshots, critiques)
-//   - demo links shared in chat / docs
+// Open in production by design — these routes drop the user into a
+// pre-built save in their own session and don't bypass any auth.
+// Dave's ot.ericbond.net deployment needs them reachable for design
+// review and bug-repro links shared with collaborators.
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-  if (!dev) throw error(404, 'Not found');
   const id = params.id;
   if (!id) {
     throw error(400, `scenario id required. Available: ${SCENARIOS.map((s) => s.id).join(', ')}`);
