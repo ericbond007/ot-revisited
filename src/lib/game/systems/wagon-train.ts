@@ -26,7 +26,7 @@ import {
   type BuyOrder
 } from '../ai/shopping';
 import { getPersona } from '../ai/personas';
-import { getLandmark } from '../content/landmarks';
+import { getLandmark, isLandmarkAbandoned } from '../content/landmarks';
 import { getPrice } from '../content/prices';
 import {
   OX_SWAP_BARTER_BOOT_USD,
@@ -638,6 +638,12 @@ export function applyNpcPostRestock(state: GameState): GameState {
   if (state.flags[flagKey]) return state;
   const here = getLandmark(id);
   if (here.kind !== 'trading_post') return state;
+  // #1162 — NPCs must skip posts that are abandoned for the current
+  // year, same as the player UI (LandmarkStage / TownStage / ActionBar).
+  // Without this, NPC trains restock at Fort Boise in 1857 (gated
+  // abandonedAfterYear: 1855) or Rock Creek Station in 1850 (gated
+  // abandonedBeforeYear: 1857). Both visibly break the period sim.
+  if (isLandmarkAbandoned(here, state.date.year)) return state;
   const stock = new Set(here.stock ?? []);
   if (stock.size === 0) return state;
   const postMult = here.priceMultiplier ?? 1.0;
