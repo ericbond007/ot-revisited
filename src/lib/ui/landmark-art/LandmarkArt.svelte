@@ -60,6 +60,7 @@
   import FortHallArt from './FortHallArt.svelte';
   import ThreeIslandArt from './ThreeIslandArt.svelte';
   import FortBoiseArt from './FortBoiseArt.svelte';
+  import FlagstaffHillArt from './FlagstaffHillArt.svelte';
   import FarewellBendArt from './FarewellBendArt.svelte';
   import BlueMountainsArt from './BlueMountainsArt.svelte';
   import GrandeRondeArt from './GrandeRondeArt.svelte';
@@ -120,6 +121,7 @@
     ft_hall: { Art: FortHallArt, tone: 'cool' },
     snake_three_island: { Art: ThreeIslandArt, tone: 'warm' },
     ft_boise: { Art: FortBoiseArt, tone: 'cool' },
+    flagstaff_hill: { Art: FlagstaffHillArt, tone: 'warm' },
     farewell_bend: { Art: FarewellBendArt, tone: 'warm' },
     blue_mountains: { Art: BlueMountainsArt, tone: 'gold' },
     grande_ronde: { Art: GrandeRondeArt, tone: 'warm' },

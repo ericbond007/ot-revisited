@@ -53,6 +53,7 @@
     'ft_hall',
     'snake_three_island',
     'ft_boise',
+    'flagstaff_hill',
     'farewell_bend',
     'blue_mountains',
     'grande_ronde',
