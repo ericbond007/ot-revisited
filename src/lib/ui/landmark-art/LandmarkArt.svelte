@@ -48,6 +48,7 @@
   import IndependenceRockArt from './IndependenceRockArt.svelte';
   import DevilsGateArt from './DevilsGateArt.svelte';
   import SweetwaterFordArt from './SweetwaterFordArt.svelte';
+  import CheyenneCampArt from './CheyenneCampArt.svelte';
   import IceSloughArt from './IceSloughArt.svelte';
   import SouthPassArt from './SouthPassArt.svelte';
   import PacificSpringsArt from './PacificSpringsArt.svelte';
@@ -112,6 +113,7 @@
     devils_gate: { Art: DevilsGateArt, tone: 'warm' },
     // Bundle ships as `sweetwater-ford` → our `sweetwater_1` (mile 932).
     sweetwater_1: { Art: SweetwaterFordArt, tone: 'cool' },
+    cheyenne_camp: { Art: CheyenneCampArt, tone: 'warm' },
     ice_slough: { Art: IceSloughArt, tone: 'cool' },
     south_pass: { Art: SouthPassArt, tone: 'cool' },
     pacific_springs: { Art: PacificSpringsArt, tone: 'cool' },

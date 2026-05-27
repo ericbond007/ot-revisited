@@ -41,6 +41,7 @@
     'independence_rock',
     'devils_gate',
     'sweetwater_1',
+    'cheyenne_camp',
     'ice_slough',
     'south_pass',
     'pacific_springs',
