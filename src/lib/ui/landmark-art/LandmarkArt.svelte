@@ -28,6 +28,7 @@
   import HollenbergRanchArt from './HollenbergRanchArt.svelte';
   import FortKearnyArt from './FortKearnyArt.svelte';
   import AshHollowArt from './AshHollowArt.svelte';
+  import RachelPattisonGraveArt from './RachelPattisonGraveArt.svelte';
   import NorthPlatteEastArt from './NorthPlatteEastArt.svelte';
   import CourthouseJailArt from './CourthouseJailArt.svelte';
   import ChimneyRockArt from './ChimneyRockArt.svelte';
@@ -77,6 +78,7 @@
     hollenberg_ranch: { Art: HollenbergRanchArt, tone: 'warm' },
     ft_kearny: { Art: FortKearnyArt, tone: 'warm' },
     ash_hollow: { Art: AshHollowArt, tone: 'warm' },
+    rachel_pattison_grave: { Art: RachelPattisonGraveArt, tone: 'warm' },
     // The new bundle ships these as `north-platte-east` and `north-platte-west`;
     // we map to our existing `north_platte_1` (mile 545) and `_2` (mile 875).
     north_platte_1: { Art: NorthPlatteEastArt, tone: 'warm' },

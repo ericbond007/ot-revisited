@@ -60,6 +60,7 @@ export type LandmarkId =
   | 'hollenberg_ranch'
   | 'ft_kearny'
   | 'ash_hollow'
+  | 'rachel_pattison_grave'
   | 'north_platte_1'
   | 'courthouse_rock'
   | 'chimney_rock'
