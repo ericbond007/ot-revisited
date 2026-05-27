@@ -36,6 +36,15 @@
 </script>
 
 <g>
+  <!-- FLUX backdrop — ht_landscape v2_2000 LoRA, painterly Hudson-River-
+       School oil-on-canvas. Sits BENEATH the SVG overlay so the decorative
+       elements (wagons, ridges, caption) still composite on top.
+       (#1078 / #1093 first per-landmark E2E render.) -->
+  <image
+    href="/wagon-bg/landmarks/chimney_rock.webp?v=1"
+    x="0" y="0" width={LMK_VIEW_W} height="200"
+    preserveAspectRatio="xMidYMid slice" />
+
   <!-- Distant low ridges (suggest the bluff line of the valley) -->
   <path
     d="M 0 100 Q 60 96 130 100 Q 200 95 280 100 Q 360 95 440 100 Q 470 98 480 100 L 480 108 L 0 108 Z"
