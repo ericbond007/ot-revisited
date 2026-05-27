@@ -54,6 +54,7 @@ export type LandmarkTone = 'warm' | 'cool' | 'gold';
  *  this union and add the row in `LandmarkArt.svelte`'s REGISTRY. */
 export type LandmarkId =
   | 'independence_mo'
+  | 'lone_elm_campground'
   | 'kansas_river'
   | 'alcove_spring'
   | 'big_blue_river'

@@ -22,6 +22,7 @@
   import type { LandmarkId, LandmarkTone } from './landmark-art-tokens';
 
   import IndependenceArt from './IndependenceArt.svelte';
+  import LoneElmCampgroundArt from './LoneElmCampgroundArt.svelte';
   import KansasRiverArt from './KansasRiverArt.svelte';
   import AlcoveSpringArt from './AlcoveSpringArt.svelte';
   import BigBlueArt from './BigBlueArt.svelte';
@@ -73,6 +74,7 @@
    *  src/lib/game/content/landmarks.ts. */
   const REGISTRY: Partial<Record<LandmarkId, RegistryEntry>> = {
     independence_mo: { Art: IndependenceArt, tone: 'warm' },
+    lone_elm_campground: { Art: LoneElmCampgroundArt, tone: 'warm' },
     kansas_river: { Art: KansasRiverArt, tone: 'warm' },
     alcove_spring: { Art: AlcoveSpringArt, tone: 'warm' },
     big_blue_river: { Art: BigBlueArt, tone: 'warm' },
