@@ -28,6 +28,7 @@
   import AlcoveSpringArt from './AlcoveSpringArt.svelte';
   import BigBlueArt from './BigBlueArt.svelte';
   import HollenbergRanchArt from './HollenbergRanchArt.svelte';
+  import RockCreekStationArt from './RockCreekStationArt.svelte';
   import FortKearnyArt from './FortKearnyArt.svelte';
   import WindlassHillArt from './WindlassHillArt.svelte';
   import AshHollowArt from './AshHollowArt.svelte';
@@ -81,6 +82,7 @@
     alcove_spring: { Art: AlcoveSpringArt, tone: 'warm' },
     big_blue_river: { Art: BigBlueArt, tone: 'warm' },
     hollenberg_ranch: { Art: HollenbergRanchArt, tone: 'warm' },
+    rock_creek_station: { Art: RockCreekStationArt, tone: 'warm' },
     ft_kearny: { Art: FortKearnyArt, tone: 'warm' },
     windlass_hill: { Art: WindlassHillArt, tone: 'warm' },
     ash_hollow: { Art: AshHollowArt, tone: 'warm' },
