@@ -70,6 +70,22 @@
       <h2 class="name">{landmark.name}</h2>
       <p class="prompt">{prompt}</p>
     </div>
+    <div class="meta-row">
+      <div class="meta-cell">
+        <span class="meta-head">DAY</span>
+        <span class="meta-val">{state.day}</span>
+      </div>
+      <div class="meta-cell">
+        <span class="meta-head">MILES TRAVELED</span>
+        <span class="meta-val">{Math.round(state.location.milesTraveled)}</span>
+      </div>
+      {#if landmark.kind !== 'end'}
+        <div class="meta-cell">
+          <span class="meta-head">MILES REMAINING</span>
+          <span class="meta-val">~{remainingMiles}</span>
+        </div>
+      {/if}
+    </div>
   </div>
 
   {#if flavor}
@@ -104,23 +120,6 @@
       </p>
     </div>
   {/if}
-
-  <div class="meta-row">
-    <div class="meta-cell">
-      <span class="meta-head">DAY</span>
-      <span class="meta-val">{state.day}</span>
-    </div>
-    <div class="meta-cell">
-      <span class="meta-head">MILES TRAVELED</span>
-      <span class="meta-val">{Math.round(state.location.milesTraveled)}</span>
-    </div>
-    {#if landmark.kind !== 'end'}
-      <div class="meta-cell">
-        <span class="meta-head">MILES REMAINING</span>
-        <span class="meta-val">~{remainingMiles}</span>
-      </div>
-    {/if}
-  </div>
 
   <!-- Rich landmark artwork (#89). Falls back to the dashed placeholder
        only for landmarks that don't yet have a registered art component. -->
@@ -277,6 +276,9 @@
 
   .meta-row {
     display: flex;
+    flex-shrink: 0;
+    margin-left: auto;
+    align-items: flex-start;
     gap: 1.5em;
     flex-wrap: wrap;
   }
