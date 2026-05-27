@@ -56,6 +56,7 @@
   import GreenRiverArt from './GreenRiverArt.svelte';
   import BigHillArt from './BigHillArt.svelte';
   import FortBridgerArt from './FortBridgerArt.svelte';
+  import ShoshoneCampArt from './ShoshoneCampArt.svelte';
   import BearRiverArt from './BearRiverArt.svelte';
   import SodaSpringsArt from './SodaSpringsArt.svelte';
   import MassacreRocksArt from './MassacreRocksArt.svelte';
@@ -122,6 +123,7 @@
     green_river: { Art: GreenRiverArt, tone: 'warm' },
     big_hill: { Art: BigHillArt, tone: 'warm' },
     ft_bridger: { Art: FortBridgerArt, tone: 'warm' },
+    shoshone_camp: { Art: ShoshoneCampArt, tone: 'cool' },
     bear_river: { Art: BearRiverArt, tone: 'cool' },
     soda_springs: { Art: SodaSpringsArt, tone: 'cool' },
     massacre_rocks: { Art: MassacreRocksArt, tone: 'warm' },
