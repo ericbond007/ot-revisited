@@ -2,6 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { createInitialState } from '$lib/game/engine';
 import { PROFESSIONS } from '$lib/game/content/professions';
+import { getBotProfile, profileToNewGameOptions, applyProfileKit } from '$lib/game/content/bot-profiles';
 import type { ProfessionId, Sex } from '$lib/game/types';
 
 export const load: PageServerLoad = async () => {
@@ -62,6 +63,38 @@ export const actions: Actions = {
     await locals.repo.save(locals.deviceId, slotName, state);
 
     // Route to the outfitter (spend starter cash on supplies before departure).
+    throw redirect(303, `/outfit?slot=${encodeURIComponent(slotName)}`);
+  },
+
+  // #102 — Load a named historical profile as the player party.
+  loadProfile: async ({ request, locals }) => {
+    const fd = await request.formData();
+    const profileId = fd.get('profileId')?.toString();
+    if (!profileId) return fail(400, { error: 'No profile selected.' });
+
+    let profile;
+    try {
+      profile = getBotProfile(profileId);
+    } catch {
+      return fail(400, { error: `Unknown profile: ${profileId}` });
+    }
+
+    if (!profile.playerEligible) {
+      return fail(400, { error: `Profile "${profile.displayName}" is not available for player use.` });
+    }
+
+    const year = parseInt(fd.get('year')?.toString() ?? String(profile.year), 10);
+    const month = parseInt(fd.get('month')?.toString() ?? '4', 10);
+    const day = parseInt(fd.get('day')?.toString() ?? '15', 10);
+
+    const seed = `${locals.deviceId}-${Date.now()}`;
+    const opts = profileToNewGameOptions(profile, { year, month, day }, seed);
+    let state = createInitialState(opts);
+    state = applyProfileKit(state, profile);
+
+    const slotName = `Journey ${new Date().toLocaleDateString()}`;
+    await locals.repo.save(locals.deviceId, slotName, state);
+
     throw redirect(303, `/outfit?slot=${encodeURIComponent(slotName)}`);
   }
 };

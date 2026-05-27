@@ -14,8 +14,10 @@
 // with composition / leader profession / fate / Wikipedia citations.
 
 import type { Rng } from '../rng';
-import type { ProfessionId } from '../types';
+import type { ProfessionId, GameState } from '../types';
 import type { WagonComposition } from './trains';
+import type { NewGameOptions, PartyPick } from '../engine';
+import type { GameDate } from '../types';
 
 /** A single party member within a named profile. The `surname` is
  *  inherited from the profile by default; per-member `surname` is for
@@ -44,10 +46,6 @@ export interface BotProfile {
   /** Maps to the existing trains.ts archetype for wagon-label logic +
    *  inventory generation. */
   composition: WagonComposition;
-  /** Leader's profession. Must exist in the catalog. Slice A is
-   *  constrained to professions that exist today (no `lawyer` for
-   *  Hastings yet — banker stand-in until the ProfessionId is
-   *  expanded with attorney-class roles, see #322 follow-up). */
   leaderProfession: ProfessionId;
   /** Verbatim party. Order matters: leader first, spouse second,
    *  children before extras. */
@@ -89,6 +87,18 @@ export interface BotProfile {
    *  Pre-#888a this was `kitOverrides` — partial overrides on a
    *  random base. Renamed + semantics shifted: now COMPLETE. */
   kit?: Record<string, number>;
+  /** Player-facing difficulty signal. Authored by hand per profile.
+   *  Drives the card badge on /new; does NOT modify game balance. */
+  difficulty: 'easy' | 'normal' | 'hard' | 'legendary';
+  /** Whether this profile is surfaced as a player option on /new.
+   *  False = NPC-only (special-case data or not yet vetted for player
+   *  balance). #102 ships with Joe Meek, Tabitha Brown, Joel Palmer, and Hastings as `playerEligible: false`
+   *  (Meek + Brown are solo profiles; engine requires 2 adults — see #1165);
+   *  flip after his kit lands (#887). Note that `kit` absence alone does
+   *  NOT block eligibility — kit-less profiles fall through to
+   *  `generateNpcInventory`'s random fallback, which is acceptable for v1
+   *  (Tabitha Brown, Meeker family). #887 will batch-add their kits. */
+  playerEligible: boolean;
 }
 
 /** The 10 launch profiles. Source: docs/handoff/bot-profiles-dossier.md.
@@ -114,6 +124,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'child',  sex: 'female', given: 'Henrietta', age: 0 }
     ],
     personaVariantHint: 'faithful',
+    difficulty: 'normal',
+    playerEligible: true,
     year: 1844,
     trait: 'Both parents died on the trail; the seven children completed the journey under the care of fellow emigrants.',
     source: 'https://en.wikipedia.org/wiki/Sager_children',
@@ -152,6 +164,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'child',  sex: 'female', given: 'Eliza',   age: 3 }
     ],
     personaVariantHint: 'generous',
+    difficulty: 'legendary',
+    playerEligible: true,
     year: 1846,
     trait: 'Captain by acclamation. Tamzene distributed food to others as their own stores ran low in the Sierra.',
     source: 'https://en.wikipedia.org/wiki/Donner_Party',
@@ -194,6 +208,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'extra',  sex: 'female', given: 'Sarah',    age: 70, surname: 'Keyes' } // Margaret's mother
     ],
     personaVariantHint: 'pace_pusher',
+    difficulty: 'hard',
+    playerEligible: true,
     year: 1846,
     trait: 'Famously impatient; built the heavy "Pioneer Palace Car"; banished after killing teamster John Snyder in a whip-fight.',
     source: 'https://en.wikipedia.org/wiki/James_Reed_(pioneer)',
@@ -230,6 +246,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'leader', sex: 'male', given: 'Joseph', age: 26 }
     ],
     personaVariantHint: 'chaos',
+    difficulty: 'easy',
+    playerEligible: false,
     year: 1840,
     trait: 'Mountain man whose beaver-trade collapse drove him to Oregon. Later first U.S. Marshal of Oregon Territory.',
     source: 'https://en.wikipedia.org/wiki/Joe_Meek',
@@ -263,6 +281,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'spouse', sex: 'female', given: 'Narcissa',  age: 28 }
     ],
     personaVariantHint: 'sunday_rester',
+    difficulty: 'hard',
+    playerEligible: true,
     year: 1836,
     trait: 'First wagons west; Narcissa among the first white women over the Rockies. Killed in the 1847 Whitman Massacre.',
     source: 'https://en.wikipedia.org/wiki/Marcus_Whitman',
@@ -298,6 +318,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'leader', sex: 'female', given: 'Tabitha', age: 66 }
     ],
     personaVariantHint: 'cautious',
+    difficulty: 'hard',
+    playerEligible: false,
     year: 1846,
     trait: 'Crossed at age 66 on foot through the Umpqua Mountains. Founded what became Pacific University.',
     source: 'https://en.wikipedia.org/wiki/Tabitha_Brown'
@@ -314,6 +336,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'child',  sex: 'male',   given: 'Oliver', age: 0 }
     ],
     personaVariantHint: 'balanced',
+    difficulty: 'normal',
+    playerEligible: true,
     year: 1852,
     trait: 'Methodical, well-prepared. Re-crossed by ox-wagon at age 75 to mark the trail with monuments.',
     source: 'https://en.wikipedia.org/wiki/Ezra_Meeker'
@@ -331,6 +355,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'extra',  sex: 'female', given: 'Nancy', age: 18, surname: 'Kelsey' }
     ],
     personaVariantHint: 'aggressive',
+    difficulty: 'hard',
+    playerEligible: true,
     year: 1841,
     trait: 'First emigrant wagon train to California. Abandoned wagons in Nevada; finished on foot and horseback.',
     source: 'https://en.wikipedia.org/wiki/John_Bidwell'
@@ -345,6 +371,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'leader', sex: 'male', given: 'Joel', age: 30 }
     ],
     personaVariantHint: 'balanced',
+    difficulty: 'easy',
+    playerEligible: false,
     year: 1845,
     trait: 'Surveyed the Barlow Road around Mt. Hood. His "Journal of Travels" became the standard 1840s emigrant guidebook.',
     source: 'https://en.wikipedia.org/wiki/Joel_Palmer'
@@ -362,6 +390,8 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       { role: 'leader', sex: 'male', given: 'Lansford', age: 22 }
     ],
     personaVariantHint: 'pace_pusher',
+    difficulty: 'legendary',
+    playerEligible: false,
     year: 1842,
     trait: 'Promoted the unproven Hastings Cutoff. Author of the unreliable 1845 Emigrant\'s Guide. Fled to Brazil after the war.',
     source: 'https://en.wikipedia.org/wiki/Lansford_Hastings'
@@ -373,6 +403,33 @@ export function getBotProfile(id: string): BotProfile {
   const p = LAUNCH_PROFILES.find((x) => x.id === id);
   if (!p) throw new Error(`Unknown bot profile: ${id}`);
   return p;
+}
+
+/** #102 — Convert a BotProfile to the NewGameOptions shape the
+ *  player-side `createInitialState` accepts. Maps members 1:1 to
+ *  PartyPicks (leader first), forces `includeStarterKit: false`
+ *  (the profile's `kit` is the kit; BASE_KIT would double-up). */
+export function profileToNewGameOptions(
+  profile: BotProfile,
+  startDate: GameDate,
+  seed: string
+): NewGameOptions {
+  const memberToPick = (m: BotProfileMember): PartyPick => ({
+    name: m.given,
+    profession: m.role === 'leader' ? profile.leaderProfession : 'farmer', // bland default for non-leaders; children's profession is stripped by makeMember
+    sex: m.sex,
+    kind: m.role === 'child' ? 'child' : 'adult',
+    age: m.age
+  });
+
+  const [leaderMember, ...rest] = profile.party;
+  return {
+    seed,
+    leader: memberToPick(leaderMember),
+    companions: rest.map(memberToPick),
+    startDate,
+    includeStarterKit: false
+  };
 }
 
 /** Pick which slots in a roster get named profiles. Returns an array
@@ -421,4 +478,26 @@ export function pickProfilesForRoster(
     [picks[i], picks[j]] = [picks[j], picks[i]];
   }
   return picks;
+}
+
+/** #102 — Apply a profile's `kit` to an already-constructed GameState
+ *  as the layer-0 inventory (parallel to generateNpcWagon's profile.kit
+ *  handling for NPCs). Mutates and returns the state for chaining.
+ *  No-op if `profile.kit` is undefined.
+ *
+ *  Cash lands on `state.cash` (top-level field). All other entries
+ *  land on `state.inventory[key]`, ADDED to whatever profession
+ *  starterGear left there (so hunter-led profiles still get their
+ *  bullet_mold + lead_pig from starterGear, layered with profile.kit). */
+export function applyProfileKit(state: GameState, profile: BotProfile): GameState {
+  if (!profile.kit) return state;
+  const next: GameState = { ...state, inventory: { ...state.inventory } };
+  for (const [key, qty] of Object.entries(profile.kit)) {
+    if (key === 'cash') {
+      next.cash = (next.cash ?? 0) + qty;
+    } else {
+      next.inventory[key] = (next.inventory[key] ?? 0) + qty;
+    }
+  }
+  return next;
 }
