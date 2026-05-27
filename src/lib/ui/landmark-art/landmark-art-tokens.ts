@@ -91,6 +91,7 @@ export type LandmarkId =
   | 'shoshone_camp'
   | 'bear_river'
   | 'soda_springs'
+  | 'massacre_rocks'
   | 'ft_hall'
   | 'snake_three_island'
   | 'ft_boise'
