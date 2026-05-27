@@ -145,7 +145,11 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       // Per-soul gear
       coat: 9, blanket: 9, boots: 9,
       // Sager signature
-      bible: 1, fiddle: 1
+      bible: 1, fiddle: 1,
+      // #297 — Ohio farm family habit: 4 hens in a coop strapped to the
+      // wagon bed. Daily egg lay yields 2 eggs/day until they're eaten,
+      // sold, or eaten by predators (#138 events).
+      chicken: 4
     }
   },
   {
@@ -303,7 +307,12 @@ export const LAUNCH_PROFILES: BotProfile[] = [
       // Per-soul gear
       coat: 2, blanket: 2, boots: 2,
       // Whitman signature — mission literacy props
-      bible: 2, primer: 1
+      bible: 2, primer: 1,
+      // #297 — Narcissa Whitman's well-known dairy aspirations: the
+      // mission party brought two milk cows tied behind the wagon
+      // plus a butter crock for the in-wagon churn (#222). Daily milk
+      // + butter yields land in inventory each travel day.
+      milk_cow: 2, butter_crock: 1
     }
   },
   {
