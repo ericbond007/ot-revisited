@@ -41,6 +41,7 @@
   import FortLaramieArt from './FortLaramieArt.svelte';
   import RegisterCliffArt from './RegisterCliffArt.svelte';
   import GuernseyRutsArt from './GuernseyRutsArt.svelte';
+  import FortCasparArt from './FortCasparArt.svelte';
   import NorthPlatteWestArt from './NorthPlatteWestArt.svelte';
   import WillowSpringsArt from './WillowSpringsArt.svelte';
   import IndependenceRockArt from './IndependenceRockArt.svelte';
@@ -97,6 +98,7 @@
     ft_laramie: { Art: FortLaramieArt, tone: 'warm' },
     register_cliff: { Art: RegisterCliffArt, tone: 'warm' },
     guernsey_ruts: { Art: GuernseyRutsArt, tone: 'warm' },
+    ft_caspar: { Art: FortCasparArt, tone: 'warm' },
     north_platte_2: { Art: NorthPlatteWestArt, tone: 'warm' },
     willow_springs: { Art: WillowSpringsArt, tone: 'warm' },
     independence_rock: { Art: IndependenceRockArt, tone: 'warm' },
