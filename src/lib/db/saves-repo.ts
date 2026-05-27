@@ -1,6 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { devices, saves } from './schema';
+import { devices, saves, feedback } from './schema';
 import type { AppDb } from './client';
 import { buildSummary, deserialize, serialize } from '../game/saves';
 import type { GameState } from '../game/types';
@@ -88,5 +88,17 @@ export class SavesRepo {
       .delete(saves)
       .where(and(eq(saves.deviceId, deviceId), eq(saves.slotName, slotName)))
       .run();
+  }
+
+  /** #1181 — store anonymous playtester feedback. deviceId is optional
+   *  so the form still works when the cookie is missing. body is required
+   *  and clamped to 4000 chars at the caller. */
+  async saveFeedback(input: {
+    deviceId: string | null;
+    body: string;
+    pageUrl: string | null;
+    userAgent: string | null;
+  }): Promise<void> {
+    await this.db.insert(feedback).values(input).run();
   }
 }
