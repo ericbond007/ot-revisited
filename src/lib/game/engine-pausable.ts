@@ -11,6 +11,7 @@ import { progressConditions } from './systems/conditions';
 import { tickOxen } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
 import { adjustMorale } from './systems/morale';
+import { applySabbathTravelDebit } from './systems/sabbath-travel';
 import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
 import { attemptFire } from './systems/fire';
@@ -19,8 +20,6 @@ import { applySpoilage, applyHeatSpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
 import { applyEggLay } from './systems/eggs';
 import { applyDairy, applyButterChurn } from './systems/dairy';
-import { isSunday } from './utils/calendar';
-import { hasLivePreacher } from './professions/predicates';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyDailyRecovery } from './systems/travel-recovery';
 import { applyTrainShare } from './systems/train-share';
@@ -227,14 +226,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // Solo wagons keep companyMode='travel' as the default so behavior is
   // unchanged for them; devout companies that lay-by on Sunday now
   // correctly skip the debit (the entire point of the devout doctrine).
-  if (isSunday(s.date) && companyMode === 'travel') {
-    const debit = hasLivePreacher(s) ? 3 : 2;
-    s = {
-      ...s,
-      morale: Math.max(0, s.morale - debit),
-      eventLog: [...s.eventLog, { day: s.day, text: `Traveled on the Sabbath. Morale suffers.` }]
-    };
-  }
+  s = applySabbathTravelDebit(s, companyMode === 'travel');
 
   // #300 — capture miles before travel so advanceTrain can drive the
   // NPC axle-grease consumption cycle off the same daily delta.
