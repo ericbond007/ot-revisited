@@ -140,6 +140,12 @@ export const SCENARIOS: Scenario[] = [
     build: () => atLandmark(baseState('laramie'), 'ft_laramie')
   },
   {
+    id: 'at_chimney_rock',
+    label: 'Chimney Rock',
+    description: 'Iconic sandstone spire on the N. Platte. First FLUX-backdrop landmark (#1093) — drops at the landmark stage to see the painterly raster in-game.',
+    build: () => atLandmark(baseState('chimney'), 'chimney_rock')
+  },
+  {
     id: 'at_bridger',
     label: 'Fort Bridger',
     description: "Jim Bridger's sparse mountain post. Tests the thin-stock variant.",
