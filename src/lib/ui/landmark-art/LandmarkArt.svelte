@@ -24,6 +24,7 @@
   import IndependenceArt from './IndependenceArt.svelte';
   import LoneElmCampgroundArt from './LoneElmCampgroundArt.svelte';
   import KansasRiverArt from './KansasRiverArt.svelte';
+  import VieuxCrossingArt from './VieuxCrossingArt.svelte';
   import AlcoveSpringArt from './AlcoveSpringArt.svelte';
   import BigBlueArt from './BigBlueArt.svelte';
   import HollenbergRanchArt from './HollenbergRanchArt.svelte';
@@ -76,6 +77,7 @@
     independence_mo: { Art: IndependenceArt, tone: 'warm' },
     lone_elm_campground: { Art: LoneElmCampgroundArt, tone: 'warm' },
     kansas_river: { Art: KansasRiverArt, tone: 'warm' },
+    vieux_crossing: { Art: VieuxCrossingArt, tone: 'warm' },
     alcove_spring: { Art: AlcoveSpringArt, tone: 'warm' },
     big_blue_river: { Art: BigBlueArt, tone: 'warm' },
     hollenberg_ranch: { Art: HollenbergRanchArt, tone: 'warm' },
