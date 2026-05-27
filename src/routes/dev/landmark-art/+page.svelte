@@ -35,6 +35,7 @@
     'register_cliff',
     'guernsey_ruts',
     'ft_caspar',
+    'martins_cove',
     'north_platte_2',
     'willow_springs',
     'independence_rock',
