@@ -194,9 +194,13 @@ export function isNativeCampHostile(
 // Pre-pass the trail was 2195 mi and bloated the mid-section by up to
 // +127 mi at South Pass (then compressed the Columbia leg to
 // compensate) — emigrants ground through ~125 phantom mid-trail miles.
-// Landmark ORDER is unchanged here; the massacre_rocks/ft_hall and
-// north_platte_2/martins_cove geographic-sequence quirks are tracked
-// separately (#1161 follow-up) since re-ordering touches event anchors.
+// Landmark ORDER post-#1040 was deliberately preserved; the
+// north_platte_2/martins_cove geographic-sequence quirk was deferred
+// and fixed in #1161 (north_platte_2 now sits immediately after
+// ft_caspar at the Casper bridge, and martins_cove sits immediately
+// after devils_gate per its actual "2 mi west of Devil's Gate"
+// position on the Sweetwater). The massacre_rocks/ft_hall reorder
+// has NOT been done — separate follow-up if needed.
 export const LANDMARKS: readonly Landmark[] = [
   { id: 'independence_mo',     name: 'Independence, MO',    milesFromPrevious: 0,   terrain: 'prairie',   kind: 'start' },
   // #242 — Lone Elm Campground (mile ~40, KS). The first overnight
@@ -390,25 +394,28 @@ export const LANDMARKS: readonly Landmark[] = [
       'coat', 'blanket',
       'spare_plank', 'ox_shoes', 'rope', 'tobacco'
     ] },
-  // #248 — Martin's Cove (mile ~855, WY). Site of the 1856 Mormon
+  // North Platte west crossing — historically at the Casper bridge,
+  // immediately past ft_caspar. Sits BEFORE the long sage-flat run
+  // to Willow Springs, not after Martin's Cove (the prior code order
+  // was the geographic-sequence quirk #1040 deferred).
+  { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 3, terrain: 'river', kind: 'river',
+    river: { depthFt: 4.0, currentMph: 3, ferryPrice: 5 } },
+  { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 37,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 5,  terrain: 'prairie',   elevationFt: 6000, kind: 'landmark' },
+  { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
+  // #248 — Martin's Cove (mile ~822, WY). Site of the 1856 Mormon
   // handcart disaster — the Martin Company was caught by an October
   // blizzard and 56 of 576 died of exposure at the cove. Memorial
   // landmark. Pre-1856 the cove was unremarkable open ground at the
-  // Sweetwater's first bend; the MEANING as a sacred site postdates
-  // the disaster. Year-gated cold-weather arrival vignette is a follow-up.
-  // (#1161 mile-sequencing fix — current cumulative is ~840, should
-  // be ~855 — deferred to its own PR; needs downstream landmark
-  // milesFromPrevious recalibration across the whole Sweetwater leg.)
-  { id: 'martins_cove',        name: "Martin's Cove",       milesFromPrevious: 30,  terrain: 'mountains', kind: 'landmark',
+  // Sweetwater's first bend, ~2 mi west of Devil's Gate (research
+  // file §1); the MEANING as a sacred site postdates the disaster.
+  // Year-gated cold-weather arrival vignette is a follow-up.
+  // (#1161 mile-sequencing recalibration: was previously placed
+  // before independence_rock with mFP 30; reordered to here for the
+  // correct geographic sequence.)
+  { id: 'martins_cove',        name: "Martin's Cove",       milesFromPrevious: 2,  terrain: 'mountains', kind: 'landmark',
     abandonedBeforeYear: 1856 },
-  // North Platte west crossing was at the Casper area; with ft_caspar
-  // and Martin's Cove inserted, the remaining stretch is short.
-  { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 8, terrain: 'river', kind: 'river',
-    river: { depthFt: 4.0, currentMph: 3, ferryPrice: 5 } },
-  { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 4,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 3,  terrain: 'prairie',   elevationFt: 6000, kind: 'landmark' },
-  { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
-  { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 10, terrain: 'river',    kind: 'river',
+  { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 8, terrain: 'river',    kind: 'river',
     river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
   // Cheyenne summer camp on the Sweetwater plains (#202). Cheyenne
   // bands ranged the high country south of the Black Hills west to

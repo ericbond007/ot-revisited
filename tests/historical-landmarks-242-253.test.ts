@@ -94,17 +94,33 @@ describe('#247 Fort Caspar — year gating', () => {
 });
 
 describe('#247-#248 Mormon Ferry / Martin Cove sequencing', () => {
+  // Post-#1161 mile-sequencing recalibration: north_platte_2 sits
+  // immediately after ft_caspar (the west crossing IS at the Casper
+  // bridge), and martins_cove sits between devils_gate and sweetwater_1
+  // (the cove is ~2 mi west of Devil's Gate on the Sweetwater).
+  it('ft_caspar appears before north_platte_2 (Casper bridge)', () => {
+    const ids = LANDMARKS.map((l) => l.id);
+    expect(ids.indexOf('ft_caspar')).toBeLessThan(ids.indexOf('north_platte_2'));
+  });
+
   it('ft_caspar appears before martins_cove', () => {
     const ids = LANDMARKS.map((l) => l.id);
     expect(ids.indexOf('ft_caspar')).toBeLessThan(ids.indexOf('martins_cove'));
   });
 
-  it('both sit between guernsey_ruts and north_platte_2', () => {
+  it('north_platte_2 sits immediately after guernsey_ruts/ft_caspar (Casper-adjacent)', () => {
     const ids = LANDMARKS.map((l) => l.id);
     const guernsey = ids.indexOf('guernsey_ruts');
-    const np2 = ids.indexOf('north_platte_2');
     expect(ids.indexOf('ft_caspar')).toBeGreaterThan(guernsey);
-    expect(ids.indexOf('martins_cove')).toBeLessThan(np2);
+    // north_platte_2 should come within a couple landmarks of ft_caspar,
+    // not be deferred until past the Sweetwater
+    expect(ids.indexOf('north_platte_2')).toBeLessThan(ids.indexOf('independence_rock'));
+  });
+
+  it('martins_cove sits between devils_gate and sweetwater_1 (2 mi west of Devil\'s Gate)', () => {
+    const ids = LANDMARKS.map((l) => l.id);
+    expect(ids.indexOf('martins_cove')).toBeGreaterThan(ids.indexOf('devils_gate'));
+    expect(ids.indexOf('martins_cove')).toBeLessThan(ids.indexOf('sweetwater_1'));
   });
 });
 
