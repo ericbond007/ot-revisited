@@ -514,18 +514,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 10,  terrain: 'river',     kind: 'river',
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
   { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   elevationFt: 5800, kind: 'landmark' },
-  // #250 — "Gate of Death" / later Massacre Rocks (mile ~1290, ID).
-  // During the 1843-1860 emigration window the narrow basalt gap on
-  // the Snake was known as "Gate of Death" — emigrants feared (and
-  // wrote about) ambushes there. The "Massacre Rocks" name only
-  // emerged AFTER the August 1862 Shoshone-Bannock attacks killed 10
-  // emigrants — anachronistic for our period. Display the period
-  // name; id stays `massacre_rocks` for stable cross-referencing.
-  // Year-aware ambush flavor + post-1862 name shift is a follow-up.
-  // Historical refs:
-  // docs/historical-pass/13-landmark-visual-references/massacre_rocks.md.
-  { id: 'massacre_rocks',      name: 'Gate of Death',       milesFromPrevious: 100,   terrain: 'mountains', kind: 'landmark' },
-  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 45,  terrain: 'prairie',   elevationFt: 4500, kind: 'trading_post',
+  { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 145,  terrain: 'prairie',   elevationFt: 4500, kind: 'trading_post',
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
     // wool blankets, manufactured goods). California Trail splits here.
@@ -561,7 +550,21 @@ export const LANDMARKS: readonly Landmark[] = [
       // HBC supply lines kept abundant Plains trade goods on hand.
       'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
-  // #251 — Salmon Falls (mile ~1450, ID). Shoshone fishery on the
+  // #250 — "Gate of Death" / later Massacre Rocks (mile ~1335, ID).
+  // During the 1843-1860 emigration window the narrow basalt gap on
+  // the Snake was known as "Gate of Death" — emigrants feared (and
+  // wrote about) ambushes there. The "Massacre Rocks" name only
+  // emerged AFTER the August 1862 Shoshone-Bannock attacks killed 10
+  // emigrants — anachronistic for our period. Display the period
+  // name; id stays `massacre_rocks` for stable cross-referencing.
+  // Year-aware ambush flavor + post-1862 name shift is a follow-up.
+  // Historical refs:
+  // docs/historical-pass/13-landmark-visual-references/massacre_rocks.md.
+  // (#1180 — reordered from pre-ft_hall to here. Geographically Gate
+  // of Death is ~10 mi SW of American Falls, just downstream of Fort
+  // Hall — not upstream as the prior LANDMARKS order had it.)
+  { id: 'massacre_rocks',      name: 'Gate of Death',       milesFromPrevious: 45,   terrain: 'mountains', kind: 'landmark' },
+  // #251 — Salmon Falls (mile ~1380, ID). Shoshone fishery on the
   // upper Snake — bands speared and dried thousands of salmon every
   // summer. Period emigrants traded knives, beads, and tobacco for
   // fresh fish. The salmon-trade encounter (#239) already covers the
@@ -579,7 +582,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // behind the Hall→Boise dehydration-wipe cluster (audit #1039: 6 of
   // 11 family-wagon dehydration wipes died on this 110-mi leg with no
   // water access). The descent to the falls is the historical relief.
-  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 90, terrain: 'desert',    kind: 'landmark', waterSource: true },
+  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 45, terrain: 'desert',    kind: 'landmark', waterSource: true },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 30, terrain: 'river',   kind: 'river',
     river: {
       depthFt: 5.0, currentMph: 3, ferryPrice: 6,
