@@ -17,6 +17,7 @@
     'independence_mo',
     'lone_elm_campground',
     'kansas_river',
+    'vieux_crossing',
     'alcove_spring',
     'big_blue_river',
     'hollenberg_ranch',
