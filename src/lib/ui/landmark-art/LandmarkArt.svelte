@@ -53,6 +53,7 @@
   import PacificSpringsArt from './PacificSpringsArt.svelte';
   import PartingOfWaysArt from './PartingOfWaysArt.svelte';
   import GreenRiverArt from './GreenRiverArt.svelte';
+  import BigHillArt from './BigHillArt.svelte';
   import FortBridgerArt from './FortBridgerArt.svelte';
   import BearRiverArt from './BearRiverArt.svelte';
   import SodaSpringsArt from './SodaSpringsArt.svelte';
@@ -112,6 +113,7 @@
     pacific_springs: { Art: PacificSpringsArt, tone: 'cool' },
     parting_of_ways: { Art: PartingOfWaysArt, tone: 'warm' },
     green_river: { Art: GreenRiverArt, tone: 'warm' },
+    big_hill: { Art: BigHillArt, tone: 'warm' },
     ft_bridger: { Art: FortBridgerArt, tone: 'warm' },
     bear_river: { Art: BearRiverArt, tone: 'cool' },
     soda_springs: { Art: SodaSpringsArt, tone: 'cool' },

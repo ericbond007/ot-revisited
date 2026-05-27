@@ -46,6 +46,7 @@
     'pacific_springs',
     'parting_of_ways',
     'green_river',
+    'big_hill',
     'ft_bridger',
     'bear_river',
     'soda_springs',
