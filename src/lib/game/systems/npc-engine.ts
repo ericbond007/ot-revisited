@@ -46,6 +46,8 @@ import { rollStrayMorning } from './strays';
 import { applyNpcMoraleBaseline } from './npc-morale';
 import { applyDailyRecovery } from './travel-recovery';
 import { applyDailyConsumption, applyDirtyWaterRisk } from './consumption';
+import { applyEggLay } from './eggs';
+import { applyDairy, applyButterChurn } from './dairy';
 import { applyDietVariety, applyHotDrinks } from './diet';
 import { applyPastryQuality } from './pastry';
 import { progressConditions } from './conditions';
@@ -414,7 +416,14 @@ export function tickNpcWagon(
   const eatersAlive = next.party.filter((m) => !m.dead).length;
   if (eatersAlive > 0) {
     const synth = synthesizeWagonState(next, env);
-    let ticked = applyDailyConsumption(synth);
+    // #297 — producer ticks run BEFORE consumption so today's egg lay
+    // / milk yield lands in inventory before the family eats it.
+    // Mirrors engine-pausable.ts ordering. No-ops when the wagon
+    // doesn't carry chickens / cows / butter_crock.
+    let producerSynth = applyEggLay(synth);
+    producerSynth = applyDairy(producerSynth);
+    producerSynth = applyButterChurn(producerSynth);
+    let ticked = applyDailyConsumption(producerSynth);
     ticked = applyDietVariety(ticked);
     ticked = applyHotDrinks(ticked);
     ticked = applyPastryQuality(ticked, rng).state;
