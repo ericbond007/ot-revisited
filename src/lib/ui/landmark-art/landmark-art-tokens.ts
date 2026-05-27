@@ -73,6 +73,7 @@ export type LandmarkId =
   | 'ft_laramie'
   | 'register_cliff'
   | 'guernsey_ruts'
+  | 'ft_caspar'
   | 'north_platte_2'
   | 'willow_springs'
   | 'independence_rock'
