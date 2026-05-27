@@ -6,8 +6,14 @@
   // un-ported ids render the placeholder chrome (LandmarkArt itself
   // no-ops; we still draw a labeled tile so the gap is visible).
   //
-  // The "abandoned" toggle exercises the desaturation wrapper —
-  // Whitman Mission is the canonical case (post-1847 ruin).
+  // Toggles:
+  //   - abandoned: exercises the desaturation wrapper (Whitman post-1847).
+  //   - showOverlay: hides every SVG element except the FLUX <image>
+  //     backdrop, so the painterly raster can be evaluated standalone
+  //     during a backdrop-iteration pass (#1078 follow-up).
+  //
+  // Click a card → fullscreen dialog with the same composition (both
+  // toggles still apply). Esc / click backdrop to close.
 
   import LandmarkArt, { hasLandmarkArt } from '$lib/ui/landmark-art/LandmarkArt.svelte';
   import type { LandmarkId } from '$lib/ui/landmark-art/landmark-art-tokens';
@@ -71,28 +77,50 @@
   ];
 
   let abandoned = $state(false);
+  let showOverlay = $state(true);
+  let lightboxId: LandmarkId | null = $state(null);
+
+  function open(id: LandmarkId) {
+    if (!hasLandmarkArt(id)) return;
+    lightboxId = id;
+  }
+  function close() {
+    lightboxId = null;
+  }
+  function onKey(e: KeyboardEvent) {
+    if (e.key === 'Escape') close();
+  }
 </script>
 
 <svelte:head>
   <title>Landmark Art Showcase — dev</title>
 </svelte:head>
 
-<div class="page">
+<svelte:window on:keydown={onKey} />
+
+<div class="page" class:overlay-hidden={!showOverlay}>
   <header>
     <h1>Landmark Art Showcase</h1>
     <p class="subtitle">
       Visual-diff target for the landmark-art port. Compare against
       <code>docs/handoff/landmark-art/Trail Atlas.html</code>.
     </p>
-    <label class="toggle">
-      <input type="checkbox" bind:checked={abandoned} />
-      <span>abandoned (e.g. Whitman post-1847)</span>
-    </label>
+    <div class="toggles">
+      <label class="toggle">
+        <input type="checkbox" bind:checked={abandoned} />
+        <span>abandoned (e.g. Whitman post-1847)</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" bind:checked={showOverlay} />
+        <span>show SVG overlay <em>(uncheck to see just the FLUX backdrop)</em></span>
+      </label>
+      <span class="hint">click a card to enlarge</span>
+    </div>
   </header>
 
   <section class="grid">
     {#each ALL_IDS as id (id)}
-      <div class="card" class:missing={!hasLandmarkArt(id)}>
+      <button type="button" class="card" class:missing={!hasLandmarkArt(id)} onclick={() => open(id)}>
         <div class="eyebrow">
           {id}{#if !hasLandmarkArt(id)} <span class="todo">— not yet ported</span>{/if}
         </div>
@@ -103,10 +131,28 @@
             <div class="placeholder">art pending</div>
           {/if}
         </div>
-      </div>
+      </button>
     {/each}
   </section>
 </div>
+
+{#if lightboxId}
+  <!-- Backdrop click closes; inner panel stops propagation so clicks on
+       the art itself don't dismiss. Esc also closes (window keydown). -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="lightbox" role="dialog" aria-modal="true" aria-label="Landmark art enlarged" tabindex="-1" onclick={close} class:overlay-hidden={!showOverlay}>
+    <button type="button" class="close" onclick={close} aria-label="Close">×</button>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="lightbox-stage" role="presentation" onclick={(e) => e.stopPropagation()}>
+      <div class="eyebrow lightbox-label">{lightboxId}</div>
+      <div class="stage lightbox-art">
+        <LandmarkArt id={lightboxId} {abandoned} />
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .page {
@@ -136,12 +182,28 @@
     border-radius: 2px;
     font-size: 12px;
   }
+  .toggles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+  }
   .toggle {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     cursor: pointer;
     font-size: 14px;
+  }
+  .toggle em {
+    color: #a08868;
+    font-style: italic;
+    font-size: 12px;
+  }
+  .hint {
+    color: #a08868;
+    font-size: 12px;
+    font-style: italic;
   }
 
   .grid {
@@ -155,8 +217,17 @@
     border: 1px solid #5a3818;
     border-radius: 3px;
     padding: 10px;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+    transition: border-color 0.15s, transform 0.15s;
   }
-  .card.missing { opacity: 0.55; }
+  .card:hover:not(.missing) {
+    border-color: #c96a2a;
+    transform: translateY(-2px);
+  }
+  .card.missing { opacity: 0.55; cursor: default; }
   .eyebrow {
     color: #c8a878;
     font-family: 'Special Elite', monospace;
@@ -188,5 +259,53 @@
     border: 2px dashed #5a3818;
     margin: 8px;
     border-radius: 2px;
+  }
+
+  /* SVG overlay toggle — per-landmark art components emit
+     <image href="…webp"> first (FLUX backdrop) then a stack of
+     <path>/<g>/<text>/etc. (decorative overlay). Hiding every non-
+     <image> element inside the mounted SVG shows just the painterly
+     raster. Applies to both grid cards AND the lightbox. */
+  :global(.overlay-hidden) :global(.stage svg g > *:not(image)) {
+    display: none;
+  }
+
+  /* Lightbox */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 5, 2, 0.92);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4vh 4vw;
+  }
+  .close {
+    position: absolute;
+    top: 12px;
+    right: 18px;
+    background: none;
+    border: none;
+    color: #e8c89a;
+    font-size: 36px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 8px 12px;
+  }
+  .close:hover { color: #c96a2a; }
+  .lightbox-stage {
+    width: min(100%, 1800px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .lightbox-label {
+    color: #e8c89a;
+    font-size: 14px;
+  }
+  .lightbox-art {
+    aspect-ratio: 16 / 7;
+    max-height: 88vh;
   }
 </style>
