@@ -33,6 +33,18 @@
   let wagonGroundOffset = $state(3.75);  // for prairie_schooner
   let tongueBase = $state(10.5);
   let tonguePerPair = $state(-12);
+  // Shadow tuning (#956). Defaults match WagonShadows' production-locked
+  // values; slide to retune in wagon-local units, scaled by SCENE_SCALE
+  // when rendered.
+  let shadowOffsetX = $state(16.5);
+  let shadowOffsetY = $state(7.5);
+  let shadowPairOffsetX = $state(-12);  // pair-shadow-only X shift — tunes gap between wagon and pair shadows
+  let shadowWagonRx = $state(17);     // "wheelbase" — wagon-shadow half-width
+  let shadowWagonRy = $state(3.7);    // wagon-shadow half-height
+  let shadowPairRx = $state(11.5);    // "length" — ox-pair-shadow half-width
+  let shadowPairRy = $state(2.9);     // ox-pair-shadow half-height
+  let shadowOpacity = $state(0.98);   // "darkness"
+  let shadowBlur = $state(8);         // "weight" — Gaussian blur sigma
   // -1 → "auto" (no explicit override → BackdropPainting picks based on
   // weather → fallback random). 0..4 → forced variant.
   let variant = $state<number>(-1);
@@ -220,12 +232,67 @@
     <p class="hint-sm">Tongue tip wagon-X = {tongueBase} + {tonguePerPair} × {Math.ceil(oxCount/2)} pair(s) = <strong>{(tongueBase + tonguePerPair * Math.ceil(oxCount/2)).toFixed(1)}</strong></p>
   </section>
 
+  <section class="tuning">
+    <h2>Shadow tuning (#956)</h2>
+    <label class="range">
+      <span>Position X (offset)</span>
+      <input type="range" min="-20" max="20" step="0.5" bind:value={shadowOffsetX} />
+      <span class="val">{shadowOffsetX}</span>
+    </label>
+    <label class="range">
+      <span>Position Y (offset)</span>
+      <input type="range" min="-10" max="10" step="0.25" bind:value={shadowOffsetY} />
+      <span class="val">{shadowOffsetY}</span>
+    </label>
+    <label class="range">
+      <span>Pair X (gap from wagon)</span>
+      <input type="range" min="-30" max="30" step="0.5" bind:value={shadowPairOffsetX} />
+      <span class="val">{shadowPairOffsetX}</span>
+    </label>
+    <label class="range">
+      <span>Wheelbase (wagon Rx)</span>
+      <input type="range" min="4" max="24" step="0.5" bind:value={shadowWagonRx} />
+      <span class="val">{shadowWagonRx}</span>
+    </label>
+    <label class="range">
+      <span>Wagon height (Ry)</span>
+      <input type="range" min="0.5" max="6" step="0.1" bind:value={shadowWagonRy} />
+      <span class="val">{shadowWagonRy}</span>
+    </label>
+    <label class="range">
+      <span>Pair length (Rx)</span>
+      <input type="range" min="3" max="18" step="0.5" bind:value={shadowPairRx} />
+      <span class="val">{shadowPairRx}</span>
+    </label>
+    <label class="range">
+      <span>Pair height (Ry)</span>
+      <input type="range" min="0.5" max="4" step="0.1" bind:value={shadowPairRy} />
+      <span class="val">{shadowPairRy}</span>
+    </label>
+    <label class="range">
+      <span>Darkness (opacity)</span>
+      <input type="range" min="0" max="1" step="0.02" bind:value={shadowOpacity} />
+      <span class="val">{shadowOpacity}</span>
+    </label>
+    <label class="range">
+      <span>Weight (blur σ)</span>
+      <input type="range" min="0" max="8" step="0.25" bind:value={shadowBlur} />
+      <span class="val">{shadowBlur}</span>
+    </label>
+  </section>
+
   <section class="stage">
     {#key restartKey}
       <WagonScene state={previewState} {timeOfDay} {paused}
                   backdropVariant={variant === -1 ? undefined : variant}
                   addonsOverride={{ driver: useBlenderDriver, useBlenderDriver, useBlenderBody, useBlenderTeam }}
-                  tuning={{ wagonX, wagonGroundOffset, tongueBase, tonguePerPair }} />
+                  tuning={{
+                    wagonX, wagonGroundOffset, tongueBase, tonguePerPair,
+                    shadowOffsetX, shadowOffsetY, shadowPairOffsetX,
+                    shadowWagonRx, shadowWagonRy,
+                    shadowPairRx, shadowPairRy,
+                    shadowOpacity, shadowBlur,
+                  }} />
     {/key}
   </section>
 

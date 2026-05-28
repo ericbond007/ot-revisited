@@ -20,29 +20,47 @@
     groundY: number;
     /** Same scale factor WagonScene uses for body transforms. */
     sceneScale: number;
+    /** Per-tunable overrides (wagon-local units). All optional; defaults
+     *  match the production-locked values. /dev/wagon-view exposes
+     *  sliders for each. */
+    offsetX?: number;          // whole-set X nudge in wagon-local units (wagon + pair)
+    offsetY?: number;          // shadow Y nudge in wagon-local units (both wagon + pair)
+    pairOffsetX?: number;      // pair-shadow-ONLY extra X nudge — slide to widen
+                               // or tighten the gap between wagon shadow and the
+                               // ox-pair shadows. + = toward wagon, − = away
+    wagonRx?: number;          // wagon-shadow half-width ("wheelbase")
+    wagonRy?: number;          // wagon-shadow half-height
+    pairRx?: number;           // ox-pair-shadow half-width ("length")
+    pairRy?: number;           // ox-pair-shadow half-height
+    opacity?: number;          // 0..1 ("darkness")
+    blurStdDev?: number;       // Gaussian blur sigma ("weight" / softness)
   }
 
-  let { wagonX, tongueTipX, oxCount, groundY, sceneScale }: Props = $props();
+  let {
+    wagonX, tongueTipX, oxCount, groundY, sceneScale,
+    // Defaults are Dave's dialed-in fit (#956 sandbox 2026-05-27).
+    offsetX = 16.5,
+    offsetY = 7.5,
+    pairOffsetX = -12,
+    wagonRx = 17,
+    wagonRy = 3.7,
+    pairRx = 11.5,
+    pairRy = 2.9,
+    opacity = 0.98,
+    blurStdDev = 8,
+  }: Props = $props();
 
-  // Wagon shadow: ellipse under the wagon body footprint. The wagon's
-  // wheel-to-wheel span is ~26 scene-local units (matches PrairieSchooner
-  // viewBox), so rx ~= 13 * SCENE_SCALE. Squash via low ry to read as a
-  // ground projection rather than a bubble.
-  const WAGON_SHADOW_RX = 13 * sceneScale;
-  const WAGON_SHADOW_RY = 2.5 * sceneScale;
+  // All wagon-local size values scale by SCENE_SCALE to land in scene coords.
+  const wagonShadowRx = $derived(wagonRx * sceneScale);
+  const wagonShadowRy = $derived(wagonRy * sceneScale);
+  const pairShadowRx = $derived(pairRx * sceneScale);
+  const pairShadowRy = $derived(pairRy * sceneScale);
+  const shadowCx = $derived(wagonX + offsetX * sceneScale);
+  const shadowCy = $derived(groundY + offsetY * sceneScale);
 
-  // Ox pair shadow: one ellipse covering both oxen in a pair. PAIR_SPACE
-  // is 24 wagon-local units — slightly narrower (rx ~= 9) keeps the
-  // shadow under the oxen's hooves without bleeding outward.
-  const PAIR_SHADOW_RX = 9 * sceneScale;
-  const PAIR_SHADOW_RY = 1.6 * sceneScale;
-
-  // Match the OX_INK color (#3a1a08) used in the SVG ox path. Opacity
-  // bumped above the SVG-ox baseline (0.34) because the painted ground
-  // strip's flower/grass/trail detail competes with a darker shadow —
-  // the SVG-mode flat gradient ground was a more contrasty backdrop.
+  // Match the OX_INK color (#3a1a08) used in the SVG ox path. Color stays
+  // fixed; "darkness" is exposed via opacity.
   const SHADOW_FILL = '#1a0904';
-  const SHADOW_OPACITY = 0.55;
 
   // Compute one shadow per ox pair. OxTeam lays out pairs at local x =
   // -(p * PAIR_SPACE) - PAIR_SPACE * 0.5, then the whole team is
@@ -60,31 +78,32 @@
 <defs>
   <!-- Soft gaussian blur so the ellipse edge fades into the ground
        instead of presenting a hard cartoon outline against the painted
-       trail surface. Std-dev tuned at SCENE_SCALE=4. -->
+       trail surface. -->
   <filter id="wagon-shadow-blur" x="-20%" y="-50%" width="140%" height="200%">
-    <feGaussianBlur stdDeviation="3" />
+    <feGaussianBlur stdDeviation={blurStdDev} />
   </filter>
 </defs>
 
 <g filter="url(#wagon-shadow-blur)">
   <!-- wagon body shadow — sits under the wagon center -->
   <ellipse
-    cx={wagonX}
-    cy={groundY}
-    rx={WAGON_SHADOW_RX}
-    ry={WAGON_SHADOW_RY}
+    cx={shadowCx}
+    cy={shadowCy}
+    rx={wagonShadowRx}
+    ry={wagonShadowRy}
     fill={SHADOW_FILL}
-    opacity={SHADOW_OPACITY}
+    {opacity}
   />
-  <!-- one shadow per ox pair -->
+  <!-- one shadow per ox pair — pairOffsetX shifts pairs RELATIVE to the
+       wagon shadow so the gap between them can be tuned independently. -->
   {#each pairs as cx (cx)}
     <ellipse
-      {cx}
-      cy={groundY}
-      rx={PAIR_SHADOW_RX}
-      ry={PAIR_SHADOW_RY}
+      cx={cx + (offsetX + pairOffsetX) * sceneScale}
+      cy={shadowCy}
+      rx={pairShadowRx}
+      ry={pairShadowRy}
       fill={SHADOW_FILL}
-      opacity={SHADOW_OPACITY}
+      {opacity}
     />
   {/each}
 </g>
