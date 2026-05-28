@@ -66,7 +66,7 @@
 
   {#if open}
     <div class="pop" class:align-right={align === 'right'}>
-      <div class="pop-head">SET {label}</div>
+      <div class="pop-head ds-eyebrow">SET {label}</div>
       <div class="pop-cards">
         {#each options as opt}
           {@const selected = opt.value === current}
@@ -109,10 +109,10 @@
     gap: 0.35em;
     padding: 0.2em 0.5em;
     background: transparent;
-    color: var(--c-tan);
+    color: var(--of-ink);
     border: 1px solid transparent;
-    border-radius: 3px;
-    font-family: inherit;
+    border-radius: var(--of-r-sm);
+    font-family: var(--of-body);
     font-size: 0.95em;
     letter-spacing: normal;
     text-transform: none;
@@ -121,24 +121,26 @@
     transition: background 0.12s, border-color 0.12s;
   }
   .stat-btn:hover:not(:disabled) {
-    background: var(--c-bg-raised);
-    border-color: var(--c-wood);
+    background: color-mix(in srgb, var(--of-paper-deep) 25%, transparent);
+    border-color: var(--of-rule);
   }
 
   .stat-icon { font-size: 1.1em; line-height: 1; }
   .stat-label {
     font-size: 0.7em;
     letter-spacing: 0.12em;
-    color: var(--c-wood);
-    font-weight: 700;
+    color: var(--of-ink-soft);
+    font-family: var(--of-sc);
+    font-weight: 400;
   }
   .stat-val {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
+    font-family: var(--of-body);
   }
   .capitalize { text-transform: capitalize; }
   .caret {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.7em;
     margin-left: 0.1em;
   }
@@ -149,27 +151,25 @@
     left: 0;
     z-index: 60;
     min-width: 260px;
-    padding: 0.6em 0.7em;
-    background: var(--c-panel);
-    border: 2px solid var(--c-rust);
-    border-radius: 4px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+    padding: var(--of-s-2) var(--of-s-3);
+    background: var(--of-paper-soft);
+    border: 3px double var(--of-ink-soft);
+    border-radius: var(--of-r-xs);
+    box-shadow:
+      inset 0 0 16px rgba(94, 60, 24, 0.08),
+      0 6px 18px rgba(74, 46, 21, 0.35);
   }
   .pop.align-right {
     left: auto;
     right: 0;
   }
   .pop-head {
-    font-size: 0.7em;
-    letter-spacing: 0.15em;
-    color: var(--c-wood);
-    font-weight: 700;
-    margin-bottom: 0.4em;
+    margin-bottom: var(--of-s-2);
   }
   .pop-cards {
     display: flex;
     flex-direction: column;
-    gap: 0.3em;
+    gap: var(--of-s-1);
   }
   .pop-cards form { margin: 0; }
 
@@ -178,11 +178,11 @@
     align-items: center;
     gap: 0.6em;
     padding: 0.4em 0.6em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
-    border-radius: 3px;
-    font-family: inherit;
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 2px solid var(--of-rule);
+    border-radius: var(--of-r-xs);
+    font-family: var(--of-body);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: none;
@@ -193,13 +193,14 @@
     transition: background 0.12s, border-color 0.12s, color 0.12s;
   }
   .card:hover:not(:disabled):not(.selected) {
-    background: var(--c-panel);
-    border-color: var(--c-rust);
+    background: var(--of-paper-soft);
+    border-color: var(--of-ink-soft);
   }
   .card.selected {
-    background: var(--c-rust);
-    color: var(--c-tan-bright);
-    border-color: var(--c-ink);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
+    border-color: var(--of-rust-dark);
+    box-shadow: var(--of-btn-emboss-active);
     cursor: default;
   }
   .card:disabled.selected { opacity: 1; }
@@ -218,8 +219,9 @@
   .card-sub {
     font-size: 0.75em;
     font-weight: normal;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
+    font-family: var(--of-sc);
     letter-spacing: normal;
   }
-  .card.selected .card-sub { color: var(--c-tan); }
+  .card.selected .card-sub { color: var(--of-paper); }
 </style>

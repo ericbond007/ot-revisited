@@ -88,7 +88,7 @@
     <span class="tt-card" class:pinned class:below={placement === 'bottom'} role="tooltip">
       <span class="tt-title">{title}</span>
       {#if subtitle}
-        <span class="tt-subtitle">{subtitle}</span>
+        <span class="tt-subtitle ds-eyebrow">{subtitle}</span>
       {/if}
       {#if description}
         <span class="tt-desc">{description}</span>
@@ -118,18 +118,20 @@
     z-index: 50;
     min-width: 220px;
     max-width: 300px;
-    padding: 0.7em 0.9em;
-    background: var(--c-parchment);
-    color: var(--c-ink);
-    border: 2px solid var(--c-rust);
-    border-radius: 3px;
-    font-family: var(--f-mono);
+    padding: var(--of-s-2) var(--of-s-3);
+    background: var(--of-paper-soft);
+    color: var(--of-ink);
+    border: 1px solid var(--of-ink-soft);
+    border-radius: var(--of-r-sm);
+    font-family: var(--of-body);
     font-size: 0.85em;
     line-height: 1.4;
     letter-spacing: normal;
     text-transform: none;
     font-weight: normal;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow:
+      inset 0 0 14px rgba(94, 60, 24, 0.08),
+      0 4px 12px rgba(74, 46, 21, 0.32);
     pointer-events: none;
     opacity: 1;
     display: flex;
@@ -137,8 +139,11 @@
     gap: 0.3em;
   }
   .tt-card.pinned {
-    border-color: var(--c-rust-dark);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--c-rust-dark);
+    border-color: var(--of-rust-dark);
+    box-shadow:
+      inset 0 0 14px rgba(94, 60, 24, 0.10),
+      0 4px 14px rgba(74, 46, 21, 0.40),
+      0 0 0 1px var(--of-rust-dark);
   }
   .tt-card::after {
     content: '';
@@ -148,9 +153,9 @@
     width: 0;
     height: 0;
     border: 6px solid transparent;
-    border-top-color: var(--c-rust);
+    border-top-color: var(--of-ink-soft);
   }
-  .tt-card.pinned::after { border-top-color: var(--c-rust-dark); }
+  .tt-card.pinned::after { border-top-color: var(--of-rust-dark); }
 
   /* #1133 — flip placement: render below the trigger when there's no
    *  headroom (top row of a profession picker, sticky-header context,
@@ -163,32 +168,28 @@
     top: auto;
     bottom: 100%;
     border-top-color: transparent;
-    border-bottom-color: var(--c-rust);
+    border-bottom-color: var(--of-ink-soft);
   }
   .tt-card.below.pinned::after {
-    border-bottom-color: var(--c-rust-dark);
+    border-bottom-color: var(--of-rust-dark);
   }
 
   .tt-title {
     font-weight: 700;
-    color: var(--c-rust-dark);
+    color: var(--of-rust-dark);
+    font-family: var(--of-sc);
     font-size: 1.05em;
   }
-  .tt-subtitle {
-    font-size: 0.7em;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--c-wood);
-  }
-  .tt-desc { color: var(--c-ink); }
+  /* .tt-subtitle inherits ds-eyebrow; no local override needed. */
+  .tt-desc { color: var(--of-ink); font-family: var(--of-body); }
   .tt-meta {
     font-size: 0.75em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
   .tt-pin-hint {
     font-size: 0.7em;
-    color: var(--c-wood);
+    color: var(--of-ink-faded);
     font-style: italic;
     margin-top: 0.2em;
   }
