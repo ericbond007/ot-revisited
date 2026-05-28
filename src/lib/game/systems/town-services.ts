@@ -61,7 +61,12 @@ export function repairWagon(state: GameState, dollars: number): RepairResult {
   const next: GameState = {
     ...state,
     cash: state.cash - cost,
-    wagon: { ...state.wagon, condition: state.wagon.condition + points },
+    wagon: {
+      ...state.wagon,
+      condition: state.wagon.condition + points,
+      // Smithy re-mounts a fresh wheel — clears any wheel-break impairment.
+      impairment: points > 0 ? null : state.wagon.impairment
+    },
     eventLog: [
       ...state.eventLog,
       { day: state.day, text: flavor }

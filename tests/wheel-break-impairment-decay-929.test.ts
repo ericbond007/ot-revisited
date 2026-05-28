@@ -53,3 +53,31 @@ describe('tickWagon honors wagon.impairment.conditionDecayMult', () => {
     expect(limpDecay).toBeCloseTo(soundDecay * 2, 1);
   });
 });
+
+import { repairWagon } from '../src/lib/game/systems/town-services';
+
+describe('repairWagon clears wagon.impairment', () => {
+  it('successful repair sets impairment to null', () => {
+    const s = baseline();
+    s.cash = 100;
+    s.wagon.condition = 40;
+    s.wagon.impairment = {
+      kind: 'wheel', paceMult: 0.5, conditionDecayMult: 2,
+      contractedAt: { day: 5, mile: 100 }
+    };
+    const result = repairWagon(s, 20);
+    expect(result.state.wagon.impairment).toBeNull();
+    expect(result.state.wagon.condition).toBeGreaterThan(40);
+  });
+
+  it('zero-dollar no-op does not clear impairment', () => {
+    const s = baseline();
+    s.cash = 100;
+    s.wagon.impairment = {
+      kind: 'wheel', paceMult: 0.5, conditionDecayMult: 2,
+      contractedAt: { day: 5, mile: 100 }
+    };
+    const result = repairWagon(s, 0);
+    expect(result.state.wagon.impairment).not.toBeNull();
+  });
+});
