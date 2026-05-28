@@ -59,3 +59,20 @@ describe('resolveWheelBreak — push_on', () => {
     expect(log).toMatch(/limp/i);
   });
 });
+
+import { EVENTS } from '../src/lib/game/content/events';
+
+describe('broken_wheel event shape', () => {
+  const evt = EVENTS.find((e) => e.id === 'wagon_wheel')!;
+  it('has 3 choices: spare / rebuild / push_on', () => {
+    expect(evt.choices.map((c) => c.id)).toEqual(['spare', 'rebuild', 'push_on']);
+  });
+  it('spare disabled when no wheel inventory', () => {
+    const s = freshState({ wheel: 0 });
+    expect(evt.choices.find((c) => c.id === 'spare')!.enabled?.(s)).toBe(false);
+  });
+  it('spare enabled when wheel >= 1', () => {
+    const s = freshState({ wheel: 1 });
+    expect(evt.choices.find((c) => c.id === 'spare')!.enabled?.(s)).toBe(true);
+  });
+});

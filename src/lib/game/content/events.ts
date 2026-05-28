@@ -13,6 +13,7 @@ import {
   findFreshUnconsumedCorpse,
   hasFoodOnHand
 } from '../systems/cannibal';
+import { resolveWheelBreak } from '../systems/wheel-break';
 
 export type EventCategory =
   | 'weather'
@@ -50,6 +51,11 @@ export interface EventChoice {
   // outside their narrow context (e.g. "Eat the body" — only when the
   // party is starving).
   hidden?: (state: GameState) => boolean;
+  // Optional state-predicate enabled gate. When set and returns false,
+  // the choice renders disabled in the modal. Unlike `requires`, this
+  // accepts an arbitrary state predicate rather than a named item ID.
+  // Useful when the gate condition spans multiple fields (e.g. count > 0).
+  enabled?: (state: GameState) => boolean;
 }
 
 export interface GameEvent {
@@ -220,27 +226,35 @@ const broken_wheel: GameEvent = {
   weight: 3,
   choices: [
     {
-      id: 'replace',
-      icon: '⚒️',
-      label: 'Replace with a spare wheel',
+      id: 'spare',
+      icon: '⚙️',
+      label: 'Mount the spare wheel',
+      enabled: (s) => (s.inventory.wheel ?? 0) > 0,
+      silentLog: true,
+      apply: (s, rng) => {
+        const { state, log } = resolveWheelBreak(s, rng, 'spare');
+        return logLine(state, log);
+      }
+    },
+    {
+      id: 'rebuild',
+      icon: '🔨',
+      label: 'Rebuild the wheel trailside (2 days, 1 if Blacksmith)',
       isDefault: true,
       silentLog: true,
       apply: (s, rng) => {
-        const have = s.inventory.wheel ?? 0;
-        if (have > 0) {
-          const { state: after, saved } = consumeWagonPart(s, rng, 'wheel');
-          const log = saved
-            ? 'The carpenter pieced the old wheel back together — the spare was kept.'
-            : 'Mounted a spare wheel. Wagon condition +10.';
-          return logLine(
-            { ...after, wagon: { ...after.wagon, condition: Math.min(100, after.wagon.condition + 10) } },
-            log
-          );
-        }
-        return logLine(
-          { ...s, wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - 15) } },
-          'No spare wheel. Improvised a fix — wagon condition −15.'
-        );
+        const { state, log } = resolveWheelBreak(s, rng, 'rebuild');
+        return logLine(state, log);
+      }
+    },
+    {
+      id: 'push_on',
+      icon: '🐎',
+      label: 'Push on — limp to the next post',
+      silentLog: true,
+      apply: (s, rng) => {
+        const { state, log } = resolveWheelBreak(s, rng, 'push_on');
+        return logLine(state, log);
       }
     }
   ]
