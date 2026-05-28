@@ -35,6 +35,10 @@ STATIC_DIR = THIS_DIR.parent.parent / "static" / "wagon-bg" / "landmarks"
 # Same default LoRA as biome backdrops — ht_landscape v2_2000 at 1.0.
 # Trigger word "ht_landscape" is baked into each prompt below.
 DEFAULT_LORAS: list[tuple[str, float]] = [("ht_landscape_v2_2000.safetensors", 1.0)]
+# Default 3072×1024 (3:1) for natural-landscape landmarks. Per-landmark
+# entries can override with `width`/`height` keys — architectural subjects
+# (forts, missions) suffer 3:1 duplication artifacts in SDXL and need
+# narrower aspects until the arch pipeline (#1187) lands.
 WIDTH, HEIGHT = 3072, 1024
 
 # Per-landmark prompts. Each entry: { id, seed, prompt }. The prompt
@@ -71,6 +75,31 @@ LANDMARKS: list[dict] = [
             "soft late afternoon light, painterly oil on canvas"
         ),
     },
+    # Architectural-subject stopgap (Old Bedlam-style single-building view).
+    # ht_landscape + 3:1 wrecks man-made structures (tiled duplication +
+    # cartoon buildings). Rendered at 2:1 to dodge the worst tiling.
+    # Replace once #1187's architectural pipeline lands.
+    {
+        "id": "ft_laramie",
+        "seed": 830020,
+        "width": 2048,
+        "height": 1024,
+        "prompt": (
+            "ht_landscape, close-up architectural portrait painting of Fort Laramie in 1850, "
+            "EXACTLY two distinct standalone fort buildings on the left side of the frame, "
+            "the two buildings stand apart with sky visible between them, "
+            "each building is a single tall wooden-and-adobe structure, "
+            "the buildings rise from the ground all the way to the upper third of the frame, "
+            "close enough to see every weathered timber and adobe brick, "
+            "one tall wooden flagpole standing between the two buildings flying one American flag, "
+            "two single horses tied to a hitching post in front of the buildings, "
+            "EXACTLY two tall conical Native American teepees on the far right edge of the frame, "
+            "the two teepees stand apart with prairie visible between them, "
+            "wide open empty prairie separating the teepees from the fort buildings in the middle of the frame, "
+            "clear sharp painterly detail, NO fog NO haze NO mist NO atmospheric softness, "
+            "warm golden afternoon light, painterly oil on canvas, period accurate 1850"
+        ),
+    },
 ]
 
 
@@ -87,11 +116,13 @@ def render(landmark_id: str, *, regen: bool = False) -> Path:
     if out_path.exists() and not regen:
         print(f"[skip] {out_path} exists (use --regen to force)")
         return out_path
-    print(f"[render] {landmark_id} → {out_path.name} ({WIDTH}x{HEIGHT}, seed {entry['seed']})")
+    width = entry.get("width", WIDTH)
+    height = entry.get("height", HEIGHT)
+    print(f"[render] {landmark_id} → {out_path.name} ({width}x{height}, seed {entry['seed']})")
     t0 = time.time()
     generate_to(
         raw_path, entry["prompt"], NEGATIVE_PROMPT,
-        WIDTH, HEIGHT, entry["seed"], loras=DEFAULT_LORAS,
+        width, height, entry["seed"], loras=DEFAULT_LORAS,
     )
     print(f"  raw {raw_path.name} written in {time.time() - t0:.1f}s")
     out_path.parent.mkdir(parents=True, exist_ok=True)
