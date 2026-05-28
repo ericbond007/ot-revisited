@@ -39,7 +39,7 @@ describe('tickWagon', () => {
   });
 
   it('clamps at 0', () => {
-    const s = { ...newGame(), wagon: { model: 'prairie_schooner' as const, condition: 0.1, canvas: 100, carryCapacity: 2500 } };
+    const s = { ...newGame(), wagon: { model: 'prairie_schooner' as const, condition: 0.1, canvas: 100, carryCapacity: 2500, impairment: null } };
     const next = tickWagon({ ...s, pace: 'grueling' }, makeRng('t:1'));
     expect(next.wagon.condition).toBeGreaterThanOrEqual(0);
   });

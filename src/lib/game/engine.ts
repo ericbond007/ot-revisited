@@ -154,7 +154,8 @@ export function createInitialState(opts: NewGameOptions): GameState {
       condition: 100,
       canvas: 100,
       carryCapacity: wagonModel.carryCapacity,
-      hasBranBarrel: wagonModel.shipsWithBranBarrel === true
+      hasBranBarrel: wagonModel.shipsWithBranBarrel === true,
+      impairment: null
     },
     oxen,
     inventory: kit.inventory,

@@ -86,6 +86,26 @@ export function deserialize(json: string): GameState {
       });
     }
   }
+  // #929: wagon.impairment added. Old saves that lack the field default to null.
+  {
+    const w = stateObj.wagon as Record<string, unknown> | null | undefined;
+    if (w && !('impairment' in w)) {
+      w.impairment = null;
+    }
+  }
+  // #929: also patch NPC companion wagons in any active wagonTrain.
+  {
+    const wt = stateObj.wagonTrain as { companions?: unknown[] } | null | undefined;
+    if (wt && Array.isArray(wt.companions)) {
+      for (const raw of wt.companions) {
+        const npc = raw as Record<string, unknown>;
+        const w = npc.wagon as Record<string, unknown> | null | undefined;
+        if (w && !('impairment' in w)) {
+          w.impairment = null;
+        }
+      }
+    }
+  }
   return stateObj as unknown as GameState;
 }
 

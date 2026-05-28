@@ -48,7 +48,8 @@ function wagon(over: Partial<WagonStateLike> = {}): WagonStateLike {
       model: DEFAULT_WAGON_MODEL,
       condition: 100,
       canvas: 100,
-      carryCapacity: model.carryCapacity
+      carryCapacity: model.carryCapacity,
+      impairment: null
     },
     ...over
   };

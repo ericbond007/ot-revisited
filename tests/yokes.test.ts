@@ -122,7 +122,7 @@ describe('upgrade.ts yoke top-up', () => {
   it('legacy save with 1 yoke + heavy wagon gets bumped to 3', () => {
     const legacy: GameState = {
       ...newGame(),
-      wagon: { model: 'heavy', condition: 100, canvas: 100, carryCapacity: 3500 },
+      wagon: { model: 'heavy', condition: 100, canvas: 100, carryCapacity: 3500, impairment: null },
       inventory: { yoke: 1 }
     };
     const upgraded = upgradeState(legacy);
@@ -132,7 +132,7 @@ describe('upgrade.ts yoke top-up', () => {
   it('save with sufficient yokes is left alone', () => {
     const fine: GameState = {
       ...newGame(),
-      wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 2500 },
+      wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 2500, impairment: null },
       inventory: { yoke: 5 }
     };
     const upgraded = upgradeState(fine);
