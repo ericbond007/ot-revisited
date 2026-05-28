@@ -22,6 +22,7 @@ import type { BundleWeights, RestBundle } from './bundle';
 export type { FordMethod } from '../actions/ford';
 import type { FordMethod } from '../actions/ford';
 import type { EquipmentRestockOpts, FoodRestockOpts } from './shopping';
+import type { WheelBreakChoice } from '../systems/wheel-break';
 
 export type PersonaId =
   | 'cautious'
@@ -146,6 +147,11 @@ export interface Persona {
    *  the threshold + cap: cautious repairs sooner + bigger; balanced
    *  thriftier; aggressive only-when-desperate. */
   pickRepairBudget(state: GameState, here: Landmark): number;
+  /**
+   * Trailside response when a wagon_wheel event fires. Sibling to
+   * `pickRepairBudget` (which fires at trading posts). See #929.
+   */
+  pickWheelBreakResponse(state: GameState, rng: Rng): WheelBreakChoice;
   /** Per-persona opts for `pickFoodRestock`. Returns the daysFloor /
    *  daysCap thresholds the persona wants applied. #303c slice A —
    *  the v10 medicine cost bump squeezed balanced's cash; lower food
