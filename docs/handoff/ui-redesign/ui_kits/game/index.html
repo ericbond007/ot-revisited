@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OT.IO — Game UI Kit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="../../assets/mark.svg">
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--of-body);
+    /* Redesign: the whole play screen is on the parchment palette now.
+       Remap the legacy --c-* chrome vars to the design-system paper
+       tokens so every panel, border, and text run flips at once. */
+    --c-bg:         var(--of-paper);
+    --c-bg-raised:  var(--of-paper);
+    --c-panel:      var(--of-paper-soft);
+    --c-border:     var(--of-rule);
+    --c-wood:       var(--of-ink-soft);
+    --c-ink:        var(--of-ink-soft);
+    --c-tan:        var(--of-ink);
+    --c-tan-bright: var(--of-ink);
+    --c-rust:       var(--of-rust);
+    --c-rust-dark:  var(--of-rust-dark);
+    color: var(--of-ink);
+    background: var(--of-paper);
+    background-image:
+      radial-gradient(ellipse 700px 380px at -8% -10%, rgba(184,154,100,0.50), transparent 60%),
+      radial-gradient(ellipse 700px 380px at 108% 110%, rgba(94,60,24,0.34), transparent 60%),
+      var(--of-tex-crinkle), var(--of-tex-fiber);
+    background-size: auto, auto, 100% 100%, 100% 100%;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+    background-blend-mode: normal, normal, multiply, multiply;
+  }
+  /* Panels in the rail + shell get the double-rule paper card treatment. */
+  .right > div, .ws-frame, .stage > div {
+    box-shadow: inset 0 0 0 1px rgba(255,245,220,0.30), 0 1px 0 rgba(0,0,0,0.05), 0 3px 7px rgba(74,46,21,0.12);
+  }
+  .shell {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto 1fr auto;
+    gap: 12px;
+    padding: 12px;
+    height: 100vh;
+    box-sizing: border-box;
+  }
+  .top    { grid-column: 1 / -1; }
+  .stage  { grid-column: 1; grid-row: 2; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+  .right  { grid-column: 2; grid-row: 2; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+  .bottom { grid-column: 1 / -1; }
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
+    .right { grid-column: 1; grid-row: auto; }
+    .bottom { grid-row: auto; }
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--c-rust-dark), 0 0 16px rgba(201,106,42,0.45); }
+    50%      { box-shadow: 0 0 0 2px var(--c-rust-dark), 0 0 22px rgba(201,106,42,0.85); }
+  }
+  @keyframes wagonbob {
+    0%, 100% { transform: translate(-50%, -50%) rotate(-0.8deg) translateY(0); }
+    50%      { transform: translate(-50%, -50%) rotate(0.8deg) translateY(-3px); }
+  }
+  @keyframes fadein  { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes modalpop { from { opacity: 0; transform: scale(0.9) } to { opacity: 1; transform: scale(1) } }
+  @keyframes choicein { from { opacity: 0; transform: translateX(-8px) } to { opacity: 1; transform: translateX(0) } }
+
+  /* Travel-scene paper frame (mirrors WagonScene.svelte's redesigned .status) */
+  .ws-frame {
+    background: var(--of-paper-soft);
+    border: 3px double var(--of-ink-soft);
+    border-radius: 3px;
+    padding: 8px 8px 10px;
+    box-shadow: inset 0 0 0 1px rgba(255,245,220,0.30), 0 1px 0 rgba(0,0,0,0.06), 0 4px 10px rgba(74,46,21,0.16);
+  }
+  .ws-landscape {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1280 / 400;
+    overflow: hidden;
+    border-radius: 2px;
+    border: 2px solid var(--of-ink-soft);
+    box-shadow: inset 0 0 12px rgba(42,29,12,0.30);
+  }
+  .ws-tag {
+    position: absolute;
+    left: 10px; bottom: 8px;
+    font-family: var(--of-sc);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--of-ink-soft);
+    background: rgba(240,224,189,0.78);
+    border: 1px solid var(--of-ink-soft);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+  .ws-readout {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 8px 6px 2px;
+    font-family: var(--of-mono);
+    font-size: 13px;
+    color: var(--of-ink);
+  }
+  .ws-readout .ws-k { color: var(--of-ink-soft); font-family: var(--of-sc); letter-spacing: 0.1em; text-transform: uppercase; font-size: 11px; margin-right: 4px; }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="Components.jsx"></script>
+<script type="text/babel" src="game-modals.jsx"></script>
+<script type="text/babel" src="TrailMapClassic.jsx"></script>
+<script type="text/babel" src="TrailMapTerrain.jsx"></script>
+<script type="text/babel" src="TrailMapHandDrawn.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+// (no React hooks used at this level — useTweaks owns state)
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "mapVariant": "handdrawn",
+  "mileage": 580,
+  "showCamp": false,
+  "modal": "none"
+}/*EDITMODE-END*/;
+
+const VARIANT_LABEL = {
+  classic: 'Classic strip',
+  terrain: 'Terrain (regional)',
+  handdrawn: 'Hand-drawn (full)',
+};
+const LABEL_VARIANT = Object.fromEntries(Object.entries(VARIANT_LABEL).map(([k, v]) => [v, k]));
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  const Map =
+    tweaks.mapVariant === 'terrain'    ? TrailMapTerrain    :
+    tweaks.mapVariant === 'handdrawn'  ? TrailMapHandDrawn  :
+                                         TrailMapClassic;
+
+  // Use chimney_rock proximity (mile 580) as a "river-coming-up" cue
+  const atRiver = false; // tweak as desired
+
+  return (
+    <div className="shell">
+      <div className="top">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button title="Journey menu" style={{ background: 'transparent', color: 'var(--c-rust)', border: '2px solid transparent', padding: '0.1em 0.3em', fontSize: '1.4em', lineHeight: 1, cursor: 'pointer', borderRadius: 4 }}>☰</button>
+          <Logo size={22} />
+          <span style={{ flex: 1 }} />
+          <button title="Send feedback" style={{ background: 'transparent', border: '1px solid var(--c-wood)', borderRadius: 4, color: 'var(--c-wood)', padding: '0.35em 0.8em', fontSize: 12, letterSpacing: '0.06em', fontFamily: 'IM Fell English SC, Georgia, serif', cursor: 'pointer' }}>Feedback</button>
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <TopBar day={42} date="Jun 14, 1848" pace="Moderate" rations="Normal" />
+        </div>
+      </div>
+
+      <div className="stage">
+        {tweaks.showCamp ? (
+          <CampStage />
+        ) : (
+          <>
+            <div className="ws-frame">
+              <div className="ws-landscape">
+                <svg viewBox="0 0 1280 400" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
+                  <defs>
+                    <linearGradient id="ws-sky" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stopColor="#cdb98a" />
+                      <stop offset="0.55" stopColor="#e0cd9c" />
+                      <stop offset="1" stopColor="#ecdcb0" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="0" y="0" width="1280" height="400" fill="url(#ws-sky)" />
+                  <circle cx="240" cy="120" r="46" fill="#e8b860" opacity="0.5" />
+                  {/* distant ridge */}
+                  <path d="M0,250 Q260,200 520,232 T1040,214 T1280,238 V400 H0 Z" fill="#b89a64" opacity="0.6" />
+                  {/* ground band */}
+                  <rect x="0" y="300" width="1280" height="100" fill="#9c7e4a" />
+                  <rect x="0" y="300" width="1280" height="6" fill="#7a6038" opacity="0.5" />
+                  {/* wagon + ox silhouettes — placeholder for the imported WagonScene SVG art */}
+                  <g transform="translate(620 250)" fill="#3a2a14">
+                    <ellipse cx="120" cy="64" rx="150" ry="12" fill="#000" opacity="0.18" />
+                    <path d="M40,60 Q44,18 120,18 Q196,18 200,60 Z" fill="#e8dcc0" stroke="#3a2a14" strokeWidth="3" />
+                    <rect x="44" y="56" width="152" height="14" fill="#5a3f1c" />
+                    <circle cx="70" cy="74" r="16" fill="none" stroke="#3a2a14" strokeWidth="4" />
+                    <circle cx="178" cy="74" r="16" fill="none" stroke="#3a2a14" strokeWidth="4" />
+                    {/* ox pair */}
+                    <g transform="translate(-70 40)" fill="#4a3418">
+                      <ellipse cx="20" cy="22" rx="34" ry="16" />
+                      <rect x="48" y="8" width="14" height="12" />
+                      <rect x="2" y="34" width="6" height="14" /><rect x="34" y="34" width="6" height="14" />
+                    </g>
+                  </g>
+                </svg>
+                <div className="ws-tag">Travel scene · WagonScene art renders here</div>
+              </div>
+              <div className="ws-readout">
+                <span><span className="ws-k">On the trail</span> <strong>{tweaks.mileage} mi</strong></span>
+                <span><span className="ws-k">Weather</span> <strong>fair, mild ✦</strong></span>
+                <span><span className="ws-k">Pace</span> <strong>moderate</strong></span>
+                <span><span className="ws-k">Oxen</span> <strong>4 yoked</strong></span>
+              </div>
+            </div>
+            {/* Travel-state bottom row (#212): event log + trail-map snippet 50/50 */}
+            <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'flex-start' }}>
+              <div style={{ flex: 1, minWidth: 0, background: 'var(--c-panel)', border: '2px solid var(--c-wood)', borderRadius: 3, padding: '11px 14px' }}>
+                <Eyebrow color="var(--c-rust)" style={{ marginBottom: 6 }}>Trail log</Eyebrow>
+                {['Forded a shallow creek — wheels held.', 'Tom spotted antelope; no shot taken.', 'Traded 20 lb flour for an axle at a passing wagon.'].map((t, i) => (
+                  <div key={i} style={{ fontFamily: 'IM Fell English, Georgia, serif', fontSize: 13, color: i === 0 ? 'var(--c-tan-bright)' : 'var(--c-tan)', padding: '3px 0', borderBottom: i < 2 ? '1px solid rgba(138,90,42,0.18)' : '0' }}>{t}</div>
+                ))}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Map currentMileage={tweaks.mileage} totalMileage={2000} />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="right">
+        <PartyPanel />
+        <WagonPanel />
+        <WagonTrainPanel />
+        <InventoryPanel />
+      </div>
+
+      <div className="bottom">
+        <ActionBar contextual={atRiver ? 'ford' : null} onAction={(a) => {
+          if (a === 'rest') setTweak('showCamp', !tweaks.showCamp);
+          if (a === 'travel') setTweak('mileage', Math.min(tweaks.mileage + 50, 2000));
+        }} />
+      </div>
+
+      {tweaks.modal === 'event' && <EventModal onClose={() => setTweak('modal', 'none')} />}
+      {tweaks.modal === 'mud' && <MudAbandonModal onClose={() => setTweak('modal', 'none')} />}
+      {tweaks.modal === 'dissent' && <CompanyDissentModal onClose={() => setTweak('modal', 'none')} />}
+      {tweaks.modal === 'member' && <PartyMemberModal onClose={() => setTweak('modal', 'none')} />}
+      {tweaks.modal === 'newspaper' && <NewspaperModal onClose={() => setTweak('modal', 'none')} />}
+      {tweaks.modal === 'letter' && <LetterModal onClose={() => setTweak('modal', 'none')} />}
+
+      <TweaksPanel>
+        <TweakSection label="Map">
+          <TweakRadio
+            label="Variant"
+            value={VARIANT_LABEL[tweaks.mapVariant] || VARIANT_LABEL.classic}
+            options={Object.values(VARIANT_LABEL)}
+            onChange={(v) => setTweak('mapVariant', LABEL_VARIANT[v])}
+          />
+          <TweakSlider
+            label="Mileage"
+            value={tweaks.mileage}
+            min={0} max={2000} step={10} unit=" mi"
+            onChange={(v) => setTweak('mileage', v)}
+          />
+        </TweakSection>
+        <TweakSection label="Overlays">
+          <TweakSelect
+            label="Modal"
+            value={({ none: 'None', event: 'Event', mud: 'Mud-abandon', dissent: 'Company dissent', member: 'Party member', newspaper: 'Newspaper', letter: 'Letter' })[tweaks.modal] || 'None'}
+            options={['None', 'Event', 'Mud-abandon', 'Company dissent', 'Party member', 'Newspaper', 'Letter']}
+            onChange={(v) => setTweak('modal', ({ None: 'none', Event: 'event', 'Mud-abandon': 'mud', 'Company dissent': 'dissent', 'Party member': 'member', Newspaper: 'newspaper', Letter: 'letter' })[v])}
+          />
+          <TweakToggle label="Camp view" value={tweaks.showCamp} onChange={(v) => setTweak('showCamp', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+function CampStage() {
+  return (
+    <div style={{
+      background: 'linear-gradient(180deg, #e0cd9c 0%, #ecdcb0 60%, #e0cd9c 100%)',
+      border: '3px double var(--of-ink-soft)',
+      borderRadius: 3,
+      padding: 20,
+      color: 'var(--of-ink)',
+      minHeight: 260,
+      position: 'relative',
+    }}>
+      <Eyebrow color="var(--of-rust)" style={{ marginBottom: 8 }}>Day one · 12 hours</Eyebrow>
+      <h2 style={{ fontFamily: 'Rye, Georgia, serif', color: 'var(--of-ink)', margin: 0, fontSize: 24, letterSpacing: '0.05em' }}>Ezra's Camp</h2>
+
+      <div style={{ position: 'absolute', top: 18, right: 22, fontSize: 22 }}>🌙</div>
+      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-end', justifyContent: 'center', marginTop: 24, fontSize: 56, lineHeight: 1, filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.5))' }}>
+        <span>⛺</span>
+        <span style={{ filter: 'drop-shadow(0 0 10px rgba(255,180,60,0.7))', animation: 'pulse 1.6s ease-in-out infinite' }}>🔥</span>
+        <span>🛖</span>
+        <span style={{ marginLeft: 18 }}>🐂</span>
+        <span style={{ fontSize: 36 }}>🐕</span>
+      </div>
+
+      <div style={{ marginTop: 22 }}>
+        <Eyebrow style={{ marginBottom: 6 }}>Camp activities — Hour 1 of 12</Eyebrow>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 4 }}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} style={{
+              aspectRatio: '1',
+              background: i === 0 ? 'rgba(255,180,60,0.6)' : 'var(--c-bg-raised)',
+              border: '1px solid var(--c-ink)',
+              borderRadius: 2,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, color: 'var(--c-tan)',
+            }}>{i === 0 ? '🔥' : ''}</div>
+          ))}
+        </div>
+        <p style={{ fontFamily: 'IM Fell English, Georgia, serif', fontStyle: 'italic', color: 'var(--c-tan)', fontSize: 13, margin: '10px 0 0' }}>
+          Pick activities for the first day. Heals injuries, recovers ox fatigue, and lets the Farmer forage. Extended rests repeat the daily recovery.
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+        <button style={{ background: 'var(--c-rust-dark)', color: 'var(--c-tan-bright)', border: '2px solid var(--c-ink)', borderRadius: 3, padding: '0.5em 1.2em', fontFamily: 'Rye, Georgia, serif', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(245,230,200,0.14), inset 0 2px 4px rgba(0,0,0,0.28), inset 0 -2px 0 rgba(0,0,0,0.30), 0 2px 4px rgba(0,0,0,0.35)' }}>Begin Rest</button>
+        <button style={{ background: 'transparent', color: 'var(--c-tan)', border: '2px solid var(--c-wood)', borderRadius: 3, padding: '0.5em 1.2em', fontFamily: 'Rye, Georgia, serif', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(245,230,200,0.10), inset 0 -2px 0 rgba(0,0,0,0.26)' }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
