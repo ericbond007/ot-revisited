@@ -23,7 +23,7 @@ export function resolveWheelBreak(
     case 'spare':
       return resolveSpare(state, rng);
     case 'rebuild':
-      throw new Error('rebuild branch not yet implemented');
+      return resolveRebuild(state, rng);
     case 'push_on':
       return resolvePushOn(state);
   }
@@ -58,5 +58,45 @@ function resolvePushOn(state: GameState): WheelBreakResult {
   return {
     state: next,
     log: 'Pushed on with a busted wheel. The wagon limps until the next blacksmith.'
+  };
+}
+
+function resolveRebuild(state: GameState, rng: Rng): WheelBreakResult {
+  const hasBlacksmith = state.party.some(
+    (m) => !m.dead && m.profession === 'blacksmith'
+  );
+  const days = hasBlacksmith ? 1 : 2;
+  const baseSuccess = hasBlacksmith ? 0.90 : 0.70;
+  const lowCondPenalty = state.wagon.condition < 30 ? -0.20 : 0;
+  const successChance = Math.max(0, Math.min(1, baseSuccess + lowCondPenalty));
+  const success = rng.next() < successChance;
+
+  const afterDays: GameState = { ...state, day: state.day + days };
+
+  if (success) {
+    const conditionUp = Math.min(100, afterDays.wagon.condition + 15);
+    return {
+      state: {
+        ...afterDays,
+        wagon: { ...afterDays.wagon, condition: conditionUp, impairment: null }
+      },
+      log: `Rebuilt the wheel (took ${days} day${days === 1 ? '' : 's'}). Condition +15.`
+    };
+  }
+
+  return {
+    state: {
+      ...afterDays,
+      wagon: {
+        ...afterDays.wagon,
+        impairment: {
+          kind: 'wheel',
+          paceMult: 0.5,
+          conditionDecayMult: 2,
+          contractedAt: { day: afterDays.day, mile: afterDays.location.milesTraveled }
+        }
+      }
+    },
+    log: `The rebuild went wrong — a spoke split during seating. The wagon limps on. ${days} day${days === 1 ? '' : 's'} spent.`
   };
 }
