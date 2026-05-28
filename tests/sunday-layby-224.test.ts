@@ -42,8 +42,10 @@ describe('#224 Sabbath morale debit on Sunday Travel', () => {
     // diet/wellness/hot-drinks +1s land identically on both days, so the
     // delta isolates the Sabbath debit (#1055 — log line no longer
     // carries the literal magnitude, so a regex test is gone).
-    const sun: GameState = { ...newGame(), morale: 50 };
-    const mon: GameState = { ...newGame(), morale: 50, date: { year: 1849, month: 4, day: 16 } };
+    // #1189: disable auto-Sabbath so the party actually travels on Sunday.
+    const base = newGame();
+    const sun: GameState = { ...base, morale: 50, flags: { ...base.flags, _autoSabbathRest: false } };
+    const mon: GameState = { ...base, morale: 50, date: { year: 1849, month: 4, day: 16 }, flags: { ...base.flags, _autoSabbathRest: false } };
     const sunRes = tickDayPausable(sun);
     const monRes = tickDayPausable(mon);
     expect(sunRes.state.morale).toBe(monRes.state.morale - 2);
@@ -58,8 +60,9 @@ describe('#224 Sabbath morale debit on Sunday Travel', () => {
       companions: [{ name: 'Mary', profession: 'banker' }],
       startDate: { year: 1849, month: 4, day: 15 }
     });
-    const sun = base;
-    const mon: GameState = { ...base, date: { year: 1849, month: 4, day: 16 } };
+    // #1189: disable auto-Sabbath so the party actually travels on Sunday.
+    const sun: GameState = { ...base, flags: { ...base.flags, _autoSabbathRest: false } };
+    const mon: GameState = { ...base, date: { year: 1849, month: 4, day: 16 }, flags: { ...base.flags, _autoSabbathRest: false } };
     const sunRes = tickDayPausable(sun);
     const monRes = tickDayPausable(mon);
     expect(sunRes.state.morale).toBe(monRes.state.morale - 3);
@@ -76,7 +79,9 @@ describe('#224 Sabbath morale debit on Sunday Travel', () => {
   });
 
   it('debit clamps morale at 0', () => {
-    const before: GameState = { ...newGame(), morale: 1 };
+    // #1189: disable auto-Sabbath so we're actually testing the debit path.
+    const base = newGame();
+    const before: GameState = { ...base, morale: 1, flags: { ...base.flags, _autoSabbathRest: false } };
     const result = tickDayPausable(before);
     expect(result.state.morale).toBeGreaterThanOrEqual(0);
   });
@@ -178,8 +183,11 @@ describe('#224 sundayLayBy action', () => {
 
 describe('#224 trade-off math', () => {
   it('a lay-by Sunday net-positive vs traveling Sunday', () => {
-    const traveler: GameState = { ...newGame(), morale: 50 };
-    const layByer: GameState = { ...newGame(), morale: 50 };
+    // #1189: disable auto-Sabbath on the traveler so they actually travel.
+    // The lay-byer calls sundayLayBy directly (engine action, not tickDayPausable).
+    const base = newGame();
+    const traveler: GameState = { ...base, morale: 50, flags: { ...base.flags, _autoSabbathRest: false } };
+    const layByer: GameState = { ...base, morale: 50 };
     const traveled = tickDayPausable(traveler).state;
     const laid = sundayLayBy(layByer);
     expect(laid.morale).toBeGreaterThan(traveled.morale);

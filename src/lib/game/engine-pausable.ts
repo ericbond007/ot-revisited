@@ -35,6 +35,8 @@ import { getLandmark } from './content/landmarks';
 import { getLandmarkArrivalEvent } from './content/landmark-arrival-events';
 import { pickApproachEvent, approachFiredFlag } from './content/landmark-approach-events';
 import { pickText } from './content/text-pools';
+import { isSunday } from './utils/calendar';
+import { sundayLayBy, defaultSabbathActions } from './actions/sunday-lay-by';
 
 function advanceDate(d: { year: number; month: number; day: number }) {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -84,6 +86,23 @@ export function prepareEventForSurfacing(
 
 export function tickDayPausable(state: GameState): PausableTickResult {
   const normalized = upgradeState(state);
+
+  // #1189 — auto-Sabbath rest. When the toggle is on AND today is a
+  // Sunday, intercept BEFORE any daily systems run (including tickWeather)
+  // and delegate entirely to sundayLayBy, which calls rest() internally.
+  // rest() handles all the daily mechanics (consumption, healing, weather,
+  // etc.) so there's no double-application. Skipped for wagon-train members
+  // — the company-rest decision (C2/#1046) governs train Sundays and wins.
+  if (
+    normalized.flags._autoSabbathRest === true
+    && isSunday(normalized.date)
+    && !normalized.completed
+    && !normalized.wagonTrain
+  ) {
+    const actions = defaultSabbathActions(normalized);
+    return { state: sundayLayBy(normalized, actions), pendingEvent: undefined };
+  }
+
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
 
   let s = tickWeather(normalized, rng);
