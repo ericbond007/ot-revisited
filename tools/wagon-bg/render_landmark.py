@@ -56,6 +56,21 @@ LANDMARKS: list[dict] = [
             "painterly oil on canvas, period accurate 1850"
         ),
     },
+    {
+        "id": "scotts_bluff",
+        "seed": 820009,
+        "prompt": (
+            "ht_landscape, view from inside the wide open Mitchell Pass, "
+            "a massive towering sandstone bluff cliff face on the left side close to the viewer, "
+            "another massive towering sandstone bluff cliff face on the right side close to the viewer, "
+            "the wide open prairie pass and deep blue sky between them in the center, "
+            "wagon caravan on the trail strung through the pass into the distance, "
+            "looking up at flat-topped layered cliffs flanking the trail on both sides, "
+            "Scotts Bluff and South Bluff on the Oregon Trail in 1850, "
+            "pale tan stratified sandstone, mixed-grass prairie foreground, "
+            "soft late afternoon light, painterly oil on canvas"
+        ),
+    },
 ]
 
 
