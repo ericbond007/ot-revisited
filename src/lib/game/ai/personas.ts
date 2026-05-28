@@ -37,6 +37,7 @@ import { warmthFor } from '../systems/warmth';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
 import type { BarterDisposition } from './types';
 import { careLevel } from '../systems/care';
+import { defaultWheelBreakResponse, thresholdWheelBreakResponse } from './wheel-break';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
@@ -756,6 +757,12 @@ export const cautiousPersona: Persona = {
   },
   shouldDissent() { return 'abide'; },
   shouldShareWithTrain() { return null; },
+  pickWheelBreakResponse(state) {
+    // Cautious never pushes on a broken wheel — burns days to rebuild
+    // rather than risk persistent wagon impairment. Threshold -1 ensures
+    // the push_on branch in thresholdWheelBreakResponse never fires.
+    return thresholdWheelBreakResponse(state, -1);
+  },
   bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
@@ -915,6 +922,10 @@ export const balancedPersona: Persona = {
     // Balanced keeps its own stores; no spontaneous handoff. Generous
     // is the only persona that overrides this with a share order.
     return null;
+  },
+  pickWheelBreakResponse(state) {
+    // Default policy: spare > rebuild > push_on (only when cond < 25, no smith).
+    return defaultWheelBreakResponse(state);
   },
   bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
@@ -1134,6 +1145,12 @@ export const aggressivePersona: Persona = {
     // Aggressive runs lean and pushes hard; no spontaneous food gifts.
     return null;
   },
+  pickWheelBreakResponse(state) {
+    // Aggressive gambles on limping: pushes on at cond < 40 (vs default 25).
+    // Mirrors the push-hard identity — busted wheel slows the wagon less
+    // than a multi-day rebuild halt.
+    return thresholdWheelBreakResponse(state, 40);
+  },
   bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
@@ -1286,6 +1303,11 @@ export const chaosPersona: Persona = {
     // Chaos is unpredictable in choices, but spontaneous food gifts
     // were never part of the noise model — keep the wire null for v1.
     return null;
+  },
+  pickWheelBreakResponse(state) {
+    // Chaos pushes on most readily — threshold 50 means it will limp on
+    // any wagon below half-condition rather than stop for a rebuild.
+    return thresholdWheelBreakResponse(state, 50);
   },
   // #1153 — chaosBundle override removed. Activating chaosBundle on
   // 4/0 dropped arrival from ~50% to 0% (random camp-action picks drained

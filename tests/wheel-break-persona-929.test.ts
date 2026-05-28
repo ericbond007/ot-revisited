@@ -35,3 +35,42 @@ describe('defaultWheelBreakResponse', () => {
     expect(defaultWheelBreakResponse(state({ wheel: 0, condition: 20, leaderProfession: 'blacksmith' }))).toBe('rebuild');
   });
 });
+
+import { getPersona } from '../src/lib/game/ai/personas';
+import { makeRng } from '../src/lib/game/rng';
+
+describe('per-persona pickWheelBreakResponse', () => {
+  const rng = makeRng('persona-929');
+
+  it('cautious never pushes on (gate disabled)', () => {
+    const p = getPersona('cautious');
+    expect(p.pickWheelBreakResponse(state({ wheel: 0, condition: 20 }), rng)).toBe('rebuild');
+    expect(p.pickWheelBreakResponse(state({ wheel: 0, condition: 5 }), rng)).toBe('rebuild');
+  });
+
+  it('balanced uses default policy', () => {
+    const p = getPersona('balanced');
+    expect(p.pickWheelBreakResponse(state({ wheel: 1 }), rng)).toBe('spare');
+    expect(p.pickWheelBreakResponse(state({ wheel: 0, condition: 20 }), rng)).toBe('push_on');
+    expect(p.pickWheelBreakResponse(state({ wheel: 0, condition: 50 }), rng)).toBe('rebuild');
+  });
+
+  it('aggressive pushes on at cond < 40', () => {
+    const p = getPersona('aggressive');
+    expect(p.pickWheelBreakResponse(state({ wheel: 0, condition: 39 }), rng)).toBe('push_on');
+    expect(p.pickWheelBreakResponse(state({ wheel: 0, condition: 50 }), rng)).toBe('rebuild');
+  });
+
+  it('chaos pushes on at cond < 50', () => {
+    const p = getPersona('chaos');
+    expect(p.pickWheelBreakResponse(state({ wheel: 0, condition: 49 }), rng)).toBe('push_on');
+    expect(p.pickWheelBreakResponse(state({ wheel: 0, condition: 60 }), rng)).toBe('rebuild');
+  });
+
+  it('every persona returns spare when wheel inventory > 0', () => {
+    for (const id of ['cautious', 'balanced', 'aggressive', 'chaos'] as const) {
+      const p = getPersona(id);
+      expect(p.pickWheelBreakResponse(state({ wheel: 1, condition: 10 }), rng)).toBe('spare');
+    }
+  });
+});
