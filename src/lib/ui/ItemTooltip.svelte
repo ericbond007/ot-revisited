@@ -32,6 +32,6 @@
   /* Match the old ItemTooltip trigger style (dotted underline) so existing
      consumers render identically. */
   .trigger {
-    border-bottom: 1px dotted var(--c-rust);
+    border-bottom: 1px dotted var(--of-rust);
   }
 </style>

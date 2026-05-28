@@ -34,7 +34,7 @@
       {@const selected = opt.value === value}
       <button
         type="button"
-        class="card"
+        class="card ds-paper"
         class:selected
         disabled={opt.disabled}
         title={opt.disabled ? (opt.disabledReason ?? '') : ''}
@@ -64,29 +64,27 @@
     margin: 0.6em 0;
   }
   legend {
-    font-size: 0.75em;
+    font-family: var(--of-sc);
+    font-size: var(--of-fs-label);
     letter-spacing: 0.15em;
-    color: var(--c-wood);
-    font-weight: 700;
+    color: var(--of-ink-soft);
+    font-weight: 400;
     text-transform: uppercase;
     padding: 0;
-    margin-bottom: 0.4em;
+    margin-bottom: var(--of-s-2);
   }
 
   .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 0.5em;
+    gap: var(--of-s-2);
   }
 
   .card {
-    /* Override default button chrome */
-    padding: 0.7em 0.8em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
-    border-radius: 3px;
-    font-family: inherit;
+    /* ds-paper provides bg, double border, shadow, radius, padding, color.
+       Override to add button semantics + flex column layout. */
+    padding: var(--of-s-3) var(--of-s-3);
+    font-family: var(--of-body);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: none;
@@ -96,19 +94,19 @@
     align-items: flex-start;
     gap: 0.2em;
     text-align: left;
-    transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s;
+    transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s, box-shadow 0.1s;
     min-height: 5.5em;
   }
-  .card:hover:not(:disabled) {
-    border-color: var(--c-rust);
-    background: var(--c-panel);
+  .card:hover:not(:disabled):not(.selected) {
+    border-color: var(--of-rust);
+    background: var(--of-paper);
     transform: translateY(-1px);
   }
   .card.selected {
-    background: var(--c-rust);
-    color: var(--c-tan-bright);
-    border-color: var(--c-ink);
-    box-shadow: 0 0 0 2px var(--c-rust-dark);
+    background: var(--of-paper-soft);
+    color: var(--of-ink);
+    border: 3px double var(--of-rust);
+    box-shadow: var(--of-btn-emboss-active), 0 0 0 1px var(--of-rust-dark);
   }
   .card:disabled {
     opacity: 0.4;
@@ -125,21 +123,23 @@
   }
   .card-label {
     font-size: 0.95em;
+    font-family: var(--of-sc);
   }
   .card-sub {
     font-weight: normal;
     font-size: 0.78em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
+    font-family: var(--of-body);
     line-height: 1.3;
   }
   .card.selected .card-sub {
-    color: var(--c-tan);
+    color: var(--of-ink-soft);
   }
   .card-disabled-reason {
     font-weight: normal;
     font-size: 0.72em;
     font-style: italic;
-    color: var(--c-rust);
+    color: var(--of-rust);
     margin-top: 0.15em;
   }
 </style>

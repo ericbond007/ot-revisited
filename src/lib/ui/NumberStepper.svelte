@@ -83,10 +83,10 @@
   }
 </script>
 
-<div class="stepper" class:disabled>
+<div class="stepper ds-stepper" class:disabled>
   <button
     type="button"
-    class="step-btn step-minus"
+    class="step-btn ds-stepper-btn step-minus"
     aria-label="{ariaLabel}: decrease (Ctrl=×5, Shift=×10)"
     onclick={dec}
     disabled={disabled || value <= min}
@@ -100,7 +100,7 @@
   {#if hideValue}
     <!-- Mouse-first: no visible/typeable box. The chip shows either the
          raw value or an override (e.g. owned + pending = total). -->
-    <span class="value-chip" aria-hidden="true">{displayValue ?? value}</span>
+    <span class="value-chip ds-stepper-val" aria-hidden="true">{displayValue ?? value}</span>
     <input type="hidden" {name} {value} />
   {:else}
     <!-- One-way value binding instead of `bind:value` — bind: races with
@@ -123,7 +123,7 @@
 
   <button
     type="button"
-    class="step-btn step-plus"
+    class="step-btn ds-stepper-btn step-plus"
     aria-label="{ariaLabel}: increase (Ctrl=×5, Shift=×10)"
     onclick={inc}
     disabled={disabled || value >= max}
@@ -137,7 +137,7 @@
   {#each bulkSteps as n}
     <button
       type="button"
-      class="step-btn bulk"
+      class="bulk ds-bulk-chip"
       aria-label="{ariaLabel}: add {n}"
       onclick={() => incBy(n)}
       disabled={disabled || value >= max}
@@ -147,13 +147,11 @@
 
 <style>
   .stepper {
-    display: inline-flex;
+    /* ds-stepper sets height/bg/border/shadow; align-items:stretch so
+       buttons fill the full channel height. */
     align-items: stretch;
-    border: 2px solid var(--c-ink);
-    border-radius: 4px;
     /* Don't clip bubbles that float above the +/- buttons. */
     overflow: visible;
-    background: var(--c-bg-raised);
     line-height: 1;
   }
   .stepper.disabled {
@@ -161,22 +159,17 @@
   }
 
   .step-btn {
-    /* Override default button styles from theme.css for a compact, square shape */
+    /* ds-stepper-btn sets bg/color/font/cursor; these overrides make
+       buttons fill the full channel height in stretch mode. */
     position: relative;
     padding: 0;
     width: 2.2em;
-    height: 2.2em;
+    height: 100%;
     min-width: unset;
     border: 0;
     border-radius: 0;
-    background: var(--c-rust-dark);
-    color: var(--c-tan-bright);
     font-size: 1.3em;
     font-weight: 900;
-    cursor: pointer;
-    text-transform: none;
-    letter-spacing: 0;
-    transition: background 0.1s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -186,8 +179,8 @@
   .bubble {
     position: absolute;
     top: -0.55em;
-    background: #8bb96a;
-    color: var(--c-ink);
+    background: var(--of-good);
+    color: var(--of-paper-soft);
     font-size: 0.55em;
     font-weight: 900;
     padding: 0.15em 0.45em;
@@ -203,56 +196,33 @@
   }
   .bubble-sub {
     left: -0.35em;
-    background: #e85a4a;
-    color: var(--c-tan-bright);
+    background: var(--of-bad);
+    color: var(--of-paper-soft);
   }
-  .step-btn.bulk {
-    /* Bulk buttons are a visual shortcut, not the primary control — keep
-       them small so they don't overflow narrow item rows. */
-    width: auto;
-    height: 1.8em;
+  .bulk {
+    /* ds-bulk-chip sets most styles; override height to match stretch context */
     align-self: center;
-    padding: 0 0.45em;
     margin-left: 0.15em;
+    height: 1.8em;
     font-size: 0.72em;
-    font-weight: 700;
-    border-radius: 3px;
-    border-left: 1px solid rgba(0, 0, 0, 0.2);
+    border-left: 1px solid var(--of-rule);
   }
   .value-chip {
-    /* Read-only count display when hideValue=true. Matches the form-input
-       slot in width so the layout doesn't shift between modes. */
-    min-width: 2.2em;
+    /* ds-stepper-val sets font/color/min-width; add padding + flex centering */
     padding: 0 0.4em;
-    background: var(--c-parchment);
-    color: var(--c-ink);
-    font-family: var(--f-mono);
-    font-size: 1.1em;
-    font-weight: 700;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     user-select: none;
-  }
-  .step-btn:hover:not(:disabled) {
-    background: var(--c-rust);
-  }
-  .step-btn:active:not(:disabled) {
-    background: var(--c-ink);
-  }
-  .step-btn:disabled {
-    background: var(--c-panel);
-    color: var(--c-wood);
-    cursor: not-allowed;
   }
 
   input[type='number'] {
     width: 3em;
     padding: 0 0.3em;
     border: 0;
-    background: var(--c-parchment);
-    color: var(--c-ink);
-    font-family: var(--f-mono);
+    background: var(--of-paper-soft);
+    color: var(--of-ink);
+    font-family: var(--of-mono);
     font-size: 1.1em;
     font-weight: 700;
     text-align: center;
@@ -266,7 +236,7 @@
     margin: 0;
   }
   input[type='number']:focus {
-    outline: 2px solid var(--c-rust);
+    outline: 2px solid var(--of-rust);
     outline-offset: -2px;
   }
 </style>
