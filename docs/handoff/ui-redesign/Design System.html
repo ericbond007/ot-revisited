@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>OT.IO — Design System</title>
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<link rel="icon" href="assets/mark.svg" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Special+Elite&family=Smythe&display=swap" />
+<link rel="stylesheet" href="colors_and_type.css" />
+<style>
+  /* Local layout chrome for the specimen page only. All actual component
+     visuals come from colors_and_type.css (.ds-* utility classes + tokens). */
+  body {
+    background: var(--of-paper);
+    background-image:
+      radial-gradient(ellipse 720px 380px at -10% -10%, rgba(184, 154, 100, 0.55), transparent 60%),
+      radial-gradient(ellipse 720px 380px at 110% 110%, rgba(94, 60, 24, 0.38), transparent 60%),
+      var(--of-tex-crinkle), var(--of-tex-fiber);
+    background-size: auto, auto, 100% 100%, 100% 100%;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+    background-blend-mode: normal, normal, multiply, multiply;
+    color: var(--of-ink);
+    font-family: var(--of-body);
+    padding: 60px 80px;
+    min-height: 100vh;
+  }
+  .ds-masthead {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin: 0 auto 40px;
+    padding: 28px 36px;
+    border-top: 3px double var(--of-ink);
+    border-bottom: 3px double var(--of-ink);
+    max-width: 1200px;
+  }
+  .ds-mast-eye {
+    font-family: var(--of-sc);
+    font-size: 14px;
+    letter-spacing: 0.30em;
+    text-transform: uppercase;
+    color: var(--of-ink-soft);
+    margin-bottom: 6px;
+  }
+  .ds-mast-title {
+    margin: 0;
+    font-family: var(--of-display);
+    font-size: 52px;
+    color: var(--of-ink);
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+  .ds-mast-sub {
+    margin: 8px 0 0;
+    font-family: var(--of-body);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--of-ink-soft);
+  }
+
+  .ds-page { max-width: 1200px; margin: 0 auto; }
+
+  .ds-sec {
+    margin-bottom: 56px;
+  }
+  .ds-sec-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: 10px;
+    border-bottom: 3px double var(--of-ink-soft);
+    margin-bottom: 22px;
+  }
+  .ds-sec-title {
+    margin: 0;
+    font-family: var(--of-display);
+    font-size: 32px;
+    color: var(--of-ink);
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+  }
+  .ds-sec-sub {
+    margin: 0;
+    font-family: var(--of-body);
+    font-style: italic;
+    color: var(--of-ink-soft);
+    font-size: 15px;
+  }
+
+  /* Swatch grid */
+  .ds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .ds-swatch {
+    border: 2px solid var(--of-ink-soft);
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--of-paper-soft);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 3px 6px rgba(74,46,21,0.10);
+  }
+  .ds-swatch-chip {
+    height: 88px;
+    border-bottom: 1px solid var(--of-ink-soft);
+  }
+  .ds-swatch-meta {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: var(--of-mono);
+  }
+  .ds-swatch-name { font-family: var(--of-display); font-size: 16px; color: var(--of-ink); letter-spacing: 0.02em; }
+  .ds-swatch-var { font-size: 12px; color: var(--of-ink-soft); }
+  .ds-swatch-hex { font-size: 12px; color: var(--of-ink); }
+
+  /* Type specimens */
+  .ds-type-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--of-rule);
+  }
+  .ds-type-row:last-child { border-bottom: 0; }
+  .ds-type-label {
+    font-family: var(--of-sc);
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--of-ink-soft);
+  }
+  .ds-type-sample { color: var(--of-ink); line-height: 1.2; }
+  .ds-type-meta { font-family: var(--of-mono); font-size: 12px; color: var(--of-ink-soft); margin-top: 4px; }
+
+  /* Component bench */
+  .ds-bench {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .ds-bench-cell {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .ds-bench-cell h3 {
+    margin: 0;
+    font-family: var(--of-display);
+    font-size: 22px;
+    color: var(--of-ink);
+    letter-spacing: 0.02em;
+  }
+  .ds-bench-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .ds-bench-note {
+    font-family: var(--of-body);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--of-ink-soft);
+    line-height: 1.5;
+    margin: 0;
+  }
+  .ds-bench-progress { width: 100%; }
+
+  /* Token quick-reference */
+  .ds-tokens {
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-ink-soft);
+    border-radius: 2px;
+    padding: 16px 22px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+  }
+  .ds-tokens pre {
+    margin: 0;
+    font-family: var(--of-mono);
+    font-size: 13px;
+    color: var(--of-ink);
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+  .ds-tokens .tok-key { color: var(--of-rust); }
+  .ds-tokens .tok-com { color: var(--of-ink-soft); font-style: italic; }
+</style>
+</head>
+<body>
+
+<header class="ds-masthead">
+  <div class="ds-mast-eye">Specimen Sheet · A.D. 1848</div>
+  <h1 class="ds-mast-title">OT.IO Design System</h1>
+  <p class="ds-mast-sub">Period broadsheet typography, carved-paper controls, foxed-corner cards. The reference for every component on the trail.</p>
+</header>
+
+<main class="ds-page">
+
+  <!-- ═══════════════════════════ COLORS ═══════════════════════════ -->
+  <section class="ds-sec">
+    <header class="ds-sec-head">
+      <h2 class="ds-sec-title">Palette</h2>
+      <p class="ds-sec-sub">Paper, ink, and the rust accent. Status colors live above the rule.</p>
+    </header>
+
+    <h3 class="ds-eyebrow" style="margin-bottom:10px">Paper &amp; ink</h3>
+    <div class="ds-grid">
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#e8d4a8"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Paper</span><span class="ds-swatch-var">--of-paper</span><span class="ds-swatch-hex">#e8d4a8</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#f0e0bd"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Paper · soft</span><span class="ds-swatch-var">--of-paper-soft</span><span class="ds-swatch-hex">#f0e0bd</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#d8c08a"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Paper · deep</span><span class="ds-swatch-var">--of-paper-deep</span><span class="ds-swatch-hex">#d8c08a</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#b89a64"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Paper · edge</span><span class="ds-swatch-var">--of-paper-edge</span><span class="ds-swatch-hex">#b89a64</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#2a1d0c"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Ink</span><span class="ds-swatch-var">--of-ink</span><span class="ds-swatch-hex">#2a1d0c</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#5a3f1c"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Ink · soft</span><span class="ds-swatch-var">--of-ink-soft</span><span class="ds-swatch-hex">#5a3f1c</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#8a6a3c"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Ink · faded</span><span class="ds-swatch-var">--of-ink-faded</span><span class="ds-swatch-hex">#8a6a3c</span></div></div>
+    </div>
+
+    <h3 class="ds-eyebrow" style="margin: 26px 0 10px">Rust &amp; status</h3>
+    <div class="ds-grid">
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#94340e"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Rust</span><span class="ds-swatch-var">--of-rust</span><span class="ds-swatch-hex">#94340e</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#5e1f08"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Rust · dark</span><span class="ds-swatch-var">--of-rust-dark</span><span class="ds-swatch-hex">#5e1f08</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#486c2a"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Good</span><span class="ds-swatch-var">--of-good</span><span class="ds-swatch-hex">#486c2a</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#a86a18"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Warn</span><span class="ds-swatch-var">--of-warn</span><span class="ds-swatch-hex">#a86a18</span></div></div>
+      <div class="ds-swatch"><div class="ds-swatch-chip" style="background:#8a1c0c"></div><div class="ds-swatch-meta"><span class="ds-swatch-name">Bad</span><span class="ds-swatch-var">--of-bad</span><span class="ds-swatch-hex">#8a1c0c</span></div></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ TYPE ═══════════════════════════ -->
+  <section class="ds-sec">
+    <header class="ds-sec-head">
+      <h2 class="ds-sec-title">Typography</h2>
+      <p class="ds-sec-sub">A four-family stack — Rye for display, IM Fell English for body, IM Fell English SC for small caps, Special Elite for mono.</p>
+    </header>
+
+    <div class="ds-type-row">
+      <div>
+        <div class="ds-type-label">Display · Rye</div>
+        <div class="ds-type-meta">--of-display · 40–52px</div>
+      </div>
+      <div class="ds-type-sample" style="font-family: var(--of-display); font-size: 48px; letter-spacing: 0.04em;">Choose a wagon</div>
+    </div>
+
+    <div class="ds-type-row">
+      <div>
+        <div class="ds-type-label">H2 · Rye</div>
+        <div class="ds-type-meta">--of-fs-h2 · 28–34px</div>
+      </div>
+      <div class="ds-type-sample" style="font-family: var(--of-display); font-size: 30px; letter-spacing: 0.03em;">Provisions &amp; gear</div>
+    </div>
+
+    <div class="ds-type-row">
+      <div>
+        <div class="ds-type-label">H3 · Rye</div>
+        <div class="ds-type-meta">--of-fs-h3 · 20–24px</div>
+      </div>
+      <div class="ds-type-sample" style="font-family: var(--of-display); font-size: 22px; letter-spacing: 0.02em;">Marcy's top-up</div>
+    </div>
+
+    <div class="ds-type-row">
+      <div>
+        <div class="ds-type-label">Body · IM Fell English</div>
+        <div class="ds-type-meta">--of-body · 16–18px · italic for flavor</div>
+      </div>
+      <div class="ds-type-sample" style="font-family: var(--of-body); font-size: 17px; line-height: 1.55;">The classic Oregon Trail wagon. Arched canvas over a 4×10 ft bed, built for the crossing. What most emigrants took.</div>
+    </div>
+
+    <div class="ds-type-row">
+      <div>
+        <div class="ds-type-label">Small Caps · IM Fell English SC</div>
+        <div class="ds-type-meta">--of-sc · eyebrows, labels, broadsheet stamps</div>
+      </div>
+      <div class="ds-type-sample" style="font-family: var(--of-sc); font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--of-ink-soft);">Day One · April 13, A.D. 1848</div>
+    </div>
+
+    <div class="ds-type-row">
+      <div>
+        <div class="ds-type-label">Mono · Special Elite</div>
+        <div class="ds-type-meta">--of-mono · numerals, prices, ledger</div>
+      </div>
+      <div class="ds-type-sample" style="font-family: var(--of-mono); font-size: 17px; font-variant-numeric: tabular-nums;">$232.00 · 1,210 / 1,800 lb · 6 oxen</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ COMPONENTS ═══════════════════════════ -->
+  <section class="ds-sec">
+    <header class="ds-sec-head">
+      <h2 class="ds-sec-title">Components</h2>
+      <p class="ds-sec-sub">Carved-paper controls with the crown-molded emboss. Use the <code style="font-family:var(--of-mono);background:rgba(0,0,0,0.06);padding:0 4px">.ds-*</code> utility classes.</p>
+    </header>
+
+    <div class="ds-bench">
+      <div class="ds-bench-cell ds-paper">
+        <h3>Buttons</h3>
+        <p class="ds-bench-note">Neutral paper for cancel/reset; rust strong variant for primary CTAs.</p>
+        <div class="ds-bench-row">
+          <button type="button" class="ds-btn">Cancel</button>
+          <button type="button" class="ds-btn-strong">Set out for Oregon</button>
+        </div>
+        <div class="ds-bench-row">
+          <button type="button" class="ds-btn" disabled>Disabled</button>
+        </div>
+      </div>
+
+      <div class="ds-bench-cell ds-paper">
+        <h3>Stepper</h3>
+        <p class="ds-bench-note">Carved channel with −/value/+ controls. Pairs with bulk chips for items sold in lots.</p>
+        <div class="ds-bench-row">
+          <span class="ds-stepper">
+            <button type="button" class="ds-stepper-btn">−</button>
+            <span class="ds-stepper-val">12</span>
+            <button type="button" class="ds-stepper-btn">+</button>
+          </span>
+          <button type="button" class="ds-bulk-chip">+25</button>
+          <button type="button" class="ds-bulk-chip">+50</button>
+          <button type="button" class="ds-bulk-chip">+100</button>
+        </div>
+      </div>
+
+      <div class="ds-bench-cell ds-paper">
+        <h3>Progress bar</h3>
+        <p class="ds-bench-note">Carved channel + raised fill. Tone switches with <code style="font-family:var(--of-mono);font-size:12px">.ds-progress-fill-warn / -bad</code>.</p>
+        <div class="ds-bench-progress">
+          <div class="ds-progress"><div class="ds-progress-fill" style="width:42%"></div></div>
+          <div style="font-family:var(--of-mono);font-size:13px;color:var(--of-ink);margin-top:6px">1,050 / 2,500 lb</div>
+        </div>
+        <div class="ds-bench-progress">
+          <div class="ds-progress"><div class="ds-progress-fill ds-progress-fill-warn" style="width:78%"></div></div>
+          <div style="font-family:var(--of-mono);font-size:13px;color:var(--of-ink);margin-top:6px">1,950 / 2,500 lb · approaching cap</div>
+        </div>
+        <div class="ds-bench-progress">
+          <div class="ds-progress"><div class="ds-progress-fill ds-progress-fill-bad" style="width:100%"></div></div>
+          <div style="font-family:var(--of-mono);font-size:13px;color:var(--of-bad);margin-top:6px">over capacity</div>
+        </div>
+      </div>
+
+      <div class="ds-bench-cell ds-paper">
+        <h3>Ledger row</h3>
+        <p class="ds-bench-note">Period menu/playbill leader connecting item name to qty controls.</p>
+        <div style="width:100%; background:var(--of-paper); border:2px solid var(--of-ink-soft); border-radius:2px;">
+          <div class="ds-row">
+            <span style="font-size:18px">🌾</span>
+            <div>
+              <div style="font-family:var(--of-body);font-weight:700;color:var(--of-ink);font-size:16px">Flour <span style="font-family:var(--of-body);font-style:italic;font-size:13px;color:var(--of-ink-soft);margin-left:6px">by the 10-lb sack</span></div>
+              <div style="font-family:var(--of-mono);font-size:12px;color:var(--of-ink-soft);margin-top:2px">$0.05/unit · 1 lb/unit</div>
+            </div>
+            <span class="ds-leader"></span>
+            <span class="ds-stepper">
+              <button type="button" class="ds-stepper-btn">−</button>
+              <span class="ds-stepper-val">40</span>
+              <button type="button" class="ds-stepper-btn">+</button>
+            </span>
+          </div>
+          <div class="ds-row">
+            <span style="font-size:18px">🥓</span>
+            <div>
+              <div style="font-family:var(--of-body);font-weight:700;color:var(--of-ink);font-size:16px">Bacon <span style="font-family:var(--of-body);font-style:italic;font-size:13px;color:var(--of-ink-soft);margin-left:6px">by the lb</span></div>
+              <div style="font-family:var(--of-mono);font-size:12px;color:var(--of-ink-soft);margin-top:2px">$0.15/unit · 1 lb/unit</div>
+            </div>
+            <span class="ds-leader"></span>
+            <span class="ds-stepper">
+              <button type="button" class="ds-stepper-btn">−</button>
+              <span class="ds-stepper-val">25</span>
+              <button type="button" class="ds-stepper-btn">+</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ EMBOSS ═══════════════════════════ -->
+  <section class="ds-sec">
+    <header class="ds-sec-head">
+      <h2 class="ds-sec-title">Emboss</h2>
+      <p class="ds-sec-sub">Three variants. Stacked inset + drop shadows create the carved crown-molded look.</p>
+    </header>
+    <div class="ds-tokens">
+<pre><span class="tok-com">/* Neutral — stepper, bulk chips, cancel */</span>
+<span class="tok-key">--of-btn-emboss</span>:
+  inset 0 1px 0 rgba(255, 245, 220, 0.65),     <span class="tok-com">/* top highlight */</span>
+  inset 0 2px 4px rgba(74, 46, 21, 0.18),      <span class="tok-com">/* inset top shadow */</span>
+  inset 0 -2px 0 rgba(0, 0, 0, 0.14),          <span class="tok-com">/* bottom shadow */</span>
+  inset 0 0 0 1px rgba(94, 60, 24, 0.28),      <span class="tok-com">/* inner rim */</span>
+  0 1px 0 rgba(255, 245, 220, 0.45),           <span class="tok-com">/* outer highlight */</span>
+  0 2px 3px rgba(74, 46, 21, 0.20),            <span class="tok-com">/* outer shadow */</span>
+  0 4px 6px rgba(74, 46, 21, 0.12);            <span class="tok-com">/* soft drop */</span>
+
+<span class="tok-com">/* Strong — rust primary CTAs */</span>
+<span class="tok-key">--of-btn-emboss-strong</span>: <span class="tok-com">/* same stack, brighter highlights + heavier drop */</span>
+
+<span class="tok-com">/* Active — pressed state */</span>
+<span class="tok-key">--of-btn-emboss-active</span>:
+  inset 0 3px 5px rgba(0, 0, 0, 0.28),         <span class="tok-com">/* deep recess */</span>
+  inset 0 -1px 0 rgba(255, 245, 220, 0.20),    <span class="tok-com">/* bottom catch-light */</span>
+  inset 0 0 0 1px rgba(94, 60, 24, 0.40);
+
+<span class="tok-com">/* Progress channel — recessed for sitting-bar look */</span>
+<span class="tok-key">--of-channel-emboss</span>: <span class="tok-com">/* same flavor as -active but with outer highlight */</span></pre>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ TEXTURE ═══════════════════════════ -->
+  <section class="ds-sec">
+    <header class="ds-sec-head">
+      <h2 class="ds-sec-title">Paper texture</h2>
+      <p class="ds-sec-sub">Foxing spots + corner aging + fold creases + crinkle + fiber grain. Apply via <code style="font-family:var(--of-mono);background:rgba(0,0,0,0.06);padding:0 4px">.ds-paper</code> — every layer is single-instance (no tiling).</p>
+    </header>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+      <div class="ds-paper" style="aspect-ratio: 4/3; display:flex; align-items:center; justify-content:center; font-family: var(--of-display); font-size: 28px; color: var(--of-ink); letter-spacing: 0.04em;">Card A</div>
+      <div class="ds-paper" style="aspect-ratio: 4/3; display:flex; align-items:center; justify-content:center; font-family: var(--of-display); font-size: 28px; color: var(--of-ink); letter-spacing: 0.04em;">Card B</div>
+      <div class="ds-paper" style="aspect-ratio: 4/3; display:flex; align-items:center; justify-content:center; font-family: var(--of-display); font-size: 28px; color: var(--of-ink); letter-spacing: 0.04em;">Card C</div>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

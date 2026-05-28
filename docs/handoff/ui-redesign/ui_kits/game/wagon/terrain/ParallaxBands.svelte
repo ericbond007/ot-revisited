@@ -1,0 +1,59 @@
+<script lang="ts">
+  // Composed terrain layers: Far + Mid + GroundBand + Near.
+  //
+  // Layer order (back → front, matching README.md): far parallax →
+  // ground gradient → near parallax. Mid sits between far and the
+  // ground band. Wagon + landmarks render OVER this in the parent
+  // composer (Phase 6); this component owns only terrain.
+  //
+  // Caller supplies `scrollX` (driven by the scene tick) and the
+  // scene constants (`horizonY`, `groundY`, `w`, `h`). All movement
+  // derives from `scrollX` — no CSS animations.
+  //
+  // Status: dev/legacy path. The production WagonScene composes
+  // GroundBand directly; this composite is currently only re-exported
+  // from `terrain/index.ts` and not imported by any consumer. The
+  // miles/deaths prop-threading below mirrors what GroundBand expects
+  // so this stays drop-in if a future page brings it back into use.
+  import type { Terrain } from '$lib/game/types';
+  import { HORIZON_Y, GROUND_Y, SCENE_W, SCENE_H } from './terrain-tokens';
+  import FarLayer from './FarLayer.svelte';
+  import MidLayer from './MidLayer.svelte';
+  import NearLayer from './NearLayer.svelte';
+  import GroundBand from './GroundBand.svelte';
+
+  interface Props {
+    terrain: Terrain;
+    scrollX: number;
+    horizonY?: number;
+    groundY?: number;
+    w?: number;
+    h?: number;
+    /** Unique-ish prefix for the GroundBand gradient ids. Pass when
+     *  multiple ParallaxBands render on one page. */
+    idPrefix?: string;
+    milesTraveled?: number;
+    deathCount?: number;
+  }
+
+  let {
+    terrain,
+    scrollX,
+    horizonY = HORIZON_Y,
+    groundY = GROUND_Y,
+    w = SCENE_W,
+    h = SCENE_H,
+    idPrefix = 'pb',
+    milesTraveled = 0,
+    deathCount = 0,
+  }: Props = $props();
+
+  const groundH = $derived(h - groundY);
+</script>
+
+<g>
+  <FarLayer {terrain} {scrollX} {horizonY} />
+  <MidLayer {terrain} {scrollX} {horizonY} {groundY} />
+  <GroundBand {terrain} {scrollX} {groundY} h={groundH} {w} {idPrefix} {milesTraveled} {deathCount} />
+  <NearLayer {terrain} {scrollX} {groundY} />
+</g>

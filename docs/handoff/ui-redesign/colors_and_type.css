@@ -1,0 +1,432 @@
+/* ==========================================================================
+   OT.IO — Design System Tokens
+   The canonical reference. Established in 'Outfit Screen.html' and adopted
+   across the project (Trade Post, ui_kits/game/*, etc.).
+
+   Aesthetic: 1840s emigrant broadsheet — handmade rag paper, iron-gall ink,
+   crown-molded carved-paper controls. Period-realistic typography stack
+   (Rye / IM Fell English / Special Elite).
+
+   Legacy variables (--c-bg etc.) preserved at the bottom for backward
+   compatibility with existing files.
+   ========================================================================== */
+
+:root {
+  /* ────────────────────────────────────────────────────────────────────
+     PALETTE — paper + ink
+     ──────────────────────────────────────────────────────────────────── */
+  --of-paper:        #e8d4a8;  /* base rag-paper field */
+  --of-paper-soft:   #f0e0bd;  /* card surfaces, sat in the light */
+  --of-paper-deep:   #d8c08a;  /* section heads, depressed surfaces */
+  --of-paper-edge:   #b89a64;  /* shadowed paper edge */
+
+  --of-ink:          #2a1d0c;  /* body text, primary rules */
+  --of-ink-soft:     #5a3f1c;  /* secondary text, secondary rules */
+  --of-ink-faded:    #8a6a3c;  /* tertiary, dotted leaders, faded edges */
+
+  --of-rule:         rgba(74, 46, 21, 0.32);  /* default ruled border */
+  --of-rule-soft:    rgba(74, 46, 21, 0.18);  /* hairline rules */
+
+  /* Accent + semantic — rust for primary action, sage/amber/red for status */
+  --of-rust:         #94340e;
+  --of-rust-dark:    #5e1f08;
+  --of-good:         #486c2a;
+  --of-warn:         #a86a18;
+  --of-bad:          #8a1c0c;
+
+  /* ────────────────────────────────────────────────────────────────────
+     TYPOGRAPHY — period-realistic stack
+     ──────────────────────────────────────────────────────────────────── */
+  --of-display:      'Rye', 'Smythe', Georgia, serif;
+  --of-body:         'IM Fell English', Georgia, serif;
+  --of-sc:           'IM Fell English SC', 'IM Fell English', Georgia, serif;
+  --of-mono:         'Special Elite', 'Courier New', ui-monospace, monospace;
+
+  /* Type scale — clamp(min, scale, max) so small text stays readable at
+     low artboard scale. Use these vars in component CSS, not hard pixels. */
+  --of-fs-eyebrow:   clamp(14px, 1.05vw, 16px);
+  --of-fs-meta:      clamp(14px, 1.05vw, 16px);
+  --of-fs-label:     clamp(13px, 0.95vw, 15px);
+  --of-fs-chip:      clamp(12px, 0.9vw, 14px);
+  --of-fs-sub:       clamp(15px, 1.15vw, 17px);
+  --of-fs-body:      clamp(16px, 1.2vw, 18px);
+  --of-fs-h3:        clamp(20px, 1.5vw, 24px);
+  --of-fs-h2:        clamp(28px, 2.2vw, 34px);
+  --of-fs-h1:        clamp(40px, 3.4vw, 52px);
+  --of-fs-display-l: clamp(38px, 2.8vw, 44px);
+
+  /* ────────────────────────────────────────────────────────────────────
+     EMBOSS — crown-molding box-shadow stacks
+     Applied to buttons, steppers, chips, progress channels & fills.
+     Three variants:
+       --of-btn-emboss        — neutral paper-color buttons
+       --of-btn-emboss-strong — primary rust-color CTAs
+       --of-btn-emboss-active — pressed state (recessed)
+     ──────────────────────────────────────────────────────────────────── */
+  --of-btn-emboss:
+    inset 0 1px 0 rgba(255, 245, 220, 0.65),
+    inset 0 2px 4px rgba(74, 46, 21, 0.18),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.14),
+    inset 0 0 0 1px rgba(94, 60, 24, 0.28),
+    0 1px 0 rgba(255, 245, 220, 0.45),
+    0 2px 3px rgba(74, 46, 21, 0.20),
+    0 4px 6px rgba(74, 46, 21, 0.12);
+  --of-btn-emboss-active:
+    inset 0 3px 5px rgba(0, 0, 0, 0.28),
+    inset 0 -1px 0 rgba(255, 245, 220, 0.20),
+    inset 0 0 0 1px rgba(94, 60, 24, 0.40),
+    0 0 0 rgba(0, 0, 0, 0);
+  --of-btn-emboss-strong:
+    inset 0 2px 0 rgba(255, 220, 180, 0.50),
+    inset 0 3px 4px rgba(0, 0, 0, 0.20),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+    inset 0 -3px 4px rgba(255, 220, 180, 0.20),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(255, 220, 180, 0.28),
+    0 3px 4px rgba(74, 46, 21, 0.28),
+    0 6px 10px rgba(74, 46, 21, 0.18);
+
+  /* Progress-channel emboss (deeper recess for a sitting-bar look) */
+  --of-channel-emboss:
+    inset 0 3px 5px rgba(0, 0, 0, 0.28),
+    inset 0 -2px 0 rgba(255, 245, 220, 0.32),
+    inset 0 -3px 4px rgba(255, 245, 220, 0.18),
+    inset 0 0 0 1px rgba(94, 60, 24, 0.32),
+    0 1px 0 rgba(255, 245, 220, 0.35),
+    0 2px 3px rgba(74, 46, 21, 0.16);
+  --of-channel-fill-emboss:
+    inset 0 2px 0 rgba(255, 255, 255, 0.28),
+    inset 0 3px 4px rgba(255, 255, 255, 0.16),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.22),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.14),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+
+  /* ────────────────────────────────────────────────────────────────────
+     TEXTURES — single-instance SVGs for paper crinkle + fiber grain.
+     Applied with `background-size: 100% 100%; background-repeat: no-repeat;`
+     so they NEVER tile.
+     ──────────────────────────────────────────────────────────────────── */
+  --of-tex-crinkle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' preserveAspectRatio='none'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='0.018' numOctaves='3' stitchTiles='stitch' seed='7'/><feColorMatrix values='0 0 0 0 0.28  0 0 0 0 0.18  0 0 0 0 0.08  0 0 0 0.32 0'/></filter><rect width='500' height='400' filter='url(%23c)'/></svg>");
+  --of-tex-fiber:   url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' preserveAspectRatio='none'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch' seed='5'/><feColorMatrix values='0 0 0 0 0.28  0 0 0 0 0.18  0 0 0 0 0.08  0 0 0 0.10 0'/></filter><rect width='500' height='400' filter='url(%23n)'/></svg>");
+
+  /* ────────────────────────────────────────────────────────────────────
+     SPACING + RADIUS — small, deliberate
+     ──────────────────────────────────────────────────────────────────── */
+  --of-r-xs:  2px;
+  --of-r-sm:  3px;
+  --of-s-1:   4px;
+  --of-s-2:   8px;
+  --of-s-3:  12px;
+  --of-s-4:  16px;
+  --of-s-5:  20px;
+  --of-s-6:  24px;
+  --of-s-8:  32px;
+
+  /* ────────────────────────────────────────────────────────────────────
+     LEGACY VARIABLES (preserved verbatim for existing files)
+     ──────────────────────────────────────────────────────────────────── */
+  --c-bg:           #1a0f08;
+  --c-bg-raised:   #2a1a10;
+  --c-panel:       #3d2817;
+  --c-border:      #5a3a1a;
+  --c-wood:        #8a5a2a;
+  --c-rust-dark:   #8a3a1a;
+  --c-rust:        #c96a2a;
+  --c-tan:         #e8c89a;
+  --c-tan-bright:  #f5e6c8;
+  --c-ink:         #3a1a08;
+  --c-sage:        #6a7a4a;
+  --c-parchment:   #e8d9b8;
+  --c-good:        #8bb96a;
+  --c-warn:        #f5c96a;
+  --c-danger:      #e85a4a;
+  --c-river:       #4a8bc9;
+  --c-river-pale:  #d6e2ec;
+  --c-parchment-visited: #f0e2c2;
+  --c-parchment-trade:   #f3dbb8;
+  --c-parchment-end:     #f5e0a8;
+
+  --f-mono:    'Special Elite', 'Courier Prime', 'Courier New', ui-monospace, monospace;
+  --f-body:    'IM Fell English', 'Georgia', 'Times New Roman', serif;
+  --f-display: 'Rye', 'IM Fell English SC', 'Georgia', serif;
+  --f-pixel:   'VT323', 'Courier New', monospace;
+
+  --fs-xs:   12px; --fs-sm: 13px; --fs-md: 15px; --fs-lg: 18px;
+  --fs-xl:   22px; --fs-2xl: 30px; --fs-3xl: 44px; --fs-4xl: 64px;
+  --lh-tight: 1.18; --lh-body: 1.55;
+  --ls-loose: 0.18em; --ls-medium: 0.10em; --ls-tight: 0.04em;
+
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
+  --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px;
+  --r-xs: 2px; --r-sm: 3px; --r-md: 4px; --r-pill: 999px;
+  --bw-1: 1px; --bw-2: 2px; --bw-3: 3px;
+  --sh-dot:   0 1px 3px rgba(0, 0, 0, 0.25);
+  --sh-card:  0 4px 14px rgba(0, 0, 0, 0.45);
+  --sh-modal: 0 12px 40px rgba(0, 0, 0, 0.7);
+  --sh-glow-rust:  0 0 14px rgba(201, 106, 42, 0.45);
+  --sh-glow-fire:  0 0 12px rgba(255, 180, 60, 0.55);
+  --sh-inset-lit:  inset 0 0 0 1px rgba(255, 180, 60, 0.5);
+  --t-fast: 0.12s; --t-base: 0.2s; --t-medium: 0.4s; --t-wagon: 2.5s;
+  --e-default: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --e-pop:     cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+/* ==========================================================================
+   GLOBAL DEFAULTS — paper-on-dark-wood
+   ========================================================================== */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--c-bg);
+  color: var(--c-tan);
+  font-family: var(--of-mono);
+  font-size: var(--of-fs-body);
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+/* ==========================================================================
+   UTILITY CLASSES — opt-in, ds- prefix. Use these instead of hand-rolling
+   embossed buttons / paper cards / progress bars in every new file.
+   ========================================================================== */
+
+/* ----- Eyebrow ----- */
+.ds-eyebrow {
+  font-family: var(--of-sc);
+  font-size: var(--of-fs-eyebrow);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--of-ink-soft);
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* ----- Paper card (textured) ----- */
+.ds-paper {
+  background: var(--of-paper-soft);
+  background-image:
+    linear-gradient(118deg, transparent 14%, rgba(94, 60, 24, 0.07) 30%, transparent 46%),
+    linear-gradient(62deg, transparent 44%, rgba(94, 60, 24, 0.05) 62%, transparent 80%),
+    radial-gradient(ellipse 130px 80px at 0% 0%, rgba(94, 60, 24, 0.20), transparent 80%),
+    radial-gradient(ellipse 140px 80px at 100% 100%, rgba(94, 60, 24, 0.16), transparent 80%),
+    radial-gradient(circle 18px at 84% 28%, rgba(94, 60, 24, 0.18), transparent 90%),
+    radial-gradient(circle 16px at 18% 72%, rgba(94, 60, 24, 0.14), transparent 90%),
+    var(--of-tex-crinkle),
+    var(--of-tex-fiber);
+  background-size: auto, auto, auto, auto, auto, auto, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-blend-mode: multiply, multiply, normal, normal, normal, normal, multiply, multiply;
+  border: 3px double var(--of-ink-soft);
+  border-radius: 2px;
+  padding: 16px 18px;
+  color: var(--of-ink);
+  box-shadow:
+    inset 0 0 22px rgba(94, 60, 24, 0.10),
+    inset 0 0 0 1px rgba(255, 245, 220, 0.30),
+    0 1px 0 rgba(0, 0, 0, 0.06),
+    0 4px 10px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+/* ----- Embossed button family ----- */
+.ds-btn {
+  padding: 12px 24px;
+  border: 3px double var(--of-ink-soft);
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: var(--of-sc);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: var(--of-fs-body);
+  background: var(--of-paper-soft);
+  color: var(--of-ink-soft);
+  box-shadow: var(--of-btn-emboss);
+  transition: box-shadow 0.08s, transform 0.04s, background 0.12s;
+}
+.ds-btn:hover { background: var(--of-paper); color: var(--of-ink); border-color: var(--of-ink-soft); }
+.ds-btn:active { box-shadow: var(--of-btn-emboss-active); transform: translateY(1px); }
+.ds-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ds-btn-strong {
+  background: var(--of-rust);
+  color: var(--of-paper-soft);
+  border-color: var(--of-rust-dark);
+  font-family: var(--of-display);
+  font-size: clamp(17px, 1.3vw, 20px);
+  letter-spacing: 0.06em;
+  padding: 14px 32px;
+  box-shadow: var(--of-btn-emboss-strong);
+}
+.ds-btn-strong:hover { background: var(--of-rust-dark); }
+.ds-btn-strong:active { box-shadow: var(--of-btn-emboss-active); transform: translateY(1px); }
+
+/* ----- Embossed stepper ----- */
+.ds-stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  background: var(--of-paper);
+  border: 2px solid var(--of-ink-soft);
+  border-radius: 2px;
+  overflow: visible;
+  position: relative;
+  box-shadow: var(--of-btn-emboss);
+}
+.ds-stepper-btn {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  color: var(--of-ink);
+  border: 0;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: var(--of-display);
+}
+.ds-stepper-btn:hover:not(:disabled) { background: rgba(94, 60, 24, 0.10); }
+.ds-stepper-btn:active { background: rgba(94, 60, 24, 0.18); }
+.ds-stepper-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.ds-stepper-val {
+  min-width: 38px;
+  text-align: center;
+  font-family: var(--of-mono);
+  font-weight: 700;
+  font-size: var(--of-fs-body);
+  color: var(--of-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ----- Embossed bulk chip ----- */
+.ds-bulk-chip {
+  padding: 0 10px;
+  height: 30px;
+  background: var(--of-paper);
+  color: var(--of-ink);
+  border: 2px solid var(--of-ink-soft);
+  border-radius: 2px;
+  font-family: var(--of-mono);
+  font-size: var(--of-fs-label);
+  font-weight: 700;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--of-btn-emboss);
+  display: inline-flex;
+  align-items: center;
+}
+.ds-bulk-chip:hover { background: var(--of-paper-deep); border-color: var(--of-ink); }
+.ds-bulk-chip:active { box-shadow: var(--of-btn-emboss-active); transform: translateY(1px); }
+
+/* ----- Embossed progress channel ----- */
+.ds-progress {
+  position: relative;
+  height: 16px;
+  background: var(--of-paper);
+  border: 2px solid var(--of-ink-soft);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: var(--of-channel-emboss);
+}
+.ds-progress-fill {
+  height: 100%;
+  background: var(--of-good);
+  transition: width 0.18s ease;
+  box-shadow: var(--of-channel-fill-emboss);
+}
+.ds-progress-fill-warn { background: var(--of-warn); }
+.ds-progress-fill-bad  { background: var(--of-bad); }
+
+/* ----- Dotted leader (ledger row connector) ----- */
+.ds-leader {
+  align-self: center;
+  margin: 0 4px;
+  border-bottom: 2px dotted var(--of-ink-faded);
+  opacity: 0.55;
+  min-width: 24px;
+  display: inline-block;
+}
+
+/* ----- Ledger row ----- */
+.ds-row {
+  display: grid;
+  grid-template-columns: 28px auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  transition: background 0.12s;
+}
+.ds-row:hover { background: rgba(216, 192, 138, 0.30); }
+
+/* ==========================================================================
+   LEGACY ELEMENT STYLES — preserved verbatim for existing files.
+   ========================================================================== */
+
+h1, h2, h3, h4 {
+  color: var(--c-tan-bright);
+  letter-spacing: var(--ls-medium);
+  margin: 0 0 0.5em 0;
+  font-family: var(--f-display);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+}
+h1 { font-size: var(--fs-3xl); }
+h2 { font-size: var(--fs-2xl); }
+h3 { font-size: var(--fs-xl); }
+h4 { font-size: var(--fs-md); letter-spacing: var(--ls-loose); color: var(--c-rust); }
+
+p { line-height: var(--lh-body); margin: 0 0 1em 0; }
+code, pre, kbd { font-family: var(--f-mono); }
+
+.brand {
+  font-family: var(--f-display);
+  font-size: var(--fs-4xl);
+  letter-spacing: 0.08em;
+  color: var(--c-rust);
+  font-weight: 900;
+  margin: 0;
+}
+.brand .dot { color: var(--c-tan-bright); }
+
+.eyebrow {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-loose);
+  font-weight: 700;
+  color: var(--c-wood);
+  text-transform: uppercase;
+}
+.panel {
+  background: var(--c-panel);
+  border: var(--bw-2) solid var(--c-wood);
+  padding: var(--s-4);
+  border-radius: var(--r-sm);
+}
+
+/* Legacy buttons unchanged — new work uses .ds-btn */
+button.legacy, .btn.legacy {
+  font-family: inherit;
+  background: var(--c-rust-dark);
+  color: var(--c-tan-bright);
+  border: var(--bw-2) solid var(--c-ink);
+  padding: 0.5em 1em;
+  cursor: pointer;
+  letter-spacing: var(--ls-medium);
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: var(--r-sm);
+  transition: background var(--t-fast), box-shadow var(--t-fast);
+}
+button.legacy:hover:not(:disabled), .btn.legacy:hover:not(:disabled) { background: var(--c-rust); }
+
+input, select, textarea {
+  font-family: inherit;
+  background: var(--c-bg-raised);
+  color: var(--c-tan);
+  border: var(--bw-2) solid var(--c-wood);
+  padding: 0.4em 0.6em;
+  border-radius: var(--r-sm);
+}
+input:focus, select:focus, textarea:focus {
+  outline: 0;
+  border-color: var(--c-rust);
+  box-shadow: 0 0 0 2px rgba(201, 106, 42, 0.25);
+}
