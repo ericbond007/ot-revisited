@@ -89,6 +89,20 @@
     String(Math.floor(((gaitPhase % 1) + 1) % 1 * 12) % 12).padStart(2, '0')
   );
 
+  // Per-pair breed pick (#214). Each pair gets a deterministic breed
+  // based on its pair index so the same team consistently shows the
+  // same mix across re-renders. '' = default gray (the original
+  // ox-yoke-wide-frames dir, no breed suffix).
+  const OX_BREEDS = ['', 'angus', 'brindle', 'devon', 'roan'] as const;
+  function breedForPair(pairIdx: number): string {
+    return OX_BREEDS[Math.abs(pairIdx * 13 + 7) % OX_BREEDS.length];
+  }
+  function yokeFramesDir(breed: string): string {
+    return breed
+      ? `ox-yoke-wide-frames-${breed}`
+      : 'ox-yoke-wide-frames';
+  }
+
   const stopped = $derived(gait === 'stopped');
   const numPairs = $derived(Math.max(1, Math.ceil(count / 2)));
 
@@ -224,7 +238,8 @@
   {#each pairs as pair}
     {@const w = PAIR_SPACE * oxScale}
     {@const h = PAIR_SPACE / 1.246 * oxScale}
-    <image href="/wagon-bg/wagon-blender/ox-yoke-wide-frames/yoke-wide--{blenderFrame}.png"
+    {@const dir = yokeFramesDir(breedForPair(pair.p))}
+    <image href="/wagon-bg/wagon-blender/{dir}/yoke-wide--{blenderFrame}.png"
            x={pair.px - w / 2 + oxDx} y={-10 + oxDy} width={w} height={h}
            preserveAspectRatio="xMidYMid meet" />
   {/each}
