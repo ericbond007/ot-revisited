@@ -25,7 +25,7 @@ export function resolveWheelBreak(
     case 'rebuild':
       throw new Error('rebuild branch not yet implemented');
     case 'push_on':
-      throw new Error('push_on branch not yet implemented');
+      return resolvePushOn(state);
   }
 }
 
@@ -40,4 +40,23 @@ function resolveSpare(state: GameState, rng: Rng): WheelBreakResult {
     ? 'The carpenter pieced the old spare wheel back together — no spare consumed. Wagon condition +10.'
     : 'Mounted a spare wheel. Wagon condition +10.';
   return { state: next, log };
+}
+
+function resolvePushOn(state: GameState): WheelBreakResult {
+  const next: GameState = {
+    ...state,
+    wagon: {
+      ...state.wagon,
+      impairment: {
+        kind: 'wheel',
+        paceMult: 0.5,
+        conditionDecayMult: 2,
+        contractedAt: { day: state.day, mile: state.location.milesTraveled }
+      }
+    }
+  };
+  return {
+    state: next,
+    log: 'Pushed on with a busted wheel. The wagon limps until the next blacksmith.'
+  };
 }

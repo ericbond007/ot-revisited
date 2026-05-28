@@ -40,3 +40,22 @@ describe('resolveWheelBreak — spare', () => {
     expect(after.wagon.condition).toBe(100);
   });
 });
+
+describe('resolveWheelBreak — push_on', () => {
+  it('sets wagon.impairment with paceMult 0.5, decayMult 2, no day-cost', () => {
+    const before = freshState({ wheel: 0 });
+    before.day = 25;
+    before.location.milesTraveled = 412;
+    before.wagon.condition = 55;
+    const { state: after, log } = resolveWheelBreak(before, makeRng('t'), 'push_on');
+    expect(after.day).toBe(25);
+    expect(after.wagon.condition).toBe(55);
+    expect(after.wagon.impairment).toEqual({
+      kind: 'wheel',
+      paceMult: 0.5,
+      conditionDecayMult: 2,
+      contractedAt: { day: 25, mile: 412 }
+    });
+    expect(log).toMatch(/limp/i);
+  });
+});
