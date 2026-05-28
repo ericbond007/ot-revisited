@@ -74,3 +74,18 @@ describe('per-persona pickWheelBreakResponse', () => {
     }
   });
 });
+
+import { runBot } from '../src/lib/dev/bot/runner';
+
+describe('player-bot wires wagon_wheel pendingEvent through persona', () => {
+  it('bot does not crash on a 60-day run with blacksmith leader', () => {
+    const report = runBot({
+      seed: 'wheel-bot-929',
+      persona: 'balanced',
+      leaderProfession: 'blacksmith',
+      companionProfessions: ['teacher'],
+      maxDays: 60
+    });
+    expect(report).toBeTruthy();
+  });
+});

@@ -805,7 +805,15 @@ export function runBot(opts: BotRunOpts): BotRunReport {
           actionType = 'eventChoice';
           const ev = tick.pendingEvent;
           stats.eventsFiredById[ev.id] = (stats.eventsFiredById[ev.id] ?? 0) + 1;
-          const choiceId = persona.pickEventChoice(state, ev, botRng);
+          // #929 — wagon_wheel gets its own persona surface that encodes
+          // blacksmith / spare / condition heuristics. Route it here
+          // before the generic pickEventChoice fallthrough.
+          let choiceId: string;
+          if (ev.id === 'wagon_wheel') {
+            choiceId = persona.pickWheelBreakResponse(state, botRng);
+          } else {
+            choiceId = persona.pickEventChoice(state, ev, botRng);
+          }
           stats.decisionsMade += 1;
           state = applyPendingChoice(state, ev, choiceId);
           // #936b — the bot has no modal; if it chose `abandon_load`
