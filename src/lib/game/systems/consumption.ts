@@ -27,7 +27,7 @@ const NUTRITION_GROUP: Record<string, NutritionGroup> = {
   butter:      'fresh'
 };
 
-const FOOD_PER_ADULT: Record<Rations, number> = {
+export const FOOD_PER_ADULT: Record<Rations, number> = {
   meager: 1,
   normal: 2,
   filling: 3
@@ -40,10 +40,10 @@ const FOOD_PER_ADULT: Record<Rations, number> = {
 // Carpenter 1857 on the Hastings/Sublette dry stretch: "I tipped
 // the children's pannikin first and what was left fell to me."
 // Scales the daily per-member count; floored so the sum stays integer.
-const CHILD_FOOD_MULT = 0.6;
+export const CHILD_FOOD_MULT = 0.6;
 // #1031b — 0.7 → 0.5 to model period-realistic child water rationing.
-const CHILD_WATER_MULT = 0.5;
-const WATER_PER_ADULT_GAL = 1;
+export const CHILD_WATER_MULT = 0.5;
+export const WATER_PER_ADULT_GAL = 1;
 const FARMER_FOOD_MULT = 0.9;
 
 // Pace × food multiplier (#267). Period reality: a grueling 14-hour
