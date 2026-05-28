@@ -46,6 +46,9 @@
   // Ox team
   import OxTeam from './ox-team/OxTeam.svelte';
 
+  // Ground shadows under wagon + ox team (#956)
+  import WagonShadows from './WagonShadows.svelte';
+
   // Wagon
   import { WAGON_RENDER } from './wagon-svg';
 
@@ -73,6 +76,15 @@
       wagonGroundOffset?: number;
       tongueBase?: number;
       tonguePerPair?: number;
+      shadowOffsetX?: number;
+      shadowOffsetY?: number;
+      shadowPairOffsetX?: number;
+      shadowWagonRx?: number;
+      shadowWagonRy?: number;
+      shadowPairRx?: number;
+      shadowPairRy?: number;
+      shadowOpacity?: number;
+      shadowBlur?: number;
     };
   }
 
@@ -224,6 +236,11 @@
     driver: true,
     kegs: wagonRender.defaultKegs,
     coop: gameState.inventory.chicken ?? 0,
+    // WagonShadows handles ground shadows for the whole composite in
+    // WagonScene (#956). Suppress PrairieSchooner's inline ellipse so we
+    // don't double-shadow. Dev sandboxes that mount the wagon SVG without
+    // WagonScene still get the inline shadow via their own addons.
+    showGroundShadow: false,
     ...(addonsOverride ?? {})
   });
 
@@ -313,6 +330,22 @@
         <!-- 8. near parallax — SVG mode only -->
         <NearLayer terrain={gameState.location.terrain} {scrollX} groundY={GROUND_Y} />
       {/if}
+
+      <!-- 8.5. wagon + ox ground shadows (#956). Drawn ON TOP of the
+           painted ground band + near parallax, UNDER the wagon + ox
+           composite (#9). Shadows stay planted on GROUND_Y while the
+           wagon/ox bodies bob via teamBob. -->
+      <WagonShadows wagonX={WAGON_X} tongueTipX={wagonTongueTipSceneX}
+                    {oxCount} groundY={GROUND_Y} sceneScale={SCENE_SCALE}
+                    offsetX={tuning?.shadowOffsetX}
+                    offsetY={tuning?.shadowOffsetY}
+                    pairOffsetX={tuning?.shadowPairOffsetX}
+                    wagonRx={tuning?.shadowWagonRx}
+                    wagonRy={tuning?.shadowWagonRy}
+                    pairRx={tuning?.shadowPairRx}
+                    pairRy={tuning?.shadowPairRy}
+                    opacity={tuning?.shadowOpacity}
+                    blurStdDev={tuning?.shadowBlur} />
 
       <!-- 9. wagon — rides the team bob via a y-offset on the translate,
            so it settles together with the hitched mass. Drawn BEFORE
