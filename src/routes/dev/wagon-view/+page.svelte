@@ -45,6 +45,12 @@
   let shadowPairRy = $state(2.9);     // ox-pair-shadow half-height
   let shadowOpacity = $state(0.98);   // "darkness"
   let shadowBlur = $state(8);         // "weight" — Gaussian blur sigma
+
+  // Mule-team tuning (#216). Only affects the Blender mule team (toggle
+  // "Mules" on). Sprite size/position + the reused ox single-yoke.
+  let muleScale = $state(1.1);
+  let muleDx = $state(5.75);
+  let muleDy = $state(0);
   // -1 → "auto" (no explicit override → BackdropPainting picks based on
   // weather → fallback random). 0..4 → forced variant.
   let variant = $state<number>(-1);
@@ -281,6 +287,25 @@
     </label>
   </section>
 
+  <section class="tuning">
+    <h2>Mule tuning (#216) — toggle “Mules” on</h2>
+    <label class="range">
+      <span>Mule size (scale)</span>
+      <input type="range" min="0.4" max="2" step="0.02" bind:value={muleScale} />
+      <span class="val">{muleScale}</span>
+    </label>
+    <label class="range">
+      <span>Mule X (offset)</span>
+      <input type="range" min="-20" max="20" step="0.25" bind:value={muleDx} />
+      <span class="val">{muleDx}</span>
+    </label>
+    <label class="range">
+      <span>Mule Y (offset)</span>
+      <input type="range" min="-20" max="20" step="0.25" bind:value={muleDy} />
+      <span class="val">{muleDy}</span>
+    </label>
+  </section>
+
   <section class="stage">
     {#key restartKey}
       <WagonScene state={previewState} {timeOfDay} {paused}
@@ -292,6 +317,7 @@
                     shadowWagonRx, shadowWagonRy,
                     shadowPairRx, shadowPairRy,
                     shadowOpacity, shadowBlur,
+                    muleScale, muleDx, muleDy,
                   }} />
     {/key}
   </section>
