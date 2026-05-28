@@ -23,7 +23,7 @@ function game(): GameState {
     seed: 'pastry',
     leader: { name: 'L', profession: 'farmer' },
     companions: [{ name: 'C', profession: 'doctor' }],
-    startDate: { year: 1849, month: 4, day: 15 }
+    startDate: { year: 1849, month: 4, day: 16 } // Monday — avoid auto-Sabbath rest (#1189)
   });
 }
 

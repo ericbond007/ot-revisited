@@ -199,6 +199,22 @@ export const actions: Actions = {
     return { state };
   },
 
+  // #1189 — toggle auto-Sabbath rest. Flips state.flags._autoSabbathRest
+  // between true and false. When ON, the engine auto-fires sundayLayBy on
+  // every Sunday during travel; when OFF the manual Lay by button is shown.
+  toggleAutoSabbath: async ({ url, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    let state = await loadState(locals, slot);
+    const current = state.flags._autoSabbathRest === true;
+    state = {
+      ...state,
+      flags: { ...state.flags, _autoSabbathRest: !current }
+    };
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
+
   rest: async ({ url, request, locals }) => {
     // Multi-day camp (#187): each ?/rest call advances exactly ONE day.
     // The first call sets `_campPlannedDays` from the form's

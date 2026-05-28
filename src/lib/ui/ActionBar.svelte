@@ -43,6 +43,8 @@
   const travelBlocked = $derived(atRiver);
   // #224 Sunday lay-by — Sabbath rest action visible only on Sundays.
   const sundayToday = $derived(isSunday(gameState.date));
+  // #1189 — auto-Sabbath toggle state.
+  const autoSabbathOn = $derived(gameState.flags._autoSabbathRest === true);
 
   // Persist travelDays across remounts. localStorage + sync init means the
   // stepper is never blank on re-render.
@@ -147,7 +149,7 @@
     <span class="action-label">Rest</span>
   </button>
 
-  {#if sundayToday}
+  {#if sundayToday && !autoSabbathOn}
     <form method="POST" action="?/sundayLayBy&slot={qp}" use:enhance class="lay-by-form">
       <button type="submit" class="action lay-by" disabled={traveling} title="Sabbath rest — religious morale, full ox recovery">
         <span class="lay-by-glyph" aria-hidden="true">🕊️</span>
@@ -155,6 +157,19 @@
       </button>
     </form>
   {/if}
+
+  <form method="POST" action="?/toggleAutoSabbath&slot={qp}" use:enhance class="auto-sabbath-form">
+    <button
+      type="submit"
+      class="action auto-sabbath"
+      class:active={autoSabbathOn}
+      disabled={traveling}
+      title={autoSabbathOn ? 'Auto-Sabbath ON — engine rests on Sundays automatically. Click to disable.' : 'Auto-Sabbath OFF — click to rest automatically every Sunday.'}
+    >
+      <span class="lay-by-glyph" aria-hidden="true">🕊️</span>
+      <span class="action-label">Auto-Sabbath</span>
+    </button>
+  </form>
 
   <button type="button" class="action" onclick={onhunt} disabled={traveling}>
     <svg class="gi gi-wide-hunt" viewBox="0 0 64 32" aria-hidden="true"><use href="#gi-hunt" /></svg>
@@ -308,6 +323,26 @@
   }
   .lay-by-form {
     display: contents;
+  }
+  .auto-sabbath-form {
+    display: contents;
+  }
+  /* #1189 Auto-Sabbath toggle button. Active = on (darker + cream border);
+     inactive = dimmed, standard border. Matches the lay-by aesthetic. */
+  .action.auto-sabbath {
+    background: #22222a;
+    border-color: var(--c-wood);
+    opacity: 0.7;
+  }
+  .action.auto-sabbath.active {
+    background: #2a2a32;
+    border-color: var(--c-cream);
+    opacity: 1;
+  }
+  .action.auto-sabbath:hover:not(:disabled) {
+    background: #3a3540;
+    border-color: var(--c-cream);
+    opacity: 1;
   }
 
   /* Contextual highlight on the action panel border per location */

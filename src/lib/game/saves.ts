@@ -106,6 +106,15 @@ export function deserialize(json: string): GameState {
       }
     }
   }
+  // #1189 — auto-Sabbath rest flag. Default true for old saves that
+  // predate the toggle. Saves with an explicit false keep it false.
+  {
+    const flags = stateObj.flags as Record<string, unknown> | undefined;
+    if (flags && !('_autoSabbathRest' in flags)) {
+      flags._autoSabbathRest = true;
+    }
+  }
+
   return stateObj as unknown as GameState;
 }
 

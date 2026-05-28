@@ -173,7 +173,15 @@ export function createInitialState(opts: NewGameOptions): GameState {
     pace: 'moderate',
     rations: 'normal',
     eventLog: [],
-    flags: { hasBoilingKnowledge: false, hadFireLastNight: false },
+    flags: {
+      hasBoilingKnowledge: false,
+      hadFireLastNight: false,
+      // #1189 — auto-Sabbath rest toggle. Default ON for new games.
+      // When true, the engine fires sundayLayBy automatically on Sundays
+      // during tickDayPausable instead of advancing the day normally.
+      // Players can toggle this via the ?/toggleAutoSabbath action.
+      _autoSabbathRest: true
+    },
     completed: false,
     outcome: 'in-progress',
     // #176 — solo by default. Players join a wagon train via the
