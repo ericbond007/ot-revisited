@@ -30,7 +30,7 @@ function baseState(): GameState {
       { id: 'a', name: 'Ann', profession: 'doctor' as ProfessionId, sex: 'female', kind: 'adult', isLeader: true,  age: 30, health: 100, conditions: [], dead: false },
       { id: 'b', name: 'Ben', profession: 'hunter' as ProfessionId, sex: 'male',   kind: 'adult', isLeader: false, age: 28, health: 100, conditions: [], dead: false }
     ],
-    wagon: { model: 'prairie_schooner', condition: 80, canvas: 100, carryCapacity: 2500 },
+    wagon: { model: 'prairie_schooner', condition: 80, canvas: 100, carryCapacity: 2500, impairment: null },
     oxen: [
       { id: 'o1', health: 100, fatigue: 30, shod: true },
       { id: 'o2', health: 100, fatigue: 30, shod: true }

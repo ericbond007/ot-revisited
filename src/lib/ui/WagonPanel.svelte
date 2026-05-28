@@ -70,6 +70,12 @@
       <div class="cond-fill" style="width: {condition}%; background: {conditionColor};"></div>
     </div>
     <span class="cond-num" style="color: {conditionColor};">{condition}</span>
+    {#if state.wagon.impairment}
+      <span
+        class="impairment-icon"
+        title="Limping — wheel impaired. Pace ×0.5, decay ×2 until a blacksmith mounts a new wheel."
+      >⚠️</span>
+    {/if}
   </div>
 
   <div class="condition-row" title="Canvas cover — leaks rain onto supplies and weakens rain-catch when low">
@@ -166,7 +172,7 @@
 
   .condition-row {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
     gap: 0.5em;
     align-items: center;
     font-size: 0.85em;
@@ -201,6 +207,10 @@
   .ox-warn {
     color: var(--c-rust);
     font-size: 0.9em;
+  }
+  .impairment-icon {
+    font-size: 0.9em;
+    cursor: default;
   }
 
   .parts-summary {

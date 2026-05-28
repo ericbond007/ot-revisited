@@ -117,7 +117,27 @@ export interface Wagon {
   // attrition on bacon + salt_pork. Prairie schooner + heavy ship with
   // one by default; light wagon can buy the upgrade at outfit.
   hasBranBarrel?: boolean;
+  /** Persistent impairment from a wheel-break "Push on" or failed rebuild
+   *  (#929). null when wagon is sound. */
+  impairment: WagonImpairment | null;
 }
+
+/**
+ * Persistent wagon impairment (#929). Set when the player picks "Push on"
+ * after a wheel break OR when a rebuild attempt fails. Cleared by smithy
+ * repair (town-services.repairWagon), by mounting a spare wheel, or by
+ * a successful trailside rebuild. Generalizable later to axle/tongue/canvas
+ * — for v1, only `kind: 'wheel'`.
+ */
+export type WagonImpairment = {
+  kind: 'wheel';
+  /** Daily pace multiplier (wheel = 0.5). Applied in milesPerDay. */
+  paceMult: number;
+  /** Condition-decay multiplier (wheel = 2). Applied in tickWagon. */
+  conditionDecayMult: number;
+  /** Day + mile the impairment was contracted, for log + debrief. */
+  contractedAt: { day: number; mile: number };
+};
 
 export interface GameDate {
   year: number;

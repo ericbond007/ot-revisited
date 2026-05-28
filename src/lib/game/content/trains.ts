@@ -446,7 +446,8 @@ function generateNpcWagon(
       condition: fresh ? 100 : rng.int(70, 100),
       canvas: fresh ? 100 : rng.int(80, 100),
       carryCapacity: wagonModel.carryCapacity,
-      hasBranBarrel: wagonModel.shipsWithBranBarrel === true
+      hasBranBarrel: wagonModel.shipsWithBranBarrel === true,
+      impairment: null
     },
     eventLog: [],
     outcome: 'in-progress',

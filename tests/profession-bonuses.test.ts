@@ -37,7 +37,7 @@ function baseState(partyProfs: ProfessionId[] = ['carpenter'], overrides: Partia
       terrain: 'prairie'
     },
     party: partyProfs.map((p, i) => mkMember(`m${i}`, p, `M${i}`)),
-    wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 2500 },
+    wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 2500, impairment: null },
     oxen: [
       { id: 'o1', health: 100, fatigue: 10, shod: true },
       { id: 'o2', health: 100, fatigue: 10, shod: true }
@@ -203,8 +203,8 @@ describe('Blacksmith (#201)', () => {
   // The replacement bonus: town blacksmith repair cost halved when a
   // live Blacksmith rides along.
   it('halves town smithy repair cost when a Blacksmith is alive', () => {
-    const withSmith = baseState(['blacksmith'], { cash: 100, wagon: { model: 'prairie_schooner' as const, condition: 50, canvas: 100, carryCapacity: 2500 } });
-    const withoutSmith = baseState(['carpenter'], { cash: 100, wagon: { model: 'prairie_schooner' as const, condition: 50, canvas: 100, carryCapacity: 2500 } });
+    const withSmith = baseState(['blacksmith'], { cash: 100, wagon: { model: 'prairie_schooner' as const, condition: 50, canvas: 100, carryCapacity: 2500, impairment: null } });
+    const withoutSmith = baseState(['carpenter'], { cash: 100, wagon: { model: 'prairie_schooner' as const, condition: 50, canvas: 100, carryCapacity: 2500, impairment: null } });
     const r1 = repairWagon(withSmith, 20);
     const r2 = repairWagon(withoutSmith, 20);
     // $20 buys 80 points with discount, 40 without.

@@ -555,6 +555,12 @@ export function tickNpcWagon(
   // roll from NPC_ELIGIBLE_EVENTS at the per-wagon fire chance, auto-
   // resolve via persona.pickNpcEventChoice → isDefault → first, project
   // deltas back, suffix log entries with the wagon name.
+  //
+  // #929 — wagon_wheel is handled via persona.pickWheelBreakResponse
+  // (the shared 3-choice ladder) instead of pickNpcEventChoice, which
+  // returns null for wagon_wheel on all base personas. This gives each
+  // persona the same choice policy for wheel-breaks that the player bot
+  // uses — aggressive pushes on, cautious rebuilds, etc.
   {
     const synth = synthesizeWagonState(next, env);
     const event = rollEvent(synth, rng, {
@@ -562,9 +568,12 @@ export function tickNpcWagon(
       fireChance: NPC_FIRE_CHANCE
     });
     if (event) {
-      const personaChoice = persona.pickNpcEventChoice(
-        synth, event.id, event.choices.map((c) => c.id), rng
-      );
+      // #929 — wagon_wheel delegates to the wheel-break persona surface.
+      const personaChoice = event.id === 'wagon_wheel'
+        ? persona.pickWheelBreakResponse(synth, rng)
+        : persona.pickNpcEventChoice(
+            synth, event.id, event.choices.map((c) => c.id), rng
+          );
       const fallbackId = event.choices.find((c) => c.isDefault)?.id ?? event.choices[0]?.id;
       const choiceId = personaChoice ?? fallbackId;
       if (choiceId) {
