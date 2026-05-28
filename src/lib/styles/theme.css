@@ -1,8 +1,8 @@
 /* ==========================================================================
    OT.IO — Colors & Type
-   Aesthetic: dusty 32-bit western — burnt-orange rust, deep wood, parchment.
-   Expanded with the design-system superset for the travel-scene work
-   (see docs/handoff/travel-scene/colors_and_type.css for the canonical brief).
+   Aesthetic: 1840s emigrant broadsheet — handmade rag paper, iron-gall ink,
+   crown-molded carved-paper controls. Period-realistic typography stack
+   (Rye / IM Fell English / Special Elite).
    ========================================================================== */
 
 /* ---------- SELF-HOSTED FONTS (woff2, latin subset) ----------
@@ -16,6 +16,13 @@
   font-weight: 400;
   font-display: swap;
   src: url('/fonts/im-fell-english-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IM Fell English SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/im-fell-english-sc-latin.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Special Elite';
@@ -40,46 +47,106 @@
 }
 
 :root {
-  /* ---------- BASE PALETTE ---------- */
-  --c-bg:           #1a0f08;
-  --c-bg-raised:    #2a1a10;
-  --c-panel:        #3d2817;
-  --c-border:       #5a3a1a;
-  --c-wood:         #8a5a2a;
-  --c-rust-dark:    #8a3a1a;
-  --c-rust:         #c96a2a;
-  --c-tan:          #e8c89a;
-  --c-tan-bright:   #f5e6c8;
-  --c-ink:          #3a1a08;
-  --c-sage:         #6a7a4a;
-  --c-parchment:    #e8d9b8;
-
-  /* ---------- SEMANTIC STATUS ---------- */
-  --c-good:         #8bb96a;
-  --c-warn:         #f5c96a;
-  --c-danger:       #e85a4a;
-  --c-river:        #4a8bc9;
-  --c-river-pale:   #d6e2ec;
-
-  /* Darker shades used by the components handoff for gradients
-     (HP bars, morale ribbon stripes). Naming follows the handoff
-     spec; values mirror the brand palette. */
-  --c-sage-dark:    #6a9a4a;
-  --c-ill-dark:     #a83a2a;
-  --c-amber-dark:   #d4a850;
-
-  /* ---------- BRIGHTER PARCHMENT VARIANTS ---------- */
-  --c-parchment-visited: #f0e2c2;
-  --c-parchment-trade:   #f3dbb8;
-  --c-parchment-end:     #f5e0a8;
-
-  /* ---------- TYPOGRAPHY FAMILIES ---------- */
+  /* ---------- TYPOGRAPHY FAMILIES (legacy) ---------- */
   --f-mono:    'Special Elite', 'Courier Prime', 'Courier New', ui-monospace, monospace;
   --f-body:    'IM Fell English', 'Georgia', 'Times New Roman', serif;
   --f-display: 'Rye', 'IM Fell English SC', 'Georgia', serif;
   --f-pixel:   'VT323', 'Courier New', monospace;
 
-  /* ---------- TYPE SCALE ---------- */
+  /* ---------- DESIGN-SYSTEM TOKENS (--of-*) ---------- */
+
+  /* PALETTE — paper + ink */
+  --of-paper:        #e8d4a8;
+  --of-paper-soft:   #f0e0bd;
+  --of-paper-deep:   #d8c08a;
+  --of-paper-edge:   #b89a64;
+
+  --of-ink:          #2a1d0c;
+  --of-ink-soft:     #5a3f1c;
+  --of-ink-faded:    #8a6a3c;
+
+  --of-rule:         rgba(74, 46, 21, 0.32);
+  --of-rule-soft:    rgba(74, 46, 21, 0.18);
+
+  --of-rust:         #94340e;
+  --of-rust-dark:    #5e1f08;
+  --of-good:         #486c2a;
+  --of-warn:         #a86a18;
+  --of-bad:          #8a1c0c;
+
+  /* TYPOGRAPHY — period-realistic stack */
+  --of-display:      'Rye', 'Smythe', Georgia, serif;
+  --of-body:         'IM Fell English', Georgia, serif;
+  --of-sc:           'IM Fell English SC', 'IM Fell English', Georgia, serif;
+  --of-mono:         'Special Elite', 'Courier New', ui-monospace, monospace;
+
+  /* Type scale — clamp(min, scale, max) */
+  --of-fs-eyebrow:   clamp(14px, 1.05vw, 16px);
+  --of-fs-meta:      clamp(14px, 1.05vw, 16px);
+  --of-fs-label:     clamp(13px, 0.95vw, 15px);
+  --of-fs-chip:      clamp(12px, 0.9vw, 14px);
+  --of-fs-sub:       clamp(15px, 1.15vw, 17px);
+  --of-fs-body:      clamp(16px, 1.2vw, 18px);
+  --of-fs-h3:        clamp(20px, 1.5vw, 24px);
+  --of-fs-h2:        clamp(28px, 2.2vw, 34px);
+  --of-fs-h1:        clamp(40px, 3.4vw, 52px);
+  --of-fs-display-l: clamp(38px, 2.8vw, 44px);
+
+  /* EMBOSS — crown-molding box-shadow stacks */
+  --of-btn-emboss:
+    inset 0 1px 0 rgba(255, 245, 220, 0.65),
+    inset 0 2px 4px rgba(74, 46, 21, 0.18),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.14),
+    inset 0 0 0 1px rgba(94, 60, 24, 0.28),
+    0 1px 0 rgba(255, 245, 220, 0.45),
+    0 2px 3px rgba(74, 46, 21, 0.20),
+    0 4px 6px rgba(74, 46, 21, 0.12);
+  --of-btn-emboss-active:
+    inset 0 3px 5px rgba(0, 0, 0, 0.28),
+    inset 0 -1px 0 rgba(255, 245, 220, 0.20),
+    inset 0 0 0 1px rgba(94, 60, 24, 0.40),
+    0 0 0 rgba(0, 0, 0, 0);
+  --of-btn-emboss-strong:
+    inset 0 2px 0 rgba(255, 220, 180, 0.50),
+    inset 0 3px 4px rgba(0, 0, 0, 0.20),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+    inset 0 -3px 4px rgba(255, 220, 180, 0.20),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(255, 220, 180, 0.28),
+    0 3px 4px rgba(74, 46, 21, 0.28),
+    0 6px 10px rgba(74, 46, 21, 0.18);
+
+  /* Progress-channel emboss */
+  --of-channel-emboss:
+    inset 0 3px 5px rgba(0, 0, 0, 0.28),
+    inset 0 -2px 0 rgba(255, 245, 220, 0.32),
+    inset 0 -3px 4px rgba(255, 245, 220, 0.18),
+    inset 0 0 0 1px rgba(94, 60, 24, 0.32),
+    0 1px 0 rgba(255, 245, 220, 0.35),
+    0 2px 3px rgba(74, 46, 21, 0.16);
+  --of-channel-fill-emboss:
+    inset 0 2px 0 rgba(255, 255, 255, 0.28),
+    inset 0 3px 4px rgba(255, 255, 255, 0.16),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.22),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.14),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+
+  /* TEXTURES */
+  --of-tex-crinkle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' preserveAspectRatio='none'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='0.018' numOctaves='3' stitchTiles='stitch' seed='7'/><feColorMatrix values='0 0 0 0 0.28  0 0 0 0 0.18  0 0 0 0 0.08  0 0 0 0.32 0'/></filter><rect width='500' height='400' filter='url(%23c)'/></svg>");
+  --of-tex-fiber:   url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='500' height='400' preserveAspectRatio='none'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch' seed='5'/><feColorMatrix values='0 0 0 0 0.28  0 0 0 0 0.18  0 0 0 0 0.08  0 0 0 0.10 0'/></filter><rect width='500' height='400' filter='url(%23n)'/></svg>");
+
+  /* SPACING + RADIUS */
+  --of-r-xs:  2px;
+  --of-r-sm:  3px;
+  --of-s-1:   4px;
+  --of-s-2:   8px;
+  --of-s-3:  12px;
+  --of-s-4:  16px;
+  --of-s-5:  20px;
+  --of-s-6:  24px;
+  --of-s-8:  32px;
+
+  /* ---------- TYPE SCALE (legacy) ---------- */
   --fs-xs:   12px;
   --fs-sm:   13px;
   --fs-md:   15px;
@@ -96,7 +163,7 @@
   --ls-medium: 0.10em;
   --ls-tight:  0.04em;
 
-  /* ---------- SPACING (4px base) ---------- */
+  /* ---------- SPACING (4px base, legacy) ---------- */
   --s-1:  4px;
   --s-2:  8px;
   --s-3:  12px;
@@ -106,7 +173,7 @@
   --s-8:  32px;
   --s-10: 40px;
 
-  /* ---------- RADII (small, period-correct) ---------- */
+  /* ---------- RADII (legacy) ---------- */
   --r-xs:   2px;
   --r-sm:   3px;
   --r-md:   4px;
@@ -133,6 +200,52 @@
 
   --e-default: cubic-bezier(0.4, 0.0, 0.2, 1);
   --e-pop:     cubic-bezier(0.2, 0.9, 0.3, 1.1);
+
+  /* ---------- LEGACY --c-* → --of-* ALIAS BRIDGE (#ui-redesign PR0) ----------
+     The whole app is on the paper palette now. Every --c-* token below
+     resolves to a design-system --of-* value. INVERSION-AWARE: surface
+     tokens map to paper, TEXT tokens (--c-tan / --c-tan-bright / --c-cream) map to INK so light-on-dark becomes dark-on-light rather
+     than vanishing. Bridge is temporary — surface-port PRs migrate files to
+     --of-* directly; the final cleanup PR deletes this block. */
+
+  /* surfaces */
+  --c-bg:            var(--of-paper);
+  --c-bg-raised:     var(--of-paper);
+  --c-panel:         var(--of-paper-soft);
+  --c-parchment:     var(--of-paper-soft);
+  --c-paper:         var(--of-paper-soft);
+  --c-parchment-visited: var(--of-paper);
+  --c-parchment-trade:   var(--of-paper-soft);
+  --c-parchment-end:     var(--of-paper-soft);
+
+  /* borders + rules */
+  --c-border:        var(--of-rule);
+  --c-wood:          var(--of-ink-soft);
+  --c-wood-soft:     var(--of-ink-faded);
+
+  /* text / ink */
+  --c-ink:           var(--of-ink);
+  --c-tan:           var(--of-ink);
+  --c-tan-bright:    var(--of-ink);
+  --c-cream:         var(--of-ink);
+
+  /* accents — carry over */
+  --c-rust:          var(--of-rust);
+  --c-rust-dark:     var(--of-rust-dark);
+
+  /* semantic status — map to --of-* roles */
+  --c-good:          var(--of-good);
+  --c-sage:          var(--of-good);
+  --c-sage-dark:     var(--of-good);
+  --c-warn:          var(--of-warn);
+  --c-amber-dark:    var(--of-warn);
+  --c-danger:        var(--of-bad);
+  --c-blood:         var(--of-bad);
+  --c-ill-dark:      var(--of-bad);
+
+  /* river (info/water) — keep a distinct cool hue muted for parchment */
+  --c-river:         #4a6a8c;
+  --c-river-pale:    #c8d4dc;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -140,174 +253,140 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--c-bg);
-  color: var(--c-tan);
-  font-family: var(--f-mono);
-  font-size: var(--fs-md);
+  background: var(--of-paper);
+  color: var(--of-ink);
+  font-family: var(--of-body);
+  font-size: var(--of-fs-body);
   line-height: var(--lh-body);
   min-height: 100vh;
 }
 
 h1, h2, h3, h4 {
-  color: var(--c-tan-bright);
-  letter-spacing: var(--ls-medium);
+  color: var(--of-ink);
+  font-family: var(--of-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
   margin: 0 0 0.5em 0;
-  font-family: var(--f-display);
-  font-weight: 700;
   line-height: var(--lh-tight);
 }
-h1 { font-size: var(--fs-3xl); }
-h2 { font-size: var(--fs-2xl); }
-h3 { font-size: var(--fs-xl); }
-h4 { font-size: var(--fs-md); letter-spacing: var(--ls-loose); color: var(--c-rust); }
+h1 { font-size: var(--of-fs-h1); }
+h2 { font-size: var(--of-fs-h2); }
+h3 { font-size: var(--of-fs-h3); }
+h4 { font-size: var(--of-fs-sub); letter-spacing: 0.08em; color: var(--of-rust); }
 
 p { line-height: var(--lh-body); margin: 0 0 1em 0; }
 
 code, pre, kbd { font-family: var(--f-mono); }
 
-a { color: var(--c-rust); text-decoration: none; }
-a:hover { color: var(--c-tan-bright); text-decoration: underline; }
+a { color: var(--of-rust); text-decoration: none; }
+a:hover { color: var(--of-rust-dark); text-decoration: underline; }
 
 /* Headline brand mark (".brand") used on landing */
 .brand {
-  font-family: var(--f-display);
-  font-size: var(--fs-4xl);
-  letter-spacing: 0.08em;
-  color: var(--c-rust);
-  font-weight: 900;
+  font-family: var(--of-display);
+  font-size: var(--of-fs-display-l);
+  letter-spacing: 0.04em;
+  color: var(--of-rust);
+  font-weight: 400;
   margin: 0;
 }
-.brand .dot { color: var(--c-tan-bright); }
+.brand .dot { color: var(--of-ink); }
 
 /* Small uppercase label — "DAY", "PARTY", "AHEAD" — pervasive */
 .eyebrow {
-  font-size: var(--fs-xs);
-  letter-spacing: var(--ls-loose);
-  font-weight: 700;
-  color: var(--c-wood);
+  font-family: var(--of-sc);
+  font-size: var(--of-fs-eyebrow);
+  letter-spacing: 0.12em;
+  font-weight: 400;
+  color: var(--of-ink-soft);
   text-transform: uppercase;
 }
 
-/* Default button — "primary" in the design system. Rust-dark surface,
-   tan-bright text, ink stroke; hover lifts to bright rust.
-   Reference visual: docs/handoff/components/src/buttons.html.
-   Token values match the bundle hex literals via --c-rust-dark
-   (#8a3a1a), --c-tan-bright (#f5e6c8), --c-ink (#3a1a08), --c-rust
-   (#c96a2a). Don't reintroduce raw hex here. */
 button {
-  font-family: inherit;
-  background: var(--c-rust-dark);
-  color: var(--c-tan-bright);
-  border: var(--bw-2) solid var(--c-ink);
+  font-family: var(--of-sc);
+  background: var(--of-paper-soft);
+  color: var(--of-ink);
+  border: 1px solid var(--of-ink-soft);
+  border-radius: var(--of-r-sm);
   padding: 0.5em 1em;
   cursor: pointer;
-  letter-spacing: var(--ls-medium);
-  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-weight: 400;
   text-transform: uppercase;
-  border-radius: var(--r-sm);
-  transition: background var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
+  box-shadow: var(--of-btn-emboss);
+  transition: background var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
 }
-button:hover:not(:disabled) { background: var(--c-rust); }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* Ghost — secondary CTAs, "Cancel" / "Back" / "Skip" affordances.
-   Transparent surface, wood stroke; hover warms the border to rust
-   without filling. */
+button:hover:not(:disabled) { background: var(--of-paper); border-color: var(--of-ink); }
+button:active:not(:disabled) { box-shadow: var(--of-btn-emboss-active); transform: translateY(1px); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.btn-strong {
+  background: var(--of-rust);
+  color: var(--of-paper-soft);
+  border-color: var(--of-rust-dark);
+  box-shadow: var(--of-btn-emboss-strong);
+}
+button.btn-strong:hover:not(:disabled) { background: var(--of-rust-dark); }
 button.btn-ghost {
   background: transparent;
-  color: var(--c-tan);
-  border-color: var(--c-wood);
+  color: var(--of-ink);
+  border-color: var(--of-ink-faded);
+  box-shadow: none;
 }
-button.btn-ghost:hover:not(:disabled) {
-  background: rgba(201, 106, 42, 0.08);
-  border-color: var(--c-rust);
-  color: var(--c-tan-bright);
-}
-
-/* Danger — irreversible actions (delete save, abandon journey).
-   Alarm fill, ink stroke; hover deepens. */
+button.btn-ghost:hover:not(:disabled) { background: rgba(94,60,24,0.08); border-color: var(--of-ink-soft); }
 button.btn-danger {
-  background: var(--c-danger);
-  border-color: var(--c-ink);
-  color: var(--c-tan-bright);
+  background: var(--of-bad);
+  color: var(--of-paper-soft);
+  border-color: var(--of-rust-dark);
 }
-button.btn-danger:hover:not(:disabled) {
-  background: #c44a3a;
-}
+button.btn-danger:hover:not(:disabled) { background: #6e1608; }
 
 input, select, textarea {
-  font-family: inherit;
-  background: var(--c-bg-raised);
-  color: var(--c-tan);
-  border: var(--bw-2) solid var(--c-wood);
+  font-family: var(--of-body);
+  background: var(--of-paper-soft);
+  color: var(--of-ink);
+  border: 1px solid var(--of-ink-soft);
   padding: 0.4em 0.6em;
-  border-radius: var(--r-sm);
+  border-radius: var(--of-r-sm);
 }
-
 input:focus, select:focus, textarea:focus {
   outline: 0;
-  border-color: var(--c-rust);
-  box-shadow: 0 0 0 2px rgba(201, 106, 42, 0.25);
+  border-color: var(--of-rust);
+  box-shadow: 0 0 0 2px rgba(148,52,14,0.25);
 }
-
-/* Custom select chrome: rust arrow, themed surface */
 select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  padding: 0.5em 2em 0.5em 0.8em;
-  cursor: pointer;
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  padding: 0.5em 2em 0.5em 0.8em; cursor: pointer;
   background-image:
-    linear-gradient(45deg, transparent 50%, var(--c-rust) 50%),
-    linear-gradient(135deg, var(--c-rust) 50%, transparent 50%);
-  background-position:
-    calc(100% - 14px) 55%,
-    calc(100% - 8px) 55%;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-  font-weight: 700;
-  letter-spacing: var(--ls-tight);
+    linear-gradient(45deg, transparent 50%, var(--of-rust) 50%),
+    linear-gradient(135deg, var(--of-rust) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 55%, calc(100% - 8px) 55%;
+  background-size: 6px 6px, 6px 6px; background-repeat: no-repeat;
+  font-weight: 400; letter-spacing: 0.02em;
 }
-select:hover:not(:disabled) {
-  border-color: var(--c-rust);
-}
-select:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-select option {
-  background: var(--c-bg-raised);
-  color: var(--c-tan);
-}
+select:hover:not(:disabled) { border-color: var(--of-rust); }
+select:disabled { opacity: 0.55; cursor: not-allowed; }
+select option { background: var(--of-paper-soft); color: var(--of-ink); }
 
 .panel {
-  background: var(--c-panel);
-  border: var(--bw-2) solid var(--c-wood);
-  padding: var(--s-4);
-  border-radius: var(--r-sm);
+  background: var(--of-paper-soft);
+  border: 3px double var(--of-ink-soft);
+  padding: var(--of-s-4);
+  border-radius: var(--of-r-sm);
+  box-shadow: inset 0 0 0 1px rgba(255,245,220,0.30), 0 1px 0 rgba(0,0,0,0.05), 0 3px 7px rgba(74,46,21,0.12);
 }
-
-/* Universal modal-body chrome — every modal that wraps its content in
-   `.panel.modal-body` inherits these. Per-modal styles still set their
-   own max-width / padding tweaks; this just ensures the brand look
-   (rust border, deep elevation shadow) is consistent across all
-   modals without each one having to remember to set them. */
 .modal-body {
-  border: 3px solid var(--c-rust);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+  border: 3px double var(--of-ink-soft);
+  box-shadow: 0 12px 40px rgba(74,46,21,0.35);
 }
-
-/* Modal title — Rye serif, rust, slightly looser tracking. Apply
-   to the headline <h2> inside any modal so the typography is
-   coherent across the app without per-file overrides. */
 .modal-title {
-  font-family: var(--f-display);
-  font-size: 24px;
+  font-family: var(--of-display);
+  font-size: var(--of-fs-h3);
   line-height: 1.2;
-  letter-spacing: 0.04em;
-  color: var(--c-rust);
+  letter-spacing: 0.02em;
+  color: var(--of-rust);
   margin: 0;
 }
+
 .container { max-width: 900px; margin: 0 auto; padding: var(--s-8) var(--s-4); }
 
 /* Responsive — Z Fold 4 unfolded is ~884px; breakpoint at 900px */
@@ -330,3 +409,174 @@ select option {
   .desktop-only { display: none; }
   .mobile-only  { display: initial; }
 }
+
+/* ==========================================================================
+   UTILITY CLASSES — opt-in, ds- prefix. Use these instead of hand-rolling
+   embossed buttons / paper cards / progress bars in every new file.
+   ========================================================================== */
+
+/* ----- Eyebrow ----- */
+.ds-eyebrow {
+  font-family: var(--of-sc);
+  font-size: var(--of-fs-eyebrow);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--of-ink-soft);
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* ----- Paper card (textured) ----- */
+.ds-paper {
+  background: var(--of-paper-soft);
+  background-image:
+    linear-gradient(118deg, transparent 14%, rgba(94, 60, 24, 0.07) 30%, transparent 46%),
+    linear-gradient(62deg, transparent 44%, rgba(94, 60, 24, 0.05) 62%, transparent 80%),
+    radial-gradient(ellipse 130px 80px at 0% 0%, rgba(94, 60, 24, 0.20), transparent 80%),
+    radial-gradient(ellipse 140px 80px at 100% 100%, rgba(94, 60, 24, 0.16), transparent 80%),
+    radial-gradient(circle 18px at 84% 28%, rgba(94, 60, 24, 0.18), transparent 90%),
+    radial-gradient(circle 16px at 18% 72%, rgba(94, 60, 24, 0.14), transparent 90%),
+    var(--of-tex-crinkle),
+    var(--of-tex-fiber);
+  background-size: auto, auto, auto, auto, auto, auto, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-blend-mode: multiply, multiply, normal, normal, normal, normal, multiply, multiply;
+  border: 3px double var(--of-ink-soft);
+  border-radius: 2px;
+  padding: 16px 18px;
+  color: var(--of-ink);
+  box-shadow:
+    inset 0 0 22px rgba(94, 60, 24, 0.10),
+    inset 0 0 0 1px rgba(255, 245, 220, 0.30),
+    0 1px 0 rgba(0, 0, 0, 0.06),
+    0 4px 10px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+/* ----- Embossed button family ----- */
+.ds-btn {
+  padding: 12px 24px;
+  border: 3px double var(--of-ink-soft);
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: var(--of-sc);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: var(--of-fs-body);
+  background: var(--of-paper-soft);
+  color: var(--of-ink-soft);
+  box-shadow: var(--of-btn-emboss);
+  transition: box-shadow 0.08s, transform 0.04s, background 0.12s;
+}
+.ds-btn:hover { background: var(--of-paper); color: var(--of-ink); border-color: var(--of-ink-soft); }
+.ds-btn:active { box-shadow: var(--of-btn-emboss-active); transform: translateY(1px); }
+.ds-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ds-btn-strong {
+  background: var(--of-rust);
+  color: var(--of-paper-soft);
+  border-color: var(--of-rust-dark);
+  font-family: var(--of-display);
+  font-size: clamp(17px, 1.3vw, 20px);
+  letter-spacing: 0.06em;
+  padding: 14px 32px;
+  box-shadow: var(--of-btn-emboss-strong);
+}
+.ds-btn-strong:hover { background: var(--of-rust-dark); }
+.ds-btn-strong:active { box-shadow: var(--of-btn-emboss-active); transform: translateY(1px); }
+
+/* ----- Embossed stepper ----- */
+.ds-stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  background: var(--of-paper);
+  border: 2px solid var(--of-ink-soft);
+  border-radius: 2px;
+  overflow: visible;
+  position: relative;
+  box-shadow: var(--of-btn-emboss);
+}
+.ds-stepper-btn {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  color: var(--of-ink);
+  border: 0;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: var(--of-display);
+}
+.ds-stepper-btn:hover:not(:disabled) { background: rgba(94, 60, 24, 0.10); }
+.ds-stepper-btn:active { background: rgba(94, 60, 24, 0.18); }
+.ds-stepper-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.ds-stepper-val {
+  min-width: 38px;
+  text-align: center;
+  font-family: var(--of-mono);
+  font-weight: 700;
+  font-size: var(--of-fs-body);
+  color: var(--of-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ----- Embossed bulk chip ----- */
+.ds-bulk-chip {
+  padding: 0 10px;
+  height: 30px;
+  background: var(--of-paper);
+  color: var(--of-ink);
+  border: 2px solid var(--of-ink-soft);
+  border-radius: 2px;
+  font-family: var(--of-mono);
+  font-size: var(--of-fs-label);
+  font-weight: 700;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--of-btn-emboss);
+  display: inline-flex;
+  align-items: center;
+}
+.ds-bulk-chip:hover { background: var(--of-paper-deep); border-color: var(--of-ink); }
+.ds-bulk-chip:active { box-shadow: var(--of-btn-emboss-active); transform: translateY(1px); }
+
+/* ----- Embossed progress channel ----- */
+.ds-progress {
+  position: relative;
+  height: 16px;
+  background: var(--of-paper);
+  border: 2px solid var(--of-ink-soft);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: var(--of-channel-emboss);
+}
+.ds-progress-fill {
+  height: 100%;
+  background: var(--of-good);
+  transition: width 0.18s ease;
+  box-shadow: var(--of-channel-fill-emboss);
+}
+.ds-progress-fill-warn { background: var(--of-warn); }
+.ds-progress-fill-bad  { background: var(--of-bad); }
+
+/* ----- Dotted leader (ledger row connector) ----- */
+.ds-leader {
+  align-self: center;
+  margin: 0 4px;
+  border-bottom: 2px dotted var(--of-ink-faded);
+  opacity: 0.55;
+  min-width: 24px;
+  display: inline-block;
+}
+
+/* ----- Ledger row ----- */
+.ds-row {
+  display: grid;
+  grid-template-columns: 28px auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  transition: background 0.12s;
+}
+.ds-row:hover { background: rgba(216, 192, 138, 0.30); }
