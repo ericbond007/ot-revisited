@@ -42,7 +42,8 @@ export function tickWagon(state: GameState, _rng: Rng): GameState {
   const terrain = TERRAIN_MULTIPLIER[state.location.terrain];
   const tarMult = (state.inventory.tar_bucket ?? 0) > 0 ? TAR_BUCKET_DECAY_MULT : 1;
   const carpenterMult = hasLiveCarpenter(state) ? CARPENTER_DECAY_MULT : 1;
-  const decay = base * terrain * tarMult * carpenterMult;
+  const impairmentMult = state.wagon.impairment?.conditionDecayMult ?? 1;
+  const decay = base * terrain * tarMult * carpenterMult * impairmentMult;
   // Round to one decimal so successive float subtractions don't drift
   // into 95.80000000000004-style noise across many ticks. The condition
   // is still effectively a 0-100 integer for display purposes — call

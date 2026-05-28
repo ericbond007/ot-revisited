@@ -30,3 +30,26 @@ describe('milesPerDay honors wagon.impairment.paceMult', () => {
     expect(milesPerDay(s)).toBe(before);
   });
 });
+
+import { tickWagon } from '../src/lib/game/systems/wagon';
+import { makeRng } from '../src/lib/game/rng';
+
+describe('tickWagon honors wagon.impairment.conditionDecayMult', () => {
+  it('doubles condition decay when decayMult = 2', () => {
+    const sound = baseline();
+    sound.wagon.condition = 80;
+    sound.wagon.impairment = null;
+    const tickedSound = tickWagon(sound, makeRng('a'));
+    const soundDecay = sound.wagon.condition - tickedSound.wagon.condition;
+
+    const limp = baseline();
+    limp.wagon.condition = 80;
+    limp.wagon.impairment = {
+      kind: 'wheel', paceMult: 0.5, conditionDecayMult: 2,
+      contractedAt: { day: 5, mile: 100 }
+    };
+    const tickedLimp = tickWagon(limp, makeRng('a'));
+    const limpDecay = limp.wagon.condition - tickedLimp.wagon.condition;
+    expect(limpDecay).toBeCloseTo(soundDecay * 2, 1);
+  });
+});
