@@ -85,6 +85,9 @@
       shadowPairRy?: number;
       shadowOpacity?: number;
       shadowBlur?: number;
+      muleScale?: number;
+      muleDx?: number;
+      muleDy?: number;
     };
   }
 
@@ -339,7 +342,7 @@
                     {oxCount} groundY={GROUND_Y} sceneScale={SCENE_SCALE}
                     offsetX={tuning?.shadowOffsetX}
                     offsetY={tuning?.shadowOffsetY}
-                    pairOffsetX={tuning?.shadowPairOffsetX}
+                    pairOffsetX={tuning?.shadowPairOffsetX ?? (isMule ? -8 : undefined)}
                     wagonRx={tuning?.shadowWagonRx}
                     wagonRy={tuning?.shadowWagonRy}
                     pairRx={tuning?.shadowPairRx}
@@ -370,6 +373,9 @@
           {gaitPhase}
           gait={paused ? 'stopped' : 'walking'}
           useBlenderTeam={addons.useBlenderTeam}
+          muleScale={tuning?.muleScale}
+          muleDx={tuning?.muleDx}
+          muleDy={tuning?.muleDy}
         />
       </g>
 

@@ -68,6 +68,12 @@
     oxDx?: number;
     oxDy?: number;
     oxScale?: number;
+    /** Mule-team sprite size/position tuning (#216, Blender mode).
+     *  Dialed via the /dev/wagon-view sliders. The yoke is baked into
+     *  the sprite, so there's no separate yoke placement here. */
+    muleScale?: number;
+    muleDx?: number;
+    muleDy?: number;
   }
 
   let {
@@ -80,6 +86,10 @@
     oxDx = 0,
     oxDy = 0,
     oxScale = 1,
+    // Dave's dialed mule↔wagon alignment (#216 dev sandbox).
+    muleScale = 1.1,
+    muleDx = 5.75,
+    muleDy = 0,
   }: Props = $props();
 
   // Blender frame index: 12 frames over one gait cycle. The
@@ -102,6 +112,20 @@
       ? `ox-yoke-wide-frames-${breed}`
       : 'ox-yoke-wide-frames';
   }
+
+  // Per-pair mule color pick (#216). Mirrors the ox breed picker. Mules
+  // render from their own Blender walk-cycle sprite set (donkey base,
+  // soniarocha CC-BY), reskinned per color. '' = the default dark dir.
+  const MULE_COLORS = ['', 'sorrel', 'gray'] as const;
+  function colorForPair(pairIdx: number): string {
+    return MULE_COLORS[Math.abs(pairIdx * 13 + 7) % MULE_COLORS.length];
+  }
+  function muleFramesDir(color: string): string {
+    return color ? `mule-walk-frames-${color}` : 'mule-walk-frames';
+  }
+  // Cropped mule sprite aspect ≈ 1.38 (mule + baked yoke; the yoke adds
+  // a little height vs the bare 1.42).
+  const MULE_ASPECT = 1.38;
 
   const stopped = $derived(gait === 'stopped');
   const numPairs = $derived(Math.max(1, Math.ceil(count / 2)));
@@ -236,12 +260,25 @@
        the YOKE_Y_SCALE/UV_COMP_BOOST/YOKE_BOW_STRETCH/YOKE_PEG_SCALE
        parameters. Cropped sprite aspect ≈ 1.246. -->
   {#each pairs as pair}
-    {@const w = PAIR_SPACE * oxScale}
-    {@const h = PAIR_SPACE / 1.246 * oxScale}
-    {@const dir = yokeFramesDir(breedForPair(pair.p))}
-    <image href="/wagon-bg/wagon-blender/{dir}/yoke-wide--{blenderFrame}.png"
-           x={pair.px - w / 2 + oxDx} y={-10 + oxDy} width={w} height={h}
-           preserveAspectRatio="xMidYMid meet" />
+    {#if isMule}
+      <!-- MULE (#216) — bare mule walk sprite per pair, with the ox
+           single-yoke reused as hitch hardware (Dave's call: reuse the
+           ox gear rather than model a mule harness). Sprite size/pos and
+           yoke placement are dialed via /dev/wagon-view sliders. -->
+      {@const w = PAIR_SPACE * muleScale}
+      {@const h = PAIR_SPACE / MULE_ASPECT * muleScale}
+      {@const dir = muleFramesDir(colorForPair(pair.p))}
+      <image href="/wagon-bg/wagon-blender/{dir}/walk--{blenderFrame}.png"
+             x={pair.px - w / 2 + muleDx} y={-10 + muleDy} width={w} height={h}
+             preserveAspectRatio="xMidYMid meet" />
+    {:else}
+      {@const w = PAIR_SPACE * oxScale}
+      {@const h = PAIR_SPACE / 1.246 * oxScale}
+      {@const dir = yokeFramesDir(breedForPair(pair.p))}
+      <image href="/wagon-bg/wagon-blender/{dir}/yoke-wide--{blenderFrame}.png"
+             x={pair.px - w / 2 + oxDx} y={-10 + oxDy} width={w} height={h}
+             preserveAspectRatio="xMidYMid meet" />
+    {/if}
   {/each}
 {:else}
 <g transform="translate(0 {teamBob})" data-team-bob={teamBob.toFixed(4)}>
