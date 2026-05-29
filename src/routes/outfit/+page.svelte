@@ -322,6 +322,7 @@
       <h1 class="of-mast-title">The Outfitting Post</h1>
       <p class="of-mast-sub">Provision the wagon. Last counter before the open trail.</p>
       <div class="of-mast-flourish">❦</div>
+      <p class="of-mast-ready">{selectedWagonModel.name} · {totalOxen} {totalOxen === 1 ? 'ox' : 'oxen'} · {Math.round(totalWeight).toLocaleString()} / {capacity.toLocaleString()} lb</p>
     </div>
 
     <div class="of-mast-r">
@@ -335,13 +336,6 @@
           spent <strong>${totalCost.toFixed(2)}</strong> of ${gs.cash.toLocaleString()}
         </span>
       </div>
-    </div>
-    <div class="of-header-compact">
-      <span class="ohc-item"><strong>{liveSouls}</strong> souls</span>
-      <span class="ohc-rule">·</span>
-      <span class="ohc-item">Cash <strong>${Math.round(gs.cash)}</strong></span>
-      <span class="ohc-item ohc-spend">Spend <strong>−${Math.round(totalCost)}</strong></span>
-      <span class="ohc-item">After <strong class:of-bad={cashLeft < 0}>${Math.round(cashLeft)}</strong></span>
       <button type="submit" class="ohc-setout" disabled={!canDepart}>Set out →</button>
     </div>
   </header>
@@ -2244,39 +2238,43 @@
     .of-wagon-grid { grid-template-columns: 1fr; }
   }
 
-  /* Collapsing sticky masthead (#outfit polish) */
+  /* Collapsing sticky masthead — condense the full masthead, keep its decorations */
   .of-header { position: sticky; top: 0; z-index: 6; background: var(--of-paper); transition: padding 0.15s ease; }
-  .of-header-compact { display: none; }
-  .of-header-collapsed { grid-template-columns: 1fr; }
-  .of-header-collapsed::before, .of-header-collapsed::after { display: none; }
-  .of-header-collapsed .of-mast-l,
-  .of-header-collapsed .of-mast-center,
-  .of-header-collapsed .of-mast-r { display: none; }
-  .of-header-collapsed .of-header-compact {
-    display: flex;
-    align-items: baseline;
-    justify-content: flex-end;
-    gap: 18px;
-    padding: 9px 28px;
-    border-bottom: 3px double var(--of-ink-soft);
+  .of-mast-ready {
+    margin: 6px 0 0;
+    font-family: var(--of-sc);
+    font-size: 13px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--of-ink-soft);
+    display: none;
   }
-  .ohc-item { font-family: var(--of-sc); font-size: 14px; letter-spacing: 0.06em; color: var(--of-ink-soft); }
-  .ohc-item strong { font-family: var(--of-mono); color: var(--of-ink); font-variant-numeric: tabular-nums; }
-  .ohc-spend strong { color: var(--of-rust); }
-  .ohc-rule { color: var(--of-ink-faded); }
+  .ohc-setout { display: none; }
+  /* Collapsed: drop the flowery lines, shrink title + purse, reveal readiness + set-out.
+     Keep the 3-column grid, the double-rule borders, the SC stamps + purse styling. */
+  .of-header-collapsed .of-mast-l { padding-top: 12px; padding-bottom: 12px; gap: 2px; }
+  .of-header-collapsed .of-mast-center { padding-top: 8px; padding-bottom: 8px; }
+  .of-header-collapsed .of-mast-r { padding-top: 12px; padding-bottom: 12px; flex-direction: row; align-items: center; gap: 16px; }
+  .of-header-collapsed .of-mast-sub,
+  .of-header-collapsed .of-mast-flourish,
+  .of-header-collapsed .of-mast-eyebrow { display: none; }
+  .of-header-collapsed .of-mast-title { font-size: 24px; }
+  .of-header-collapsed .of-mast-ready { display: block; }
+  .of-header-collapsed .of-purse-stamp-big { font-size: 26px; }
+  .of-header-collapsed .ohc-setout { display: inline-block; }
   .ohc-setout {
-    margin-left: 6px;
-    padding: 7px 18px;
+    padding: 9px 20px;
     background: var(--of-rust);
     color: var(--of-paper-soft);
     border: 2px solid var(--of-rust-dark);
     border-radius: 2px;
     font-family: var(--of-display);
-    font-size: 15px;
+    font-size: 16px;
     letter-spacing: 0.04em;
+    white-space: nowrap;
     cursor: pointer;
     box-shadow: var(--of-btn-emboss-strong);
   }
-  .ohc-setout:hover:not(:disabled) { background: var(--of-rust-dark); }
+  .of-header-collapsed .ohc-setout:hover:not(:disabled) { background: var(--of-rust-dark); }
   .ohc-setout:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
