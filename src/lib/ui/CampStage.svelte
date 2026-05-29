@@ -283,7 +283,7 @@
     overflow-y: auto;
     /* Warm night background to contrast with the daylit TrailMap. */
     background: linear-gradient(180deg, #1a1308 0%, #2a1d10 60%, #1f1508 100%);
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     border-width: 3px;
     position: relative; /* stacking context for the dawn overlay */
   }
@@ -326,18 +326,18 @@
   .kind {
     font-size: 0.72em;
     letter-spacing: 0.18em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
   .title {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 1.15em;
     letter-spacing: 0.04em;
   }
   .prompt {
     margin: 0.15em 0 0;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.78em;
     line-height: 1.35;
     font-style: italic;
@@ -348,13 +348,13 @@
   .pill-label {
     font-size: 0.7em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
   .pill-hint {
     margin-left: 0.5em;
     font-size: 0.78em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
 
@@ -378,24 +378,24 @@
   }
   .budget {
     font-size: 0.82em;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
   .budget.over { color: #e85a4a; }
-  .budget strong { color: var(--c-tan-bright); font-weight: 700; }
+  .budget strong { color: var(--of-ink); font-weight: 700; }
 
   .clock {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: 3px;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     padding: 4px;
-    border: 2px solid var(--c-ink);
+    border: 2px solid var(--of-ink);
     border-radius: 4px;
   }
   .slot {
     position: relative;
     aspect-ratio: 1 / 1;
-    background: var(--c-panel);
+    background: var(--of-paper-soft);
     border-radius: 2px;
     display: flex;
     align-items: center;
@@ -403,7 +403,7 @@
     transition: background 0.2s, box-shadow 0.2s;
   }
   .slot.filled {
-    background: var(--c-rust-dark);
+    background: var(--of-rust-dark);
     box-shadow: inset 0 0 0 1px rgba(255, 180, 60, 0.3);
   }
   .slot.first-of-run {
@@ -415,7 +415,7 @@
   }
   .slot-num {
     font-size: 0.7em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     opacity: 0.5;
   }
 
@@ -435,9 +435,9 @@
     align-items: center;
     gap: 0.5em;
     padding: 0.35em 0.55em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     font-family: inherit;
     font-weight: 700;
@@ -448,13 +448,13 @@
     transition: background 0.12s, border-color 0.12s, color 0.12s, opacity 0.12s;
   }
   .card:hover:not(:disabled):not(.selected) {
-    background: var(--c-panel);
-    border-color: var(--c-rust);
+    background: var(--of-paper-soft);
+    border-color: var(--of-rust);
   }
   .card.selected {
-    background: var(--c-rust);
-    color: var(--c-tan-bright);
-    border-color: var(--c-ink);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
+    border-color: var(--of-ink);
   }
   .card:disabled { opacity: 0.45; cursor: not-allowed; }
   .card.locked { opacity: 0.4; }
@@ -470,16 +470,16 @@
   .card-hours {
     font-size: 0.72em;
     font-weight: 700;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: 0.08em;
     padding: 0.15em 0.4em;
-    background: var(--c-panel);
+    background: var(--of-paper-soft);
     border-radius: 3px;
     flex-shrink: 0;
   }
   .card.selected .card-hours {
-    background: var(--c-ink);
-    color: var(--c-tan-bright);
+    background: var(--of-ink);
+    color: var(--of-ink);
   }
 
   /* --- Actions footer --- */
@@ -494,21 +494,21 @@
   .begin {
     font-size: 1.05em;
     padding: 0.7em 1.4em;
-    background: var(--c-rust);
-    color: var(--c-tan-bright);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
   }
   .begin:hover:not(:disabled) {
     filter: brightness(1.15);
   }
   .leave {
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-wood);
-    color: var(--c-tan);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink-soft);
+    color: var(--of-ink);
   }
   .party-note {
     margin-left: auto;
     font-size: 0.85em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
 
@@ -519,13 +519,13 @@
   .break {
     width: 100%;
     background: transparent;
-    border: 1px dashed var(--c-wood);
-    color: var(--c-wood);
+    border: 1px dashed var(--of-ink-soft);
+    color: var(--of-ink-soft);
     font-size: 0.85em;
     padding: 0.35em 1em;
     cursor: pointer;
   }
-  .break:hover { color: var(--c-rust); border-color: var(--c-rust); }
+  .break:hover { color: var(--of-rust); border-color: var(--of-rust); }
 
   /* Dawn-into-morning transition. Mounts on entry + on every day of
      stay; the {#key dayOfStay} re-mount is what re-fires the fade. */

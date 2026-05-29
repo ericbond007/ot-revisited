@@ -146,15 +146,15 @@
 
   /* Trading post: warm parchment / rust — welcoming */
   .stage-trading_post {
-    background: var(--c-parchment);
-    color: var(--c-ink);
-    border-color: var(--c-rust);
+    background: var(--of-paper-soft);
+    color: var(--of-ink);
+    border-color: var(--of-rust);
   }
-  .stage-trading_post .kind { color: var(--c-rust-dark); }
-  .stage-trading_post .name { color: var(--c-rust-dark); }
-  .stage-trading_post .meta-head { color: var(--c-rust-dark); }
-  .stage-trading_post .meta-val { color: var(--c-ink); }
-  .stage-trading_post .flavor { color: var(--c-ink); }
+  .stage-trading_post .kind { color: var(--of-rust-dark); }
+  .stage-trading_post .name { color: var(--of-rust-dark); }
+  .stage-trading_post .meta-head { color: var(--of-rust-dark); }
+  .stage-trading_post .meta-val { color: var(--of-ink); }
+  .stage-trading_post .flavor { color: var(--of-ink); }
   .stage-trading_post .art-placeholder {
     background: rgba(138, 90, 42, 0.12);
     border-color: rgba(138, 90, 42, 0.4);
