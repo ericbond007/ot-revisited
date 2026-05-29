@@ -207,24 +207,24 @@
     z-index: 100;
   }
   .modal-body {
-    background: var(--c-bg, #2a1f17);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper, #2a1f17);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 4px;
     padding: 1em 1.2em;
     max-width: 720px;
     width: calc(100vw - 2em);
     max-height: 80vh;
     overflow-y: auto;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
   .modal-title {
     margin: 0;
     font-size: 1.2em;
-    color: var(--c-tan-bright, #e8d9b8);
+    color: var(--of-paper-soft);
   }
   .hdr-stats {
     margin: 0.2em 0 0.8em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.85em;
   }
   .train-list {
@@ -238,12 +238,12 @@
   .train-row {
     padding: 0.5em 0.7em;
     background: rgba(232, 217, 184, 0.06);
-    border-left: 3px solid var(--c-wood);
+    border-left: 3px solid var(--of-ink-soft);
     border-radius: 2px;
   }
   .train-row.dimmed {
     opacity: 0.55;
-    border-left-color: var(--c-rust);
+    border-left-color: var(--of-rust);
   }
   .row-head {
     display: flex;
@@ -252,10 +252,10 @@
     flex-wrap: wrap;
   }
   .row-name { font-weight: 700; }
-  .row-prof { color: var(--c-wood); font-size: 0.9em; }
+  .row-prof { color: var(--of-ink-soft); font-size: 0.9em; }
   .row-badge {
     margin-left: auto;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 0.78em;
     letter-spacing: 0.05em;
   }
@@ -267,7 +267,7 @@
     font-size: 0.9em;
   }
   .row-loss {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 400;
     margin-left: 0.15em;
   }
@@ -275,7 +275,7 @@
     margin-top: 0.35em;
     font-size: 0.85em;
     font-family: 'IM Fell English', 'Special Elite', Georgia, serif;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-style: italic;
   }
   .actions {
@@ -283,15 +283,15 @@
     text-align: right;
   }
   .actions button {
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-wood);
-    color: var(--c-tan);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink-soft);
+    color: var(--of-ink);
     padding: 0.4em 1.2em;
     border-radius: 3px;
     cursor: pointer;
     font-family: inherit;
   }
-  .actions button:hover { border-color: var(--c-rust); }
+  .actions button:hover { border-color: var(--of-rust); }
   .captaincy {
     margin-top: 1em;
     padding-top: 0.6em;
@@ -302,11 +302,11 @@
     gap: 0.8em;
     flex-wrap: wrap;
   }
-  .cap-line { font-size: 0.9em; color: var(--c-tan); }
+  .cap-line { font-size: 0.9em; color: var(--of-ink); }
   .cap-badge {
     display: inline-block;
-    background: var(--c-rust);
-    color: var(--c-tan-bright, #e8d9b8);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
     padding: 0.1em 0.5em;
     border-radius: 2px;
     margin-right: 0.5em;
@@ -314,46 +314,46 @@
     font-weight: 700;
     letter-spacing: 0.05em;
   }
-  .cap-aside { color: var(--c-rust); font-style: italic; }
+  .cap-aside { color: var(--of-rust); font-style: italic; }
   .cap-form { margin: 0; }
   .cap-btn {
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-wood);
-    color: var(--c-tan);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink-soft);
+    color: var(--of-ink);
     padding: 0.35em 0.9em;
     border-radius: 3px;
     cursor: pointer;
     font-family: inherit;
     font-size: 0.85em;
   }
-  .cap-btn:hover { border-color: var(--c-rust); }
+  .cap-btn:hover { border-color: var(--of-rust); }
   .cap-peek {
     margin-top: 0.4em;
     font-size: 0.8em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     line-height: 1.5;
   }
   .peek-tag {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 600;
     margin-right: 0.4em;
   }
   .peek-item { white-space: nowrap; }
   .peek-empty {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
   .peek-more {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     margin-left: 0.3em;
   }
   .cap-action-form {
     margin: 0.4em 0 0;
   }
   .cap-action-btn {
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-rust);
-    color: var(--c-tan);
+    background: var(--of-paper);
+    border: 1px solid var(--of-rust);
+    color: var(--of-ink);
     padding: 0.3em 0.7em;
     border-radius: 3px;
     cursor: pointer;

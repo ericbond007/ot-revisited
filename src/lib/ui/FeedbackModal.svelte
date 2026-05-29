@@ -108,7 +108,7 @@
     max-width: 520px;
     width: 100%;
     padding: 1.2em 1.4em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     border-width: 3px;
     animation: card-slide 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.1);
   }
@@ -127,39 +127,39 @@
   }
   .head-text { display: flex; flex-direction: column; gap: 0.15em; }
   .head-tag {
-    font-size: 0.7em; letter-spacing: 0.18em; color: var(--c-wood); font-weight: 700;
+    font-size: 0.7em; letter-spacing: 0.18em; color: var(--of-ink-soft); font-weight: 700;
   }
   .modal-head h2 {
-    margin: 0; color: var(--c-rust); font-size: 1.2em; letter-spacing: 0.04em;
+    margin: 0; color: var(--of-rust); font-size: 1.2em; letter-spacing: 0.04em;
   }
   .close-btn {
-    background: transparent; border: 0; color: var(--c-wood);
+    background: transparent; border: 0; color: var(--of-ink-soft);
     font-size: 1.4em; padding: 0.1em 0.4em; cursor: pointer; line-height: 1;
   }
-  .close-btn:hover:not(:disabled) { color: var(--c-rust); }
+  .close-btn:hover:not(:disabled) { color: var(--of-rust); }
   .close-btn:disabled { opacity: 0.4; cursor: wait; }
-  .lede { margin: 0 0 0.7em; color: var(--c-wood); font-size: 0.9em; line-height: 1.4; }
+  .lede { margin: 0 0 0.7em; color: var(--of-ink-soft); font-size: 0.9em; line-height: 1.4; }
   .form { display: flex; flex-direction: column; gap: 0.5em; }
   textarea {
     width: 100%; padding: 0.6em 0.7em;
-    border: 2px solid var(--c-ink); border-radius: 4px;
-    background: var(--c-parchment); color: var(--c-ink);
+    border: 2px solid var(--of-ink); border-radius: 4px;
+    background: var(--of-paper-soft); color: var(--of-ink);
     font-family: inherit; font-size: 0.95em; line-height: 1.4;
     resize: vertical;
   }
-  textarea:focus { outline: none; border-color: var(--c-rust); box-shadow: 0 0 0 2px rgba(201, 106, 42, 0.25); }
+  textarea:focus { outline: none; border-color: var(--of-rust); box-shadow: 0 0 0 2px rgba(201, 106, 42, 0.25); }
   .bottom-row {
     display: flex; align-items: center; gap: 0.8em; justify-content: flex-end;
   }
-  .count { color: var(--c-wood); font-size: 0.78em; margin-right: auto; }
+  .count { color: var(--of-ink-soft); font-size: 0.78em; margin-right: auto; }
   .err { color: #e85a4a; font-weight: 600; font-size: 0.85em; }
   .send-btn { font-size: 0.95em; padding: 0.55em 1.1em; }
   .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .sent {
-    color: var(--c-rust); margin: 0.5em 0 0; font-size: 0.95em;
+    color: var(--of-rust); margin: 0.5em 0 0; font-size: 0.95em;
   }
   .link-btn {
-    background: transparent; border: 0; color: var(--c-rust);
+    background: transparent; border: 0; color: var(--of-rust);
     text-decoration: underline; cursor: pointer; padding: 0; font: inherit;
   }
 </style>

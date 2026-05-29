@@ -141,11 +141,11 @@
     max-width: 640px;
     width: 100%;
     padding: 1.5em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
   }
 
   .model-desc {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     margin: 0 0 0.4em 0;
     line-height: 1.4;
@@ -155,17 +155,17 @@
     flex-wrap: wrap;
     gap: 0.4em;
     font-size: 0.85em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     margin-bottom: 1.1em;
   }
-  .model-stats strong { color: var(--c-tan-bright); }
+  .model-stats strong { color: var(--of-ink); }
 
   .section { margin-bottom: 1.2em; }
   .section:last-of-type { margin-bottom: 1em; }
   .section-head {
     font-size: 0.72em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.4em;
   }
@@ -177,8 +177,8 @@
   }
   .cond-bar {
     height: 1.2em;
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink);
     border-radius: 3px;
     overflow: hidden;
   }
@@ -196,7 +196,7 @@
     font-size: 1.1em;
   }
   .cond-word {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
 
@@ -211,12 +211,12 @@
     gap: 0.5em;
     align-items: center;
     padding: 0.3em 0.5em;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     border-radius: 3px;
     font-size: 0.85em;
   }
   .ox-row.dead { opacity: 0.4; }
-  .ox-id { color: var(--c-wood); font-weight: 700; }
+  .ox-id { color: var(--of-ink-soft); font-weight: 700; }
   .ox-icon { font-size: 1.2em; line-height: 1; }
   .ox-bar-group {
     display: grid;
@@ -227,13 +227,13 @@
   }
   .ox-bar-label {
     font-size: 0.7em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: 0.08em;
   }
   .ox-bar {
     height: 0.6em;
-    background: var(--c-bg);
-    border: 1px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -242,7 +242,7 @@
     transition: width 0.4s;
   }
   .ox-bar-num {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-weight: 700;
     text-align: right;
   }
@@ -267,14 +267,14 @@
     border-bottom: 0;
   }
   .spare-row.none {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .spare-qty {
     font-weight: 700;
-    color: var(--c-rust);
+    color: var(--of-rust);
   }
   .spare-qty.zero {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: normal;
   }
 

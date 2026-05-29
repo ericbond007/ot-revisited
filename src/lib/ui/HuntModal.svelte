@@ -185,7 +185,7 @@
     </div>
 
     {#if aliveCount === 0}
-      <p style="color: var(--c-rust);">No one is left to hunt or gather.</p>
+      <p style="color: var(--of-rust);">No one is left to hunt or gather.</p>
       <button type="button" onclick={onclose}>Close</button>
     {:else}
       <form method="POST" action="?/hunt&slot={qp}">
@@ -242,7 +242,7 @@
     max-width: 640px;
     width: 100%;
     padding: 1.5em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
   }
 
   .stats {
@@ -250,13 +250,13 @@
     gap: 1em;
     flex-wrap: wrap;
     font-size: 0.9em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     padding: 0.4em 0.6em;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     border-radius: 3px;
     margin-bottom: 1em;
   }
-  .stats strong { color: var(--c-tan); }
+  .stats strong { color: var(--of-ink); }
 
   .actions {
     display: flex;

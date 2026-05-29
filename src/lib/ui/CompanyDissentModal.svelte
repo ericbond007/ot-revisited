@@ -74,7 +74,7 @@
     max-width: 480px;
     width: 100%;
     padding: 1.5em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     border-width: 3px;
     animation: card-slide 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
   }
@@ -103,11 +103,11 @@
     font-size: 0.7em;
     letter-spacing: 0.15em;
     font-weight: 700;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .head-titles h2 {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 1.4em;
     line-height: 1.1;
   }
@@ -118,11 +118,11 @@
     background: rgba(201, 106, 42, 0.1);
     border-left: 3px solid #c96a2a;
     border-radius: 0 3px 3px 0;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.9em;
     line-height: 1.5;
   }
-  .advice strong { color: var(--c-tan-bright); }
+  .advice strong { color: var(--of-ink); }
 
   .choices-form {
     display: flex;
@@ -144,8 +144,8 @@
 
   .choice-warn {
     background: none;
-    border: 1px solid var(--c-rust);
-    color: var(--c-rust);
+    border: 1px solid var(--of-rust);
+    color: var(--of-rust);
   }
   .choice-warn:hover {
     background: rgba(153, 0, 0, 0.1);
@@ -154,12 +154,12 @@
   .choice-danger {
     background: none;
     border: none;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.88em;
     text-decoration: underline;
     cursor: pointer;
     padding: 0.3em;
     text-align: left;
   }
-  .choice-danger:hover { color: var(--c-rust); }
+  .choice-danger:hover { color: var(--of-rust); }
 </style>

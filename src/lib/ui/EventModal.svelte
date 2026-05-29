@@ -131,7 +131,7 @@
     max-width: 640px;
     width: 100%;
     padding: 1.5em 1.5em 1.3em;
-    border: 3px solid var(--c-rust);
+    border: 3px solid var(--of-rust);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
     animation: card-slide 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
   }
@@ -147,20 +147,20 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-border);
+    background: var(--of-paper);
+    border: 1px solid var(--of-rule);
     padding: 0.2em 0.7em;
     border-radius: 20px;
     font-size: 0.75em;
     letter-spacing: 0.12em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.4em;
   }
   .cat-icon { font-size: 1.1em; line-height: 1; }
 
   .event-title {
-    color: var(--c-rust);
+    color: var(--of-rust);
     margin: 0;
     font-family: var(--f-display);
     font-size: 24px;
@@ -172,14 +172,14 @@
     font-family: var(--f-body);
     line-height: 1.55;
     margin: 12px 0 16px 0;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 1.02em;
   }
 
   .choice-label {
     font-size: 0.72em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.5em;
   }
@@ -197,9 +197,9 @@
     gap: 0.8em;
     width: 100%;
     padding: 0.8em 1em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     cursor: pointer;
     font-family: inherit;
@@ -216,8 +216,8 @@
     to   { opacity: 1; transform: translateX(0); }
   }
   .choice-card:hover:not(:disabled) {
-    border-color: var(--c-rust);
-    background: var(--c-panel);
+    border-color: var(--of-rust);
+    background: var(--of-paper-soft);
     transform: translateX(3px);
   }
   .choice-card:disabled {
@@ -245,6 +245,6 @@
   }
 
   .choice-card.default {
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
   }
 </style>

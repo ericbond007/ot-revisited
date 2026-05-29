@@ -93,7 +93,7 @@
     max-width: 480px;
     width: 100%;
     padding: 1.5em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     border-width: 3px;
     animation: card-slide 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
   }
@@ -122,11 +122,11 @@
     font-size: 0.7em;
     letter-spacing: 0.15em;
     font-weight: 700;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .head-titles h2 {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 1.4em;
     line-height: 1.1;
   }
@@ -137,11 +137,11 @@
     background: rgba(201, 106, 42, 0.1);
     border-left: 3px solid #c96a2a;
     border-radius: 0 3px 3px 0;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.9em;
     line-height: 1.5;
   }
-  .advice strong { color: var(--c-tan-bright); }
+  .advice strong { color: var(--of-ink); }
 
   .item-list {
     display: flex;
@@ -156,35 +156,35 @@
     align-items: center;
     gap: 0.6em;
     padding: 0.55em 0.7em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-border);
+    background: var(--of-paper);
+    border: 1px solid var(--of-rule);
     border-radius: 3px;
     cursor: pointer;
   }
   .item-row.on {
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     background: rgba(153, 0, 0, 0.08);
   }
   .item-row input { flex-shrink: 0; }
   .item-name {
     flex: 1;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
     min-width: 0;
   }
   .item-weight {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.88em;
     flex-shrink: 0;
   }
 
   .total {
     text-align: right;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.95em;
     margin-bottom: 1em;
   }
-  .total strong { color: var(--c-tan-bright); }
+  .total strong { color: var(--of-ink); }
   .total.enough strong { color: #8bb96a; }
 
   .actions {
@@ -203,18 +203,18 @@
   .escape-form {
     margin-top: 1em;
     padding-top: 0.9em;
-    border-top: 1px solid var(--c-border);
+    border-top: 1px solid var(--of-rule);
     display: flex;
     justify-content: center;
   }
   .force {
     background: none;
     border: none;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.88em;
     text-decoration: underline;
     cursor: pointer;
     padding: 0.3em;
   }
-  .force:hover { color: var(--c-rust); }
+  .force:hover { color: var(--of-rust); }
 </style>
