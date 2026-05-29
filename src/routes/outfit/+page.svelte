@@ -830,19 +830,7 @@
                 </span>
                 <span class="of-bundle-chevron">{expanded ? '▾' : '▸'}</span>
               </button>
-              {#if !expanded}
-                <div class="of-bundle-preview">
-                  {#each itemIds.slice(0, 8) as id}
-                    {@const meta = ITEMS[id]}
-                    {#if meta}
-                      <span class="of-bundle-preview-icon" title="{b.kit[id]} × {meta.name}">📦</span>
-                    {/if}
-                  {/each}
-                  {#if itemIds.length > 8}
-                    <span class="of-bundle-preview-more">+{itemIds.length - 8}</span>
-                  {/if}
-                </div>
-              {:else}
+              {#if expanded}
                 <div class="of-bundle-expand">
                   <p class="of-bundle-blurb">{b.blurb}</p>
                   <div class="of-bundle-items">
@@ -1310,7 +1298,7 @@
   }
   .of-wagon-chip {
     font-family: var(--of-sc);
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     font-weight: 400;
@@ -1643,7 +1631,7 @@
   .of-dash-icon { font-size: 16px; line-height: 1; text-align: center; }
   .of-dash-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; line-height: 1.1; }
   .of-dash-label {
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-weight: 700;
@@ -1724,7 +1712,7 @@
     border-radius: 12px;
     cursor: pointer;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -1733,7 +1721,7 @@
   .of-catnav-pill:hover { border-color: var(--of-rust); color: var(--of-ink); }
   .of-catnav-pill-filled { background: var(--of-rust); color: var(--of-paper-soft); border-color: var(--of-rust-dark); }
   .of-catnav-pill-filled:hover { color: var(--of-paper-soft); }
-  .of-catnav-pill-count { font-size: 10px; background: rgba(0, 0, 0, 0.12); padding: 1px 5px; border-radius: 8px; color: inherit; font-variant-numeric: tabular-nums; }
+  .of-catnav-pill-count { font-size: 12px; background: rgba(0, 0, 0, 0.12); padding: 1px 5px; border-radius: 8px; color: inherit; font-variant-numeric: tabular-nums; }
   .of-catnav-pill-filled .of-catnav-pill-count { background: rgba(255, 255, 255, 0.22); }
 
   /* ----- Category sections ----- */
@@ -1792,7 +1780,7 @@
   .of-cov {
     margin-left: 8px;
     font-family: var(--of-mono);
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.04em;
     padding: 2px 7px;
     border-radius: 2px;
@@ -1985,7 +1973,7 @@
   .of-weight-row {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--of-ink);
   }
   .of-dim { color: var(--of-ink-soft); opacity: 0.6; }
@@ -1995,7 +1983,7 @@
     padding: 6px 8px;
     font-family: var(--of-body);
     font-style: italic;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.4;
     border-radius: 2px;
   }
@@ -2011,7 +1999,7 @@
     margin: 0;
     font-family: var(--of-body);
     font-style: italic;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--of-ink-soft);
     line-height: 1.4;
   }
@@ -2044,20 +2032,11 @@
   .of-bundle-icon { font-size: 17px; line-height: 1; text-align: center; }
   .of-bundle-titles { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
   .of-bundle-name { font-family: var(--of-display); font-size: 14px; color: var(--of-ink); letter-spacing: 0.02em; line-height: 1.1; }
-  .of-bundle-sub { font-size: 10px; color: var(--of-ink-soft); font-style: italic; line-height: 1.2; }
+  .of-bundle-sub { font-size: 12px; color: var(--of-ink-soft); font-style: italic; line-height: 1.2; }
   .of-bundle-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0; line-height: 1.1; }
-  .of-bundle-itemcount { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--of-ink-soft); opacity: 0.7; font-weight: 700; }
+  .of-bundle-itemcount { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--of-ink-soft); opacity: 0.7; font-weight: 700; }
   .of-bundle-cost { font-size: 13px; color: var(--of-rust); font-weight: 700; font-variant-numeric: tabular-nums; }
-  .of-bundle-chevron { color: var(--of-ink-soft); font-size: 12px; width: 14px; text-align: center; }
-  .of-bundle-preview {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 12px 8px 36px;
-    flex-wrap: wrap;
-  }
-  .of-bundle-preview-icon { font-size: 14px; opacity: 0.85; line-height: 1; }
-  .of-bundle-preview-more { font-size: 10px; color: var(--of-ink-soft); font-weight: 700; letter-spacing: 0.04em; }
+  .of-bundle-chevron { color: var(--of-ink-soft); font-size: 13px; width: 14px; text-align: center; }
   .of-bundle-expand {
     padding: 4px 12px 12px;
     border-top: 1px dashed var(--of-rule);
@@ -2066,7 +2045,7 @@
     flex-direction: column;
     gap: 8px;
   }
-  .of-bundle-blurb { margin: 6px 0 0; font-family: var(--of-body); font-style: italic; font-size: 12px; color: var(--of-ink); line-height: 1.5; }
+  .of-bundle-blurb { margin: 6px 0 0; font-family: var(--of-body); font-style: italic; font-size: 13px; color: var(--of-ink); line-height: 1.5; }
   .of-bundle-items {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2080,7 +2059,7 @@
     grid-template-columns: 16px 1fr auto auto;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--of-ink);
     padding: 2px 0;
     font-variant-numeric: tabular-nums;
@@ -2101,7 +2080,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
     margin-top: 4px;
   }
@@ -2123,7 +2102,7 @@
   .of-tips {
     margin: 6px 0 0;
     padding: 0 0 0 14px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--of-ink-soft);
     line-height: 1.5;
   }
@@ -2195,11 +2174,11 @@
   .of-confirm-status {
     font-family: var(--of-body);
     font-style: italic;
-    font-size: 11px;
+    font-size: 13px;
     text-align: center;
     line-height: 1.3;
   }
-  .of-confirm-status-ok { color: var(--of-good); font-weight: 700; font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; }
+  .of-confirm-status-ok { color: var(--of-good); font-weight: 700; font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; }
   .of-confirm-status-warn { color: var(--of-warn); }
   .of-confirm-status-fail { color: var(--of-bad); }
   .of-btn {
