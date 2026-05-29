@@ -65,20 +65,20 @@
   .landing { padding-top: 2em; }
   .brand {
     margin: 0 0 0.1em 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     height: 4.4em;
     line-height: 1;
   }
   .brand :global(.lockup) { height: 100%; }
   .subtitle {
     margin: 0 0 0.4em 0;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 1.1em;
     font-style: italic;
     letter-spacing: 0.04em;
   }
   .tagline {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 1.1em;
     margin: 0 0 var(--s-5) 0;
   }

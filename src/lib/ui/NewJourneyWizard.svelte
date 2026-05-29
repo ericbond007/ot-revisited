@@ -186,7 +186,7 @@
     display: flex;
     flex-direction: column;
     padding: 1.2em 1.4em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     border-width: 3px;
     animation: card-slide 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.1);
   }
@@ -211,12 +211,12 @@
   .head-tag {
     font-size: 0.7em;
     letter-spacing: 0.18em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
   .modal-head h2 {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 1.3em;
     letter-spacing: 0.04em;
   }
@@ -225,24 +225,24 @@
     padding: 0;
     background: transparent;
     border: 0;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.8em;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
     margin-bottom: 0.15em;
   }
-  .back-link:hover { color: var(--c-rust); }
+  .back-link:hover { color: var(--of-rust); }
   .close-btn {
     background: transparent;
     border: 0;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 1.4em;
     padding: 0.1em 0.4em;
     cursor: pointer;
     line-height: 1;
   }
-  .close-btn:hover { color: var(--c-rust); }
+  .close-btn:hover { color: var(--of-rust); }
   .form-error {
     padding: 0.6em 0.9em;
     border: 2px solid #e85a4a;
@@ -290,13 +290,13 @@
     gap: 0.25rem 1rem;
   }
   .preview-roster li { font-size: 0.9em; }
-  .preview-trait { font-style: italic; margin: 0.5em 0; color: var(--c-wood); }
+  .preview-trait { font-style: italic; margin: 0.5em 0; color: var(--of-ink-soft); }
   .preview-source { font-size: 0.8em; margin: 0; }
-  .preview-source a { color: var(--c-rust); }
+  .preview-source a { color: var(--of-rust); }
   .date-head {
     margin: 0.8em 0 0.4em;
     font-size: 1.05em;
-    color: var(--c-rust);
+    color: var(--of-rust);
     letter-spacing: 0.03em;
   }
   .date-pickers {
@@ -309,16 +309,16 @@
   .field { display: flex; flex-direction: column; gap: 0.3em; }
   .field-label {
     font-size: 0.8em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .date-pickers select {
     min-height: 2.4em;
     padding: 0.3em 2em 0.3em 0.7em;
-    background-color: var(--c-parchment);
-    color: var(--c-ink);
-    border: 2px solid var(--c-ink);
+    background-color: var(--of-paper-soft);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink);
     border-radius: 4px;
     font-family: var(--f-mono);
     font-size: 1em;
@@ -333,10 +333,10 @@
     background-size: 0.9em;
     transition: border-color 0.12s, box-shadow 0.12s;
   }
-  .date-pickers select:hover { border-color: var(--c-rust); }
+  .date-pickers select:hover { border-color: var(--of-rust); }
   .date-pickers select:focus {
     outline: none;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     box-shadow: 0 0 0 2px rgba(201, 106, 42, 0.25);
   }
   .action-bar {
@@ -353,9 +353,9 @@
   .cancel-btn {
     background: transparent;
     border: 0;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     text-decoration: underline;
     cursor: pointer;
   }
-  .cancel-btn:hover { color: var(--c-rust); }
+  .cancel-btn:hover { color: var(--of-rust); }
 </style>
