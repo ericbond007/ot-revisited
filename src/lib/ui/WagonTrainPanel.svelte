@@ -55,18 +55,18 @@
 
 <style>
   .panel.train-panel {
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-wood);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink-soft);
     border-radius: 4px;
     padding: 0.6em 0.8em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-family: inherit;
     text-align: left;
     width: 100%;
     cursor: pointer;
     margin-bottom: 0.5em;
   }
-  .panel.train-panel:hover { border-color: var(--c-rust); }
+  .panel.train-panel:hover { border-color: var(--of-rust); }
   .tp-head {
     display: flex;
     align-items: baseline;
@@ -77,17 +77,17 @@
     margin: 0;
     font-size: 0.78em;
     letter-spacing: 0.12em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
   .tp-name {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-weight: 400;
     text-transform: none;
     letter-spacing: 0;
   }
   .expand-hint {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.9em;
     opacity: 0.7;
   }
@@ -108,7 +108,7 @@
   }
   .tp-lbl {
     font-size: 0.7em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     margin-top: 0.15em;

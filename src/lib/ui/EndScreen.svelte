@@ -173,7 +173,7 @@
   .epitaph {
     margin: 0;
     font-style: italic;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.95em;
   }
   .stats {
@@ -185,10 +185,10 @@
     border-top: 1px solid rgba(138, 90, 42, 0.3);
     border-bottom: 1px solid rgba(138, 90, 42, 0.3);
     font-size: 0.9em;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
   .stat strong {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-size: 1.15em;
     font-weight: 900;
   }
@@ -203,9 +203,9 @@
     align-items: center;
     gap: 0.4em;
     padding: 0.55em 1.2em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan-bright);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 4px;
     text-decoration: none;
     font-weight: 700;
@@ -215,22 +215,24 @@
     transition: border-color 0.15s, background 0.15s;
   }
   .cta:hover {
-    border-color: var(--c-rust);
-    background: var(--c-panel);
+    border-color: var(--of-rust);
+    background: var(--of-paper-soft);
   }
   .cta.primary {
-    background: var(--c-rust-dark);
-    border-color: var(--c-rust);
+    background: var(--of-rust-dark);
+    border-color: var(--of-rust);
+    color: var(--of-paper-soft);
   }
   .cta.primary:hover {
-    background: var(--c-rust);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
   }
 
   /* Tombstone / wiped --- */
   .tombstone-wrap {
     padding: 1.2em 1.4em;
     border-color: #4a4840;
-    background: linear-gradient(180deg, var(--c-panel) 0%, #15130f 100%);
+    background: linear-gradient(180deg, var(--of-paper-soft) 0%, #15130f 100%);
   }
   .big-stone {
     font-size: 5em;
@@ -244,7 +246,7 @@
     100% { opacity: 1; transform: translateY(0); }
   }
   .tombstone-wrap .head {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-family: var(--f-mono, 'Georgia', serif);
     font-weight: 900;
   }
@@ -277,17 +279,17 @@
   }
   .grave-name {
     font-weight: 700;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-size: 0.92em;
   }
   .grave-role {
     font-size: 0.72em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     text-transform: capitalize;
   }
   .grave-cause {
     font-size: 0.75em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-style: italic;
   }
 
@@ -315,19 +317,19 @@
     display: flex;
     justify-content: space-between;
     padding: 0.3em 0.5em;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     border-radius: 3px;
     font-size: 0.88em;
   }
   .roster-row.is-dead {
     opacity: 0.55;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .roster-name {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
   }
   .roster-fate {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-style: italic;
   }
 
@@ -335,22 +337,22 @@
   .score {
     margin-top: 1em;
     padding: 0.8em 1em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-rust);
+    background: var(--of-paper);
+    border: 1px solid var(--of-rust);
     border-radius: 4px;
   }
   .score-head {
     font-family: var(--f-mono);
     font-size: 0.7em;
     letter-spacing: 0.18em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     text-align: center;
   }
   .score-total {
     font-family: var(--f-display);
     font-size: 2.2em;
-    color: var(--c-rust);
+    color: var(--of-rust);
     text-align: center;
     line-height: 1.1;
     margin: 0.1em 0 0.4em 0;
@@ -364,7 +366,7 @@
     flex-direction: column;
     gap: 0.18em;
     font-size: 0.85em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     border-top: 1px solid rgba(138, 90, 42, 0.3);
     padding-top: 0.5em;
   }
@@ -374,12 +376,12 @@
   }
   .score-breakdown li.luxury-head {
     margin-top: 0.3em;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
   }
   .score-breakdown li.luxury-item {
     padding-left: 0.6em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.92em;
   }
 
@@ -390,14 +392,14 @@
     margin: 1.2em 0 0.6em;
     padding: 0.9em 1em;
     background: rgba(232, 217, 184, 0.15);
-    border-top: 1px solid var(--c-wood);
-    border-bottom: 1px solid var(--c-wood);
+    border-top: 1px solid var(--of-ink-soft);
+    border-bottom: 1px solid var(--of-ink-soft);
     text-align: center;
   }
   .cliff-head {
     font-size: 0.72em;
     letter-spacing: 0.18em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.5em;
   }
@@ -405,18 +407,18 @@
     font-family: 'IM Fell English', 'Special Elite', Georgia, serif;
     font-size: 1.2em;
     letter-spacing: 0.06em;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
   }
   .epilogue {
     margin: 1.2em 0 0.6em;
     padding: 0.9em 1em;
-    border-top: 1px solid var(--c-wood);
-    border-bottom: 1px solid var(--c-wood);
+    border-top: 1px solid var(--of-ink-soft);
+    border-bottom: 1px solid var(--of-ink-soft);
   }
   .epilogue-head {
     font-size: 0.72em;
     letter-spacing: 0.18em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.6em;
     text-align: center;
@@ -433,8 +435,8 @@
     font-family: 'IM Fell English', 'Special Elite', Georgia, serif;
     font-size: 1.02em;
     line-height: 1.45;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     padding-left: 0.9em;
-    border-left: 2px solid var(--c-wood);
+    border-left: 2px solid var(--of-ink-soft);
   }
 </style>

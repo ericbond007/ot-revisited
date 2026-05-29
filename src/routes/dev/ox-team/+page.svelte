@@ -90,12 +90,12 @@
   .brand-title {
     font-family: var(--f-display);
     font-size: var(--fs-3xl);
-    color: var(--c-rust);
+    color: var(--of-rust);
     letter-spacing: var(--ls-medium);
     margin: 0 0 var(--s-2) 0;
   }
   .subtitle {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-family: var(--f-body);
     margin: 0 0 var(--s-3) 0;
   }
@@ -103,7 +103,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-family: var(--f-mono);
     font-size: var(--fs-sm);
     cursor: pointer;
@@ -116,13 +116,13 @@
   }
 
   .card {
-    background: var(--c-panel);
-    border: var(--bw-2) solid var(--c-wood);
+    background: var(--of-paper-soft);
+    border: var(--bw-2) solid var(--of-ink-soft);
     border-radius: var(--r-sm);
     padding: var(--s-3);
   }
   .eyebrow {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: var(--fs-xs);
     letter-spacing: var(--ls-loose);
     text-transform: uppercase;
@@ -130,7 +130,7 @@
   }
   .stage {
     background: linear-gradient(180deg, #b3d4e8 0%, #d8e4ee 60%, #b8a05a 100%);
-    border: var(--bw-1) solid var(--c-ink);
+    border: var(--bw-1) solid var(--of-ink);
     border-radius: var(--r-xs);
     overflow: hidden;
     aspect-ratio: 400 / 110;

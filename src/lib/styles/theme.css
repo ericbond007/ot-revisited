@@ -73,6 +73,7 @@
   --of-good:         #486c2a;
   --of-warn:         #a86a18;
   --of-bad:          #8a1c0c;
+  --of-river:        #4a6a8c; /* muted blue — water/ford context (promoted from legacy --c-river) */
 
   /* TYPOGRAPHY — period-realistic stack */
   --of-display:      'Rye', 'Smythe', Georgia, serif;

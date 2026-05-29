@@ -33,14 +33,14 @@
   .brand-title {
     font-family: var(--f-display);
     font-size: var(--fs-3xl);
-    color: var(--c-rust);
+    color: var(--of-rust);
     letter-spacing: var(--ls-medium);
     margin: 0 0 var(--s-2) 0;
   }
   .subtitle {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-family: var(--f-body);
     margin: 0 0 var(--s-4) 0;
   }
-  code { background: var(--c-bg-raised); padding: 0 .25em; border-radius: 2px; }
+  code { background: var(--of-paper); padding: 0 .25em; border-radius: 2px; }
 </style>

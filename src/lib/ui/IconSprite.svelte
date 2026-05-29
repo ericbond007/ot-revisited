@@ -7,7 +7,7 @@
   // Symbols ported verbatim from
   // docs/handoff/components/src/action-bar.html. Path data is committed —
   // do not optimize or redraw. Travel is hard-fill #f5e6c8 (matches
-  // --c-tan-bright); the others use currentColor so the action bar can
+  // --of-ink); the others use currentColor so the action bar can
   // theme them per state.
 </script>
 

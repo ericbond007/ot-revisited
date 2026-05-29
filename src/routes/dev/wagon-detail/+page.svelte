@@ -348,25 +348,25 @@
     height: 100vh;
     margin: 0;
     padding: 0.6em 1em;
-    background: var(--c-panel, #2a1a08);
-    color: var(--c-tan, #eeedeb);
+    background: var(--of-paper-soft, #2a1a08);
+    color: var(--of-ink, #eeedeb);
     font-family: var(--f-body, sans-serif);
   }
   header h1 {
     margin: 0 0 0.2em 0;
-    color: var(--c-rust, #990000);
+    color: var(--of-rust, #990000);
     font-size: 1.4em;
   }
   .hint {
     margin: 0 0 0.6em 0;
-    color: var(--c-wood, #aa8a5a);
+    color: var(--of-ink-soft, #aa8a5a);
     font-size: 0.85em;
     font-style: italic;
   }
   .hint-sm {
     margin: 0.2em 0 0 0;
     font-size: 0.78em;
-    color: var(--c-wood, #aa8a5a);
+    color: var(--of-ink-soft, #aa8a5a);
     font-style: italic;
   }
   .layout {
@@ -398,7 +398,7 @@
   .controls legend {
     padding: 0 0.4em;
     font-size: 0.8em;
-    color: var(--c-wood, #aa8a5a);
+    color: var(--of-ink-soft, #aa8a5a);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
