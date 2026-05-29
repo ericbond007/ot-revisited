@@ -125,21 +125,21 @@
     flex-direction: column;
     gap: 0.4em;
     padding: 0.7em 0.9em;
-    background: var(--c-panel);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-ink-soft);
     cursor: pointer;
     text-align: left;
     font-family: inherit;
-    color: var(--c-tan);
+    color: var(--of-ink);
     letter-spacing: normal;
     text-transform: none;
     font-weight: normal;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .wagon-panel:hover:not(:disabled) {
-    background: var(--c-panel); /* override global button:hover rust fill */
-    border-color: var(--c-rust);
-    box-shadow: 0 0 0 1px var(--c-rust) inset;
+    background: var(--of-paper-soft); /* override global button:hover rust fill */
+    border-color: var(--of-rust);
+    box-shadow: 0 0 0 1px var(--of-rust) inset;
   }
 
   .wp-head {
@@ -148,25 +148,25 @@
     align-items: baseline;
   }
   .wp-head h4 {
-    color: var(--c-rust);
+    color: var(--of-rust);
     margin: 0;
     font-size: 0.75em;
     letter-spacing: 0.15em;
   }
   .wp-model {
     font-size: 0.9em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-weight: normal;
     letter-spacing: 0.05em;
     text-transform: none;
   }
   .expand-hint {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.85em;
     opacity: 0.6;
   }
   .wagon-panel:hover .expand-hint {
-    color: var(--c-rust);
+    color: var(--of-rust);
     opacity: 1;
   }
 
@@ -177,11 +177,11 @@
     align-items: center;
     font-size: 0.85em;
   }
-  .cond-label { color: var(--c-wood); }
+  .cond-label { color: var(--of-ink-soft); }
   .cond-bar {
     height: 0.7em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -202,10 +202,10 @@
     flex-wrap: wrap;
   }
   .ox-icon { font-size: 1.1em; }
-  .ox-count { color: var(--c-tan-bright); font-weight: 700; }
-  .ox-stat { color: var(--c-wood); }
+  .ox-count { color: var(--of-ink); font-weight: 700; }
+  .ox-stat { color: var(--of-ink-soft); }
   .ox-warn {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 0.9em;
   }
   .impairment-icon {
@@ -220,11 +220,11 @@
     font-size: 0.72em;
   }
   .part-chip {
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     padding: 0.1em 0.5em;
     border-radius: 10px;
-    color: var(--c-wood);
-    border: 1px solid var(--c-border);
+    color: var(--of-ink-soft);
+    border: 1px solid var(--of-rule);
     white-space: nowrap;
   }
 </style>

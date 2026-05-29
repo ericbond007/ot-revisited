@@ -120,8 +120,8 @@
        floor margin. The dev-list flex-grows into whatever's left after
        the static rows. */
     padding: 0.4em;
-    background: var(--c-panel);
-    border: 2px solid var(--c-rust);
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-rust);
     border-radius: 4px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
     display: flex;
@@ -131,7 +131,7 @@
   .menu-head {
     font-size: 0.65em;
     letter-spacing: 0.18em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     padding: 0.3em 0.5em 0.5em 0.5em;
   }
@@ -165,8 +165,8 @@
     width: 100%;
     /* Override the theme button chrome so it matches the other menu
        items visually — it's still a submit button, just styled as a row. */
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
+    background: var(--of-paper);
+    color: var(--of-ink);
     font-family: inherit;
     font-weight: normal;
     letter-spacing: 0;
@@ -177,11 +177,11 @@
   }
   .dev-item:hover {
     border-color: #8bb96a;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
   }
   .menu-foot {
     font-size: 0.65em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     text-align: right;
     padding: 0.4em 0.5em 0.2em 0.5em;
@@ -192,17 +192,17 @@
     align-items: center;
     gap: 0.6em;
     padding: 0.5em 0.6em;
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
-    color: var(--c-tan);
+    color: var(--of-ink);
     text-decoration: none;
     transition: background 0.1s, border-color 0.1s, color 0.1s;
   }
   .item:hover {
-    background: var(--c-panel);
-    border-color: var(--c-rust);
-    color: var(--c-tan-bright);
+    background: var(--of-paper-soft);
+    border-color: var(--of-rust);
+    color: var(--of-ink);
   }
   .item.danger:hover {
     border-color: #e85a4a;
@@ -224,7 +224,7 @@
   }
   .item-sub {
     font-size: 0.78em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
 </style>

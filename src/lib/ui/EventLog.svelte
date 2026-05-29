@@ -17,7 +17,7 @@
 </script>
 
 <div class="panel event-log">
-  <h4 style="color: var(--c-rust); margin: 0 0 0.5em 0;">EVENT LOG</h4>
+  <h4 style="color: var(--of-rust); margin: 0 0 0.5em 0;">EVENT LOG</h4>
   <div class="event-log-scroll">
     {#each entries as e, i (e.key)}
       <div
@@ -65,14 +65,14 @@
     border-bottom: 0;
   }
   .event-log-line .day-tag {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
     white-space: nowrap;
   }
   /* The newest entry gets a brief highlight so it's obvious something changed */
   .event-log-line.newest {
     background: rgba(201, 106, 42, 0.16);
-    border-left: 3px solid var(--c-rust);
+    border-left: 3px solid var(--of-rust);
     padding-left: calc(0.5em - 3px);
     animation: log-new-pulse 2s ease-out;
   }

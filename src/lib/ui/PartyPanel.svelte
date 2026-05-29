@@ -255,22 +255,22 @@
     flex-direction: column;
     gap: 0.5em;
     padding: 12px 14px 14px;
-    background: var(--c-panel);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     cursor: pointer;
     text-align: left;
     font-family: var(--f-body);
-    color: var(--c-tan);
+    color: var(--of-ink);
     letter-spacing: normal;
     text-transform: none;
     font-weight: normal;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .party-panel:hover:not(:disabled) {
-    background: var(--c-panel); /* override global button:hover rust fill */
-    border-color: var(--c-rust);
-    box-shadow: 0 0 0 1px var(--c-rust) inset;
+    background: var(--of-paper-soft); /* override global button:hover rust fill */
+    border-color: var(--of-rust);
+    box-shadow: 0 0 0 1px var(--of-rust) inset;
   }
 
   /* ---- Header ---- */
@@ -278,12 +278,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--of-rule);
     padding-bottom: 6px;
     margin-bottom: 2px;
   }
   .pp-head h4 {
-    color: var(--c-rust);
+    color: var(--of-rust);
     margin: 0;
     font-size: 10px;
     letter-spacing: 0.18em;
@@ -319,17 +319,17 @@
     font-size: 13px;
     line-height: 1.25;
   }
-  .name { color: var(--c-tan-bright); }
-  .name.dead-name { text-decoration: line-through; color: var(--c-wood); }
-  .leader { color: var(--c-rust); margin-left: 2px; }
+  .name { color: var(--of-ink); }
+  .name.dead-name { text-decoration: line-through; color: var(--of-ink-soft); }
+  .leader { color: var(--of-rust); margin-left: 2px; }
   .prof {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 11px;
     font-style: italic;
     margin-left: 4px;
   }
   .ill-tag {
-    color: var(--c-danger);
+    color: var(--of-bad);
     font-size: 10px;
     font-family: var(--f-mono);
     letter-spacing: 0.08em;
@@ -340,7 +340,7 @@
     font-family: var(--f-mono);
     letter-spacing: 0.05em;
     margin-top: 2px;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
 
   /* ---- HP bar ---- */
@@ -355,8 +355,8 @@
   .hp-bar-track {
     flex: 1;
     height: 6px;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink);
     border-radius: 1px;
     overflow: hidden;
     position: relative;
@@ -371,16 +371,16 @@
     background-image: linear-gradient(
       90deg,
       transparent 24%,
-      var(--c-ink) 24%,
-      var(--c-ink) 25%,
+      var(--of-ink) 24%,
+      var(--of-ink) 25%,
       transparent 25%,
       transparent 49%,
-      var(--c-ink) 49%,
-      var(--c-ink) 50%,
+      var(--of-ink) 49%,
+      var(--of-ink) 50%,
       transparent 50%,
       transparent 74%,
-      var(--c-ink) 74%,
-      var(--c-ink) 75%,
+      var(--of-ink) 74%,
+      var(--of-ink) 75%,
       transparent 75%
     );
     opacity: 0.5;
@@ -410,17 +410,17 @@
     font-size: 11px;
     margin-top: 4px;
     padding-top: 6px;
-    border-top: 1px solid var(--c-border);
+    border-top: 1px solid var(--of-rule);
   }
   .morale-label {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-family: var(--f-mono);
     letter-spacing: 0.1em;
   }
   .morale-bar {
     height: 8px;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink);
     border-radius: 1px;
     overflow: hidden;
     transform-origin: left;
@@ -430,8 +430,8 @@
     height: 100%;
     background: repeating-linear-gradient(
       135deg,
-      var(--c-warn) 0 4px,
-      var(--c-amber-dark) 4px 8px
+      var(--of-warn) 0 4px,
+      var(--of-warn) 4px 8px
     );
     transition: width 0.6s ease-out;
   }
@@ -441,14 +441,14 @@
     gap: 3px;
   }
   .morale-num {
-    color: var(--c-warn);
+    color: var(--of-warn);
     font-weight: 700;
     font-family: var(--f-mono);
   }
   .trend { font-size: 10px; }
-  .trend-down { color: var(--c-danger); }
-  .trend-up { color: var(--c-good); }
-  .trend-flat { color: var(--c-wood); }
+  .trend-down { color: var(--of-bad); }
+  .trend-up { color: var(--of-good); }
+  .trend-flat { color: var(--of-ink-soft); }
 
   /* ---- Mini-stats footer ---- */
   .mini-stats {
@@ -458,14 +458,14 @@
     font-size: 10px;
     font-family: var(--f-mono);
     letter-spacing: 0.06em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     text-align: center;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink);
     border-radius: 2px;
     padding: 5px;
   }
-  .ms-val { color: var(--c-tan-bright); font-size: 13px; }
+  .ms-val { color: var(--of-ink); font-size: 13px; }
   .ms-num { margin-left: 2px; }
 
   /* ---- Animations ---- */
