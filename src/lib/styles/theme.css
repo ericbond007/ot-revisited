@@ -73,7 +73,7 @@
   --of-good:         #486c2a;
   --of-warn:         #a86a18;
   --of-bad:          #8a1c0c;
-  --of-river:        #4a6a8c; /* muted blue — water/ford context (promoted from legacy --c-river) */
+  --of-river:        #4a6a8c; /* muted blue — water/ford context (PR9 finale; legacy bridge deleted) */
 
   /* TYPOGRAPHY — period-realistic stack */
   --of-display:      'Rye', 'Smythe', Georgia, serif;
@@ -202,51 +202,6 @@
   --e-default: cubic-bezier(0.4, 0.0, 0.2, 1);
   --e-pop:     cubic-bezier(0.2, 0.9, 0.3, 1.1);
 
-  /* ---------- LEGACY --c-* → --of-* ALIAS BRIDGE (#ui-redesign PR0) ----------
-     The whole app is on the paper palette now. Every --c-* token below
-     resolves to a design-system --of-* value. INVERSION-AWARE: surface
-     tokens map to paper, TEXT tokens (--c-tan / --c-tan-bright / --c-cream) map to INK so light-on-dark becomes dark-on-light rather
-     than vanishing. Bridge is temporary — surface-port PRs migrate files to
-     --of-* directly; the final cleanup PR deletes this block. */
-
-  /* surfaces */
-  --c-bg:            var(--of-paper);
-  --c-bg-raised:     var(--of-paper);
-  --c-panel:         var(--of-paper-soft);
-  --c-parchment:     var(--of-paper-soft);
-  --c-paper:         var(--of-paper-soft);
-  --c-parchment-visited: var(--of-paper);
-  --c-parchment-trade:   var(--of-paper-soft);
-  --c-parchment-end:     var(--of-paper-soft);
-
-  /* borders + rules */
-  --c-border:        var(--of-rule);
-  --c-wood:          var(--of-ink-soft);
-  --c-wood-soft:     var(--of-ink-faded);
-
-  /* text / ink */
-  --c-ink:           var(--of-ink);
-  --c-tan:           var(--of-ink);
-  --c-tan-bright:    var(--of-ink);
-  --c-cream:         var(--of-ink);
-
-  /* accents — carry over */
-  --c-rust:          var(--of-rust);
-  --c-rust-dark:     var(--of-rust-dark);
-
-  /* semantic status — map to --of-* roles */
-  --c-good:          var(--of-good);
-  --c-sage:          var(--of-good);
-  --c-sage-dark:     var(--of-good);
-  --c-warn:          var(--of-warn);
-  --c-amber-dark:    var(--of-warn);
-  --c-danger:        var(--of-bad);
-  --c-blood:         var(--of-bad);
-  --c-ill-dark:      var(--of-bad);
-
-  /* river (info/water) — keep a distinct cool hue muted for parchment */
-  --c-river:         #4a6a8c;
-  --c-river-pale:    #c8d4dc;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
