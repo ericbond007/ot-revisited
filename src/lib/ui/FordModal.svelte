@@ -107,7 +107,7 @@
 
 <style>
   /* River-blue title accent — overrides the global .modal-title rust. */
-  .river-title { color: var(--c-river); }
+  .river-title { color: var(--of-river); }
   .river-header {
     display: flex;
     align-items: center;

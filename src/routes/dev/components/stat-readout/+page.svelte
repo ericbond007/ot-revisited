@@ -54,16 +54,16 @@
   .brand-title {
     font-family: var(--f-display);
     font-size: var(--fs-3xl);
-    color: var(--c-rust);
+    color: var(--of-rust);
     letter-spacing: var(--ls-medium);
     margin: 0 0 var(--s-2) 0;
   }
-  .subtitle { color: var(--c-tan); font-family: var(--f-body); margin: 0 0 var(--s-4) 0; }
-  code { background: var(--c-bg-raised); padding: 0 .25em; border-radius: 2px; }
+  .subtitle { color: var(--of-ink); font-family: var(--f-body); margin: 0 0 var(--s-4) 0; }
+  code { background: var(--of-paper); padding: 0 .25em; border-radius: 2px; }
 
   .card {
-    background: var(--c-panel);
-    border: var(--bw-2) solid var(--c-wood);
+    background: var(--of-paper-soft);
+    border: var(--bw-2) solid var(--of-ink-soft);
     border-radius: var(--r-sm);
     padding: 8px 12px;
   }
@@ -73,7 +73,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 4px 16px;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
   .stat {
     display: inline-flex;
@@ -85,19 +85,19 @@
   .stat-label {
     font-size: 10px;
     letter-spacing: 0.12em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     font-family: var(--f-mono);
   }
   .day-num, .val {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
   }
 
   .caption {
     margin-top: 12px;
     font-size: 11px;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
 </style>

@@ -21,8 +21,8 @@
 
 <style>
   .wrap { padding: 1.5em; max-width: 720px; margin: 0 auto; }
-  h1 { color: var(--c-rust); margin: 0 0 0.4em; }
-  .lede { color: var(--c-wood); margin: 0 0 1.2em; }
+  h1 { color: var(--of-rust); margin: 0 0 0.4em; }
+  .lede { color: var(--of-ink-soft); margin: 0 0 1.2em; }
   ul { list-style: none; padding: 0; margin: 0; }
   li {
     padding: 0.6em 0;
@@ -30,10 +30,10 @@
   }
   li:last-child { border-bottom: 0; }
   code {
-    background: var(--c-parchment);
+    background: var(--of-paper-soft);
     padding: 0.1em 0.4em;
     border-radius: 3px;
   }
-  small { display: block; color: var(--c-wood); font-size: 0.85em; margin-top: 0.2em; }
-  a { color: var(--c-rust); font-weight: 600; }
+  small { display: block; color: var(--of-ink-soft); font-size: 0.85em; margin-top: 0.2em; }
+  a { color: var(--of-rust); font-weight: 600; }
 </style>

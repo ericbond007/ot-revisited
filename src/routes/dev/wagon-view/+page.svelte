@@ -341,21 +341,21 @@
     margin: 1em auto;
     padding: 0 1em;
     font-family: var(--font-body, sans-serif);
-    color: var(--c-tan, #e7d8b8);
+    color: var(--of-ink, #e7d8b8);
   }
   header h1 {
     margin: 0 0 0.2em 0;
-    color: var(--c-rust, #c25a32);
+    color: var(--of-rust, #c25a32);
     font-size: 1.4em;
   }
   .hint {
     margin: 0.2em 0 0.6em 0;
-    color: var(--c-wood, #aa8a5a);
+    color: var(--of-ink-soft, #aa8a5a);
     font-size: 0.85em;
     font-style: italic;
   }
   .hint code {
-    background: var(--c-bg-raised, #2a1a08);
+    background: var(--of-paper, #2a1a08);
     padding: 0.05em 0.3em;
     border-radius: 2px;
     font-style: normal;
@@ -366,8 +366,8 @@
     gap: 0.4em 0.8em;
     margin: 0.8em 0;
     padding: 0.8em;
-    background: var(--c-bg-raised, #2a1a08);
-    border: 2px solid var(--c-wood, #aa8a5a);
+    background: var(--of-paper, #2a1a08);
+    border: 2px solid var(--of-ink-soft, #aa8a5a);
     border-radius: 4px;
   }
   .controls label {
@@ -376,7 +376,7 @@
     gap: 0.2em;
     font-size: 0.78em;
     letter-spacing: 0.06em;
-    color: var(--c-wood, #aa8a5a);
+    color: var(--of-ink-soft, #aa8a5a);
     text-transform: uppercase;
   }
   .controls label.cb {
@@ -385,21 +385,21 @@
     text-transform: none;
     letter-spacing: 0;
     font-size: 0.9em;
-    color: var(--c-tan, #e7d8b8);
+    color: var(--of-ink, #e7d8b8);
   }
   .controls label.raster-toggle {
     grid-column: 1 / -1;
     justify-self: start;
-    border-top: 1px dashed var(--c-wood, #aa8a5a);
+    border-top: 1px dashed var(--of-ink-soft, #aa8a5a);
     padding-top: 0.5em;
     margin-top: 0.2em;
   }
   .controls select,
   .controls input[type='number'] {
     padding: 0.3em 0.5em;
-    background: var(--c-panel, #1a0e08);
-    color: var(--c-tan, #e7d8b8);
-    border: 1px solid var(--c-wood, #aa8a5a);
+    background: var(--of-paper-soft, #1a0e08);
+    color: var(--of-ink, #e7d8b8);
+    border: 1px solid var(--of-ink-soft, #aa8a5a);
     border-radius: 3px;
     font-family: inherit;
   }
@@ -409,9 +409,9 @@
   .restart {
     align-self: end;
     padding: 0.4em 0.8em;
-    background: var(--c-bg-raised, #2a1a08);
-    color: var(--c-rust, #c25a32);
-    border: 2px solid var(--c-rust, #c25a32);
+    background: var(--of-paper, #2a1a08);
+    color: var(--of-rust, #c25a32);
+    border: 2px solid var(--of-rust, #c25a32);
     border-radius: 3px;
     font-family: inherit;
     font-size: 0.9em;
@@ -419,8 +419,8 @@
     cursor: pointer;
   }
   .restart:hover {
-    background: var(--c-rust, #c25a32);
-    color: var(--c-bg-raised, #2a1a08);
+    background: var(--of-rust, #c25a32);
+    color: var(--of-paper, #2a1a08);
   }
   .stage {
     margin: 0.8em 0;
@@ -428,14 +428,14 @@
   .tuning {
     margin: 0.8em 0;
     padding: 0.6em 0.8em;
-    background: var(--c-bg-raised, #2a1a08);
-    border: 1px solid var(--c-wood, #aa8a5a);
+    background: var(--of-paper, #2a1a08);
+    border: 1px solid var(--of-ink-soft, #aa8a5a);
     border-radius: 4px;
   }
   .tuning h2 {
     margin: 0 0 0.4em 0;
     font-size: 0.85em;
-    color: var(--c-wood, #aa8a5a);
+    color: var(--of-ink-soft, #aa8a5a);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
@@ -445,7 +445,7 @@
     align-items: center;
     gap: 0.6em;
     font-size: 0.85em;
-    color: var(--c-tan, #e7d8b8);
+    color: var(--of-ink, #e7d8b8);
     text-transform: none;
     letter-spacing: 0;
     margin: 0.25em 0;
@@ -453,23 +453,23 @@
   .tuning label.range .val {
     text-align: right;
     font-variant-numeric: tabular-nums;
-    color: var(--c-wood, #aa8a5a);
+    color: var(--of-ink-soft, #aa8a5a);
   }
   .tuning .hint-sm {
     margin: 0.4em 0 0 0;
     font-size: 0.8em;
-    color: var(--c-wood, #aa8a5a);
+    color: var(--of-ink-soft, #aa8a5a);
     font-style: italic;
   }
   .tuning .hint-sm strong {
-    color: var(--c-tan, #e7d8b8);
+    color: var(--of-ink, #e7d8b8);
     font-style: normal;
   }
   footer .hint {
     text-align: center;
   }
   footer strong {
-    color: var(--c-tan, #e7d8b8);
+    color: var(--of-ink, #e7d8b8);
     font-style: normal;
     font-weight: normal;
   }

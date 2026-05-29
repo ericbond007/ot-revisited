@@ -94,29 +94,29 @@
   .brand-title {
     font-family: var(--f-display);
     font-size: var(--fs-3xl);
-    color: var(--c-rust);
+    color: var(--of-rust);
     letter-spacing: var(--ls-medium);
     margin: 0 0 var(--s-2) 0;
   }
   .subtitle {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-family: var(--f-body);
     margin: 0 0 var(--s-4) 0;
   }
-  code { background: var(--c-bg-raised); padding: 0 .25em; border-radius: 2px; }
+  code { background: var(--of-paper); padding: 0 .25em; border-radius: 2px; }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: var(--s-3);
   }
   .card {
-    background: var(--c-bg);
-    border: var(--bw-2) solid var(--c-wood);
+    background: var(--of-paper);
+    border: var(--bw-2) solid var(--of-ink-soft);
     border-radius: var(--r-sm);
     padding: var(--s-3);
   }
   .eyebrow {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: var(--fs-xs);
     letter-spacing: var(--ls-loose);
     text-transform: uppercase;

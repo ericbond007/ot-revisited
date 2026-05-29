@@ -41,15 +41,15 @@
   .brand-title {
     font-family: var(--f-display);
     font-size: var(--fs-3xl);
-    color: var(--c-rust);
+    color: var(--of-rust);
     letter-spacing: var(--ls-medium);
     margin: 0 0 var(--s-2) 0;
   }
-  .subtitle { color: var(--c-tan); font-family: var(--f-body); margin: 0 0 var(--s-4) 0; }
-  code { background: var(--c-bg-raised); padding: 0 .25em; border-radius: 2px; }
+  .subtitle { color: var(--of-ink); font-family: var(--f-body); margin: 0 0 var(--s-4) 0; }
+  code { background: var(--of-paper); padding: 0 .25em; border-radius: 2px; }
   .card {
-    background: var(--c-panel);
-    border: var(--bw-2) solid var(--c-wood);
+    background: var(--of-paper-soft);
+    border: var(--bw-2) solid var(--of-ink-soft);
     border-radius: var(--r-sm);
     padding: var(--s-3);
     margin-bottom: var(--s-3);
@@ -58,7 +58,7 @@
     gap: 14px;
   }
   .eyebrow {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: var(--fs-xs);
     letter-spacing: var(--ls-loose);
     text-transform: uppercase;
