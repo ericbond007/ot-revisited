@@ -325,9 +325,9 @@
     flex-direction: column;
     gap: 0.7em;
     padding: 1em 1.2em;
-    border-color: var(--post-accent, var(--c-rust));
+    border-color: var(--post-accent, var(--of-rust));
     border-width: 2px;
-    background: linear-gradient(180deg, var(--c-panel) 0%, #1a1612 100%);
+    background: linear-gradient(180deg, var(--of-paper-soft) 0%, #1a1612 100%);
   }
 
   /* Hero artwork canvas (#173) — bespoke per-landmark SVG between
@@ -357,19 +357,19 @@
   .kind {
     font-size: 0.7em;
     letter-spacing: 0.18em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     text-transform: uppercase;
   }
   .title {
     margin: 0.05em 0 0.1em;
-    color: var(--post-accent, var(--c-rust));
+    color: var(--post-accent, var(--of-rust));
     font-size: 1.5em;
     letter-spacing: 0.04em;
   }
   .flavor {
     margin: 0;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     font-size: 0.9em;
     line-height: 1.4;
@@ -385,19 +385,19 @@
     flex-direction: column;
     align-items: flex-end;
     padding: 0.3em 0.6em;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     border: 1px solid rgba(138, 90, 42, 0.4);
     border-radius: 3px;
     font-size: 0.85em;
   }
   .stat-label {
     font-size: 0.65em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: 0.12em;
     font-weight: 700;
   }
   .stat-val {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
   }
   .stat.tone-good { border-color: #8bb96a; color: #8bb96a; }
@@ -419,9 +419,9 @@
     align-items: center;
     gap: 0.7em;
     padding: 0.7em 0.9em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     font-family: inherit;
     font-weight: 700;
@@ -431,18 +431,18 @@
     transition: background 0.12s, border-color 0.12s;
   }
   .svc-card:hover:not(:disabled) {
-    background: var(--c-panel);
-    border-color: var(--post-accent, var(--c-rust));
+    background: var(--of-paper-soft);
+    border-color: var(--post-accent, var(--of-rust));
   }
   .svc-card:disabled { opacity: 0.55; cursor: not-allowed; }
   .svc-card.primary {
-    border-color: var(--post-accent, var(--c-rust));
-    background: var(--c-panel);
+    border-color: var(--post-accent, var(--of-rust));
+    background: var(--of-paper-soft);
   }
   /* #176 — leave-train confirmation: muted red border so it doesn't
      visually outweigh the join-train action above. */
   .svc-card-danger {
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     opacity: 0.85;
   }
   .train-info {
@@ -450,14 +450,14 @@
     flex-direction: row;
     align-items: flex-start;
   }
-  .train-info:hover { background: var(--c-bg-raised); border-color: var(--c-wood); }
+  .train-info:hover { background: var(--of-paper); border-color: var(--of-ink-soft); }
   .train-roster {
     list-style: none;
     padding: 0.3em 0 0;
     margin: 0.3em 0 0;
     font-weight: 400;
     font-size: 0.85em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     line-height: 1.4;
   }
   .train-roster li {
@@ -470,9 +470,9 @@
   .train-roster-line { flex: 1 1 auto; }
   .train-give-form { margin: 0; padding: 0; }
   .train-give-btn {
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 1px solid var(--c-wood);
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 1px solid var(--of-ink-soft);
     border-radius: 3px;
     font-family: inherit;
     font-size: 0.85em;
@@ -480,8 +480,8 @@
     cursor: pointer;
   }
   .train-give-btn:hover {
-    background: var(--c-panel);
-    border-color: var(--c-rust);
+    background: var(--of-paper-soft);
+    border-color: var(--of-rust);
   }
   .svc-icon {
     font-size: 1.7em;
@@ -499,13 +499,13 @@
   .svc-sub {
     font-size: 0.78em;
     font-weight: normal;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: normal;
     line-height: 1.3;
   }
 
   .empty {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     text-align: center;
     padding: 1em;
@@ -519,14 +519,14 @@
     border-top: 1px solid rgba(138, 90, 42, 0.25);
   }
   .leave {
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-wood);
-    color: var(--c-tan);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink-soft);
+    color: var(--of-ink);
     padding: 0.5em 1.2em;
     border-radius: 3px;
     font-family: inherit;
     font-weight: 700;
     cursor: pointer;
   }
-  .leave:hover { border-color: var(--c-rust); }
+  .leave:hover { border-color: var(--of-rust); }
 </style>

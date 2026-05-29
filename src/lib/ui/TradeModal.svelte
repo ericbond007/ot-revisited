@@ -690,12 +690,12 @@
   .post-name {
     margin: 0;
     font-size: 1.25em;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     line-height: 1.1;
   }
   .post-blurb {
     margin: 0;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.9em;
     font-style: italic;
     line-height: 1.5;
@@ -707,7 +707,7 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     font-weight: 700;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     background: rgba(0, 0, 0, 0.25);
     border-left: 3px solid var(--post-accent);
     border-radius: 0 2px 2px 0;
@@ -723,7 +723,7 @@
   }
   .live-inv-panel .hint {
     font-size: 0.7em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     font-weight: normal;
     letter-spacing: normal;
@@ -755,7 +755,7 @@
   }
   .live-row:nth-child(odd) { background: rgba(138, 90, 42, 0.06); }
   .live-row.sold-out { opacity: 0.45; text-decoration: line-through; }
-  .live-name { color: var(--c-tan); }
+  .live-name { color: var(--of-ink); }
   .live-qty { display: inline-flex; align-items: baseline; gap: 0.3em; }
   .live-qty strong {
     color: var(--post-accent);
@@ -781,14 +781,14 @@
   .discount-panel p {
     margin: 0;
     font-size: 0.85em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     line-height: 1.4;
   }
 
   .panel-head {
     font-size: 0.7em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.4em;
   }
@@ -811,7 +811,7 @@
   }
   .lede {
     margin: 0;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.88em;
     font-style: italic;
   }
@@ -830,10 +830,10 @@
   .total-label {
     font-size: 0.65em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
-  .total-val { font-weight: 700; font-size: 1.05em; color: var(--c-tan-bright); }
+  .total-val { font-weight: 700; font-size: 1.05em; color: var(--of-ink); }
   .total-val.small { font-size: 0.85em; }
   .total-val.spend { color: #c96a2a; }
   .total-val.revenue { color: #8bb96a; }
@@ -862,8 +862,8 @@
   }
 
   .group {
-    background: var(--c-panel);
-    border: 2px solid var(--c-border);
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-rule);
     border-radius: 4px;
   }
   .group-head {
@@ -874,9 +874,9 @@
     align-items: center;
     gap: 0.5em;
     padding: 0.55em 0.8em;
-    background: var(--c-panel);
+    background: var(--of-paper-soft);
     border-bottom: 1px solid var(--post-accent);
-    color: var(--c-tan);
+    color: var(--of-ink);
     letter-spacing: 0.04em;
     font-weight: 700;
     font-size: 0.95em;
@@ -911,18 +911,18 @@
     flex-wrap: wrap;
     font-size: 0.76em;
   }
-  .price { color: var(--c-wood); }
+  .price { color: var(--of-ink-soft); }
   .buy-price::before { content: ''; }
   .sell-price { color: #8bb96a; }
   .stock-left {
     font-size: 0.85em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-style: italic;
   }
   .stock-left.low { color: #c96a2a; font-weight: 700; }
   .stock-left.out { color: #e85a4a; font-weight: 700; font-style: normal; }
   .sell-price.disabled {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     text-decoration: line-through;
     opacity: 0.7;
   }
@@ -948,7 +948,7 @@
     border-radius: 2px;
   }
   .control-tag.buy {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     background: var(--post-accent);
   }
   .control-tag.sell {
@@ -977,15 +977,15 @@
     font-size: 1.05em;
     padding: 0.7em 1.4em;
     background: var(--post-accent);
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
   }
   .confirm:hover:not(:disabled) {
     filter: brightness(1.15);
   }
   .cancel {
-    color: var(--c-wood);
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-wood);
+    color: var(--of-ink-soft);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink-soft);
   }
   .warning {
     color: #e85a4a;
@@ -994,7 +994,7 @@
   }
 
   .empty {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     margin: 0.3em 0;
   }
@@ -1018,9 +1018,9 @@
   .mode-tab {
     flex: 1;
     padding: 0.5em 0.8em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     font-family: inherit;
     font-weight: 700;
@@ -1031,13 +1031,13 @@
     transition: background 0.12s, border-color 0.12s, color 0.12s;
   }
   .mode-tab:hover:not(.active) {
-    background: var(--c-panel);
-    border-color: var(--c-rust);
+    background: var(--of-paper-soft);
+    border-color: var(--of-rust);
   }
   .mode-tab.active {
-    background: var(--c-rust);
-    color: var(--c-tan-bright);
-    border-color: var(--c-ink);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
+    border-color: var(--of-ink);
   }
 
   .barter-form {
@@ -1056,8 +1056,8 @@
     flex-direction: column;
     gap: 0.4em;
     padding: 0.7em;
-    background: var(--c-panel);
-    border: 1px solid var(--c-wood);
+    background: var(--of-paper-soft);
+    border: 1px solid var(--of-ink-soft);
     border-radius: 3px;
   }
   .barter-col-head {
@@ -1065,14 +1065,14 @@
     font-size: 0.85em;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--c-rust);
+    color: var(--of-rust);
   }
   .barter-select {
     width: 100%;
     padding: 0.4em 0.5em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     font-family: inherit;
     font-size: 0.9em;
@@ -1086,15 +1086,15 @@
     font-size: 0.75em;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .barter-have {
     font-size: 0.78em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .empty {
     margin: 0;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     font-size: 0.85em;
   }
@@ -1116,7 +1116,7 @@
     font-size: 0.7em;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .quote-rate-val {
     font-size: 1.3em;
@@ -1135,9 +1135,9 @@
     padding: 0.4em 0.7em;
     font-size: 0.82em;
     font-style: italic;
-    color: var(--c-tan);
-    background: var(--c-panel);
-    border-left: 3px solid var(--c-wood);
+    color: var(--of-ink);
+    background: var(--of-paper-soft);
+    border-left: 3px solid var(--of-ink-soft);
     border-radius: 0 3px 3px 0;
   }
   .barter-flavor.preferred { border-left-color: #8bb96a; }
