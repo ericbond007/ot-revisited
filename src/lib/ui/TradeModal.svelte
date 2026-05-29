@@ -625,7 +625,7 @@
   .trade-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(26, 15, 8, 0.92);
+    background: rgba(42, 29, 12, 0.80);
     z-index: 100;
     display: flex;
     align-items: stretch;
