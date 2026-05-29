@@ -394,9 +394,9 @@
     display: flex;
     flex-direction: column;
     padding: 0.4em 0.5em;
-    border: var(--bw-2) solid var(--c-wood);
+    border: var(--bw-2) solid var(--of-ink-soft);
     border-radius: var(--r-sm);
-    background: var(--c-panel);
+    background: var(--of-paper-soft);
     gap: 0.35em;
   }
   /* Hero strip (#212): 1280:400 (~3.2:1) so the wagon scene reads as
