@@ -122,48 +122,48 @@
   }
   .remove-btn {
     padding: 0.3em 0.7em;
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink-soft);
   }
   .name-dice {
     padding: 0.25em 0.5em;
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     font-size: 1.1em;
     cursor: pointer;
     transition: background 0.1s, transform 0.1s;
     line-height: 1;
   }
-  .name-dice:hover { background: var(--c-panel); transform: rotate(-15deg); }
+  .name-dice:hover { background: var(--of-paper-soft); transform: rotate(-15deg); }
   .name-dice:active { transform: rotate(15deg) scale(0.95); }
   .required-tag {
     font-size: 0.7em;
     letter-spacing: 0.15em;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
     padding: 0.3em 0.6em;
   }
   .sex-toggle {
     display: inline-flex;
-    border: 2px solid var(--c-wood);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     overflow: hidden;
   }
   .sex-btn {
     padding: 0.25em 0.55em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
+    background: var(--of-paper);
+    color: var(--of-ink);
     border: 0;
     font-size: 1.1em;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.1s, color 0.1s;
   }
-  .sex-btn:hover:not(.selected) { background: var(--c-panel); }
+  .sex-btn:hover:not(.selected) { background: var(--of-paper-soft); }
   .sex-btn.selected {
-    background: var(--c-rust);
-    color: var(--c-tan-bright);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
   }
   .add-companion { margin-bottom: 0.8em; }
   .kit-toggle {
@@ -172,15 +172,15 @@
     gap: 0.6em;
     margin: 0.5em 0 0;
     padding: 0.7em 0.9em;
-    border: 1px solid var(--c-wood-soft, rgba(120,80,40,0.25));
+    border: 1px solid var(--of-ink-faded, rgba(120,80,40,0.25));
     border-radius: 4px;
-    background: var(--c-paper, rgba(255,250,240,0.4));
+    background: var(--of-paper-soft, rgba(255,250,240,0.4));
     cursor: pointer;
   }
   .kit-toggle input[type="checkbox"] { margin-top: 0.2em; flex-shrink: 0; }
   .kit-toggle-text { display: flex; flex-direction: column; gap: 0.2em; }
   .kit-toggle-text small {
-    color: var(--c-wood, #6a4a28);
+    color: var(--of-ink-soft, #6a4a28);
     font-size: 0.85em;
     line-height: 1.3;
   }

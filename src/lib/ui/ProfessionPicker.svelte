@@ -71,9 +71,9 @@
     justify-content: center;
     gap: 0.2em;
     padding: 0.5em 0.3em;
-    background: var(--c-bg-raised);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     cursor: pointer;
     font-family: inherit;
@@ -87,13 +87,13 @@
     width: 100%;
   }
   .card:hover:not(:disabled):not(.selected) {
-    background: var(--c-panel);
-    border-color: var(--c-rust);
+    background: var(--of-paper-soft);
+    border-color: var(--of-rust);
   }
   .card.selected {
-    background: var(--c-rust);
-    color: var(--c-tan-bright);
-    border-color: var(--c-ink);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
+    border-color: var(--of-ink);
   }
 
   .icon {
@@ -106,12 +106,12 @@
     line-height: 1.1;
   }
   .fem {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 0.9em;
     margin-left: 0.2em;
   }
   .card.selected .fem {
-    color: var(--c-tan-bright);
+    color: var(--of-paper-soft);
   }
 
   /* The Tooltip wrapper spans inline by default — make it a grid item so the

@@ -8,6 +8,10 @@
   import { getProfession } from '$lib/game/content/professions';
   import { getWagon, BRAN_BARREL_UPGRADE_PRICE, type WagonModel, type WagonModelId } from '$lib/game/content/wagons';
   import { ICON } from '$lib/data/icon-dictionary';
+  import { BUNDLES, type Bundle } from '$lib/game/content/bundles';
+  import { computeCoverage } from '$lib/game/systems/coverage';
+  import BundleCard from '$lib/ui/outfit/BundleCard.svelte';
+  import CoverageHints from '$lib/ui/outfit/CoverageHints.svelte';
 
   let { data, form }: {
     data: {
@@ -44,6 +48,28 @@
   let buyQty = $state<Record<string, number>>(
     Object.fromEntries(data.buyables.filter((id) => PRICES[id] && ITEMS[id]).map((id) => [id, 0]))
   );
+
+  // #1172 — applied-bundle ids (visual marker only; a bundle can be
+  // applied more than once — additive is intentional, the steppers trim).
+  let appliedBundles = $state<Set<string>>(new Set());
+
+  function applyBundle(b: Bundle) {
+    for (const [id, qty] of Object.entries(b.kit)) {
+      // All bundle ids are pre-seeded in buyQty (they're in OUTFITTER_BUYABLES),
+      // so this mutates an existing reactive key — additive onto the basket.
+      buyQty[id] = (buyQty[id] ?? 0) + qty;
+    }
+    appliedBundles = new Set(appliedBundles).add(b.id);
+  }
+
+  // A-la-carte cost at the player's effective buy prices (honors
+  // merchant/banker discount via buyMult). Display only — no stored cost.
+  function bundleCost(b: Bundle): number {
+    return Object.entries(b.kit).reduce(
+      (s, [id, qty]) => s + qty * (PRICES[id]?.buy ?? 0) * buyMult,
+      0
+    );
+  }
 
   // Wagon + oxen selections.
   // svelte-ignore state_referenced_locally
@@ -106,6 +132,18 @@
   const totalWeight = $derived(starterWeight + suppliesWeight);
   const capacity = $derived(selectedWagonModel.carryCapacity);
   const weightPct = $derived(Math.round((totalWeight / capacity) * 100));
+
+  // #1172 — live coverage hints, recomputed against the real engine
+  // consumption model as the basket + wagon change.
+  const coverage = $derived(
+    computeCoverage({
+      party: gs.party,
+      starterInventory: gs.inventory,
+      basket: buyQty,
+      wagonModel: selectedWagon
+    })
+  );
+  const liveSouls = $derived(gs.party.filter((m) => !m.dead).length);
   const weightColor = $derived(
     weightPct >= 100 ? '#e85a4a' :
     weightPct >= 80  ? '#c96a2a' :
@@ -291,6 +329,31 @@
 
   <!-- Left rail: tips + contextual hints -->
   <aside class="side-rail">
+
+    <!-- #1172 — one-click historical loadouts (additive, a-la-carte priced) -->
+    <section class="ds-paper bundles-panel">
+      <span class="ds-eyebrow">Loadouts</span>
+      <p class="bundles-blurb">
+        Apply a historical preset to fill the basket fast, then adjust. Priced at the
+        shelf rate — no discount, no markup.
+      </p>
+      <div class="bundles-list">
+        {#each BUNDLES as b (b.id)}
+          <BundleCard
+            bundle={b}
+            cost={bundleCost(b)}
+            applied={appliedBundles.has(b.id)}
+            onapply={applyBundle}
+          />
+        {/each}
+      </div>
+    </section>
+
+    <!-- #1172 — live coverage hints -->
+    <section class="ds-paper">
+      <CoverageHints {coverage} souls={liveSouls} />
+    </section>
+
     <section class="panel tips-panel">
       <div class="panel-head">TIPS</div>
       <ul class="tips">
@@ -744,7 +807,7 @@
   }
   .live-inv-panel .hint {
     font-size: 0.7em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     font-weight: normal;
     letter-spacing: normal;
@@ -767,7 +830,7 @@
     font-size: 0.72em;
     letter-spacing: 0.08em;
     font-weight: 700;
-    color: var(--c-rust);
+    color: var(--of-rust);
     text-transform: uppercase;
   }
   .live-rows {
@@ -782,14 +845,14 @@
     font-size: 0.85em;
   }
   .live-row:nth-child(odd) { background: rgba(138, 90, 42, 0.06); }
-  .live-name { color: var(--c-tan); }
+  .live-name { color: var(--of-ink); }
   .live-qty {
     display: inline-flex;
     align-items: baseline;
     gap: 0.3em;
   }
   .live-qty strong {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
     font-size: 1.05em;
   }
@@ -809,24 +872,24 @@
     flex-direction: column;
     gap: 0.4em;
     font-size: 0.85em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     line-height: 1.4;
   }
-  .tips strong { color: var(--c-rust); }
+  .tips strong { color: var(--of-rust); }
   .discount-panel p {
     margin: 0 0 0.3em 0;
     font-size: 0.85em;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
   .discount-panel .small {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     font-size: 0.78em;
   }
   .wagon-hint-panel p {
     margin: 0 0 0.5em 0;
     font-size: 0.85em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-style: italic;
     line-height: 1.4;
   }
@@ -845,14 +908,14 @@
   .hint-stats dt {
     font-size: 0.85em;
     letter-spacing: 0.08em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     text-transform: uppercase;
   }
   .hint-stats dd {
     margin: 0;
     font-weight: 700;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
   }
 
   .main-col {
@@ -889,7 +952,7 @@
     align-items: center;
     flex-wrap: wrap;
     padding: 0.7em 0.9em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
   }
 
   @media (max-width: 900px) {
@@ -916,18 +979,18 @@
   }
   .outfit-head h1 {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     letter-spacing: 0.05em;
     font-size: 1.3em;
   }
   .lede {
     margin: 0;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.88em;
     font-style: italic;
   }
   .hint {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.82em;
     font-style: italic;
     font-weight: normal;
@@ -939,7 +1002,7 @@
   .panel-head {
     font-size: 0.7em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.4em;
   }
@@ -958,13 +1021,13 @@
     width: 1.1em;
     height: 1.1em;
     cursor: pointer;
-    accent-color: var(--c-rust);
+    accent-color: var(--of-rust);
   }
   .dog-glyph-big { font-size: 1.8em; line-height: 1; }
   .dog-glyph { font-size: 1em; line-height: 1; margin-right: 0.2em; }
   .dog-copy { display: flex; flex-direction: column; gap: 0.15em; }
-  .dog-title { color: var(--c-tan-bright); font-weight: 700; }
-  .dog-sub { font-size: 0.82em; color: var(--c-wood); }
+  .dog-title { color: var(--of-ink); font-weight: 700; }
+  .dog-sub { font-size: 0.82em; color: var(--of-ink-soft); }
   .dog-name-row {
     display: flex;
     align-items: center;
@@ -975,22 +1038,22 @@
   .dog-name-label {
     font-size: 0.7em;
     letter-spacing: 0.12em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
   .dog-name-input {
     width: 12em;
     padding: 0.25em 0.5em;
-    background: var(--c-parchment);
-    color: var(--c-ink);
-    border: 2px solid var(--c-ink);
+    background: var(--of-paper-soft);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink);
     border-radius: 3px;
     font-family: inherit;
     font-size: 0.95em;
     font-weight: 700;
   }
   .dog-name-input:focus {
-    outline: 2px solid var(--c-rust);
+    outline: 2px solid var(--of-rust);
     outline-offset: -2px;
   }
   .party-list {
@@ -1000,7 +1063,7 @@
     font-size: 0.95em;
   }
   .party-row { display: inline-flex; gap: 0.3em; align-items: baseline; }
-  .prof { color: var(--c-wood); font-size: 0.85em; }
+  .prof { color: var(--of-ink-soft); font-size: 0.85em; }
 
   /* Starter kit — grouped by category so quantities are easy to scan */
   .starter { padding: 0.8em 1em; }
@@ -1019,7 +1082,7 @@
     align-items: baseline;
     gap: 0.4em;
     padding: 0.15em 0;
-    border-bottom: 2px solid var(--c-wood);
+    border-bottom: 2px solid var(--of-ink-soft);
     margin-bottom: 0.25em;
   }
   .starter-group-icon { font-size: 1.1em; line-height: 1; }
@@ -1027,13 +1090,13 @@
     font-size: 0.8em;
     letter-spacing: 0.12em;
     font-weight: 700;
-    color: var(--c-rust);
+    color: var(--of-rust);
     text-transform: uppercase;
   }
   .starter-group-wt {
     margin-left: auto;
     font-size: 0.75em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
   .starter-rows {
@@ -1050,19 +1113,19 @@
   }
   .starter-row:nth-child(odd) { background: rgba(138, 90, 42, 0.06); }
   .starter-row:last-child { border-bottom: 0; }
-  .starter-name { color: var(--c-tan); }
+  .starter-name { color: var(--of-ink); }
   .starter-qty {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.9em;
   }
   .starter-qty strong {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
     font-size: 1.15em;
     margin-left: 0.1em;
   }
   .empty {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     margin: 0.3em 0;
   }
@@ -1083,12 +1146,12 @@
   .total-label {
     font-size: 0.65em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
-  .total-val { font-weight: 700; font-size: 1.05em; color: var(--c-tan-bright); }
+  .total-val { font-weight: 700; font-size: 1.05em; color: var(--of-ink); }
   .total-val.small { font-size: 0.85em; }
-  .total-val.cash { color: var(--c-tan-bright); }
+  .total-val.cash { color: var(--of-ink); }
   .total-val.spend { color: #c96a2a; }
   .total-val.danger { color: #e85a4a; }
 
@@ -1118,26 +1181,27 @@
     align-items: center;
     gap: 0.7em;
     padding: 0.6em 0.8em;
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 3px;
     cursor: pointer;
     transition: background 0.12s, border-color 0.12s;
   }
-  .kind-card:hover { border-color: var(--c-rust); }
+  .kind-card:hover { border-color: var(--of-rust); }
   .kind-card.selected {
-    background: var(--c-rust-dark);
-    border-color: var(--c-rust);
+    background: var(--of-rust-dark);
+    border-color: var(--of-rust);
   }
   .kind-card input[type='radio'] {
     margin: 0;
-    accent-color: var(--c-rust);
+    accent-color: var(--of-rust);
   }
   .kind-glyph { font-size: 1.8em; line-height: 1; }
   .kind-body { display: flex; flex-direction: column; gap: 0.1em; }
-  .kind-label { color: var(--c-tan-bright); font-weight: 700; }
-  .kind-sub { font-size: 0.82em; color: var(--c-wood); }
-  .kind-card.selected .kind-sub { color: var(--c-tan); }
+  .kind-label { color: var(--of-ink); font-weight: 700; }
+  .kind-sub { font-size: 0.82em; color: var(--of-ink-soft); }
+  .kind-card.selected .kind-label { color: var(--of-paper-soft); font-weight: 700; }
+  .kind-card.selected .kind-sub { color: var(--of-paper-soft); }
   .surcharge {
     font-size: 0.8em;
     color: #c96a2a;
@@ -1146,10 +1210,10 @@
   }
   .grain-hint {
     font-size: 0.82em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     padding: 0.35em 0.5em;
     background: rgba(201, 106, 42, 0.1);
-    border-left: 3px solid var(--c-rust);
+    border-left: 3px solid var(--of-rust);
     border-radius: 0 3px 3px 0;
     margin-top: 0.4em;
     line-height: 1.4;
@@ -1169,12 +1233,12 @@
   .oxen-glyph { font-size: 1.4em; line-height: 1; }
   .oxen-have, .oxen-total, .oxen-plus {
     font-size: 0.95em;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
   .oxen-have strong, .oxen-total strong {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
   }
-  .oxen-plus { color: var(--c-wood); font-weight: 700; }
+  .oxen-plus { color: var(--of-ink-soft); font-weight: 700; }
 
   .team-status {
     padding: 0.4em 0.6em;
@@ -1185,12 +1249,12 @@
   }
   .team-status.tone-ok {
     background: rgba(139, 185, 106, 0.15);
-    color: var(--c-tan);
+    color: var(--of-ink);
     border-left: 3px solid #8bb96a;
   }
   .team-status.tone-warn {
     background: rgba(245, 201, 106, 0.15);
-    color: var(--c-tan);
+    color: var(--of-ink);
     border-left: 3px solid #f5c96a;
   }
   .team-status.tone-bad {
@@ -1205,7 +1269,7 @@
   .buy-head { margin-top: 0.5em; }
   .buy-head h2 {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 1.1em;
     letter-spacing: 0.05em;
   }
@@ -1213,12 +1277,12 @@
 
   .group {
     /* Override default button chrome — use panel styling inside */
-    background: var(--c-panel);
-    border: 2px solid var(--c-border);
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-rule);
     border-radius: 4px;
   }
   .group.open {
-    border-color: var(--c-wood);
+    border-color: var(--of-ink-soft);
   }
   .group-head {
     /* Sticky category header — stays at the top of the scroll area as the
@@ -1234,29 +1298,29 @@
     gap: 0.5em;
     width: 100%;
     padding: 0.55em 0.8em;
-    background: var(--c-panel);
+    background: var(--of-paper-soft);
     border: 0;
     border-bottom: 1px solid rgba(138, 90, 42, 0.4);
     cursor: pointer;
     font-family: inherit;
-    color: var(--c-tan);
+    color: var(--of-ink);
     text-align: left;
     letter-spacing: 0.04em;
     text-transform: none;
     font-weight: 700;
     font-size: 0.95em;
   }
-  .group-head:hover { color: var(--c-tan-bright); }
+  .group-head:hover { color: var(--of-ink); }
   .group-icon { font-size: 1.2em; line-height: 1; }
   .group-label { flex: 1; }
   .group-count {
     font-size: 0.8em;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
     margin-right: 0.4em;
   }
   .group-chev {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.85em;
   }
 
@@ -1275,7 +1339,7 @@
     padding: 0.6em 0.8em;
     margin: 0 0.4em 0.4em 0.4em;
     background: rgba(201, 106, 42, 0.10);
-    border: 1px dashed var(--c-rust);
+    border: 1px dashed var(--of-rust);
     border-radius: 4px;
   }
   .bundle-label {
@@ -1289,20 +1353,20 @@
     line-height: 1;
   }
   .bundle-name {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: bold;
     font-size: 0.95em;
   }
   .bundle-desc {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.78em;
     opacity: 0.85;
   }
   .bundle-add {
     padding: 0.4em 0.9em;
-    background: var(--c-rust);
-    color: var(--c-cream);
-    border: 1px solid var(--c-rust-dark);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
+    border: 1px solid var(--of-rust-dark);
     border-radius: 3px;
     font-family: inherit;
     font-size: 0.85em;
@@ -1331,7 +1395,7 @@
     min-width: 0;
   }
   .item-name { font-size: 0.95em; }
-  .item-price { font-size: 0.76em; color: var(--c-wood); }
+  .item-price { font-size: 0.76em; color: var(--of-ink-soft); }
 
   .item-controls {
     display: inline-flex;
@@ -1346,7 +1410,7 @@
     padding: 0.7em 1.4em;
   }
   .back {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     text-decoration: underline;
   }
   .warning {
@@ -1354,4 +1418,9 @@
     font-size: 0.9em;
     font-style: italic;
   }
+
+  /* #1172 — bundles panel + coverage */
+  .bundles-panel { display: flex; flex-direction: column; gap: 8px; }
+  .bundles-blurb { margin: 0; font-family: var(--of-body); font-style: italic; font-size: var(--of-fs-sub); color: var(--of-ink-soft); line-height: 1.4; }
+  .bundles-list { display: flex; flex-direction: column; gap: 6px; }
 </style>
