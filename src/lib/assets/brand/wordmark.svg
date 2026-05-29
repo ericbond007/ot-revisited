@@ -1,10 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96" role="img" aria-label="OT.IO wordmark">
   <defs>
-    
+    <style>
+      .ot  { font-family: 'Rye', Georgia, serif; font-size: 56px; }
+      .sub { font-family: 'IM Fell English SC', 'IM Fell English', Georgia, serif; font-size: 12px; letter-spacing: 0.16em; }
+    </style>
   </defs>
-  <text x="6" y="68" class="ot" fill="#c96a2a">OT</text>
-  <text x="148" y="68" class="ot" fill="#f5e6c8">.</text>
-  <text x="170" y="68" class="ot" fill="#c96a2a">IO</text>
-  <text x="8" y="90" class="sub" fill="#8a5a2a">OREGON TRAIL · REVISITED</text>
-  <line x1="6" y1="14" x2="314" y2="14" stroke="#5a3a1a" stroke-width="1" stroke-dasharray="4 3"></line>
+  <text x="6" y="68" class="ot" fill="#94340e">OT</text>
+  <text x="148" y="68" class="ot" fill="#5e1f08">.</text>
+  <text x="170" y="68" class="ot" fill="#94340e">IO</text>
+  <text x="8" y="90" class="sub" fill="#5a3f1c">OREGON TRAIL · REVISITED</text>
+  <line x1="6" y1="14" x2="314" y2="14" stroke="#8a6a3c" stroke-width="1" stroke-dasharray="4 3"></line>
 </svg>

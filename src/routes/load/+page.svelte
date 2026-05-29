@@ -12,9 +12,9 @@
       {#each data.saves as save}
         <div class="panel" style="display: flex; justify-content: space-between; align-items: center; gap: 1em;">
           <div>
-            <strong style="color: var(--c-rust);">{save.slotName}</strong>
+            <strong style="color: var(--of-rust);">{save.slotName}</strong>
             <div style="font-size: 0.9em;">{save.summary}</div>
-            <div style="font-size: 0.75em; color: var(--c-wood);">Saved {new Date(save.updatedAt).toLocaleString()}</div>
+            <div style="font-size: 0.75em; color: var(--of-ink-soft);">Saved {new Date(save.updatedAt).toLocaleString()}</div>
           </div>
           <div style="display: flex; gap: 0.5em;">
             <form method="POST" action="?/load">
