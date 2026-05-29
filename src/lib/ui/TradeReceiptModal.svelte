@@ -143,7 +143,7 @@
     max-width: 620px;
     width: 100%;
     padding: 1.5em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     border-width: 3px;
     max-height: 92vh;
     overflow-y: auto;
@@ -166,11 +166,11 @@
     font-size: 0.7em;
     letter-spacing: 0.15em;
     font-weight: 700;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .head-titles h2 {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 1.4em;
     line-height: 1.1;
   }
@@ -201,8 +201,8 @@
     padding: 0.2em 0.1em;
     font-size: 0.88em;
   }
-  .qty { color: var(--c-rust); font-weight: 700; text-align: right; }
-  .name { color: var(--c-tan); }
+  .qty { color: var(--of-rust); font-weight: 700; text-align: right; }
+  .name { color: var(--of-ink); }
   .amount { font-weight: 700; font-variant-numeric: tabular-nums; }
   .amount.pos, .val.pos { color: #8bb96a; }
   .amount.neg, .val.neg { color: #e85a4a; }
@@ -215,7 +215,7 @@
     margin-top: 0.25em;
     font-size: 0.82em;
     font-weight: 700;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: 0.05em;
   }
   .subtotal .pos { color: #8bb96a; }
@@ -234,20 +234,20 @@
   .bonus-icon { font-size: 1.4em; line-height: 1; }
   .bonus-body { display: flex; flex-direction: column; gap: 0.1em; min-width: 0; }
   .bonus-title {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
     font-size: 0.92em;
   }
   .bonus-sub {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.8em;
   }
   .bonus-sub strong { color: #8bb96a; }
 
   .totals {
     padding: 0.6em 0.8em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-border);
+    background: var(--of-paper);
+    border: 1px solid var(--of-rule);
     border-radius: 3px;
     display: flex;
     flex-direction: column;
@@ -260,19 +260,19 @@
     gap: 0.6em;
   }
   .label {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.78em;
     letter-spacing: 0.08em;
     font-weight: 700;
   }
   .val {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
     display: inline-flex;
     align-items: baseline;
     gap: 0.25em;
   }
-  .val .arrow { color: var(--c-wood); font-weight: normal; }
+  .val .arrow { color: var(--of-ink-soft); font-weight: normal; }
   .weight-delta {
     font-size: 0.78em;
     font-weight: 700;
@@ -290,8 +290,8 @@
   .continue {
     font-size: 1em;
     padding: 0.65em 1.6em;
-    background: var(--c-rust);
-    color: var(--c-tan-bright);
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
   }
   .continue:hover { filter: brightness(1.15); }
 </style>

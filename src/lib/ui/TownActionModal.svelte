@@ -96,7 +96,7 @@
     kind === 'repair' ? {
       glyph: ICON.town_services.blacksmith,
       title: 'Hire the blacksmith',
-      accent: 'var(--c-rust)',
+      accent: 'var(--of-rust)',
       formAction: `?/townRepair&slot=${qp}`,
       summary: `+${repairPoints} wagon condition`,
       confirmLabel: 'Confirm'
@@ -128,7 +128,7 @@
     : kind === 'forge' ? {
       glyph: '⚒️',
       title: 'Forge ox shoes',
-      accent: 'var(--c-rust)',
+      accent: 'var(--of-rust)',
       formAction: `?/townForgeOxShoes&slot=${qp}`,
       summary: `${forgePairs} ${forgePairs === 1 ? 'pair' : 'pairs'} of ox shoes`,
       confirmLabel: 'Confirm'
@@ -247,7 +247,7 @@
     padding: 1.2em 1.4em;
     border-color: var(--accent);
     border-width: 2px;
-    background: linear-gradient(180deg, var(--c-panel) 0%, #1a1612 100%);
+    background: linear-gradient(180deg, var(--of-paper-soft) 0%, #1a1612 100%);
   }
 
   .head {
@@ -272,7 +272,7 @@
   .modal-title { margin: 0; color: var(--accent); font-size: 1.25em; }
 
   .summary {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     margin: 0 0 0.9em 0;
     font-size: 0.92em;
     line-height: 1.4;
@@ -294,11 +294,11 @@
     font-size: 0.75em;
     font-weight: 700;
     letter-spacing: 0.1em;
-    color: var(--c-rust-dark);
+    color: var(--of-rust-dark);
   }
   .qty-suffix {
     font-size: 0.85em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     opacity: 0.7;
   }
 
@@ -313,7 +313,7 @@
     font-size: 0.75em;
     font-weight: 700;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .cost-val { font-size: 1.4em; font-weight: 700; color: var(--accent); }
   .cost-val.cant-afford { color: #e85a4a; }
@@ -335,7 +335,7 @@
   .btn-cancel {
     border-color: rgba(138, 90, 42, 0.5);
     background: transparent;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .btn-cancel:hover { background: rgba(138, 90, 42, 0.1); }
   .btn-confirm {
