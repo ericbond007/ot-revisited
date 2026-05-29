@@ -79,9 +79,9 @@
     flex-direction: column;
     gap: 0.4em;
     padding: 0.8em 0.8em 0.7em 0.8em;
-    background: var(--c-panel);
-    color: var(--c-tan);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper-soft);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
     border-radius: 4px;
     cursor: pointer;
     font-family: inherit;
@@ -92,13 +92,13 @@
     transition: background 0.12s, border-color 0.12s, color 0.12s;
   }
   .card:hover:not(.selected) {
-    background: var(--c-bg-raised);
-    border-color: var(--c-rust);
+    background: var(--of-paper);
+    border-color: var(--of-rust);
   }
   .card.selected {
-    background: var(--c-bg-raised);
-    border-color: var(--c-rust);
-    box-shadow: 0 0 0 1px var(--c-rust) inset;
+    background: var(--of-paper);
+    border-color: var(--of-rust);
+    box-shadow: 0 0 0 1px var(--of-rust) inset;
   }
 
   .icon-row {
@@ -106,13 +106,13 @@
     justify-content: center;
     align-items: flex-end;
     min-height: 2.8em;
-    color: var(--c-rust);
+    color: var(--of-rust);
   }
   .name {
     font-weight: 700;
     font-size: 1.05em;
     letter-spacing: 0.05em;
-    color: var(--c-rust);
+    color: var(--of-rust);
     text-align: center;
   }
   .price-row {
@@ -123,7 +123,7 @@
   }
   .price {
     font-weight: 700;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
   }
   .delta {
     font-size: 0.8em;
@@ -144,19 +144,19 @@
   .stats dt {
     font-size: 0.9em;
     letter-spacing: 0.08em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     text-transform: uppercase;
   }
   .stats dd {
     margin: 0;
     font-weight: 700;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
 
   .desc {
     font-size: 0.78em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     margin: 0;
     line-height: 1.35;
