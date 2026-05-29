@@ -80,7 +80,7 @@
       {/if}
       <h2 class="modal-title river-title">{riverName}</h2>
     </div>
-    <p style="color: var(--c-wood);">
+    <p style="color: var(--of-ink-soft);">
       Depth {river.depthFt.toFixed(1)} ft · Current {river.currentMph} mph · Ferry ${river.ferryPrice}
     </p>
 
@@ -118,7 +118,7 @@
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(26, 15, 8, 0.85);
+    background: rgba(42, 29, 12, 0.80);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -141,7 +141,7 @@
   }
   .wait-label {
     font-size: 0.85em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     font-weight: 700;

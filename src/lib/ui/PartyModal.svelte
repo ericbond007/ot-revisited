@@ -122,7 +122,7 @@
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(26, 15, 8, 0.85);
+    background: rgba(42, 29, 12, 0.80);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -134,7 +134,7 @@
     max-width: 640px;
     width: 100%;
     padding: 1.5em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
   }
 
   .section { margin-bottom: 1.2em; }
@@ -142,7 +142,7 @@
   .section-head {
     font-size: 0.72em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.4em;
   }
@@ -150,15 +150,15 @@
   .morale-row { display: flex; flex-direction: column; gap: 0.4em; }
   .morale-bar {
     height: 1.2em;
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink);
     border-radius: 3px;
     overflow: hidden;
   }
   .morale-fill { height: 100%; transition: width 0.5s, background 0.5s; }
   .morale-text { display: flex; gap: 0.5em; align-items: baseline; }
   .morale-num { font-weight: 700; font-size: 1.1em; }
-  .morale-word { color: var(--c-wood); font-style: italic; }
+  .morale-word { color: var(--of-ink-soft); font-style: italic; }
 
   .people-list { display: flex; flex-direction: column; gap: 0.5em; }
   .person-row {
@@ -167,34 +167,34 @@
     flex-direction: column;
     gap: 0.3em;
     padding: 0.5em 0.7em;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     border: 2px solid transparent;
     border-radius: 3px;
     cursor: pointer;
     text-align: left;
     font-family: inherit;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-weight: normal;
     letter-spacing: normal;
     text-transform: none;
     transition: border-color 0.12s, background 0.12s;
   }
   .person-row:hover:not(:disabled) {
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
   }
   .person-row.dead {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     cursor: pointer; /* still clickable to see death details */
   }
   .chev {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.85em;
     opacity: 0.5;
     margin-left: 0.4em;
     transition: opacity 0.12s, color 0.12s;
   }
   .person-row:hover .chev {
-    color: var(--c-rust);
+    color: var(--of-rust);
     opacity: 1;
   }
   .person-head {
@@ -208,25 +208,25 @@
     line-height: 1;
   }
   .person-row.child {
-    border-left: 3px solid var(--c-rust);
+    border-left: 3px solid var(--of-rust);
     padding-left: calc(0.7em - 3px);
   }
   .person-name {
     font-weight: 700;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-size: 1em;
   }
-  .person-row.dead .person-name { color: var(--c-wood); text-decoration: line-through; }
-  .leader-star { color: var(--c-rust); margin-left: 0.2em; }
+  .person-row.dead .person-name { color: var(--of-ink-soft); text-decoration: line-through; }
+  .leader-star { color: var(--of-rust); margin-left: 0.2em; }
   .person-profession {
     font-size: 0.75em;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .person-age {
     font-size: 0.8em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     margin-left: auto;
   }
   .person-bar-row {
@@ -238,13 +238,13 @@
   }
   .person-bar-label {
     font-size: 0.7em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     letter-spacing: 0.08em;
   }
   .person-bar {
     height: 0.7em;
-    background: var(--c-bg);
-    border: 1px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -252,10 +252,10 @@
   .person-bar-num { font-weight: 700; text-align: right; }
   .person-status {
     font-size: 0.8em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-style: italic;
   }
-  .person-row.dead .person-status { color: var(--c-wood); }
+  .person-row.dead .person-status { color: var(--of-ink-soft); }
 
   .actions {
     display: flex;

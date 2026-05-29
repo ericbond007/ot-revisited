@@ -153,7 +153,7 @@
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(26, 15, 8, 0.85);
+    background: rgba(42, 29, 12, 0.80);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -165,7 +165,7 @@
     max-width: 680px;
     width: 100%;
     padding: 1.5em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     max-height: 90vh;
     overflow-y: auto;
   }
@@ -180,12 +180,12 @@
   .stat-head {
     font-size: 0.7em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
   .stat-val {
     font-size: 1em;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
   }
   .weight-row {
@@ -197,8 +197,8 @@
   }
   .weight-bar {
     height: 0.8em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -209,7 +209,7 @@
   .section-head {
     font-size: 0.75em;
     letter-spacing: 0.12em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.3em;
     display: flex;
@@ -219,7 +219,7 @@
   .cat-icon { font-size: 1.1em; }
   .cat-weight {
     font-size: 0.85em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     font-weight: normal;
     letter-spacing: normal;
@@ -244,10 +244,10 @@
   .item-row:last-child {
     border-bottom: 0;
   }
-  .item-name { color: var(--c-tan); }
+  .item-name { color: var(--of-ink); }
   .item-qty {
     font-weight: 700;
-    color: var(--c-rust);
+    color: var(--of-rust);
   }
 
   /* "Lighten the wagon" controls — visible only at landmarks (#179).
@@ -262,7 +262,7 @@
   .drop-btn {
     background: transparent;
     border: 1px solid rgba(138, 90, 42, 0.45);
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.7em;
     padding: 1px 5px;
     border-radius: 2px;
@@ -274,13 +274,13 @@
   }
   .drop-btn:hover {
     background: rgba(232, 90, 74, 0.18);
-    color: var(--c-paper);
-    border-color: var(--c-blood, #8a2020);
+    color: var(--of-paper-soft);
+    border-color: var(--of-bad, #8a2020);
   }
 
   .empty {
     font-style: italic;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     text-align: center;
     padding: 1em;
   }

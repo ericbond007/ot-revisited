@@ -136,7 +136,7 @@
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(26, 15, 8, 0.85);
+    background: rgba(42, 29, 12, 0.80);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -149,7 +149,7 @@
     max-width: 520px;
     width: 100%;
     padding: 1.3em 1.4em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
   }
 
   .head {
@@ -172,24 +172,24 @@
   }
   h2 {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     letter-spacing: 0.04em;
   }
   .leader {
     font-size: 0.7em;
     letter-spacing: 0.15em;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
   }
   .role {
     font-size: 0.85em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     text-transform: capitalize;
   }
   .profession {
     font-size: 0.75em;
     letter-spacing: 0.12em;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
     text-transform: uppercase;
     margin-top: 0.15em;
@@ -199,7 +199,7 @@
   .section-head {
     font-size: 0.7em;
     letter-spacing: 0.15em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
     margin-bottom: 0.35em;
   }
@@ -213,17 +213,17 @@
   }
   .bar {
     height: 0.9em;
-    background: var(--c-bg-raised);
-    border: 2px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink);
     border-radius: 3px;
     overflow: hidden;
   }
   .fill { height: 100%; transition: width 0.4s, background 0.4s; }
   .bar-num { font-weight: 700; }
-  .bar-word { color: var(--c-wood); font-style: italic; font-size: 0.9em; }
+  .bar-word { color: var(--of-ink-soft); font-style: italic; font-size: 0.9em; }
 
   .dead-line {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
 
@@ -240,22 +240,22 @@
     flex-direction: column;
     gap: 0.1em;
     padding: 0.4em 0.6em;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     border-radius: 3px;
   }
   .cond-meta {
     font-size: 0.78em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .cond-treat {
     font-size: 0.78em;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-style: italic;
   }
 
   .bonus {
     margin: 0 0 0.4em 0;
-    color: var(--c-tan);
+    color: var(--of-ink);
     line-height: 1.4;
   }
 
@@ -270,11 +270,11 @@
   }
   .gear-list li:last-child { border-bottom: 0; }
   .gear-qty {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
     min-width: 2.5em;
   }
-  .gear-name { color: var(--c-tan); }
+  .gear-name { color: var(--of-ink); }
 
   .actions {
     display: flex;

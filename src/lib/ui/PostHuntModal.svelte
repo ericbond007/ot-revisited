@@ -183,7 +183,7 @@
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(26, 15, 8, 0.88);
+    background: rgba(42, 29, 12, 0.80);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -199,7 +199,7 @@
     max-width: 560px;
     width: 100%;
     padding: 1.5em;
-    border-color: var(--c-rust);
+    border-color: var(--of-rust);
     border-width: 3px;
     animation: card-slide 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
   }
@@ -228,11 +228,11 @@
     font-size: 0.7em;
     letter-spacing: 0.15em;
     font-weight: 700;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .head-titles h2 {
     margin: 0;
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-size: 1.5em;
     line-height: 1.1;
   }
@@ -248,8 +248,8 @@
     align-items: flex-start;
     gap: 0.7em;
     padding: 0.6em 0.8em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-border);
+    background: var(--of-paper);
+    border: 1px solid var(--of-rule);
     border-radius: 3px;
     animation: row-in 0.3s ease-out backwards;
   }
@@ -264,7 +264,7 @@
   }
 
   .haul-row.standalone { margin: 0.5em 0; }
-  .haul-row.meat    { border-left: 3px solid var(--c-rust); }
+  .haul-row.meat    { border-left: 3px solid var(--of-rust); }
   .haul-row.liver   { border-left: 3px solid #c94a4a; }
   .haul-row.berries { border-left: 3px solid #7a4a8c; }
   .haul-row.spent   { opacity: 0.8; }
@@ -282,11 +282,11 @@
     min-width: 0;
   }
   .row-name {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
   }
   .row-detail {
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.88em;
   }
   .spoil-warn {
@@ -304,20 +304,20 @@
     background: rgba(201, 106, 42, 0.1);
     border-left: 3px solid #c96a2a;
     border-radius: 0 3px 3px 0;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.9em;
     line-height: 1.5;
   }
-  .advice strong { color: var(--c-tan-bright); }
+  .advice strong { color: var(--of-ink); }
 
   .empty {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     line-height: 1.5;
     margin: 0 0 1em 0;
     padding: 1em;
     text-align: center;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     border-radius: 3px;
   }
 
