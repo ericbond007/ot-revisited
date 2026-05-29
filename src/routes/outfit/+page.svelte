@@ -583,20 +583,22 @@
               <button type="button" class="of-catnav-clear" onclick={() => (searchQuery = '')} title="Clear search">×</button>
             {/if}
           </div>
-          <div class="of-catnav-pills">
-            {#each groups as g}
-              {@const filled = g.ids.filter((id) => (buyQty[id] ?? 0) > 0).length}
-              <button
-                type="button"
-                class="of-catnav-pill"
-                class:of-catnav-pill-filled={filled > 0}
-                onclick={() => jumpTo(g.cat)}
-              >
-                {CATEGORY_LABEL[g.cat]}
-                <span class="of-catnav-pill-count">{filled > 0 ? filled : g.ids.length}</span>
-              </button>
-            {/each}
-          </div>
+        </div>
+
+        <!-- Category jump bar — prominent buttons; scrolls with content (search above stays sticky) -->
+        <div class="of-catbar">
+          {#each groups as g}
+            {@const filled = g.ids.filter((id) => (buyQty[id] ?? 0) > 0).length}
+            <button
+              type="button"
+              class="of-catbar-btn"
+              class:of-catbar-btn-filled={filled > 0}
+              onclick={() => jumpTo(g.cat)}
+            >
+              <span class="of-catbar-label">{CATEGORY_LABEL[g.cat]}</span>
+              <span class="of-catbar-count">{filled > 0 ? filled : g.ids.length}</span>
+            </button>
+          {/each}
         </div>
 
         <!-- Category sections -->
@@ -1670,7 +1672,7 @@
     border-radius: 3px;
     margin-bottom: 8px;
     position: sticky;
-    top: 52px;
+    top: 98px;
     z-index: 4;
     box-shadow: 0 4px 10px rgba(74, 46, 21, 0.08);
   }
@@ -1708,29 +1710,6 @@
     font-weight: 400;
   }
   .of-catnav-clear:hover { color: var(--of-bad); }
-  .of-catnav-pills { display: flex; gap: 4px; flex-wrap: wrap; }
-  .of-catnav-pill {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    padding: 4px 9px;
-    background: var(--of-paper);
-    color: var(--of-ink-soft);
-    border: 1px solid var(--of-rule);
-    border-radius: 12px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    transition: border-color 0.12s, color 0.12s, background 0.12s;
-  }
-  .of-catnav-pill:hover { border-color: var(--of-rust); color: var(--of-ink); }
-  .of-catnav-pill-filled { background: var(--of-rust); color: var(--of-paper-soft); border-color: var(--of-rust-dark); }
-  .of-catnav-pill-filled:hover { color: var(--of-paper-soft); }
-  .of-catnav-pill-count { font-size: 12px; background: rgba(0, 0, 0, 0.12); padding: 1px 5px; border-radius: 8px; color: inherit; font-variant-numeric: tabular-nums; }
-  .of-catnav-pill-filled .of-catnav-pill-count { background: rgba(255, 255, 255, 0.22); }
 
   /* ----- Category sections ----- */
   .of-catalog { display: flex; flex-direction: column; gap: 10px; }
@@ -2277,4 +2256,37 @@
   }
   .of-header-collapsed .ohc-setout:hover:not(:disabled) { background: var(--of-rust-dark); }
   .ohc-setout:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Category jump bar — prominent carved buttons (replaces the tiny pills) */
+  .of-catbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .of-catbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 15px;
+    background: var(--of-paper-soft);
+    color: var(--of-ink);
+    border: 2px solid var(--of-ink-soft);
+    border-radius: 3px;
+    font-family: var(--of-sc);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: var(--of-btn-emboss);
+    transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.04s;
+  }
+  .of-catbar-btn:hover { background: var(--of-paper); border-color: var(--of-rust); color: var(--of-rust); }
+  .of-catbar-btn:active { transform: translateY(1px); box-shadow: var(--of-btn-emboss-active); }
+  .of-catbar-count {
+    font-family: var(--of-mono);
+    font-size: 12px;
+    background: var(--of-paper-deep);
+    border: 1px solid var(--of-rule);
+    border-radius: 9px;
+    padding: 1px 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .of-catbar-btn-filled { background: var(--of-rust); color: var(--of-paper-soft); border-color: var(--of-rust-dark); }
+  .of-catbar-btn-filled .of-catbar-count { background: rgba(255, 245, 220, 0.22); color: var(--of-paper-soft); border-color: transparent; }
 </style>
