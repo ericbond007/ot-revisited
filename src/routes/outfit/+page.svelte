@@ -130,6 +130,10 @@
   });
   const canDepart = $derived(canAfford && teamStatus.tone !== 'bad');
 
+  // Collapsing masthead on scroll (#outfit polish).
+  let scrollY = $state(0);
+  const headerCollapsed = $derived(scrollY > 80);
+
   // Group buyables by category
   const CATEGORY_LABEL: Record<ItemCategory, string> = {
     food: 'Food', feed: 'Feed', medicine: 'Medicine', weapon: 'Weapons',
@@ -271,6 +275,8 @@
   );
 </script>
 
+<svelte:window bind:scrollY={scrollY} />
+
 <form method="POST" action="?/outfit&slot={encodeURIComponent(data.slot)}" class="of-screen">
 
   <!-- Hidden form fields for wagon/team -->
@@ -294,7 +300,7 @@
   <!-- ================================================================
        HEADER — Broadsheet masthead
        ================================================================ -->
-  <header class="of-header">
+  <header class="of-header" class:of-header-collapsed={headerCollapsed}>
     <div class="of-mast-l">
       <div class="of-mast-row">
         <span class="of-mast-stamp">From <strong>Independence, Mo.</strong></span>
@@ -329,6 +335,14 @@
           spent <strong>${totalCost.toFixed(2)}</strong> of ${gs.cash.toLocaleString()}
         </span>
       </div>
+    </div>
+    <div class="of-header-compact">
+      <span class="ohc-item"><strong>{liveSouls}</strong> souls</span>
+      <span class="ohc-rule">·</span>
+      <span class="ohc-item">Cash <strong>${Math.round(gs.cash)}</strong></span>
+      <span class="ohc-item ohc-spend">Spend <strong>−${Math.round(totalCost)}</strong></span>
+      <span class="ohc-item">After <strong class:of-bad={cashLeft < 0}>${Math.round(cashLeft)}</strong></span>
+      <button type="submit" class="ohc-setout" disabled={!canDepart}>Set out →</button>
     </div>
   </header>
 
@@ -1187,11 +1201,11 @@
     gap: 20px;
     padding: 26px 28px 18px;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
   }
   .of-main {
     min-height: 0;
-    overflow-y: auto;
+    overflow-y: visible;
     padding-right: 4px;
     display: flex;
     flex-direction: column;
@@ -1662,7 +1676,7 @@
     border-radius: 3px;
     margin-bottom: 8px;
     position: sticky;
-    top: -1px;
+    top: 52px;
     z-index: 4;
     box-shadow: 0 4px 10px rgba(74, 46, 21, 0.08);
   }
@@ -1911,7 +1925,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    overflow-y: auto;
+    overflow-y: visible;
     min-height: 0;
     padding-right: 4px;
   }
@@ -2229,4 +2243,40 @@
     .of-dashboard { grid-template-columns: repeat(3, 1fr); }
     .of-wagon-grid { grid-template-columns: 1fr; }
   }
+
+  /* Collapsing sticky masthead (#outfit polish) */
+  .of-header { position: sticky; top: 0; z-index: 6; background: var(--of-paper); transition: padding 0.15s ease; }
+  .of-header-compact { display: none; }
+  .of-header-collapsed { grid-template-columns: 1fr; }
+  .of-header-collapsed::before, .of-header-collapsed::after { display: none; }
+  .of-header-collapsed .of-mast-l,
+  .of-header-collapsed .of-mast-center,
+  .of-header-collapsed .of-mast-r { display: none; }
+  .of-header-collapsed .of-header-compact {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 18px;
+    padding: 9px 28px;
+    border-bottom: 3px double var(--of-ink-soft);
+  }
+  .ohc-item { font-family: var(--of-sc); font-size: 14px; letter-spacing: 0.06em; color: var(--of-ink-soft); }
+  .ohc-item strong { font-family: var(--of-mono); color: var(--of-ink); font-variant-numeric: tabular-nums; }
+  .ohc-spend strong { color: var(--of-rust); }
+  .ohc-rule { color: var(--of-ink-faded); }
+  .ohc-setout {
+    margin-left: 6px;
+    padding: 7px 18px;
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
+    border: 2px solid var(--of-rust-dark);
+    border-radius: 2px;
+    font-family: var(--of-display);
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: var(--of-btn-emboss-strong);
+  }
+  .ohc-setout:hover:not(:disabled) { background: var(--of-rust-dark); }
+  .ohc-setout:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
