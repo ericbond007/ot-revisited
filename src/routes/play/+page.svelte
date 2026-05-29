@@ -411,17 +411,17 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
     margin-left: auto;
     padding: 0.35em 0.8em;
     background: transparent;
-    border: 1px solid var(--c-wood);
+    border: 1px solid var(--of-ink-soft);
     border-radius: 4px;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.78em;
     letter-spacing: 0.06em;
     cursor: pointer;
     transition: color 120ms, border-color 120ms, background 120ms;
   }
   .feedback-btn:hover {
-    color: var(--c-rust);
-    border-color: var(--c-rust);
+    color: var(--of-rust);
+    border-color: var(--of-rust);
     background: rgba(201, 106, 42, 0.08);
   }
   .top-bar {
@@ -443,7 +443,7 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
   .journey-icon {
     /* Override default button chrome — acts like a soft icon button */
     background: transparent;
-    color: var(--c-rust);
+    color: var(--of-rust);
     border: 2px solid transparent;
     padding: 0.1em 0.3em;
     font-size: 1.4em;
@@ -454,8 +454,8 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
   }
   .journey-icon:hover,
   .journey-icon.active {
-    border-color: var(--c-rust);
-    background: var(--c-bg-raised);
+    border-color: var(--of-rust);
+    background: var(--of-paper);
   }
   .journey-title {
     margin: 0;
@@ -539,7 +539,7 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
     /* Match the prototype's tighter inline rhythm: 4px row gap × 16px column gap. */
     gap: 4px 16px;
     align-items: center;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
   .date-readout .stat {
     display: inline-flex;
@@ -554,16 +554,16 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
   .date-readout .stat-label {
     font-size: 0.7em;
     letter-spacing: 0.12em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-weight: 700;
   }
   .date-readout .day-num {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
     transition: color 0.25s, text-shadow 0.25s;
   }
   .date-readout.pulse .day-num {
-    color: var(--c-rust);
-    text-shadow: 0 0 10px var(--c-rust);
+    color: var(--of-rust);
+    text-shadow: 0 0 10px var(--of-rust);
   }
 </style>

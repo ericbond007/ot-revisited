@@ -225,21 +225,21 @@
     flex-direction: column;
     gap: 0.4em;
     padding: 0.7em 0.9em;
-    background: var(--c-panel);
-    border: 2px solid var(--c-wood);
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-ink-soft);
     cursor: pointer;
     text-align: left;
     font-family: inherit;
-    color: var(--c-tan);
+    color: var(--of-ink);
     letter-spacing: normal;
     text-transform: none;
     font-weight: normal;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .inventory-panel:hover:not(:disabled) {
-    background: var(--c-panel);
-    border-color: var(--c-rust);
-    box-shadow: 0 0 0 1px var(--c-rust) inset;
+    background: var(--of-paper-soft);
+    border-color: var(--of-rust);
+    box-shadow: 0 0 0 1px var(--of-rust) inset;
   }
 
   .ip-head {
@@ -248,18 +248,18 @@
     align-items: baseline;
   }
   .ip-head h4 {
-    color: var(--c-rust);
+    color: var(--of-rust);
     margin: 0;
     font-size: 0.75em;
     letter-spacing: 0.15em;
   }
   .expand-hint {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-size: 0.85em;
     opacity: 0.6;
   }
   .inventory-panel:hover .expand-hint {
-    color: var(--c-rust);
+    color: var(--of-rust);
     opacity: 1;
   }
 
@@ -271,10 +271,10 @@
     justify-content: space-between;
     gap: 0.8em;
     font-size: 0.82em;
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
   }
   .cash { font-weight: 700; }
-  .water { color: var(--c-tan); }
+  .water { color: var(--of-ink); }
   .water-dirty { color: #c96a2a; font-weight: 700; }
 
   /* Food summary — the at-a-glance "how long will we last?" chip. */
@@ -283,7 +283,7 @@
     align-items: baseline;
     gap: 0.5em;
     padding: 0.3em 0.5em;
-    background: var(--c-bg-raised);
+    background: var(--of-paper);
     border: 1px solid rgba(138, 90, 42, 0.35);
     border-radius: 3px;
   }
@@ -295,12 +295,12 @@
   }
   .food-unit {
     font-size: 0.78em;
-    color: var(--c-tan);
+    color: var(--of-ink);
   }
   .food-lb {
     margin-left: auto;
     font-size: 0.78em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
 
@@ -311,11 +311,11 @@
     align-items: center;
     font-size: 0.8em;
   }
-  .weight-label { color: var(--c-wood); }
+  .weight-label { color: var(--of-ink-soft); }
   .weight-bar {
     height: 0.6em;
-    background: var(--c-bg-raised);
-    border: 1px solid var(--c-ink);
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink);
     border-radius: 2px;
     overflow: hidden;
     position: relative;
@@ -368,13 +368,13 @@
     font-size: 0.7em;
     letter-spacing: 0.1em;
     font-weight: 700;
-    color: var(--c-rust);
+    color: var(--of-rust);
     text-transform: uppercase;
   }
   .group-count {
     margin-left: auto;
     font-size: 0.72em;
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
   }
   .group-rows {
@@ -388,10 +388,10 @@
     justify-content: space-between;
     font-size: 0.8em;
   }
-  .row-name { color: var(--c-tan); }
-  .row-qty { color: var(--c-rust); font-weight: 700; }
+  .row-name { color: var(--of-ink); }
+  .row-qty { color: var(--of-rust); font-weight: 700; }
   .empty {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     font-style: italic;
     font-size: 0.85em;
     padding: 0.3em 0;

@@ -237,26 +237,26 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0.4em;
-    color: var(--c-tan);
+    color: var(--of-ink);
     font-size: 0.85em;
   }
   .heading-label {
-    color: var(--c-rust);
+    color: var(--of-rust);
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-size: 0.78em;
   }
   .heading-leg {
-    color: var(--c-tan-bright);
+    color: var(--of-ink);
     font-weight: 700;
     letter-spacing: 0.04em;
   }
   .heading-sub {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
   }
   .heading-sep {
-    color: var(--c-wood);
+    color: var(--of-ink-soft);
     opacity: 0.6;
   }
   .travel-form {
@@ -271,9 +271,9 @@
     align-items: center;
     gap: 0.4em;
     padding: 0.4em 0.8em;
-    background: var(--c-rust-dark);
-    color: var(--c-tan-bright);
-    border: 2px solid var(--c-ink);
+    background: var(--of-rust-dark);
+    color: var(--of-paper-soft);
+    border: 2px solid var(--of-ink);
     border-radius: 3px;
     font-family: inherit;
     font-weight: 700;
@@ -284,7 +284,7 @@
     transition: background 0.12s, box-shadow 0.12s;
   }
   .action:hover:not(:disabled) {
-    background: var(--c-rust);
+    background: var(--of-rust);
   }
   .action:disabled {
     opacity: 0.5;
@@ -310,11 +310,11 @@
      on Sundays; sized to match the SVG-glyph buttons around it. */
   .action.lay-by {
     background: #2a2a32;
-    border-color: var(--c-cream);
+    border-color: var(--of-ink);
   }
   .action.lay-by:hover:not(:disabled) {
     background: #3a3540;
-    border-color: var(--c-cream);
+    border-color: var(--of-ink);
   }
   .lay-by-glyph {
     font-size: 1.4em;
@@ -331,33 +331,33 @@
      inactive = dimmed, standard border. Matches the lay-by aesthetic. */
   .action.auto-sabbath {
     background: #22222a;
-    border-color: var(--c-wood);
+    border-color: var(--of-ink-soft);
     opacity: 0.7;
   }
   .action.auto-sabbath.active {
     background: #2a2a32;
-    border-color: var(--c-cream);
+    border-color: var(--of-ink);
     opacity: 1;
   }
   .action.auto-sabbath:hover:not(:disabled) {
     background: #3a3540;
-    border-color: var(--c-cream);
+    border-color: var(--of-ink);
     opacity: 1;
   }
 
   /* Contextual highlight on the action panel border per location */
-  .panel-trading_post { border-color: var(--c-rust); }
+  .panel-trading_post { border-color: var(--of-rust); }
   .panel-river { border-color: #4a8bc9; background: #1a1f28; }
   .panel-end { border-color: #f5c96a; }
 
   /* Highlight the contextually-relevant action button */
   .highlight:not(:disabled) {
-    background: var(--c-rust);
-    box-shadow: 0 0 0 2px var(--c-rust-dark), 0 0 10px rgba(201, 106, 42, 0.4);
+    background: var(--of-rust);
+    box-shadow: 0 0 0 2px var(--of-rust-dark), 0 0 10px rgba(201, 106, 42, 0.4);
     animation: action-pulse 1.6s ease-in-out infinite;
   }
   @keyframes action-pulse {
-    0%, 100% { box-shadow: 0 0 0 2px var(--c-rust-dark), 0 0 10px rgba(201, 106, 42, 0.3); }
-    50%      { box-shadow: 0 0 0 2px var(--c-rust-dark), 0 0 16px rgba(201, 106, 42, 0.7); }
+    0%, 100% { box-shadow: 0 0 0 2px var(--of-rust-dark), 0 0 10px rgba(201, 106, 42, 0.3); }
+    50%      { box-shadow: 0 0 0 2px var(--of-rust-dark), 0 0 16px rgba(201, 106, 42, 0.7); }
   }
 </style>
