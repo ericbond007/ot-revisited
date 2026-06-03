@@ -6,7 +6,7 @@ import { applyDailyConsumption } from '../systems/consumption';
 import { progressConditions } from '../systems/conditions';
 import { adjustMorale } from '../systems/morale';
 import { reapDead } from '../systems/death';
-import { applySpoilage, computeSpoilDay, setNpcSpoilClock } from '../systems/spoilage';
+import { applySpoilage, computeSpoilDay, setNpcSpoilClock, setSpoilClock } from '../systems/spoilage';
 import { applyDehydration } from '../systems/dehydration';
 import { applyEggLay } from '../systems/eggs';
 
@@ -368,6 +368,8 @@ export function hunt(state: GameState, opts: HuntOptions): GameState {
     ? { ...s.flags, _gameMeatSpoilDay: computeSpoilDay(s.day) }
     : { ...s.flags };
   s = { ...s, inventory: nextInventory, flags: nextFlags };
+  // Berries gathered/dressed on the hunt spoil on the fresh-berry curve.
+  if (berriesGain > 0) s = setSpoilClock(s, 'berries');
 
   // #294 — apply company-hunt redistribution + train-morale shifts.
   // Solo hunt while in-train: small −1 train morale per in-progress

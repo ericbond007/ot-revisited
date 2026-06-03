@@ -15,6 +15,7 @@ import { attemptFire } from '../systems/fire';
 import { reapDead } from '../systems/death';
 import { applyDehydration } from '../systems/dehydration';
 import { applyEggLay } from '../systems/eggs';
+import { setSpoilClock } from '../systems/spoilage';
 import { applyDietVariety, applyHotDrinks } from '../systems/diet';
 import {
   getCampAction,
@@ -177,6 +178,8 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
           ...s,
           inventory: { ...s.inventory, berries: currentBerries + FARMER_FORAGE_BERRIES }
         };
+        // Fresh-foraged berries mold fast — start/refresh the spoil clock.
+        s = setSpoilClock(s, 'berries');
       }
     }
 
