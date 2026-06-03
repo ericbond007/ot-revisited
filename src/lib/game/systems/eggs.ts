@@ -1,4 +1,5 @@
 import type { GameState } from '../types';
+import { setSpoilClock } from './spoilage';
 
 // Daily egg lay from the wagon's chickens. Historically 1 hen laid
 // ~every other day on trail conditions (poor feed, stress), so we
@@ -15,11 +16,16 @@ export function applyEggLay(state: GameState): GameState {
   if (chickens <= 0) return state;
   const laid = Math.floor(chickens / 2);
   if (laid <= 0) return state;
-  return {
+  // Refresh the egg spoil clock on every lay: fresh eggs from today
+  // reset the freshness window, so a pile only spoils once the hens
+  // stop laying for EGG_FRESH_DAYS (died / sold off). Matches the
+  // "none laid in two weeks" log copy.
+  const withEggs: GameState = {
     ...state,
     inventory: {
       ...state.inventory,
       egg: (state.inventory.egg ?? 0) + laid
     }
   };
+  return setSpoilClock(withEggs, 'egg');
 }
