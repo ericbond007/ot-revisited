@@ -502,8 +502,10 @@
           </div>
           <div class="of-chicken-stepper">
             <span class="of-chicken-have">starter: {gs.inventory.chicken ?? 0}</span>
+            <!-- No `name`: the top-level buyQty loop is the single source of
+                 the buy_chicken form field. A `name` here emits a SECOND hidden
+                 input and the server double-buys (dup-buy regression). -->
             <NumberStepper
-              name="buy_chicken"
               bind:value={buyQty.chicken}
               min={0}
               max={chickenRoom}
@@ -706,8 +708,9 @@
                               <button type="button" class="of-bulk-chip" onclick={() => { buyQty[id] = (buyQty[id] ?? 0) + 50; }}>+50</button>
                             </span>
                           {/if}
+                          <!-- No `name`: top-level buyQty loop is the single
+                               source of buy_<id>; a name here double-buys. -->
                           <NumberStepper
-                            name="buy_{id}"
                             bind:value={buyQty[id]}
                             min={0}
                             max={id === 'chicken' ? chickenRoom : (isBulkCat ? 999 : 99)}
