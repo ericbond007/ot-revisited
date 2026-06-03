@@ -39,6 +39,22 @@ export const load: PageServerLoad = async ({ url, locals }) => {
   };
 };
 
+/** Parse buy_<id> form fields into purchase orders, deduped by item.
+ *  The form should emit exactly one buy_<id> per item, but a duplicate
+ *  hidden input (e.g. a named stepper + a top-level loop) would otherwise
+ *  be applied twice and double-charge the player. Last write wins —
+ *  duplicate inputs carry the same qty, so dedup-by-key is correct. */
+export function parseBuyOrders(fd: FormData): Array<{ item: string; qty: number }> {
+  const byItem = new Map<string, number>();
+  for (const [key, value] of fd.entries()) {
+    if (!key.startsWith('buy_')) continue;
+    const item = key.slice(4);
+    const qty = parseInt(value.toString(), 10);
+    if (qty > 0) byItem.set(item, qty);
+  }
+  return [...byItem].map(([item, qty]) => ({ item, qty }));
+}
+
 function parseWagonId(raw: string | undefined): WagonModelId {
   if (raw === 'light' || raw === 'prairie_schooner' || raw === 'heavy') return raw;
   return DEFAULT_WAGON_MODEL;
@@ -135,13 +151,7 @@ export const actions: Actions = {
     const dogNameRaw = fd.get('dogName')?.toString().trim() ?? '';
     const dogName = dogNameRaw.slice(0, 30);
 
-    const buys: Array<{ item: string; qty: number }> = [];
-    for (const [key, value] of fd.entries()) {
-      if (!key.startsWith('buy_')) continue;
-      const item = key.slice(4);
-      const qty = parseInt(value.toString(), 10);
-      if (qty > 0) buys.push({ item, qty });
-    }
+    const buys = parseBuyOrders(fd);
 
     let state = await locals.repo.load(locals.deviceId, slot);
     if (!state) throw error(404, `No save in slot "${slot}"`);
