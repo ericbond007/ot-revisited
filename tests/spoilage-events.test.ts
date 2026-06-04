@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { SPOILAGE_EVENTS } from '../src/lib/game/content/spoilage-events';
-import { EVENTS } from '../src/lib/game/content/events';
+import { EVENTS, NPC_ELIGIBLE_EVENTS } from '../src/lib/game/content/events';
+import { resolveEvent } from '../src/lib/game/systems/events';
+import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from '../src/lib/game/systems/wagon-synth';
+import type { NpcWagonState } from '../src/lib/game/types';
 import { midTempF } from '../src/lib/game/systems/temperature';
 import { createInitialState } from '../src/lib/game/engine';
 import { makeRng } from '../src/lib/game/rng';
@@ -20,13 +23,50 @@ const choice = (id: string, cid: string) => ev(id).choices.find((c) => c.id === 
 const rng = makeRng('t');
 const hot = (over: Partial<GameState> = {}) => game({ date: { year: 1848, month: 7, day: 1 }, weather: 'heat', ...over });
 
-describe('registration + parity', () => {
-  it('all spoilage events are registered and npcSkip', () => {
+function fakeWagon(over: Partial<NpcWagonState> & { id: string }): NpcWagonState {
+  return {
+    name: `the ${over.id} family`, leaderProfession: 'farmer',
+    hasChildren: false, seed: over.id,
+    party: [{ id: `${over.id}-p`, name: 'X', kind: 'adult', sex: 'male', age: 30, profession: 'farmer', isLeader: true, health: 100, dead: false, conditions: [] }],
+    inventory: {}, oxen: [{ id: `${over.id}-o`, health: 100, fatigue: 0, shod: true }],
+    morale: 70, cash: 100,
+    wagon: { model: 'prairie_schooner', condition: 100, canvas: 100, carryCapacity: 1500, hasBranBarrel: false, impairment: null },
+    eventLog: [], rations: 'filling', water: 40, waterCap: 80, dirtyWater: 0,
+    spoilDays: {}, dryDays: 0, greaseMiles: 0, starvationDays: 0,
+    outcome: 'in-progress', ...over
+  } as NpcWagonState;
+}
+
+describe('registration + NPC parity', () => {
+  it('all spoilage events are registered, NPC-eligible, and have a default', () => {
     for (const e of SPOILAGE_EVENTS) {
       expect(EVENTS.find((x) => x.id === e.id)).toBeTruthy();
-      expect(e.npcSkip).toBe(true);
+      expect(NPC_ELIGIBLE_EVENTS.find((x) => x.id === e.id)).toBeTruthy();
+      expect(e.npcSkip).not.toBe(true);
       expect(e.choices.some((c) => c.isDefault)).toBe(true);
     }
+  });
+
+  it('damp meal spoils a companion wagon\'s flour through the synth/project path', () => {
+    const base = game();
+    const env: TrainEnv = { day: 1, date: { year: 1848, month: 7, day: 1 }, location: base.location, weather: 'rain', pace: 'moderate' };
+    const wagon = fakeWagon({ id: 'a', inventory: { flour: 100 } });
+    const synth = synthesizeWagonState(wagon, env);
+    expect(ev('spoil_damp_meal').gate!(synth)).toBe(true);
+    const ticked = resolveEvent(synth, ev('spoil_damp_meal'), 'press_on', rng);
+    const projected = projectWagonDeltas(ticked, wagon);
+    expect(projected.inventory.flour!).toBeLessThan(100);
+  });
+
+  it('weevils dent a companion wagon\'s morale (eat-them default)', () => {
+    const base = game();
+    const env: TrainEnv = { day: 1, date: { year: 1848, month: 7, day: 1 }, location: base.location, weather: 'heat', pace: 'moderate' };
+    const wagon = fakeWagon({ id: 'b', morale: 80, inventory: { hardtack: 80 } });
+    const synth = synthesizeWagonState(wagon, env);
+    expect(ev('spoil_weevils').gate!(synth)).toBe(true);
+    const ticked = resolveEvent(synth, ev('spoil_weevils'), 'eat_them', rng);
+    const projected = projectWagonDeltas(ticked, wagon);
+    expect(projected.morale).toBeLessThan(80);
   });
 });
 

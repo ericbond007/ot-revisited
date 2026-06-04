@@ -12,9 +12,11 @@ import { midTempF } from '../systems/temperature';
 //   • a POSITIVE — a hard freeze that lets fresh meat keep longer.
 //
 // Each speaks through a real choice (mitigate vs press on), per the
-// "activities resolve via choices" rule. All are `npcSkip` for now —
-// their apply() touches player inventory directly; NPC-wagon parity
-// (damp/weevil loss on companion wagons) is a deliberate follow-up.
+// "activities resolve via choices" rule. All are category 'finds' so they
+// run per-wagon on NPC companions too (parity): a storm dampens every
+// wagon's flour, heat turns each wagon's bacon. projectWagonDeltas carries
+// the inventory / morale / spoil-clock effects back to each NpcWagonState.
+// NPCs auto-pick the isDefault choice via pickNpcEventChoice's fallback.
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -47,8 +49,7 @@ function takeMeal(s: GameState, lb: number): GameState {
 // --- Moisture: damp in the meal sacks ---
 const damp_meal: GameEvent = {
   id: 'spoil_damp_meal',
-  category: 'weather',
-  npcSkip: true,
+  category: 'finds',
   title: 'Damp in the meal sacks',
   body: 'Days of wet weather worked into the flour. The top of the sacks has gone to a green-grey crust of mould.',
   weight: 4,
@@ -82,7 +83,6 @@ const damp_meal: GameEvent = {
 const weevils: GameEvent = {
   id: 'spoil_weevils',
   category: 'finds',
-  npcSkip: true,
   title: 'Weevils in the hardtack',
   body: 'The warm stores have bred weevils. The hardtack is alive with them and the flour is shot through.',
   weight: 4,
@@ -123,7 +123,6 @@ const weevils: GameEvent = {
 const flies_meat: GameEvent = {
   id: 'spoil_flies_meat',
   category: 'finds',
-  npcSkip: true,
   title: 'Blowflies in the meat',
   body: 'The heat brought blowflies down on the fresh game hung off the wagon. Half of it is already crawling.',
   weight: 5,
@@ -164,8 +163,7 @@ const flies_meat: GameEvent = {
 // --- Acute heat spike on cured bacon ---
 const scorched_bacon: GameEvent = {
   id: 'spoil_scorched_bacon',
-  category: 'weather',
-  npcSkip: true,
+  category: 'finds',
   title: 'The bacon turns in the heat',
   body: 'A scorching, still day. The bacon sweated grease through its wrappings and a slab has gone rancid.',
   weight: 3,
@@ -193,8 +191,7 @@ const scorched_bacon: GameEvent = {
 // --- Positive: a hard freeze keeps the fresh meat ---
 const hard_freeze_keeps: GameEvent = {
   id: 'preserve_hard_freeze',
-  category: 'weather',
-  npcSkip: true,
+  category: 'finds',
   title: 'A hard freeze',
   body: 'The night drops well below freezing. The game meat froze solid on the hook — it will keep far longer now.',
   weight: 3,
