@@ -8,7 +8,7 @@ import { rollDailyTheft } from './systems/item-loss';
 import { applyStarvation } from './systems/starvation';
 import { tickWeather } from './systems/weather';
 import { progressConditions } from './systems/conditions';
-import { tickOxen } from './systems/oxen';
+import { tickOxen, recoverOxenFatigue, recoverOxenHealth } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
 import { adjustMorale } from './systems/morale';
 import { applySabbathTravelDebit } from './systems/sabbath-travel';
@@ -178,8 +178,24 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   s = rollDailyTheft(s, rng).state;
   s = applyDirtyWaterRisk(s, rng);
   s = applyStarvation(s);
-  s = tickOxen(s, rng);
-  s = tickWagon(s, rng);
+  // #review (lay-by oxen) — decide travel-vs-lay-by BEFORE today's ox /
+  // wagon wear, so a company lay-by day doesn't tire the oxen or age the
+  // wagon (this mirrors the NPC `traveled` gate in tickNpcWagon). Solo
+  // wagons have no train, so the decision is { mode:'travel' } and their
+  // behaviour is byte-identical to before. The decision block + dissent
+  // are still persisted further down, reusing `restDecision`.
+  const restDecision = s.wagonTrain ? companyRestDecision(s) : null;
+  const companyMode: CompanyRestMode = restDecision?.mode ?? 'travel';
+  if (companyMode === 'travel') {
+    s = tickOxen(s, rng);
+    s = tickWagon(s, rng);
+  } else {
+    // Lay-by: the team rests rather than pulls — no fatigue, no wagon
+    // wear. Mirror the NPC rest-day recovery (terrain-aware fatigue +
+    // passive HP at low fatigue).
+    const recovery = s.location.terrain === 'desert' || s.location.terrain === 'mountains' ? 5 : 15;
+    s = { ...s, oxen: recoverOxenHealth(recoverOxenFatigue(s.oxen, recovery)) };
+  }
   s = adjustMorale(s, rng);
   s = applyHolidays(s);
 
@@ -192,22 +208,22 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // hysteresis; persist the updated block right after (for tomorrow's
   // hysteresis + slice-B dissent). No train → decision is
   // { mode:'travel' } so solo behavior is byte-identical to before.
-  let companyMode: CompanyRestMode = 'travel';
-  if (s.wagonTrain) {
-    const decision = companyRestDecision(s);
-    companyMode = decision.mode;
+  // companyMode + restDecision were computed above (before ox/wagon wear).
+  // Persist the updated decision block for tomorrow's hysteresis + slice-B
+  // dissent. No train → nothing to persist; solo behaviour unchanged.
+  if (s.wagonTrain && restDecision) {
     const block = s.wagonTrain.companyDecisionBlock;
-    const isNewBlock = !block || block.mode !== decision.mode;
+    const isNewBlock = !block || block.mode !== restDecision.mode;
     s = {
       ...s,
       wagonTrain: {
         ...s.wagonTrain,
         companyDecisionBlock: isNewBlock
-          ? { mode: decision.mode, blockStartDay: s.day }
+          ? { mode: restDecision.mode, blockStartDay: s.day }
           : block
       },
       eventLog: isNewBlock
-        ? [...s.eventLog, { day: s.day, text: `The company ${decision.mode === 'travel' ? 'breaks camp' : 'lays by'} — ${decision.reason}.` }]
+        ? [...s.eventLog, { day: s.day, text: `The company ${restDecision.mode === 'travel' ? 'breaks camp' : 'lays by'} — ${restDecision.reason}.` }]
         : s.eventLog
     };
   }
