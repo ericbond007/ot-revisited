@@ -51,7 +51,7 @@ export const ITEMS: Record<string, ItemMeta> = {
   // it as fully shelf-stable — abstraction, but reasonable at
   // trail-journey timescale. foodDrawOrder 3 places it after fresh
   // food and bacon — eaten as a daily protein, not the first draw.
-  cheese:      { id: 'cheese',      name: "Farmer's cheese", category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3, description: "Pressed from milk in the cheese hoop. Salty, dense, keeps for weeks. A 'fresh' nutrition group for variety." },
+  cheese:      { id: 'cheese',      name: "Farmer's cheese", category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3.1, description: "Pressed from milk in the cheese hoop. Salty, dense, keeps for weeks. A 'fresh' nutrition group for variety." },
   // Wagon-pail butter (#222) — passive on travel days when the party
   // owns a butter_crock + has ≥2 gal of fresh milk. The day's jostling
   // does the churn for free; emigrant diaries (Royce, Sager, Williams)

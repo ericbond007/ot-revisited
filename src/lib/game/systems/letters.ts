@@ -36,7 +36,7 @@ export interface PendingLetter {
 }
 
 function readSet(state: GameState, key: '_lettersDeliveredAt' | '_lettersRead'): Set<string> {
-  const arr = (state.flags[key] as unknown as string[] | undefined) ?? [];
+  const arr = (state.flags[key] as string[] | undefined) ?? [];
   return new Set(arr);
 }
 
@@ -47,7 +47,7 @@ function writeSet(
 ): GameState {
   return {
     ...state,
-    flags: { ...state.flags, [key]: [...set] as unknown as Record<string, unknown> }
+    flags: { ...state.flags, [key]: [...set] }
   };
 }
 

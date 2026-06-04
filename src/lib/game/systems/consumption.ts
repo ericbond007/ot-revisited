@@ -213,7 +213,7 @@ export function applyDailyConsumption(state: GameState): GameState {
     ...state.flags,
     _lastFoodShortfall: remaining,
     _lastDirtyWaterDrawn: dirtyDrawn,
-    _lastFoodGroups: [...groupsDrawn] as unknown as string,
+    _lastFoodGroups: [...groupsDrawn],
     _pastryDrawnLb: pastryDrawn
   };
 

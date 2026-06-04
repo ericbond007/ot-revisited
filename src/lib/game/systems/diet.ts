@@ -28,7 +28,7 @@ const HOT_DRINK_OZ_PER_ADULT_PER_DAY = 1;
 
 /** +1 morale on days the party drew from ≥2 nutrition groups. */
 export function applyDietVariety(state: GameState): GameState {
-  const groups = (state.flags._lastFoodGroups as unknown as string[] | undefined) ?? [];
+  const groups = (state.flags._lastFoodGroups as string[] | undefined) ?? [];
   if (!Array.isArray(groups) || groups.length < 2) return state;
   return {
     ...state,
