@@ -1630,6 +1630,12 @@ EVENTS.push(...PARTY_EVENTS);
 import { WATER_EVENTS } from './water-events';
 EVENTS.push(...WATER_EVENTS);
 
+// Spoilage events (approach 3) — moisture/pest/heat events that hit the
+// food stores the temperature curve can't reach (damp meal, weevils,
+// blowflies, scorched bacon, plus a hard-freeze preserve). npcSkip for now.
+import { SPOILAGE_EVENTS } from './spoilage-events';
+EVENTS.push(...SPOILAGE_EVENTS);
+
 // #225 nooning event slot — midday flavor encounters that join the
 // regular road-event pool. Period reality: the noon stop was the
 // trail's most-described social moment. Most events are small flavor
