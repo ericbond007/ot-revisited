@@ -34,7 +34,6 @@ export interface WagonModel {
   // Per-model bonuses added on top of BASE_KIT in buildStarterKit.
   // Heavy wagons get extra spares to reflect higher break rates;
   // light wagons get nothing extra. (#107)
-  starterSpares?: Record<string, number>;
   // Bran-fill bacon barrel ships with the wagon by default? (#264)
   // Light wagons skip it (no room in the bed); the player can buy
   // the upgrade at outfit. Schooner + heavy include it.
@@ -94,7 +93,6 @@ export const WAGONS: Record<WagonModelId, WagonModel> = {
     // Heavy wagons break parts more often. Extra spares reflect that
     // an outfit big enough to load a household into would also pack
     // contingency parts for the haul.
-    starterSpares: { wheel: 1, spare_plank: 2 },
     shipsWithBranBarrel: true
   }
 };

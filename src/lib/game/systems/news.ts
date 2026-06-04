@@ -288,14 +288,14 @@ const HEADLINES_PER_PAPER_MAX = 4;
 const GOSSIP_PER_PAPER = 2;
 
 function readHeadlinesRead(state: GameState): Set<string> {
-  const arr = (state.flags._headlinesRead as unknown as string[] | undefined) ?? [];
+  const arr = (state.flags._headlinesRead as string[] | undefined) ?? [];
   return new Set(arr);
 }
 
 function writeHeadlinesRead(state: GameState, set: Set<string>): GameState {
   return {
     ...state,
-    flags: { ...state.flags, _headlinesRead: [...set] as unknown as Record<string, unknown> }
+    flags: { ...state.flags, _headlinesRead: [...set] }
   };
 }
 
