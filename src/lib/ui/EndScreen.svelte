@@ -231,8 +231,8 @@
   /* Tombstone / wiped --- */
   .tombstone-wrap {
     padding: 1.2em 1.4em;
-    border-color: #4a4840;
-    background: linear-gradient(180deg, var(--of-paper-soft) 0%, #15130f 100%);
+    border-color: var(--of-ink-soft);
+    background: linear-gradient(180deg, var(--of-paper-soft) 0%, var(--of-paper) 100%);
   }
   .big-stone {
     font-size: 5em;
@@ -262,8 +262,8 @@
     align-items: center;
     gap: 0.6em;
     padding: 0.5em 0.7em;
-    background: #1a1816;
-    border: 1px solid #4a4840;
+    background: var(--of-paper);
+    border: 1px solid var(--of-ink-soft);
     border-radius: 3px;
   }
   .grave-stone {
