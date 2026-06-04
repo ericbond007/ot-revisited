@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseBuyOrders } from '../src/routes/outfit/+page.server';
+import { _parseBuyOrders as parseBuyOrders } from '../src/routes/outfit/+page.server';
 
 // Regression: the outfit form once emitted two `buy_<id>` hidden inputs per
 // item (a named NumberStepper + the top-level buyQty loop), so the server

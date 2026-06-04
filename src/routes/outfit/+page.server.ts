@@ -44,7 +44,10 @@ export const load: PageServerLoad = async ({ url, locals }) => {
  *  hidden input (e.g. a named stepper + a top-level loop) would otherwise
  *  be applied twice and double-charge the player. Last write wins —
  *  duplicate inputs carry the same qty, so dedup-by-key is correct. */
-export function parseBuyOrders(fd: FormData): Array<{ item: string; qty: number }> {
+// Underscore-prefixed so SvelteKit permits the export from a +page.server
+// module (non-reserved bare exports 500 the whole route); the `_` lets the
+// outfit-buy-dedup unit test import it directly.
+export function _parseBuyOrders(fd: FormData): Array<{ item: string; qty: number }> {
   const byItem = new Map<string, number>();
   for (const [key, value] of fd.entries()) {
     if (!key.startsWith('buy_')) continue;
@@ -151,7 +154,7 @@ export const actions: Actions = {
     const dogNameRaw = fd.get('dogName')?.toString().trim() ?? '';
     const dogName = dogNameRaw.slice(0, 30);
 
-    const buys = parseBuyOrders(fd);
+    const buys = _parseBuyOrders(fd);
 
     let state = await locals.repo.load(locals.deviceId, slot);
     if (!state) throw error(404, `No save in slot "${slot}"`);
