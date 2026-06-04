@@ -247,7 +247,7 @@
     padding: 1.2em 1.4em;
     border-color: var(--accent);
     border-width: 2px;
-    background: linear-gradient(180deg, var(--of-paper-soft) 0%, #1a1612 100%);
+    background: linear-gradient(180deg, var(--of-paper-soft) 0%, var(--of-paper) 100%);
   }
 
   .head {

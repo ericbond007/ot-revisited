@@ -327,7 +327,7 @@
     padding: 1em 1.2em;
     border-color: var(--post-accent, var(--of-rust));
     border-width: 2px;
-    background: linear-gradient(180deg, var(--of-paper-soft) 0%, #1a1612 100%);
+    background: linear-gradient(180deg, var(--of-paper-soft) 0%, var(--of-paper) 100%);
   }
 
   /* Hero artwork canvas (#173) — bespoke per-landmark SVG between
