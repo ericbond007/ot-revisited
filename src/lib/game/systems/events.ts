@@ -19,12 +19,13 @@ const LAWYER_CONFLICT_WEIGHT_MULT = 0.5;
 // Wagon-category events fire more often when the wagon is overloaded —
 // structural stress translates to higher breakdown odds. All other
 // categories keep their base weight.
-function effectiveWeight(ev: GameEvent, state: GameState): number {
+export function effectiveWeight(ev: GameEvent, state: GameState): number {
   let w = ev.weight;
   if (ev.category === 'wagon') w *= wagonHazardMult(state);
-  // Cholera-scare news (#150) makes the cholera-scare event 50% more
-  // likely to fire while the rumor window is open.
-  if (ev.id === 'cholera_scare') {
+  // Cholera-scare news (#150) makes the cholera event 50% more likely
+  // to fire while the rumor window is open. (The event's id is
+  // 'health_cholera'; the variable is named cholera_scare.)
+  if (ev.id === 'health_cholera') {
     const until = (state.flags._choleraHintedUntilDay as number | undefined) ?? 0;
     if (until > state.day) w *= 1.5;
   }
