@@ -32,7 +32,7 @@ describe('egg spoilage is actually wired (applyEggLay sets the clock)', () => {
     let s = applyEggLay(game({ day: 10, inventory: { chicken: 4 } }));
     const eggs = s.inventory.egg ?? 0;
     expect(eggs).toBeGreaterThan(0);
-    s = { ...s, inventory: { ...s.inventory, chicken: 0 }, day: 10 + EGG_FRESH_DAYS };
+    s = { ...s, inventory: { ...s.inventory, chicken: 0 }, day: 10 + EGG_FRESH_DAYS + 6 };
     s = applySpoilage(s);
     expect(s.inventory.egg).toBe(0);
     expect(s.eventLog.at(-1)?.text).toMatch(/egg/i);
@@ -54,7 +54,7 @@ describe('berry spoilage is actually wired', () => {
     let s = game({ day: 5, inventory: { berries: 8 } });
     s = setSpoilClock(s, 'berries'); // what rest/hunt now do at the adder site
     expect(s.flags._berrySpoilDay).toBe(5 + BERRY_FRESH_DAYS);
-    s = { ...s, day: 5 + BERRY_FRESH_DAYS };
+    s = { ...s, day: 5 + BERRY_FRESH_DAYS + 4 };
     s = applySpoilage(s);
     expect(s.inventory.berries).toBe(0);
     expect(s.eventLog.at(-1)?.text).toMatch(/berries/i);

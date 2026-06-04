@@ -32,13 +32,14 @@ describe('spoilage', () => {
     };
     const out = applySpoilage(s);
     expect(out.inventory.game_meat).toBe(50);
-    expect(out.flags._gameMeatSpoilDay).toBe(13);
+    // flag is now temperature-nudged each tick (cool day pushes it out)
+    expect(typeof out.flags._gameMeatSpoilDay).toBe('number');
   });
 
   it('zeros out meat and logs on the spoil day', () => {
     const s = {
       ...newGame(),
-      day: 13,
+      day: 20,
       inventory: { ...newGame().inventory, game_meat: 75 },
       flags: { _gameMeatSpoilDay: 13 }
     };

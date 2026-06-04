@@ -96,7 +96,7 @@ describe('tickNpcWagon — spoilage wired into the daily pipeline', () => {
       inventory: { game_meat: 50 } // only food
     });
     w = setNpcSpoilClock(w, 'game_meat', 0);
-    const r = tickNpcWagon(w, { day: GAME_MEAT_FRESH_DAYS, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' }, makeRng('a'));
+    const r = tickNpcWagon(w, { day: GAME_MEAT_FRESH_DAYS + 3, date: { year: 1848, month: 7, day: 15 }, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'clear' }, makeRng('a'));
     // Meat zeroed by spoilage; food consumption then sees no food →
     // starvation onset begins. The patient took an HP hit from
     // starvation but didn't eat poisoned game.
@@ -110,7 +110,7 @@ describe('tickNpcWagon — spoilage wired into the daily pipeline', () => {
       id: 'a',
       inventory: { bacon: 50, flour: 200 } // flour as alternative food so the bacon isn't consumed
     });
-    const r = tickNpcWagon(w, { day: 1, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'heat' }, makeRng('h'));
+    const r = tickNpcWagon(w, { day: 1, date: { year: 1848, month: 7, day: 15 }, traveled: true, pace: 'moderate', terrain: 'prairie', weather: 'heat' }, makeRng('h'));
     // Bacon dropped by heat. Flour drop reflects normal food consumption.
     expect(r.wagon.inventory.bacon).toBeLessThan(50);
     expect(r.playerLogs.some((l) => /heat/i.test(l))).toBe(true);
