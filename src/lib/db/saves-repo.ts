@@ -58,7 +58,28 @@ export class SavesRepo {
       .where(and(eq(saves.deviceId, deviceId), eq(saves.slotName, slotName)))
       .get();
     if (!row) return null;
-    return deserialize(row.gameState);
+    try {
+      return deserialize(row.gameState);
+    } catch (err) {
+      // A corrupt or schema-drifted slot must not throw a 500 from every
+      // game action that loads it. Treat it as absent — no save migration
+      // is supported, so an unreadable save is simply gone.
+      console.warn(`[saves] dropping unreadable slot "${slotName}": ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  /** A slot name not yet used by this device, suffixing " (2)", " (3)"…
+   *  so two journeys started the same calendar day don't silently
+   *  overwrite each other through the save upsert. */
+  async uniqueSlotName(deviceId: string, base: string): Promise<string> {
+    const taken = new Set((await this.list(deviceId)).map((r) => r.slotName));
+    if (!taken.has(base)) return base;
+    for (let n = 2; n < 1000; n++) {
+      const candidate = `${base} (${n})`;
+      if (!taken.has(candidate)) return candidate;
+    }
+    return `${base} (${Date.now()})`;
   }
 
   async save(deviceId: string, slotName: string, state: GameState): Promise<void> {
