@@ -72,7 +72,7 @@ export const actions: Actions = {
       startDate: { year, month, day },
       includeStarterKit
     });
-    const slotName = `Journey ${new Date().toLocaleDateString()}`;
+    const slotName = await locals.repo.uniqueSlotName(locals.deviceId, `Journey ${new Date().toLocaleDateString()}`);
     await locals.repo.save(locals.deviceId, slotName, state);
     throw redirect(303, `/outfit?slot=${encodeURIComponent(slotName)}`);
   },
@@ -116,7 +116,7 @@ export const actions: Actions = {
     const opts = profileToNewGameOptions(profile, { year, month, day }, seed);
     let state = createInitialState(opts);
     state = applyProfileKit(state, profile);
-    const slotName = `Journey ${new Date().toLocaleDateString()}`;
+    const slotName = await locals.repo.uniqueSlotName(locals.deviceId, `Journey ${new Date().toLocaleDateString()}`);
     await locals.repo.save(locals.deviceId, slotName, state);
     throw redirect(303, `/outfit?slot=${encodeURIComponent(slotName)}`);
   }
