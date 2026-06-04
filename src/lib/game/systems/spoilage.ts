@@ -1,4 +1,5 @@
 import type { GameState, NpcWagonState } from '../types';
+import { midTempF } from './temperature';
 
 /**
  * Fresh-pile spoilage. Each tracked item has a freshness window in
@@ -21,6 +22,27 @@ export const EGG_FRESH_DAYS = 14;
 /** Days fresh berries keep before molding. */
 export const BERRY_FRESH_DAYS = 3;
 
+/* -------------------------------------------------------------------- *
+ * Temperature-driven spoilage (#temp-spoil). The fresh-day windows above
+ * are calibrated at SPOIL_REF_TEMP_F. The real spoil rate scales with the
+ * day's temperature (midTempF): food rots fast in summer heat and keeps
+ * for days in a cold mountain camp. Q10 rule of thumb — spoilage roughly
+ * doubles per ~15°F.
+ * -------------------------------------------------------------------- */
+
+/** Temperature at which a pile ages at the nominal 1 fresh-day / real day. */
+export const SPOIL_REF_TEMP_F = 70;
+/** °F step that doubles (above) / halves (below) the spoilage rate. */
+export const SPOIL_DOUBLING_F = 15;
+
+/** Spoilage rate multiplier for a given temperature. 1.0 at the reference
+ *  temp, ~2x per +15°F, ~0.5x per -15°F. Clamped so extremes stay sane
+ *  (near-frozen food still ages a hair; desert heat caps at 6x). */
+export function spoilageAgingFactor(tempF: number): number {
+  const f = Math.pow(2, (tempF - SPOIL_REF_TEMP_F) / SPOIL_DOUBLING_F);
+  return Math.max(0.1, Math.min(6, f));
+}
+
 /** Days fresh milk keeps in a cool wagon. Period dairying without
  *  refrigeration: 2 days at moderate temps; the spoil clock refreshes
  *  whenever the cow is milked again, which (#139) happens daily on
@@ -34,6 +56,11 @@ interface SpoilRule {
   itemId: string;
   flagKey: string;
   freshDays: number;
+  /** Whether the global temperature curve scales this pile's aging.
+   *  Milk is false — dairy.ts already sets its window from the weather
+   *  (heat 1d / normal 2d / frost 4d), so the global factor would
+   *  double-count temperature for it. */
+  tempSensitive: boolean;
   /** Log line when the pile rots. {qty} is replaced with the lb amount. */
   spoilText: (qty: number) => string;
 }
@@ -44,24 +71,28 @@ interface SpoilRule {
 export const SPOIL_RULES: readonly SpoilRule[] = [
   {
     itemId: 'game_meat',
+    tempSensitive: true,
     flagKey: '_gameMeatSpoilDay',
     freshDays: GAME_MEAT_FRESH_DAYS,
     spoilText: (qty) => `${qty} lb of fresh game meat spoiled in the wagon.`
   },
   {
     itemId: 'egg',
+    tempSensitive: true,
     flagKey: '_eggSpoilDay',
     freshDays: EGG_FRESH_DAYS,
     spoilText: (qty) => `${qty} eggs went bad in the basket — none laid in two weeks.`
   },
   {
     itemId: 'berries',
+    tempSensitive: true,
     flagKey: '_berrySpoilDay',
     freshDays: BERRY_FRESH_DAYS,
     spoilText: (qty) => `${qty} lb of berries molded through.`
   },
   {
     itemId: 'milk',
+    tempSensitive: false,
     flagKey: '_milkSpoilDay',
     freshDays: MILK_FRESH_DAYS,
     spoilText: (qty) => `${qty} gal of milk soured in the bucket.`
@@ -105,7 +136,17 @@ export function applySpoilage(state: GameState): GameState {
       next = { ...next, flags };
       continue;
     }
-    if (next.day < spoilDay) continue;
+    // Temperature-weighted aging: each real day consumes `factor` fresh-
+    // days of budget (hot pulls the spoil-day earlier, cold pushes it
+    // later). Persist the nudge so it accumulates across ticks. At
+    // SPOIL_REF_TEMP_F (or a non-temp-sensitive pile) factor is 1.0 and
+    // behaviour matches the flat-rate model.
+    const factor = rule.tempSensitive ? spoilageAgingFactor(midTempF(next)) : 1;
+    const adjustedSpoilDay = spoilDay - (factor - 1);
+    if (next.day < adjustedSpoilDay) {
+      next = { ...next, flags: { ...next.flags, [rule.flagKey]: adjustedSpoilDay } };
+      continue;
+    }
     const inventory = { ...next.inventory, [rule.itemId]: 0 };
     const flags = { ...next.flags };
     delete (flags as Record<string, unknown>)[rule.flagKey];
@@ -129,20 +170,29 @@ export function applySpoilage(state: GameState): GameState {
  * bran-fill barrel as the mitigation, which on our wagon is the
  * `hasBranBarrel` trait (#264) — halves the daily loss when present.
  *
- * Runs once per day-tick on weather === 'heat'. Salt pork's heavier
- * cure makes it half as vulnerable as bacon.
+ * Runs every day-tick; loss scales with the day's temperature (midTempF)
+ * above a warm threshold. Salt pork's heavier cure makes it half as
+ * vulnerable as bacon.
  */
 export const BACON_HEAT_LB_PER_DAY = 3;
 export const SALT_PORK_HEAT_LB_PER_DAY = 1.5;
 
+/** Cured meat only sweats and turns above this temperature; below it the
+ *  cure holds and there is no daily loss. */
+export const CURED_MEAT_WARM_THRESHOLD_F = 78;
+
 export function applyHeatSpoilage(state: GameState): GameState {
-  if (state.weather !== 'heat') return state;
+  // Temperature-scaled cured-meat attrition (was a binary weather==='heat'
+  // gate). Loss ramps from 0 at the warm threshold to ~1.5x the base rate
+  // in desert heat, so any genuinely hot stretch turns the bacon.
+  const lossFactor = Math.max(0, Math.min(1.5, (midTempF(state) - CURED_MEAT_WARM_THRESHOLD_F) / 14));
+  if (lossFactor <= 0) return state;
   const baconHeld = state.inventory.bacon ?? 0;
   const saltPorkHeld = state.inventory.salt_pork ?? 0;
   if (baconHeld <= 0 && saltPorkHeld <= 0) return state;
   const mitMult = state.wagon.hasBranBarrel ? 0.5 : 1;
-  const baconLoss = Math.min(baconHeld, Math.round(BACON_HEAT_LB_PER_DAY * mitMult));
-  const saltPorkLoss = Math.min(saltPorkHeld, Math.round(SALT_PORK_HEAT_LB_PER_DAY * mitMult));
+  const baconLoss = Math.min(baconHeld, Math.round(BACON_HEAT_LB_PER_DAY * lossFactor * mitMult));
+  const saltPorkLoss = Math.min(saltPorkHeld, Math.round(SALT_PORK_HEAT_LB_PER_DAY * lossFactor * mitMult));
   if (baconLoss <= 0 && saltPorkLoss <= 0) return state;
   const inventory = { ...state.inventory };
   if (baconLoss > 0) inventory.bacon = baconHeld - baconLoss;

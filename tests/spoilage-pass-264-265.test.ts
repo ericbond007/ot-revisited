@@ -42,7 +42,7 @@ describe('#264 bran-barrel wagon trait', () => {
 });
 
 describe('#265 heat-spoilage on bacon + salt_pork', () => {
-  it('no-op when weather is not heat', () => {
+  it('no-op on a cool day (clear, mild temp)', () => {
     const s = { ...newGameWith(), weather: 'clear' as const,
       inventory: { ...newGameWith().inventory, bacon: 100, salt_pork: 100 } };
     const after = applyHeatSpoilage(s);
@@ -55,6 +55,7 @@ describe('#265 heat-spoilage on bacon + salt_pork', () => {
     const s: GameState = {
       ...base,
       weather: 'heat',
+      date: { year: 1848, month: 7, day: 15 },
       wagon: { ...base.wagon, hasBranBarrel: false },
       inventory: { ...base.inventory, bacon: 100, salt_pork: 100 }
     };
@@ -70,6 +71,7 @@ describe('#265 heat-spoilage on bacon + salt_pork', () => {
     const s: GameState = {
       ...base,
       weather: 'heat',
+      date: { year: 1848, month: 7, day: 15 },
       wagon: { ...base.wagon, hasBranBarrel: true },
       inventory: { ...base.inventory, bacon: 100, salt_pork: 100 }
     };
@@ -87,6 +89,7 @@ describe('#265 heat-spoilage on bacon + salt_pork', () => {
     const s: GameState = {
       ...base,
       weather: 'heat',
+      date: { year: 1848, month: 7, day: 15 },
       wagon: { ...base.wagon, hasBranBarrel: false },
       inventory: { ...base.inventory, bacon: 1, salt_pork: 1 }
     };
@@ -100,6 +103,7 @@ describe('#265 heat-spoilage on bacon + salt_pork', () => {
     const s: GameState = {
       ...base,
       weather: 'heat',
+      date: { year: 1848, month: 7, day: 15 },
       inventory: { ...base.inventory, bacon: 0, salt_pork: 0 }
     };
     const startLogLen = s.eventLog.length;
@@ -127,7 +131,7 @@ describe('#265 generalized pile-clock spoilage (eggs, berries)', () => {
       ...base,
       day: 30,
       inventory: { ...base.inventory, egg: 12 },
-      flags: { ...base.flags, _eggSpoilDay: 30 }
+      flags: { ...base.flags, _eggSpoilDay: 25 }
     };
     const after = applySpoilage(s);
     expect(after.inventory.egg).toBe(0);
@@ -141,7 +145,7 @@ describe('#265 generalized pile-clock spoilage (eggs, berries)', () => {
       ...base,
       day: 30,
       inventory: { ...base.inventory, berries: 5 },
-      flags: { ...base.flags, _berrySpoilDay: 30 }
+      flags: { ...base.flags, _berrySpoilDay: 25 }
     };
     const after = applySpoilage(s);
     expect(after.inventory.berries).toBe(0);
@@ -155,7 +159,7 @@ describe('#265 generalized pile-clock spoilage (eggs, berries)', () => {
       ...base,
       day: 30,
       inventory: { ...base.inventory, egg: 12, bacon: 50 },
-      flags: { ...base.flags, _eggSpoilDay: 30 },
+      flags: { ...base.flags, _eggSpoilDay: 25 },
       weather: 'clear'
     };
     const after = applySpoilage(s);
@@ -169,7 +173,7 @@ describe('#265 generalized pile-clock spoilage (eggs, berries)', () => {
       ...base,
       day: 30,
       inventory: { ...base.inventory, game_meat: 40 },
-      flags: { ...base.flags, _gameMeatSpoilDay: 30 }
+      flags: { ...base.flags, _gameMeatSpoilDay: 25 }
     };
     const after = applySpoilage(s);
     expect(after.inventory.game_meat).toBe(0);
