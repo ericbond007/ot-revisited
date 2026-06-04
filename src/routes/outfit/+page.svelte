@@ -54,6 +54,20 @@
     );
   }
 
+  // Per-item emoji glyphs for the bundle preview/expand rows. Game ITEMS
+  // carry no icon field, so these are sourced verbatim from the Claude
+  // Design handoff (outfit-data.jsx · OF_ITEMS) for the items bundles use.
+  const BUNDLE_ITEM_ICONS: Record<string, string> = {
+    flour: '🌾', bacon: '🥓', beans: '🫘', sugar: '🍯', coffee: '☕',
+    dried_fruit: '🍇', hardtack: '🍞', gunpowder: '💥', lead_balls: '⚪',
+    percussion_caps: '🎯', rifle: '🔫', water_bag: '💧', ox_shoes: '🐾',
+    rope: '🪢', iron_toolkit: '🛠️', shovel: '🪏', bandages: '🩹',
+    quinine: '💊', laudanum: '🧪', patent_medicine: '🍶', plow: '🚜',
+    seed_grain: '🌾', fruit_tree_saplings: '🌳', garden_seeds: '🌱',
+    family_bible: '📖'
+  };
+  const itemIcon = (id: string): string => BUNDLE_ITEM_ICONS[id] ?? '·';
+
   // Wagon + oxen
   // svelte-ignore state_referenced_locally
   let selectedWagon = $state<WagonModelId>(gs.wagon.model);
@@ -843,6 +857,22 @@
                 </span>
                 <span class="of-bundle-chevron">{expanded ? '▾' : '▸'}</span>
               </button>
+              {#if !expanded}
+                <!-- Collapsed item-icon strip (handoff of-bundle-preview) -->
+                <div class="of-bundle-preview">
+                  {#each itemIds.slice(0, 8) as id}
+                    {@const meta = ITEMS[id]}
+                    {#if meta}
+                      <span
+                        class="of-bundle-preview-icon"
+                        title="{b.kit[id]} × {meta.name}">{itemIcon(id)}</span>
+                    {/if}
+                  {/each}
+                  {#if itemIds.length > 8}
+                    <span class="of-bundle-preview-more">+{itemIds.length - 8}</span>
+                  {/if}
+                </div>
+              {/if}
               {#if expanded}
                 <div class="of-bundle-expand">
                   <p class="of-bundle-blurb">{b.blurb}</p>
@@ -852,7 +882,7 @@
                       {#if meta}
                         {@const covered = (buyQty[id] ?? 0) >= (b.kit[id] ?? 0)}
                         <div class="of-bundle-item" class:of-bundle-item-covered={covered}>
-                          <span class="of-bundle-item-icon">·</span>
+                          <span class="of-bundle-item-icon">{itemIcon(id)}</span>
                           <span class="of-bundle-item-name">{meta.name}</span>
                           <span class="of-bundle-item-qty">{b.kit[id]}</span>
                           {#if covered}<span class="of-bundle-item-check">✓</span>{/if}
@@ -2027,6 +2057,22 @@
   .of-bundle-itemcount { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--of-ink-soft); opacity: 0.7; font-weight: 700; }
   .of-bundle-cost { font-size: 13px; color: var(--of-rust); font-weight: 700; font-variant-numeric: tabular-nums; }
   .of-bundle-chevron { color: var(--of-ink-soft); font-size: 13px; width: 14px; text-align: center; }
+  /* Collapsed preview row — small icon strip below the header (handoff). */
+  .of-bundle-preview {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px 8px 36px;
+    flex-wrap: wrap;
+  }
+  .of-bundle-preview-icon { font-size: 14px; opacity: 0.85; line-height: 1; }
+  .of-bundle-preview-more {
+    font-size: 10px;
+    color: var(--of-ink-soft);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .of-bundle-applied .of-bundle-preview-icon { opacity: 0.5; }
   .of-bundle-expand {
     padding: 4px 12px 12px;
     border-top: 1px dashed var(--of-rule);
