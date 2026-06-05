@@ -21,6 +21,7 @@ import { hunt, type HuntTarget, type AmmoBand } from '$lib/game/actions/hunt';
 import { ford, type FordMethod } from '$lib/game/actions/ford';
 import { trade } from '$lib/game/actions/trade';
 import { applyBarter } from '$lib/game/systems/barter';
+import { settleTrade as _settleTrade, type TradeBasket } from '$lib/game/systems/settle-trade';
 import { abandonSelected, droppableHeavyItems } from '$lib/game/systems/item-loss';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
@@ -116,6 +117,21 @@ async function runTravelLoop(
   }
   await locals.repo.save(locals.deviceId, slot, state);
   return state;
+}
+
+
+export function _parseTradeBasket(fd: FormData): TradeBasket {
+  const mode = fd.get('mode')?.toString() === 'barter' ? 'barter' : 'cash';
+  const get: Record<string, number> = {};
+  const give: Record<string, number> = {};
+  for (const [key, value] of fd.entries()) {
+    const qty = parseInt(value.toString(), 10);
+    if (!Number.isFinite(qty) || qty <= 0) continue;
+    if (key.startsWith('get_')) get[key.slice(4)] = qty;
+    else if (key.startsWith('give_')) give[key.slice(5)] = qty;
+  }
+  const cashOffer = Math.max(0, parseInt(fd.get('cashOffer')?.toString() ?? '0', 10) || 0);
+  return { mode, get, give, cashOffer };
 }
 
 export const actions: Actions = {
@@ -895,5 +911,22 @@ export const actions: Actions = {
     state = result.state;
     await locals.repo.save(locals.deviceId, slot, state);
     return { state };
-  }
+  },
+  // #<settle-trade-task> — unified trade basket settlement. Accepts
+  // mode (cash|barter), get_*/give_* item quantities, and optional
+  // cashOffer. Calls the engine's settleTrade, persists state, returns.
+  settleTrade: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const basket = _parseTradeBasket(fd);
+    let state = await loadState(locals, slot);
+    try {
+      state = _settleTrade(state, basket).state;
+    } catch (e) {
+      throw error(409, (e as Error).message);
+    }
+    await locals.repo.save(locals.deviceId, slot, state);
+    return { state };
+  },
 };

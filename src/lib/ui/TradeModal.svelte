@@ -1,17 +1,27 @@
 <script lang="ts">
+  // Unified two-mode trade basket (handoff port). One modal, a Cash (default)
+  // / Barter toggle, a sticky summary, and two parallel item columns:
+  //   left  = your wagon (give)   right = post stock (get)
+  // Client preview math mirrors settle-trade.ts exactly so the displayed
+  // totals match what the server applies on confirm. Submits a single
+  // { mode, cashOffer, get_<id>, give_<id> } basket to ?/settleTrade.
   import type { GameState } from '$lib/game/types';
-  import { PRICES } from '$lib/game/content/prices';
+  import { PRICES, getPrice } from '$lib/game/content/prices';
   import { ITEMS, type ItemCategory } from '$lib/game/content/items';
-  import { getLandmark, type PostKind } from '$lib/game/content/landmarks';
+  import { getLandmark, postBuysForCash, type PostKind } from '$lib/game/content/landmarks';
   import { getProfession } from '$lib/game/content/professions';
-  import { getWagon } from '$lib/game/content/wagons';
+  import { professionDiscount } from '$lib/game/actions/trade';
   import { postRemainingQty } from '$lib/game/systems/post-stock';
-  import { findBarterableItems, quoteBarter, BARTER_RATE_FLOOR } from '$lib/game/systems/barter';
-  import { ICON } from '$lib/data/icon-dictionary';
+  import {
+    findBarterableItems,
+    BARTER_RATE_FLOOR,
+    BARTER_RATE_CEIL,
+    BARTER_POST_PREFERENCE_BONUS,
+    BARTER_POST_REJECT_PENALTY
+  } from '$lib/game/systems/barter';
   import { POST_THEME } from '$lib/data/post-theme';
-  import ItemTooltip from './ItemTooltip.svelte';
-  import NumberStepper from './NumberStepper.svelte';
   import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
+  import TradeItemColumn from './TradeItemColumn.svelte';
 
   let { state: gameState, slot, onclose }: {
     state: GameState;
@@ -20,106 +30,82 @@
   } = $props();
   const qp = $derived(encodeURIComponent(slot));
 
-  // Landmark context — drives per-post flavor + stock.
+  // ---- Post identity ----
   const hereId = $derived(gameState.location.atLandmarkId);
   const here = $derived(hereId ? getLandmark(hereId) : null);
   const postName = $derived(here?.name ?? 'Trading Post');
   const postKind = $derived<PostKind>(here?.postKind ?? 'frontier');
   const postBlurb = $derived(here?.blurb ?? 'A post on the trail.');
-  // Defaults to true — only explicit false-flagged posts (U.S. Army, a
-  // hostile native post, etc.) refuse to buy goods from the party.
-  const buysFromEmigrants = $derived(here?.buysFromEmigrants !== false);
-  // Per-post category exclusions (#204) — road ranches don't buy
-  // fur-trade specialty (raw hides, robes, beads). Used in canSell.
-  const excludedCats = $derived(new Set(here?.excludeBuyCategories ?? []));
-
-  // Fallback stock for any trading_post without its own declared stock list.
-  const FALLBACK_STOCK = [
-    'flour', 'beans', 'bacon', 'gunpowder', 'lead_balls', 'percussion_caps', 'bandages', 'quinine',
-    'coat', 'blanket', 'ox_shoes', 'rope'
-  ];
-
   const theme = $derived(POST_THEME[postKind]);
 
-  // Merchant / Banker buy discount + sell bonus (matches trade.ts).
-  const hasMerchant = $derived(gameState.party.some((m) => !m.dead && m.profession === 'merchant'));
-  const hasBanker = $derived(gameState.party.some((m) => !m.dead && m.profession === 'banker'));
-  const buyMult = $derived(1 - (hasMerchant ? 0.15 : 0) - (hasBanker ? 0.10 : 0));
-  const sellMult = $derived(1 + (hasMerchant ? 0.20 : 0) + (hasBanker ? 0.10 : 0));
+  // Leader + profession chip.
+  const leader = $derived(gameState.party[0]);
+  const leaderProf = $derived(leader?.profession ? getProfession(leader.profession) : null);
+  const partyCount = $derived(gameState.party.filter((m) => !m.dead).length);
 
-  // Post stock (what the player can BUY here).
-  // svelte-ignore state_referenced_locally
-  const initialStock = (hereId ? getLandmark(hereId).stock : null) ?? FALLBACK_STOCK;
-  // svelte-ignore state_referenced_locally
-  const initialStockFiltered = initialStock.filter((id) => PRICES[id] && ITEMS[id]);
+  // ---- Pricing primitives (mirror settle-trade.ts) ----
+  const postMult = $derived(here?.priceMultiplier ?? 1.0);
+  const profMult = $derived(professionDiscount(gameState));
+  const pBuy = $derived(profMult.buyMult);
+  const pSell = $derived(profMult.sellMult);
+  const year = $derived(gameState.date.year);
+  // Whether the post pays coin for player goods (cash-mode sell gate).
+  const buysCash = $derived(here ? postBuysForCash(here, year) : false);
+
+  const preferredSet = $derived(new Set(here?.barterPreferred ?? []));
+  const refusedSet = $derived(new Set(here?.barterRefused ?? []));
+  const excludedCats = $derived(new Set<string>(here?.excludeBuyCategories ?? []));
+  const barterEnabled = $derived(here?.barterEnabled !== false);
+
+  function prefReject(id: string): number {
+    let m = 1.0;
+    if (preferredSet.has(id)) m *= 1 + BARTER_POST_PREFERENCE_BONUS;
+    if (refusedSet.has(id)) m *= 1 - BARTER_POST_REJECT_PENALTY;
+    return m;
+  }
+
+  // ---- Mode + basket state ----
+  let mode = $state<'cash' | 'barter'>('cash');
+  let get = $state<Record<string, number>>({});
+  let give = $state<Record<string, number>>({});
+  let cashOffer = $state(0);
+
+  // Switching modes clears the cash top-up (barter-only).
+  function setMode(next: 'cash' | 'barter') {
+    if (mode === next) return;
+    mode = next;
+    cashOffer = 0;
+  }
+
+  // ---- Item lists ----
+  // Get side = post stock. Give side = player inventory; in barter mode it's
+  // narrowed to what the post will actually take (findBarterableItems).
   const stockIds = $derived(
-    (here?.stock ?? FALLBACK_STOCK).filter((id) => PRICES[id] && ITEMS[id])
+    (here?.stock ?? []).filter((id) => PRICES[id] && ITEMS[id])
   );
-
-  // Items the player currently owns (and can sell).
-  // svelte-ignore state_referenced_locally
-  const initialOwnedIds = Object.entries(gameState.inventory)
-    .filter(([id, qty]) => qty > 0 && PRICES[id])
-    .map(([id]) => id);
   const ownedIds = $derived(
     Object.entries(gameState.inventory)
       .filter(([id, qty]) => qty > 0 && PRICES[id] && ITEMS[id])
       .map(([id]) => id)
   );
+  const barterableIds = $derived(
+    here ? findBarterableItems(gameState, here).map((b) => b.item).filter((id) => ITEMS[id]) : []
+  );
+  // In cash mode the give side is a sell-back: all owned, minus post-excluded
+  // categories (parity with settle-trade.ts cash-mode validation).
+  const cashSellableIds = $derived(
+    ownedIds.filter((id) => !excludedCats.has(ITEMS[id].category))
+  );
+  const giveIds = $derived(mode === 'barter' ? barterableIds : cashSellableIds);
 
-  // Unified item list = union of stock + owned. Each row can buy, sell, or
-  // both (rendered as two sub-rows on the same line).
-  // svelte-ignore state_referenced_locally
-  const allIdsInitial = Array.from(new Set([...initialStockFiltered, ...initialOwnedIds]))
-    .filter((id) => ITEMS[id] && PRICES[id]);
-  const allIds = $derived(
-    Array.from(new Set([...stockIds, ...ownedIds])).filter((id) => ITEMS[id] && PRICES[id])
-  );
-
-  // #1134 — Signed per-item state. Positive = buying that many; negative =
-  // selling that many; 0 = no trade. Replaces the prior pair of buyQty /
-  // sellQty state objects + their two stacked steppers per row. Buy and
-  // sell are derived for the totals/weight math via Math.max(0, ±v).
-  let tradeQty = $state<Record<string, number>>(
-    Object.fromEntries(allIdsInitial.map((id) => [id, 0]))
-  );
-  // Keep qty dict in sync with derived lists — stock / inventory can shift
-  // mid-modal (shouldn't, but be defensive; NumberStepper bindings break on
-  // undefined keys).
-  $effect(() => {
-    for (const id of allIds) {
-      if (tradeQty[id] === undefined) tradeQty[id] = 0;
-    }
-  });
-  // Derived buy/sell views for downstream math (totals, weight, live panel).
-  const buyQty = $derived(
-    Object.fromEntries(
-      Object.entries(tradeQty).map(([id, v]) => [id, Math.max(0, v)])
-    )
-  );
-  const sellQty = $derived(
-    Object.fromEntries(
-      Object.entries(tradeQty).map(([id, v]) => [id, Math.max(0, -v)])
-    )
-  );
-
-  // Group ids by item category so the list reads like a store shelf rather
-  // than a flat alphabetical dump.
   const CATEGORY_ORDER: ItemCategory[] = [
     'food', 'feed', 'medicine', 'tool', 'wagon_part', 'weapon', 'ammo',
     'clothing', 'livestock', 'comfort', 'native_trade'
   ];
-  const CATEGORY_LABEL: Record<ItemCategory, string> = {
-    food: 'Food', feed: 'Feed', medicine: 'Medicine', weapon: 'Weapons', ammo: 'Ammunition',
-    tool: 'Tools', wagon_part: 'Wagon parts', livestock: 'Livestock',
-    clothing: 'Clothing', comfort: 'Comfort', native_trade: 'Trade goods'
-  };
-  const CATEGORY_ICON = ICON.inventory_categories;
-
   type Group = { cat: ItemCategory; ids: string[] };
-  const groups = $derived.by<Group[]>(() => {
+  function groupOf(ids: string[]): Group[] {
     const byCat: Partial<Record<ItemCategory, string[]>> = {};
-    for (const id of allIds) {
+    for (const id of ids) {
       const meta = ITEMS[id];
       if (!meta) continue;
       (byCat[meta.category] ??= []).push(id);
@@ -127,501 +113,393 @@
     return CATEGORY_ORDER
       .filter((c) => byCat[c] && byCat[c]!.length > 0)
       .map((c) => ({ cat: c, ids: byCat[c]!.sort((a, b) => ITEMS[a].name.localeCompare(ITEMS[b].name)) }));
+  }
+  const getGroups = $derived(groupOf(stockIds));
+  const giveGroups = $derived(groupOf(giveIds));
+
+  // Keep basket keys defined so the column bind:value works, and prune any
+  // give entries that fall off the list when switching modes (e.g. a cash-
+  // only excluded item that isn't barterable).
+  $effect(() => {
+    for (const id of stockIds) if (get[id] === undefined) get[id] = 0;
+    for (const id of giveIds) if (give[id] === undefined) give[id] = 0;
+    for (const id of Object.keys(give)) {
+      if (give[id] > 0 && !giveIds.includes(id)) give[id] = 0;
+    }
   });
 
-  // Totals — driven by raw buyQty/sellQty but applying the same multipliers
-  // trade.ts uses on the server.
-  const buyTotal = $derived(
-    Object.entries(buyQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.buy ?? 0) * buyMult, 0)
-  );
-  const sellTotal = $derived(
-    Object.entries(sellQty).reduce((s, [id, q]) => s + q * (PRICES[id]?.sell ?? 0) * sellMult, 0)
-  );
-  const netCost = $derived(buyTotal - sellTotal);
-  const canAfford = $derived(Math.ceil(netCost) <= gameState.cash);
-  const afterCash = $derived(gameState.cash - netCost);
+  // ---- Per-unit values + source/max helpers (passed to columns) ----
+  const getHave = (id: string) => (here ? postRemainingQty(gameState, here, id) : 0);
+  const getMax = (id: string) => {
+    // Chicken coop cap mirrors settle-trade.ts: can't exceed wagon capacity.
+    const remaining = getHave(id);
+    return Math.min(remaining, 999);
+  };
+  const giveHave = (id: string) => gameState.inventory[id] ?? 0;
+  const giveMax = (id: string) => Math.min(giveHave(id), 999);
 
-  // Weight preview — change in wagon weight after the trade resolves.
-  const currentWeight = $derived(
-    Object.entries(gameState.inventory).reduce(
-      (s, [id, q]) => s + (q || 0) * (ITEMS[id]?.weightLbPerUnit ?? 0), 0
+  // get-side per-unit value: buy × (pBuy × postMult)  (both modes)
+  const getPerUnit = (id: string) => getPrice(id).buy * (pBuy * postMult);
+  // give-side per-unit value:
+  //   cash:   sell × (pSell × postMult)
+  //   barter: sell × postMult × prefReject(id)
+  const givePerUnit = (id: string) =>
+    mode === 'cash'
+      ? getPrice(id).sell * (pSell * postMult)
+      : getPrice(id).sell * postMult * prefReject(id);
+
+  // ---- Preview math (mirror settle-trade.ts) ----
+  const getValue = $derived(
+    Object.entries(get).reduce(
+      (s, [id, q]) => (q > 0 ? s + getPrice(id).buy * (pBuy * postMult) * q : s), 0
     )
   );
-  const weightDelta = $derived(
-    Object.entries(buyQty).reduce((s, [id, q]) => s + q * (ITEMS[id]?.weightLbPerUnit ?? 0), 0)
-    - Object.entries(sellQty).reduce((s, [id, q]) => s + q * (ITEMS[id]?.weightLbPerUnit ?? 0), 0)
+  const giveValue = $derived(
+    Object.entries(give).reduce((s, [id, q]) => {
+      if (q <= 0) return s;
+      return mode === 'cash'
+        ? s + getPrice(id).sell * (pSell * postMult) * q
+        : s + getPrice(id).sell * postMult * prefReject(id) * q;
+    }, 0)
   );
-  const afterWeight = $derived(currentWeight + weightDelta);
-  const capacity = $derived(gameState.wagon.carryCapacity);
-  const weightPct = $derived(Math.round((afterWeight / capacity) * 100));
+  const getCount = $derived(Object.values(get).reduce((s, q) => s + (q > 0 ? q : 0), 0));
+  const giveCount = $derived(Object.values(give).reduce((s, q) => s + (q > 0 ? q : 0), 0));
 
-  // Chicken coop cap per wagon model. The BUY stepper for chickens
-  // clamps at (cap - currently-owned + selling) so the player can't
-  // overstuff the coop. The server-side trade() re-checks this.
-  const chickenCap = $derived(getWagon(gameState.wagon.model).chickenCap);
-  const chickensOwned = $derived(gameState.inventory.chicken ?? 0);
-  const chickensSelling = $derived(sellQty.chicken ?? 0);
-  const chickenRoom = $derived(
-    Math.max(0, chickenCap - chickensOwned + chickensSelling)
-  );
-  const weightColor = $derived(
-    weightPct >= 100 ? '#e85a4a' :
-    weightPct >= 90  ? '#c96a2a' :
-    weightPct >= 70  ? '#f5c96a' : '#8bb96a'
-  );
+  // CASH mode net: + you pay, − you receive.
+  const netCash = $derived(Math.round(getValue - giveValue));
+  const overBudget = $derived(Math.ceil(getValue - giveValue) > gameState.cash);
+  // Nothing-gained guard parity: empty get + no player gain.
+  const cashNothingGained = $derived(getCount === 0 && netCash >= 0);
 
-  // Live "what you'll have after" panel data — starter (current) + buys - sells.
-  type LiveEntry = { id: string; name: string; current: number; delta: number; after: number };
-  type LiveGroup = { cat: ItemCategory; entries: LiveEntry[] };
-  const liveGroups = $derived.by<LiveGroup[]>(() => {
-    const byCat: Partial<Record<ItemCategory, LiveEntry[]>> = {};
-    const ids = new Set<string>([
-      ...Object.keys(gameState.inventory),
-      ...Object.keys(buyQty),
-      ...Object.keys(sellQty)
-    ]);
-    for (const id of ids) {
-      const meta = ITEMS[id];
-      if (!meta) continue;
-      const current = gameState.inventory[id] ?? 0;
-      const delta = (buyQty[id] ?? 0) - (sellQty[id] ?? 0);
-      const after = current + delta;
-      if (after <= 0 && delta === 0) continue;
-      (byCat[meta.category] ??= []).push({ id, name: meta.name, current, delta, after });
+  // BARTER mode.
+  const giveTotal = $derived(giveValue + cashOffer);
+  const rate = $derived(
+    getValue > 0 ? giveTotal / getValue : giveTotal === 0 ? 1 : Infinity
+  );
+  const tooThin = $derived(mode === 'barter' && getCount > 0 && rate < BARTER_RATE_FLOOR);
+  const overpaying = $derived(mode === 'barter' && getCount > 0 && rate > BARTER_RATE_CEIL);
+  // Cash needed to lift the give-goods to a FLOOR-fair offer.
+  const cashGapToFair = $derived(Math.max(0, getValue * BARTER_RATE_FLOOR - giveValue));
+  // Cash needed to balance the trade exactly (rate = 1).
+  const cashGapEven = $derived(Math.max(0, getValue - giveValue));
+
+  // ---- Confirm gating (mirror settle-trade.ts throw conditions) ----
+  const canConfirm = $derived.by(() => {
+    if (!here) return false;
+    if (mode === 'cash') {
+      if (cashNothingGained) return false;
+      if (overBudget) return false;
+      // A cash-mode give at a no-cash post is impossible (column hidden), but
+      // guard anyway.
+      if (giveCount > 0 && !buysCash) return false;
+      return true;
     }
-    return CATEGORY_ORDER
-      .filter((c) => byCat[c] && byCat[c]!.length > 0)
-      .map((c) => ({ cat: c, entries: byCat[c]!.sort((a, b) => a.name.localeCompare(b.name)) }));
+    // barter
+    if (getCount === 0) return false;
+    if (tooThin) return false;
+    if (Math.ceil(cashOffer) > gameState.cash) return false;
+    return true;
   });
 
-  // Leader name + profession chip for the header.
-  const leader = $derived(gameState.party[0]);
-  const leaderProf = $derived(leader?.profession ? getProfession(leader.profession) : null);
+  // ---- Cash top-up chips ----
+  const cashChips = [0.5, 1, 5, 10];
+  function addCash(amt: number) {
+    cashOffer = Math.min(gameState.cash, Math.round((cashOffer + amt) * 100) / 100);
+  }
+  function clearCash() { cashOffer = 0; }
+  function evenCash() {
+    cashOffer = Math.min(gameState.cash, Math.ceil(cashGapEven));
+  }
 
-  // #1001 — barter mode. Default screen is the cash trade. When the
-  // user flips to barter, the buy/sell pane swaps for a give/receive
-  // pair with live quote feedback.
-  type Mode = 'trade' | 'barter';
-  let mode = $state<Mode>('trade');
-  const barterEnabled = $derived(here?.barterEnabled !== false);
-  const barterables = $derived(here ? findBarterableItems(gameState, here) : []);
-  const preferredSet = $derived(new Set(here?.barterPreferred ?? []));
-  const refusedSet = $derived(new Set(here?.barterRefused ?? []));
-
-  let giveItem = $state<string>('');
-  let giveQty = $state<number>(1);
-  let receiveItem = $state<string>('');
-  let receiveQty = $state<number>(1);
-
-  // Default give/receive selections when the user lands on the barter pane
-  // (top trade-value item player owns + first preferred-or-stock item).
-  $effect(() => {
-    if (mode !== 'barter') return;
-    if (!giveItem && barterables.length > 0) giveItem = barterables[0].item;
-    if (!receiveItem && stockIds.length > 0) receiveItem = stockIds[0];
-  });
-
-  const giveOwned = $derived(gameState.inventory[giveItem] ?? 0);
-  const giveStepperMax = $derived(Math.min(giveOwned, 999));
-  const receiveStockLeft = $derived(
-    receiveItem && here ? postRemainingQty(gameState, here, receiveItem) : 0
+  // ---- RateScale geometry (port of handoff RateScale) ----
+  const SCALE_LO = 0.30, SCALE_HI = 1.25;
+  const scalePct = (v: number) =>
+    Math.max(0, Math.min(100, ((v - SCALE_LO) / (SCALE_HI - SCALE_LO)) * 100));
+  const scaleTicks = [0.5, 0.75, 1.0];
+  const scaleTone = $derived(
+    tooThin ? 'bad' : rate >= 0.95 ? 'good' : 'mid'
   );
-  const receiveStepperMax = $derived(Math.min(receiveStockLeft, 999));
+  const showRate = $derived(rate > 0 && Number.isFinite(rate));
 
-  const barterQuote = $derived(
-    giveItem && receiveItem && giveQty > 0 && receiveQty > 0
-      ? quoteBarter(gameState, { item: giveItem, qty: giveQty }, { item: receiveItem, qty: receiveQty })
-      : null
-  );
-
-  // Refused-item flavor — first refused item the player owns drives the
-  // "trader shakes his head" line, post-specific where useful.
-  const POST_REFUSAL_FLAVOR: Record<string, string> = {
-    fort_bridger: "Bridger waves it off — \"take that to Hall, friend.\"",
-    fort_hall: "The factor declines — \"trade that downriver, not here.\"",
-    whitman_mission: "The reverend won't barter for that here.",
-    fort_laramie: "The post refuses that line — try Bridger.",
+  // PreferencesBanner text.
+  const fmtList = (ids: readonly string[]) => {
+    const names = ids.map((id) => ITEMS[id]?.name ?? id.replace(/_/g, ' ')).filter(Boolean);
+    if (names.length === 0) return '—';
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]} and ${names[1]}`;
+    return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
   };
-  const refusalHint = $derived(
-    refusedSet.has(giveItem)
-      ? (POST_REFUSAL_FLAVOR[hereId ?? ''] ?? 'The trader shakes his head at this offer.')
-      : null
-  );
+  const prefersText = $derived(fmtList(here?.barterPreferred ?? []));
+  const refusesText = $derived(fmtList(here?.barterRefused ?? []));
+  const hasRefuses = $derived((here?.barterRefused ?? []).length > 0);
 
-  // Hint for preferred items (auto-generated from the post's
-  // barterPreferred list, using item display names).
-  const preferredHint = $derived(() => {
-    const items = (here?.barterPreferred ?? [])
-      .map((id) => ITEMS[id]?.name ?? id.replace(/_/g, ' '))
-      .filter(Boolean);
-    if (items.length === 0) return null;
-    const list = items.length === 1
-      ? items[0]
-      : items.length === 2
-        ? `${items[0]} and ${items[1]}`
-        : `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
-    return `${postName} prefers ${list} — best rate when you trade those.`;
-  });
+  const money = (n: number) => `$${n.toFixed(2)}`;
+
+  // Hidden form lines — only non-zero entries.
+  const getLines = $derived(Object.entries(get).filter(([, q]) => q > 0));
+  const giveLines = $derived(Object.entries(give).filter(([, q]) => q > 0));
 </script>
 
 <div class="trade-backdrop" onclick={onclose} role="presentation">
-  <div class="trade-wrap post-{postKind}" onclick={(e) => e.stopPropagation()} role="presentation"
-       style="--post-accent: {theme.accent};">
-
-    <!-- Left rail: post flavor + live inventory + profession discount -->
-    <aside class="side-rail">
-      <section class="panel post-panel">
-        <div class="post-head">
-          {#if hereId && hasLandmarkIcon(hereId)}
-            <LandmarkIcon id={hereId} size={48} className="post-glyph-svg" />
-          {:else}
-            <span class="post-glyph">{theme.glyph}</span>
-          {/if}
-          <div class="post-titles">
-            <span class="post-tag">{theme.tag}</span>
-            <h2 class="post-name">{postName}</h2>
+  <div
+    class="trade-wrap"
+    onclick={(e) => e.stopPropagation()}
+    role="presentation"
+    style="--post-accent: {theme.accent};"
+  >
+    <!-- ===== PostHeader ===== -->
+    <header class="tp-head">
+      <div class="tp-head-l">
+        {#if hereId && hasLandmarkIcon(hereId)}
+          <LandmarkIcon id={hereId} size={52} className="post-glyph-svg" />
+        {:else}
+          <span class="tp-post-glyph">{theme.glyph}</span>
+        {/if}
+        <div class="tp-head-titles">
+          <div class="tp-eyebrow">{theme.tag}</div>
+          <h1 class="tp-head-name">{postName}</h1>
+          <div class="tp-head-sub">
+            {#if leader}<strong>{leader.name}</strong>{#if leaderProf}, <span class="tp-prof">{leaderProf.name}</span>{/if}'s party of {partyCount}{/if}
           </div>
         </div>
-        <p class="post-blurb">{postBlurb}</p>
-        {#if !buysFromEmigrants}
-          <div class="post-notice">Quartermaster — sells only, won't buy from you.</div>
-        {/if}
-      </section>
+      </div>
+      <div class="tp-head-r">
+        <span class="tp-eyebrow">Purse</span>
+        <span class="tp-cash">${gameState.cash}</span>
+      </div>
+    </header>
 
-      <section class="panel live-inv-panel">
-        <div class="panel-head">
-          WHAT YOU'LL HAVE
-          <span class="hint">after trade</span>
+    <p class="tp-blurb">{postBlurb}</p>
+
+    <!-- ===== PreferencesBanner ===== -->
+    {#if barterEnabled && ((here?.barterPreferred ?? []).length > 0 || hasRefuses)}
+      <div class="tp-banner">
+        <div class="tp-banner-pref">
+          <span class="tp-chip tp-chip-prefers">★ Prefers</span>
+          <span class="tp-banner-text">{prefersText}</span>
+          {#if (here?.barterPreferred ?? []).length > 0}
+            <span class="tp-banner-bonus">+15% rate</span>
+          {/if}
         </div>
-        {#if liveGroups.length === 0}
-          <p class="empty">Nothing yet.</p>
-        {:else}
-          <div class="live-groups">
-            {#each liveGroups as g}
-              <div class="live-group">
-                <div class="live-group-head">
-                  <span class="live-group-icon">{CATEGORY_ICON[g.cat]}</span>
-                  <span class="live-group-label">{CATEGORY_LABEL[g.cat]}</span>
-                </div>
-                <div class="live-rows">
-                  {#each g.entries as e}
-                    <div class="live-row" class:sold-out={e.after === 0}>
-                      <span class="live-name">{e.name}</span>
-                      <span class="live-qty">
-                        <strong>{e.after}</strong>
-                        {#if e.delta > 0}<span class="live-delta add">+{e.delta}</span>
-                        {:else if e.delta < 0}<span class="live-delta sub">{e.delta}</span>{/if}
-                      </span>
+        {#if hasRefuses}
+          <div class="tp-banner-pref">
+            <span class="tp-chip tp-chip-refused">⊘ Refuses</span>
+            <span class="tp-banner-text">{refusesText}</span>
+            <span class="tp-banner-penalty">−40% rate</span>
+          </div>
+        {/if}
+      </div>
+    {/if}
+
+    <div class="tp-deal">
+      <!-- ===== Sticky summary ===== -->
+      <header class="tp-summary">
+        <div class="tp-mode-toggle-row">
+          <div class="tp-mode-toggle" role="tablist" aria-label="Trade mode">
+            <button
+              type="button" role="tab" aria-selected={mode === 'cash'}
+              class="tp-mode-tab" class:tp-mode-tab-active={mode === 'cash'}
+              onclick={() => setMode('cash')}
+            >Cash</button>
+            {#if barterEnabled}
+              <button
+                type="button" role="tab" aria-selected={mode === 'barter'}
+                class="tp-mode-tab" class:tp-mode-tab-active={mode === 'barter'}
+                onclick={() => setMode('barter')}
+              >Barter</button>
+            {/if}
+          </div>
+          <span class="tp-mode-hint">
+            {#if mode === 'barter'}
+              Trade goods for goods. Add cash on top to balance an offer.
+            {:else}
+              Pay {postName} in cash.{#if buysCash} Use the give column to sell items back.{/if}
+            {/if}
+          </span>
+        </div>
+
+        {#if mode === 'barter'}
+          <div class="tp-summary-row">
+            <span class="tp-summary-label">You give</span>
+            <span class="tp-summary-goods">{money(giveValue)}<span class="tp-summary-sub">goods</span></span>
+            <span class="tp-summary-plus">+</span>
+            <div class="tp-summary-cash">
+              <span class="tp-summary-cash-label">cash</span>
+              <span class="tp-summary-cash-val">{money(cashOffer)}</span>
+              <div class="tp-cash-chips">
+                <button
+                  type="button" class="tp-cash-chip tp-cash-chip-neg"
+                  onclick={clearCash} disabled={cashOffer === 0} title="Clear cash"
+                >×</button>
+                {#each cashChips as amt}
+                  <button
+                    type="button" class="tp-cash-chip"
+                    disabled={cashOffer >= gameState.cash}
+                    onclick={() => addCash(amt)}
+                  >+{amt < 1 ? `${amt * 100}¢` : `$${amt}`}</button>
+                {/each}
+                {#if cashGapEven > 0 && cashGapEven <= gameState.cash && Math.abs(cashOffer - cashGapEven) > 0.01}
+                  <button
+                    type="button" class="tp-cash-chip tp-cash-chip-suggest"
+                    onclick={evenCash} title="Top up cash to balance the trade"
+                  >Even ${Math.ceil(cashGapEven)}</button>
+                {/if}
+              </div>
+            </div>
+            <span class="tp-summary-eq">=</span>
+            <span class="tp-summary-total tp-total-accent">{money(giveTotal)}</span>
+          </div>
+
+          <div class="tp-summary-row">
+            <span class="tp-summary-label">You get</span>
+            <span class="tp-summary-goods">{money(getValue)}<span class="tp-summary-sub">goods</span></span>
+            <span class="tp-summary-spacer"></span>
+            <span class="tp-summary-spacer"></span>
+            <span class="tp-summary-eq">=</span>
+            <span class="tp-summary-total tp-total-accent">{money(getValue)}</span>
+          </div>
+
+          <div class="tp-summary-balance">
+            {#if showRate}
+              <div class="tp-scale tp-scale-{scaleTone}">
+                <div class="tp-scale-track">
+                  <div
+                    class="tp-scale-fair"
+                    style="left: {scalePct(BARTER_RATE_FLOOR)}%; width: {scalePct(BARTER_RATE_CEIL) - scalePct(BARTER_RATE_FLOOR)}%;"
+                  ></div>
+                  {#each scaleTicks as t}
+                    <div class="tp-scale-tick" style="left: {scalePct(t)}%;">
+                      <div class="tp-scale-tick-line"></div>
+                      <div class="tp-scale-tick-label">{t.toFixed(2)}</div>
                     </div>
                   {/each}
+                  <div class="tp-scale-notch" style="left: {scalePct(rate)}%;">
+                    <div class="tp-scale-notch-val">{rate.toFixed(2)}×</div>
+                  </div>
                 </div>
+                <div class="tp-scale-legend">Fair: 0.50 – 1.05</div>
               </div>
-            {/each}
+            {/if}
           </div>
-        {/if}
-      </section>
 
-      {#if hasMerchant || hasBanker}
-        <section class="panel discount-panel">
-          <div class="panel-head">PROFESSION BONUS</div>
-          <p>
-            {hasMerchant && hasBanker
-              ? 'Merchant + Banker are haggling — both buy and sell are favorable.'
-              : hasMerchant
-                ? 'Merchant is haggling — −15% buy, +20% sell.'
-                : 'Banker is bankrolling — −10% buy, +10% sell.'}
-          </p>
-        </section>
-      {/if}
-    </aside>
-
-    <!-- Main column -->
-    <div class="main-col">
-      <!-- Header panel -->
-      <header class="trade-head panel">
-        <h1>{postName}</h1>
-        <p class="lede">
-          {#if leader}<strong>{leader.name}</strong>{#if leaderProf}, <span class="lede-prof">{leaderProf.name}</span>{/if} at the counter. {/if}
-          Pick what to take, what to leave.
-        </p>
-        <!-- #1001 — mode toggle. Cash trade is the default; barter swaps in
-             a give/receive view when the post permits it. -->
-        {#if barterEnabled}
-          <div class="mode-tabs" role="tablist" aria-label="Trade mode">
-            <button
-              type="button"
-              class="mode-tab"
-              class:active={mode === 'trade'}
-              role="tab"
-              aria-selected={mode === 'trade'}
-              onclick={() => (mode = 'trade')}
-            >
-              Buy &amp; Sell
-            </button>
-            <button
-              type="button"
-              class="mode-tab"
-              class:active={mode === 'barter'}
-              role="tab"
-              aria-selected={mode === 'barter'}
-              onclick={() => (mode = 'barter')}
-            >
-              Barter
-            </button>
+          {#if tooThin || overpaying}
+            <div class="tp-alert" class:tp-alert-bad={tooThin} class:tp-alert-warn={overpaying}>
+              {#if tooThin}
+                <strong>Trader refuses.</strong>
+                {#if cashGapToFair > 0 && cashGapToFair <= gameState.cash}
+                  Add <strong class="tp-accent">${Math.ceil(cashGapToFair)}</strong> cash or more goods.
+                {:else}
+                  Not enough cash to balance — give more goods.
+                {/if}
+              {:else}
+                You're overpaying — trim cash or take more from the post.
+              {/if}
+            </div>
+          {/if}
+        {:else}
+          <div class="tp-summary-cashrow">
+            <div class="tp-summary-cashpair">
+              <span class="tp-summary-label">Sell</span>
+              <span class="tp-summary-goods tp-cash-credit">+{money(giveValue)}</span>
+            </div>
+            <div class="tp-summary-cashpair">
+              <span class="tp-summary-label">Buy</span>
+              <span class="tp-summary-goods tp-cash-debit">−{money(getValue)}</span>
+            </div>
+            <span class="tp-summary-eq">=</span>
+            <div class="tp-summary-cashpair">
+              <span class="tp-summary-label">Net</span>
+              <span
+                class="tp-summary-total"
+                class:tp-total-danger={overBudget}
+                class:tp-total-good={netCash < 0}
+                class:tp-total-accent={netCash > 0 && !overBudget}
+              >
+                {netCash >= 0 ? money(netCash) : `+${money(-netCash)}`}
+              </span>
+              <span class="tp-summary-sub">
+                {overBudget ? 'over budget' : netCash > 0 ? 'you pay' : netCash < 0 ? 'you receive' : '—'}
+              </span>
+            </div>
           </div>
         {/if}
       </header>
 
-    {#if mode === 'trade'}
-      <!-- Sticky totals bar -->
-      <div class="totals-bar panel" class:overdraw={!canAfford}>
-        <div class="total-cell">
-          <span class="total-label">CASH</span>
-          <span class="total-val cash">${gameState.cash}</span>
-        </div>
-        <div class="total-cell">
-          <span class="total-label">BUY</span>
-          <span class="total-val spend">${buyTotal.toFixed(2)}</span>
-        </div>
-        <div class="total-cell">
-          <span class="total-label">SELL</span>
-          <span class="total-val revenue">${sellTotal.toFixed(2)}</span>
-        </div>
-        <div class="total-cell">
-          <span class="total-label">NET</span>
-          <span class="total-val net" class:positive={netCost < 0}>
-            {netCost >= 0 ? '−' : '+'}${Math.abs(netCost).toFixed(2)}
-          </span>
-        </div>
-        <div class="total-cell">
-          <span class="total-label">AFTER</span>
-          <span class="total-val" class:danger={!canAfford}>
-            ${afterCash.toFixed(2)}
-          </span>
-        </div>
-        <div class="total-cell">
-          <span class="total-label">WEIGHT</span>
-          <span class="total-val small" style="color: {weightColor};">
-            {Math.round(afterWeight)}/{capacity.toLocaleString()} · {weightPct}%
-          </span>
-        </div>
+      <!-- ===== Two parallel item columns ===== -->
+      <div class="tp-cols">
+        {#if mode === 'cash' && !buysCash}
+          <section class="tp-col tp-col-disabled">
+            <header class="tp-col-head">
+              <div class="tp-eyebrow">You give from</div>
+              <div class="tp-col-title">Your wagon</div>
+              <div class="tp-col-sub">sell for cash</div>
+            </header>
+            <p class="tp-pile-empty">
+              This post trades in goods, not coin — switch to Barter to offer items.
+            </p>
+          </section>
+        {:else}
+          <TradeItemColumn
+            title="Your wagon"
+            subtitle={mode === 'barter' ? 'give in trade' : 'sell for cash'}
+            side="give"
+            groups={giveGroups}
+            have={giveHave}
+            maxFor={giveMax}
+            perUnit={givePerUnit}
+            perUnitKind={mode === 'barter' ? 'credit' : 'cash'}
+            bind:values={give}
+            {preferredSet}
+            {refusedSet}
+            barter={mode === 'barter'}
+            emptyNote={mode === 'barter' ? 'Nothing here the trader will take.' : 'Nothing to sell.'}
+          />
+        {/if}
+
+        <TradeItemColumn
+          title={postName}
+          subtitle={mode === 'barter' ? 'take from stock' : 'buy with cash'}
+          side="get"
+          groups={getGroups}
+          have={getHave}
+          maxFor={getMax}
+          perUnit={getPerUnit}
+          perUnitKind="cash"
+          bind:values={get}
+          {preferredSet}
+          {refusedSet}
+          barter={mode === 'barter'}
+          emptyNote="No stock here right now."
+        />
       </div>
-
-      <form method="POST" action="?/trade&slot={qp}" class="trade-form">
-        <div class="scroll-area">
-          {#each groups as g}
-            <section class="group">
-              <div class="group-head">
-                <span class="group-icon">{CATEGORY_ICON[g.cat]}</span>
-                <span class="group-label">{CATEGORY_LABEL[g.cat]}</span>
-              </div>
-              <div class="item-grid">
-                {#each g.ids as id}
-                  {@const owned = gameState.inventory[id] ?? 0}
-                  {@const inStock = stockIds.includes(id)}
-                  {@const buying = buyQty[id] ?? 0}
-                  {@const selling = sellQty[id] ?? 0}
-                  {@const afterOwned = owned + buying - selling}
-                  {@const isBulkCat = g.cat === 'food' || g.cat === 'ammo' || g.cat === 'feed'}
-                  {@const canSell = buysFromEmigrants && owned > 0 && !excludedCats.has(ITEMS[id].category)}
-                  {@const stockLeft = inStock && here ? postRemainingQty(gameState, here, id) : 0}
-                  {@const perItemIcon = (ICON.inventory_items as Record<string, string>)[id]}
-                  <div class="item-row" class:out-of-stock={!inStock && owned === 0}>
-                    <div class="item-label">
-                      <ItemTooltip {id}>
-                        {#snippet children()}
-                          <span class="item-name">
-                            {#if perItemIcon}<span class="item-icon">{perItemIcon}</span>{/if}{ITEMS[id].name}
-                          </span>
-                        {/snippet}
-                      </ItemTooltip>
-                      <div class="price-row">
-                        {#if inStock}
-                          <span class="price buy-price">
-                            buy ${(PRICES[id].buy * buyMult).toFixed(2)}
-                          </span>
-                          <span class="price stock-left" class:low={stockLeft <= 3} class:out={stockLeft === 0}>
-                            {stockLeft === 0 ? 'out of stock' : `${stockLeft} left`}
-                          </span>
-                        {/if}
-                        {#if canSell}
-                          <span class="price sell-price">
-                            sell ${(PRICES[id].sell * sellMult).toFixed(2)}
-                          </span>
-                        {:else if owned > 0}
-                          <span class="price sell-price disabled">
-                            won't buy (have {owned})
-                          </span>
-                        {/if}
-                      </div>
-                    </div>
-                    <div class="item-controls">
-                      {#if inStock || canSell}
-                        {@const wagonCap = id === 'chicken' ? chickenRoom : (isBulkCat ? 999 : 99)}
-                        {@const buyMax = inStock ? Math.min(wagonCap, stockLeft) : 0}
-                        {@const sellMax = canSell ? owned : 0}
-                        {@const v = tradeQty[id] ?? 0}
-                        <div class="control-col">
-                          <span class="control-tag" class:buy={v > 0} class:sell={v < 0}>
-                            {v > 0 ? 'BUY' : v < 0 ? 'SELL' : (buyMax > 0 && sellMax > 0 ? 'TRADE' : buyMax > 0 ? 'BUY' : 'SELL')}
-                          </span>
-                          <NumberStepper
-                            bind:value={tradeQty[id]}
-                            min={-sellMax}
-                            max={buyMax}
-                            bulkSteps={isBulkCat && buyMax >= 10 ? [10, 50] : []}
-                            ariaLabel="{ITEMS[id].name}: negative sells, positive buys"
-                            hideValue
-                            displayValue={afterOwned}
-                            addedValue={v !== 0 ? v : undefined}
-                          />
-                          {#if id === 'chicken' && chickenRoom === 0 && v >= 0}
-                            <span class="coop-full">coop full</span>
-                          {/if}
-                          <!-- #1134 — server reads buy_/sell_ prefixed form
-                               fields; emit both, derived from signed value. -->
-                          <input type="hidden" name="buy_{id}" value={Math.max(0, v)} />
-                          <input type="hidden" name="sell_{id}" value={Math.max(0, -v)} />
-                        </div>
-                      {/if}
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </section>
-          {/each}
-        </div>
-
-        <!-- Action bar -->
-        <div class="action-bar panel">
-          <button type="submit" class="confirm" disabled={!canAfford}>
-            Confirm Trade
-          </button>
-          <button type="button" class="cancel" onclick={onclose}>Cancel</button>
-          {#if !canAfford}
-            <span class="warning">Can't afford this — trim the list.</span>
-          {/if}
-        </div>
-      </form>
-    {:else}
-      <!-- #1001 — Barter pane. Item-for-item trade with live quote. -->
-      <form method="POST" action="?/barter&slot={qp}" class="barter-form">
-        <div class="barter-grid">
-          <!-- GIVE column -->
-          <section class="barter-col">
-            <h3 class="barter-col-head">You give</h3>
-            {#if barterables.length === 0}
-              <p class="empty">Nothing here the {postName} trader will take.</p>
-            {:else}
-              <select name="giveItem" bind:value={giveItem} class="barter-select">
-                {#each barterables as b}
-                  {@const meta = ITEMS[b.item]}
-                  {@const preferred = preferredSet.has(b.item)}
-                  {@const refused = refusedSet.has(b.item)}
-                  <option value={b.item}>
-                    {meta?.name ?? b.item} ({b.qty})
-                    {#if preferred}· preferred{/if}
-                    {#if refused}· refused{/if}
-                  </option>
-                {/each}
-              </select>
-              <div class="barter-qty-row">
-                <label for="give-qty">qty</label>
-                <NumberStepper
-                  bind:value={giveQty}
-                  min={1}
-                  max={giveStepperMax}
-                  ariaLabel="Give quantity"
-                />
-                <span class="barter-have">of {giveOwned}</span>
-              </div>
-              <input type="hidden" name="giveQty" value={giveQty} />
-            {/if}
-          </section>
-
-          <!-- RECEIVE column -->
-          <section class="barter-col">
-            <h3 class="barter-col-head">You receive</h3>
-            {#if stockIds.length === 0}
-              <p class="empty">No stock to barter for.</p>
-            {:else}
-              <select name="receiveItem" bind:value={receiveItem} class="barter-select">
-                {#each stockIds as id}
-                  {@const meta = ITEMS[id]}
-                  {@const left = here ? postRemainingQty(gameState, here, id) : 0}
-                  <option value={id} disabled={left === 0}>
-                    {meta?.name ?? id} ({left} left)
-                  </option>
-                {/each}
-              </select>
-              <div class="barter-qty-row">
-                <label for="receive-qty">qty</label>
-                <NumberStepper
-                  bind:value={receiveQty}
-                  min={1}
-                  max={receiveStepperMax}
-                  ariaLabel="Receive quantity"
-                />
-                <span class="barter-have">of {receiveStockLeft} left</span>
-              </div>
-              <input type="hidden" name="receiveQty" value={receiveQty} />
-            {/if}
-          </section>
-        </div>
-
-        <!-- Quote readout -->
-        {#if barterQuote}
-          {@const r = barterQuote.rate}
-          {@const tone = !barterQuote.fair ? 'bad' : r >= 0.9 ? 'good' : 'mid'}
-          <div class="barter-quote panel quote-{tone}">
-            <div class="quote-rate">
-              <span class="quote-rate-label">Rate</span>
-              <span class="quote-rate-val">{r.toFixed(2)}×</span>
-            </div>
-            <div class="quote-status">
-              {#if !barterQuote.fair}
-                {#if r < BARTER_RATE_FLOOR}
-                  Trader refuses — you're giving too little.
-                {:else if r > 1.05}
-                  You'd be paying through the nose. Walk away.
-                {:else}
-                  This post won't accept that trade.
-                {/if}
-              {:else if r >= 0.95}
-                Fair trade.
-              {:else}
-                Trader's terms — still fair.
-              {/if}
-            </div>
-          </div>
-        {/if}
-
-        {#if refusalHint}
-          <p class="barter-flavor refused">{refusalHint}</p>
-        {/if}
-        {#if preferredHint()}
-          <p class="barter-flavor preferred">{preferredHint()}</p>
-        {/if}
-
-        <div class="action-bar panel">
-          <button
-            type="submit"
-            class="confirm"
-            disabled={!barterQuote?.fair || giveQty <= 0 || receiveQty <= 0 || giveQty > giveOwned || receiveQty > receiveStockLeft}
-          >
-            Trade
-          </button>
-          <button type="button" class="cancel" onclick={onclose}>Cancel</button>
-        </div>
-      </form>
-    {/if}
     </div>
+
+    <!-- ===== Footer ===== -->
+    <footer class="tp-totals" class:tp-totals-bad={mode === 'cash' ? overBudget : tooThin}>
+      <form method="POST" action="?/settleTrade&slot={qp}" class="tp-form">
+        <input type="hidden" name="mode" value={mode} />
+        <input type="hidden" name="cashOffer" value={mode === 'barter' ? Math.round(cashOffer) : 0} />
+        {#each getLines as [id, q] (id)}
+          <input type="hidden" name="get_{id}" value={q} />
+        {/each}
+        {#each giveLines as [id, q] (id)}
+          <input type="hidden" name="give_{id}" value={q} />
+        {/each}
+        <button type="button" class="tp-btn tp-btn-cancel" onclick={onclose}>Cancel</button>
+        <button type="submit" class="tp-btn tp-btn-confirm" disabled={!canConfirm}>
+          Confirm trade
+        </button>
+        {#if mode === 'cash' && overBudget}
+          <span class="tp-foot-warn">Can't afford this — trim the list.</span>
+        {:else if mode === 'barter' && tooThin}
+          <span class="tp-foot-warn">Offer too thin — add cash or goods.</span>
+        {/if}
+      </form>
+    </footer>
   </div>
 </div>
 
 <style>
-  /* Full-viewport backdrop. The post-themed accent drives border + header
-     tinting so each post feels distinct without a full theme rewrite. */
   .trade-backdrop {
     position: fixed;
     inset: 0;
@@ -631,519 +509,471 @@
     align-items: stretch;
     justify-content: stretch;
   }
-
   .trade-wrap {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 0.6em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
     width: 100%;
     height: 100vh;
     padding: 0.6em;
     overflow: hidden;
+    background: var(--of-paper);
+    color: var(--of-ink);
   }
 
-  .side-rail {
+  /* ----- PostHeader ----- */
+  .tp-head {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 1em;
+    padding: 0.6em 0.9em;
+    background: var(--of-paper-soft);
+    border: 3px solid var(--post-accent);
+    border-radius: 3px;
+  }
+  .tp-head-l { display: flex; align-items: center; gap: 0.8em; min-width: 0; }
+  .tp-post-glyph { font-size: 2.4em; line-height: 1; }
+  .tp-head-titles { display: flex; flex-direction: column; gap: 0.1em; min-width: 0; }
+  .tp-eyebrow {
+    font-size: 0.65em;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--post-accent);
+    font-weight: 700;
+  }
+  .tp-head-name {
+    margin: 0;
+    color: var(--of-ink);
+    font-size: 1.4em;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+  }
+  .tp-head-sub { font-size: 0.85em; color: var(--of-ink-soft); }
+  .tp-prof { color: var(--post-accent); font-weight: 700; }
+  .tp-head-r {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.1em;
+    white-space: nowrap;
+  }
+  .tp-cash {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--of-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .tp-blurb {
+    margin: 0;
+    padding: 0 0.3em;
+    font-size: 0.86em;
+    font-style: italic;
+    color: var(--of-ink-soft);
+    line-height: 1.4;
+  }
+
+  /* ----- PreferencesBanner ----- */
+  .tp-banner {
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-rule);
+    border-radius: 3px;
+    padding: 0.6em 0.8em;
     display: flex;
     flex-direction: column;
     gap: 0.5em;
+  }
+  .tp-banner-pref {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 0.85em;
+    flex-wrap: wrap;
+  }
+  .tp-banner-text { color: var(--of-ink); flex: 1; line-height: 1.4; }
+  .tp-banner-bonus { font-size: 0.7em; letter-spacing: 0.06em; color: var(--of-good); font-weight: 700; }
+  .tp-banner-penalty { font-size: 0.7em; letter-spacing: 0.06em; color: var(--of-bad); font-weight: 700; }
+  .tp-chip {
+    display: inline-block;
+    padding: 0.15em 0.45em;
+    font-size: 0.65em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    border-radius: 2px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .tp-chip-prefers {
+    color: var(--of-good);
+    background: rgba(72, 108, 42, 0.15);
+    border-color: rgba(72, 108, 42, 0.5);
+  }
+  .tp-chip-refused {
+    color: var(--of-bad);
+    background: rgba(138, 28, 12, 0.12);
+    border-color: rgba(138, 28, 12, 0.5);
+  }
+
+  /* ----- Deal scroll area ----- */
+  .tp-deal {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7em;
+    flex: 1;
     min-height: 0;
     overflow-y: auto;
     padding-right: 0.2em;
   }
-  .main-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-    min-height: 0;
-    min-width: 0;
-  }
 
-  /* Post flavor panel — themed per post kind via --post-accent. */
-  .post-panel {
-    padding: 0.9em 1em;
-    border-color: var(--post-accent);
-    border-width: 3px;
-  }
-  .post-head {
-    display: flex;
-    align-items: center;
-    gap: 0.7em;
-    margin-bottom: 0.6em;
-  }
-  .post-glyph {
-    font-size: 2.2em;
-    line-height: 1;
-  }
-  .post-titles {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1em;
-    min-width: 0;
-  }
-  .post-tag {
-    font-size: 0.7em;
-    letter-spacing: 0.15em;
-    font-weight: 700;
-    color: var(--post-accent);
-    text-transform: uppercase;
-  }
-  .post-name {
-    margin: 0;
-    font-size: 1.25em;
-    color: var(--of-ink);
-    line-height: 1.1;
-  }
-  .post-blurb {
-    margin: 0;
-    color: var(--of-ink);
-    font-size: 0.9em;
-    font-style: italic;
-    line-height: 1.5;
-  }
-  .post-notice {
-    margin-top: 0.7em;
-    padding: 0.3em 0.5em;
-    font-size: 0.75em;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: var(--of-ink);
-    background: rgba(0, 0, 0, 0.25);
-    border-left: 3px solid var(--post-accent);
-    border-radius: 0 2px 2px 0;
-  }
-
-  /* Live inventory — mirrors the outfit screen's sidebar. */
-  .live-inv-panel { padding: 0.7em 0.9em; }
-  .live-inv-panel .panel-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.5em;
-  }
-  .live-inv-panel .hint {
-    font-size: 0.7em;
-    color: var(--of-ink-soft);
-    font-style: italic;
-    font-weight: normal;
-    letter-spacing: normal;
-  }
-  .live-groups { display: flex; flex-direction: column; gap: 0.5em; }
-  .live-group-head {
-    display: flex;
-    align-items: baseline;
-    gap: 0.35em;
-    padding-bottom: 0.15em;
-    border-bottom: 1px solid rgba(138, 90, 42, 0.3);
-    margin-bottom: 0.15em;
-  }
-  .live-group-icon { font-size: 1em; line-height: 1; }
-  .live-group-label {
-    font-size: 0.72em;
-    letter-spacing: 0.08em;
-    font-weight: 700;
-    color: var(--post-accent);
-    text-transform: uppercase;
-  }
-  .live-rows { display: flex; flex-direction: column; }
-  .live-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 0.15em 0.2em;
-    font-size: 0.85em;
-  }
-  .live-row:nth-child(odd) { background: rgba(138, 90, 42, 0.06); }
-  .live-row.sold-out { opacity: 0.45; text-decoration: line-through; }
-  .live-name { color: var(--of-ink); }
-  .live-qty { display: inline-flex; align-items: baseline; gap: 0.3em; }
-  .live-qty strong {
-    color: var(--post-accent);
-    font-weight: 700;
-    font-size: 1.05em;
-  }
-  .live-delta {
-    font-size: 0.72em;
-    font-weight: 700;
-    padding: 0.1em 0.35em;
-    border-radius: 2px;
-  }
-  .live-delta.add {
-    color: #8bb96a;
-    background: rgba(139, 185, 106, 0.15);
-  }
-  .live-delta.sub {
-    color: #e85a4a;
-    background: rgba(232, 90, 74, 0.15);
-  }
-
-  .discount-panel { padding: 0.7em 0.9em; }
-  .discount-panel p {
-    margin: 0;
-    font-size: 0.85em;
-    color: var(--of-ink);
-    line-height: 1.4;
-  }
-
-  .panel-head {
-    font-size: 0.7em;
-    letter-spacing: 0.15em;
-    color: var(--of-ink-soft);
-    font-weight: 700;
-    margin-bottom: 0.4em;
-  }
-
-  /* Header of the main column */
-  .trade-head {
-    padding: 0.6em 0.9em;
-    display: flex;
-    align-items: baseline;
-    gap: 0.9em;
-    flex-wrap: wrap;
-    border-color: var(--post-accent);
-    border-width: 3px;
-  }
-  .trade-head h1 {
-    margin: 0;
-    color: var(--post-accent);
-    letter-spacing: 0.05em;
-    font-size: 1.3em;
-  }
-  .lede {
-    margin: 0;
-    color: var(--of-ink-soft);
-    font-size: 0.88em;
-    font-style: italic;
-  }
-  .lede-prof { color: var(--post-accent); font-style: normal; font-weight: 700; }
-
-  /* Sticky totals bar */
-  .totals-bar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 0.5em 1em;
-    padding: 0.7em 0.9em;
-    transition: border-color 0.15s;
-  }
-  .totals-bar.overdraw { border-color: #e85a4a; }
-  .total-cell { display: flex; flex-direction: column; gap: 0.1em; }
-  .total-label {
-    font-size: 0.65em;
-    letter-spacing: 0.15em;
-    color: var(--of-ink-soft);
-    font-weight: 700;
-  }
-  .total-val { font-weight: 700; font-size: 1.05em; color: var(--of-ink); }
-  .total-val.small { font-size: 0.85em; }
-  .total-val.spend { color: #c96a2a; }
-  .total-val.revenue { color: #8bb96a; }
-  .total-val.net { color: #c96a2a; }
-  .total-val.net.positive { color: #8bb96a; }
-  .total-val.danger { color: #e85a4a; }
-
-  /* Scrollable item list */
-  .trade-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-    flex: 1;
-    min-height: 0;
-  }
-  .scroll-area {
-    flex: 1;
-    min-height: 0;
-    min-width: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 0.3em;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-  }
-
-  .group {
-    background: var(--of-paper-soft);
-    border: 2px solid var(--of-rule);
-    border-radius: 4px;
-  }
-  .group-head {
+  /* ----- Sticky summary ----- */
+  .tp-summary {
     position: sticky;
-    top: 0;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    padding: 0.55em 0.8em;
+    top: -0.2em;
+    z-index: 5;
     background: var(--of-paper-soft);
-    border-bottom: 1px solid var(--post-accent);
-    color: var(--of-ink);
-    letter-spacing: 0.04em;
-    font-weight: 700;
-    font-size: 0.95em;
-  }
-  .group-icon { font-size: 1.2em; line-height: 1; }
-
-  .item-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-    gap: 0;
-    padding: 0 0.4em 0.5em 0.4em;
-  }
-  .item-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.6em;
-    padding: 0.45em 0.6em;
-    border-bottom: 1px solid rgba(138, 90, 42, 0.25);
-    min-width: 0;
-  }
-  .item-row:nth-child(odd) { background: rgba(138, 90, 42, 0.12); }
-  .item-row:last-child { border-bottom: 0; }
-  .item-row:hover { background: rgba(201, 106, 42, 0.14); }
-  .item-row.out-of-stock { opacity: 0.5; }
-
-  .item-label { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; }
-  .item-name { font-size: 0.95em; }
-  .price-row {
+    border: 3px solid var(--post-accent);
+    border-radius: 3px;
+    padding: 0.7em 1em;
     display: flex;
-    gap: 0.6em;
-    flex-wrap: wrap;
-    font-size: 0.76em;
+    flex-direction: column;
+    gap: 0.5em;
+    box-shadow: 0 6px 14px rgba(42, 29, 12, 0.35);
   }
-  .price { color: var(--of-ink-soft); }
-  .buy-price::before { content: ''; }
-  .sell-price { color: #8bb96a; }
-  .stock-left {
-    font-size: 0.85em;
-    color: var(--of-ink);
-    font-style: italic;
+  .tp-mode-toggle-row { display: flex; align-items: center; gap: 0.9em; flex-wrap: wrap; }
+  .tp-mode-toggle {
+    display: inline-flex;
+    background: var(--of-paper-deep);
+    border: 2px solid var(--of-rule);
+    border-radius: 3px;
+    padding: 2px;
+    gap: 2px;
   }
-  .stock-left.low { color: #c96a2a; font-weight: 700; }
-  .stock-left.out { color: #e85a4a; font-weight: 700; font-style: normal; }
-  .sell-price.disabled {
+  .tp-mode-tab {
+    padding: 0.35em 1.1em;
+    background: transparent;
     color: var(--of-ink-soft);
-    text-decoration: line-through;
-    opacity: 0.7;
+    border: 2px solid transparent;
+    border-radius: 2px;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    font-size: 0.78em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .tp-mode-tab:hover:not(.tp-mode-tab-active) {
+    color: var(--of-ink);
+    background: var(--of-paper);
+  }
+  .tp-mode-tab-active {
+    color: var(--of-paper-soft);
+    background: var(--post-accent);
+    border-color: var(--post-accent);
+  }
+  .tp-mode-hint {
+    flex: 1;
+    font-style: italic;
+    font-size: 0.82em;
+    color: var(--of-ink-soft);
+    line-height: 1.4;
+    min-width: 12em;
   }
 
-  /* Stepper cluster — when both BUY and SELL are possible, render them
-     side-by-side with a small tag above each so they're easy to tell apart. */
-  .item-controls {
-    display: inline-flex;
-    align-items: flex-end;
-    gap: 0.8em;
+  /* Cash-mode summary */
+  .tp-summary-cashrow {
+    display: flex;
+    align-items: baseline;
+    gap: 1.4em;
+    flex-wrap: wrap;
   }
-  .control-col {
-    display: inline-flex;
-    flex-direction: column;
+  .tp-summary-cashpair { display: flex; align-items: baseline; gap: 0.6em; }
+  .tp-cash-credit { color: var(--of-good); }
+  .tp-cash-debit { color: var(--of-rust); }
+
+  /* Barter-mode summary rows */
+  .tp-summary-row {
+    display: grid;
+    grid-template-columns: 6em minmax(7em, 9em) 0.8em minmax(0, 1fr) 0.8em 6em;
     align-items: center;
-    gap: 0.15em;
+    gap: 0.6em;
+    font-variant-numeric: tabular-nums;
   }
-  .control-tag {
-    font-size: 0.6em;
-    letter-spacing: 0.15em;
+  .tp-summary-label {
+    font-size: 0.72em;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--of-ink-soft);
     font-weight: 700;
-    padding: 0.1em 0.4em;
-    border-radius: 2px;
   }
-  .control-tag.buy {
-    color: var(--of-ink);
-    background: var(--post-accent);
-  }
-  .control-tag.sell {
-    color: #8bb96a;
-    background: rgba(139, 185, 106, 0.18);
-    border: 1px solid rgba(139, 185, 106, 0.4);
-  }
-  .coop-full {
+  .tp-summary-goods { font-size: 1em; font-weight: 700; color: var(--of-ink); }
+  .tp-summary-sub {
     font-size: 0.68em;
     letter-spacing: 0.08em;
-    color: #e85a4a;
-    font-style: italic;
-    margin-top: 0.2em;
-  }
-
-  /* Action bar — pinned at the bottom of main-col */
-  .action-bar {
-    display: flex;
-    gap: 0.8em;
-    align-items: center;
-    flex-wrap: wrap;
-    padding: 0.7em 0.9em;
-    border-color: var(--post-accent);
-  }
-  .confirm {
-    font-size: 1.05em;
-    padding: 0.7em 1.4em;
-    background: var(--post-accent);
-    color: var(--of-ink);
-  }
-  .confirm:hover:not(:disabled) {
-    filter: brightness(1.15);
-  }
-  .cancel {
     color: var(--of-ink-soft);
-    background: var(--of-paper);
-    border: 2px solid var(--of-ink-soft);
-  }
-  .warning {
-    color: #e85a4a;
-    font-size: 0.9em;
-    font-style: italic;
-  }
-
-  .empty {
-    color: var(--of-ink-soft);
-    font-style: italic;
-    margin: 0.3em 0;
-  }
-
-  @media (max-width: 900px) {
-    .trade-wrap {
-      grid-template-columns: 1fr;
-      height: auto;
-      overflow: auto;
-    }
-    .side-rail { overflow-y: visible; }
-    .scroll-area { overflow-y: visible; }
-  }
-
-  /* #1001 — mode tabs + barter pane */
-  .mode-tabs {
-    display: flex;
-    gap: 0.3em;
-    margin-top: 0.5em;
-  }
-  .mode-tab {
-    flex: 1;
-    padding: 0.5em 0.8em;
-    background: var(--of-paper);
-    color: var(--of-ink);
-    border: 2px solid var(--of-ink-soft);
-    border-radius: 3px;
-    font-family: inherit;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: none;
-    font-size: 0.85em;
-    cursor: pointer;
-    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    text-transform: uppercase;
+    margin-left: 0.3em;
   }
-  .mode-tab:hover:not(.active) {
-    background: var(--of-paper-soft);
-    border-color: var(--of-rust);
-  }
-  .mode-tab.active {
-    background: var(--of-rust);
-    color: var(--of-paper-soft);
-    border-color: var(--of-ink);
-  }
-
-  .barter-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6em;
-    padding: 0.8em;
-  }
-  .barter-grid {
+  .tp-summary-plus, .tp-summary-eq { text-align: center; color: var(--of-ink-soft); font-weight: 700; }
+  .tp-summary-spacer { display: block; }
+  .tp-summary-cash {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.8em;
-  }
-  .barter-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4em;
-    padding: 0.7em;
-    background: var(--of-paper-soft);
-    border: 1px solid var(--of-ink-soft);
-    border-radius: 3px;
-  }
-  .barter-col-head {
-    margin: 0;
-    font-size: 0.85em;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--of-rust);
-  }
-  .barter-select {
-    width: 100%;
-    padding: 0.4em 0.5em;
-    background: var(--of-paper);
-    color: var(--of-ink);
-    border: 2px solid var(--of-ink-soft);
-    border-radius: 3px;
-    font-family: inherit;
-    font-size: 0.9em;
-  }
-  .barter-qty-row {
-    display: flex;
+    grid-template-columns: auto auto 1fr;
     align-items: center;
-    gap: 0.5em;
+    gap: 0.6em;
+    background: rgba(148, 52, 14, 0.05);
+    border: 1px dashed var(--of-rule);
+    border-radius: 3px;
+    padding: 0.25em 0.6em;
   }
-  .barter-qty-row label {
-    font-size: 0.75em;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--of-ink-soft);
-  }
-  .barter-have {
-    font-size: 0.78em;
-    color: var(--of-ink-soft);
-  }
-  .empty {
-    margin: 0;
-    color: var(--of-ink-soft);
-    font-style: italic;
-    font-size: 0.85em;
-  }
-
-  .barter-quote {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.8em;
-    padding: 0.6em 0.9em;
-    border-width: 2px;
-  }
-  .quote-rate {
-    display: flex;
-    align-items: baseline;
-    gap: 0.4em;
-  }
-  .quote-rate-label {
-    font-size: 0.7em;
+  .tp-summary-cash-label {
+    font-size: 0.68em;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--of-ink-soft);
-  }
-  .quote-rate-val {
-    font-size: 1.3em;
     font-weight: 700;
   }
-  .quote-status { font-size: 0.85em; }
-  .quote-good { border-color: #8bb96a; }
-  .quote-good .quote-rate-val { color: #8bb96a; }
-  .quote-mid { border-color: #f5c96a; }
-  .quote-mid .quote-rate-val { color: #f5c96a; }
-  .quote-bad { border-color: #e85a4a; }
-  .quote-bad .quote-rate-val { color: #e85a4a; }
-
-  .barter-flavor {
-    margin: 0;
-    padding: 0.4em 0.7em;
-    font-size: 0.82em;
-    font-style: italic;
+  .tp-summary-cash-val {
+    font-size: 0.95em;
     color: var(--of-ink);
-    background: var(--of-paper-soft);
-    border-left: 3px solid var(--of-ink-soft);
-    border-radius: 0 3px 3px 0;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 3.5em;
   }
-  .barter-flavor.preferred { border-left-color: #8bb96a; }
-  .barter-flavor.refused { border-left-color: #e85a4a; }
+  .tp-cash-chips {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .tp-cash-chip {
+    background: var(--of-paper-deep);
+    color: var(--of-ink);
+    border: 1px solid var(--of-rule);
+    border-radius: 2px;
+    padding: 0.25em 0.55em;
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .tp-cash-chip:hover:not(:disabled) {
+    border-color: var(--of-rust);
+    color: var(--of-rust);
+    background: var(--of-paper);
+  }
+  .tp-cash-chip:disabled { opacity: 0.35; cursor: not-allowed; }
+  .tp-cash-chip-neg {
+    color: var(--of-ink-soft);
+    width: 1.6em;
+    padding: 0.25em 0;
+    text-align: center;
+    font-size: 0.9em;
+    font-weight: 400;
+  }
+  .tp-cash-chip-neg:hover:not(:disabled) {
+    color: var(--of-bad);
+    border-color: var(--of-bad);
+    background: rgba(138, 28, 12, 0.08);
+  }
+  .tp-cash-chip-suggest {
+    border-width: 2px;
+    border-color: var(--post-accent);
+    color: var(--post-accent);
+  }
+  .tp-summary-total { font-size: 1.3em; font-weight: 700; text-align: right; color: var(--of-ink); }
+  .tp-total-accent { color: var(--post-accent); }
+  .tp-total-good { color: var(--of-good); }
+  .tp-total-danger { color: var(--of-bad); }
+
+  .tp-summary-balance {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+    padding-top: 0.4em;
+    border-top: 1px dashed var(--of-rule);
+  }
+
+  /* ----- RateScale ----- */
+  .tp-scale {
+    flex: 1;
+    padding: 0.4em 0.25em;
+  }
+  .tp-scale-track {
+    position: relative;
+    height: 2.4em;
+    margin: 0.4em 1.1em 1.2em;
+  }
+  .tp-scale-track::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 4px;
+    background: var(--of-paper-deep);
+    border: 1px solid var(--of-rule);
+    border-radius: 2px;
+    transform: translateY(-50%);
+  }
+  .tp-scale-fair {
+    position: absolute;
+    top: 50%;
+    height: 12px;
+    background: rgba(72, 108, 42, 0.25);
+    border: 1px solid rgba(72, 108, 42, 0.5);
+    border-radius: 2px;
+    transform: translateY(-50%);
+    z-index: 1;
+  }
+  .tp-scale-tick { position: absolute; top: 0; bottom: 0; z-index: 2; transform: translateX(-50%); }
+  .tp-scale-tick-line { width: 1px; height: 1em; background: var(--of-rule); margin: 0.7em auto 0; }
+  .tp-scale-tick-label {
+    margin-top: 0.25em;
+    text-align: center;
+    font-size: 0.65em;
+    color: var(--of-ink-soft);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .tp-scale-notch {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 26px;
+    border-radius: 2px;
+    border: 2px solid var(--of-ink);
+    background: var(--post-accent);
+    transform: translate(-50%, -50%);
+    z-index: 3;
+  }
+  .tp-scale-notch-val {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translate(-50%, -0.4em);
+    background: var(--of-paper-deep);
+    border: 2px solid var(--post-accent);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+    color: var(--of-ink);
+    font-weight: 700;
+    font-size: 0.78em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .tp-scale-legend {
+    text-align: center;
+    font-size: 0.65em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--of-good);
+    font-weight: 700;
+  }
+  .tp-scale-bad .tp-scale-notch-val { border-color: var(--of-bad); color: var(--of-bad); }
+  .tp-scale-bad .tp-scale-notch { background: var(--of-bad); }
+  .tp-scale-bad .tp-scale-legend { color: var(--of-bad); }
+
+  /* ----- Alert ----- */
+  .tp-alert {
+    margin-top: 0.2em;
+    padding: 0.4em 0.7em;
+    border-radius: 2px;
+    border: 1px solid;
+    font-style: italic;
+    font-size: 0.85em;
+    line-height: 1.4;
+  }
+  .tp-alert strong { font-style: normal; font-weight: 700; }
+  .tp-alert-bad {
+    background: rgba(138, 28, 12, 0.08);
+    border-color: rgba(138, 28, 12, 0.55);
+    color: var(--of-ink);
+  }
+  .tp-alert-bad > strong:first-child { color: var(--of-bad); }
+  .tp-alert-warn {
+    background: rgba(168, 106, 24, 0.1);
+    border-color: rgba(168, 106, 24, 0.5);
+    color: var(--of-ink);
+  }
+  .tp-accent { color: var(--post-accent); }
+
+  /* ----- Two columns ----- */
+  .tp-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7em;
+    align-items: flex-start;
+  }
+  .tp-col-disabled {
+    background: var(--of-paper-soft);
+    border: 2px solid var(--of-rule);
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .tp-col-disabled .tp-col-head {
+    padding: 0.7em 1em;
+    background: var(--of-paper-deep);
+    border-bottom: 3px solid var(--of-rule);
+  }
+  .tp-col-disabled .tp-col-title {
+    color: var(--of-ink-soft);
+    font-size: 1.15em;
+    font-weight: 700;
+    margin-top: 0.15em;
+  }
+  .tp-col-disabled .tp-col-sub {
+    font-size: 0.78em; color: var(--of-ink-soft); font-style: italic; margin-top: 0.15em;
+  }
+  .tp-pile-empty { margin: 1em; color: var(--of-ink-soft); font-style: italic; font-size: 0.9em; }
+
+  /* ----- Footer ----- */
+  .tp-totals {
+    background: var(--of-paper-soft);
+    border: 3px solid var(--post-accent);
+    border-radius: 3px;
+    padding: 0.6em 0.9em;
+    transition: border-color 0.15s;
+  }
+  .tp-totals-bad { border-color: var(--of-bad); }
+  .tp-form { display: flex; align-items: center; gap: 0.8em; flex-wrap: wrap; }
+  .tp-btn {
+    font-size: 1em;
+    padding: 0.6em 1.3em;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+  .tp-btn-confirm {
+    background: var(--post-accent);
+    color: var(--of-paper-soft);
+    border: 2px solid var(--of-rust-dark);
+  }
+  .tp-btn-confirm:hover:not(:disabled) { filter: brightness(1.1); }
+  .tp-btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+  .tp-btn-cancel {
+    color: var(--of-ink-soft);
+    background: var(--of-paper);
+    border: 2px solid var(--of-ink-soft);
+  }
+  .tp-foot-warn { color: var(--of-bad); font-size: 0.85em; font-style: italic; }
 
   @media (max-width: 900px) {
-    .barter-grid { grid-template-columns: 1fr; }
+    .tp-cols { grid-template-columns: 1fr; }
+    .tp-summary-row {
+      grid-template-columns: 5em 1fr;
+      gap: 0.3em 0.6em;
+    }
+    .tp-summary-plus, .tp-summary-eq, .tp-summary-spacer { display: none; }
+    .tp-summary-cash { grid-column: 1 / -1; }
+    .tp-summary-total { grid-column: 1 / -1; text-align: left; }
   }
 </style>
