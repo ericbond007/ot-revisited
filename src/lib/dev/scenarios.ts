@@ -415,24 +415,6 @@ export const SCENARIOS: Scenario[] = [
     }
   },
   {
-    id: 'post_trade_receipt',
-    label: 'Post-trade receipt',
-    description: 'Just traded at Fort Laramie — opens the TradeReceiptModal.',
-    build: () => {
-      let s = atLandmark(baseState('post_trade'), 'ft_laramie');
-      // Give some cash + a sell-able pile so both columns have content.
-      s = { ...s, cash: 200 };
-      s = setInventory(s, { ...s.inventory, bacon: 40 });
-      return trade(s, {
-        buys: [
-          { item: 'flour', qty: 30 },
-          { item: 'lead_balls', qty: 15 }
-        ],
-        sells: [{ item: 'bacon', qty: 10 }]
-      });
-    }
-  },
-  {
     id: 'post_camp_summary',
     label: 'Post-camp summary',
     description: 'Just finished a 3-day rest with whiskey + dig-well + sing-along — opens the camp reveal.',

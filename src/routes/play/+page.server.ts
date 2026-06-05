@@ -358,17 +358,6 @@ export const actions: Actions = {
     return { state: next };
   },
 
-  ackTrade: async ({ url, locals }) => {
-    const slot = url.searchParams.get('slot');
-    if (!slot) throw error(400, 'slot required');
-    const state = await loadState(locals, slot);
-    const flags = { ...state.flags };
-    delete (flags as Record<string, unknown>)._tradeResult;
-    const next = { ...state, flags };
-    await locals.repo.save(locals.deviceId, slot, next);
-    return { state: next };
-  },
-
   ackPaper: async ({ url, locals }) => {
     const slot = url.searchParams.get('slot');
     if (!slot) throw error(400, 'slot required');
@@ -557,70 +546,9 @@ export const actions: Actions = {
     return { state: next };
   },
 
-  trade: async ({ url, request, locals }) => {
-    const slot = url.searchParams.get('slot');
-    if (!slot) throw error(400, 'slot required');
-    const fd = await request.formData();
-    const buys: Array<{ item: string; qty: number }> = [];
-    const sells: Array<{ item: string; qty: number }> = [];
-    for (const [key, value] of fd.entries()) {
-      if (key.startsWith('buy_')) {
-        const item = key.slice(4);
-        const qty = parseInt(value.toString(), 10);
-        if (qty > 0) buys.push({ item, qty });
-      } else if (key.startsWith('sell_')) {
-        const item = key.slice(5);
-        const qty = parseInt(value.toString(), 10);
-        if (qty > 0) sells.push({ item, qty });
-      }
-    }
-    let state = await loadState(locals, slot);
-    state = trade(state, { buys, sells });
-    // Decrement post stock for each purchase so future visits see the
-    // shelves emptier. Only applies at trading posts (skipped silently
-    // for any other trade context).
-    if (state.location.atLandmarkId) {
-      const here = getLandmark(state.location.atLandmarkId);
-      if (here.kind === 'trading_post') {
-        const purchaseMap: Record<string, number> = {};
-        for (const b of buys) purchaseMap[b.item] = (purchaseMap[b.item] ?? 0) + b.qty;
-        state = recordPostPurchases(state, here, purchaseMap);
-      }
-    }
-    await locals.repo.save(locals.deviceId, slot, state);
-    return { state };
-  },
-
   // #1001 — Item-for-item barter at a trading post. The engine surface
   // (systems/barter.ts) validates fairness + inventory; this action is
   // a thin wrapper that loads state, calls applyBarter, persists.
-  barter: async ({ url, request, locals }) => {
-    const slot = url.searchParams.get('slot');
-    if (!slot) throw error(400, 'slot required');
-    const fd = await request.formData();
-    const giveItem = fd.get('giveItem')?.toString() ?? '';
-    const giveQty = parseInt(fd.get('giveQty')?.toString() ?? '0', 10);
-    const receiveItem = fd.get('receiveItem')?.toString() ?? '';
-    const receiveQty = parseInt(fd.get('receiveQty')?.toString() ?? '0', 10);
-    if (!giveItem || giveQty <= 0 || !receiveItem || receiveQty <= 0) {
-      throw error(400, 'invalid barter offer');
-    }
-    let state = await loadState(locals, slot);
-    const rng = makeRng(`${state.seed}:barter:${state.day}`);
-    try {
-      state = applyBarter(
-        state,
-        { item: giveItem, qty: giveQty },
-        { item: receiveItem, qty: receiveQty },
-        rng,
-      );
-    } catch (e) {
-      throw error(409, (e as Error).message);
-    }
-    await locals.repo.save(locals.deviceId, slot, state);
-    return { state };
-  },
-
   // --- Town services (#152) ---
 
   townRepair: async ({ url, request, locals }) => {

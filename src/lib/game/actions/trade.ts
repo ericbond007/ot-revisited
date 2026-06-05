@@ -6,40 +6,8 @@ import { getWagon } from '../content/wagons';
 import { hasLiveMerchant, hasLiveBanker } from '../professions/predicates';
 import { computeWaterCap } from '../systems/water-cap';
 
-// Structured reveal written to flags._tradeResult. Consumed by
-// TradeReceiptModal; cleared by `?/ackTrade`. JSON-serializable.
-export interface TradeResult {
-  postName: string;
-  // Per-line items bought (one row per distinct item id).
-  bought: Array<{ id: string; qty: number; lineTotal: number }>;
-  // Per-line items sold.
-  sold: Array<{ id: string; qty: number; lineTotal: number }>;
-  rawCost: number;
-  rawRevenue: number;
-  netCost: number;      // rawCost - rawRevenue (positive = you paid)
-  cashBefore: number;
-  cashAfter: number;
-  weightBefore: number;
-  weightAfter: number;
-  professionBonus: {
-    merchant: boolean;
-    banker: boolean;
-    buyMult: number;
-    sellMult: number;
-    estimatedSavings: number; // how much the discounts saved vs no-bonus
-  };
-}
 
-function itemWeight(id: string, qty: number): number {
-  return (ITEMS[id]?.weightLbPerUnit ?? 0) * qty;
-}
 
-function totalInventoryWeight(inventory: Record<string, number>): number {
-  return Object.entries(inventory).reduce(
-    (sum, [id, qty]) => sum + itemWeight(id, qty ?? 0),
-    0
-  );
-}
 
 // Resolve an item id to its display name. Falls back to the id if missing
 // (shouldn't happen — every tradable item has a catalog entry).
@@ -144,54 +112,7 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
   if (sells.length > 0) parts.push(`sold ${sells.map((s) => `${s.qty} ${itemName(s.item)}`).join(', ')}`);
   const logText = `Trade: ${parts.join('; ')} (net $${netDisplay}).`;
 
-  // Build the receipt reveal. Per-line totals use post-discount prices
-  // so what the player sees on the receipt matches what changed hands.
-  const boughtLines: TradeResult['bought'] = buys.map(({ item, qty }) => ({
-    id: item,
-    qty,
-    lineTotal: getPrice(item).buy * qty * buyMult
-  }));
-  const soldLines: TradeResult['sold'] = sells.map(({ item, qty }) => ({
-    id: item,
-    qty,
-    lineTotal: getPrice(item).sell * qty * sellMult
-  }));
 
-  // Savings estimate vs "no profession bonus" so the Merchant/Banker
-  // value is legible on the receipt. The post-tier multiplier still
-  // applies to the no-bonus baseline — the post charges the same scale
-  // to either bonus tier; only the profession discount/bonus differs.
-  const rawCostNoBonus = buys.reduce(
-    (sum, { item, qty }) => sum + getPrice(item).buy * qty * postMult, 0
-  );
-  const rawRevenueNoBonus = sells.reduce(
-    (sum, { item, qty }) => sum + getPrice(item).sell * qty * postMult, 0
-  );
-  const estimatedSavings =
-    (rawCostNoBonus - rawCost) + (rawRevenue - rawRevenueNoBonus);
-
-  const hereId = state.location.atLandmarkId;
-  const postName = hereId ? getLandmark(hereId).name : 'Trading Post';
-
-  const result: TradeResult = {
-    postName,
-    bought: boughtLines,
-    sold: soldLines,
-    rawCost,
-    rawRevenue,
-    netCost: rawCost - rawRevenue,
-    cashBefore: state.cash,
-    cashAfter: newCash,
-    weightBefore: totalInventoryWeight(state.inventory),
-    weightAfter: totalInventoryWeight(inventory),
-    professionBonus: {
-      merchant: hasLiveMerchant(state),
-      banker: hasLiveBanker(state),
-      buyMult,
-      sellMult,
-      estimatedSavings
-    }
-  };
 
   // Water-carrying cap scales with water_bag count. Recompute after
   // every trade in case the player bought or sold skins; keep current
@@ -208,10 +129,6 @@ export function trade(state: GameState, opts: TradeOptions): GameState {
       waterCap: newWaterCap,
       water: Math.min(state.resources.water, newWaterCap)
     },
-    eventLog: [...state.eventLog, { day: state.day, text: logText }],
-    flags: {
-      ...state.flags,
-      _tradeResult: result as unknown as Record<string, unknown>
-    }
+    eventLog: [...state.eventLog, { day: state.day, text: logText }]
   };
 }
