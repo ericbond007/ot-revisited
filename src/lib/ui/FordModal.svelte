@@ -7,6 +7,7 @@
   import NumberStepper from './NumberStepper.svelte';
   import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
   import { ICON } from '$lib/data/icon-dictionary';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { state: gameState, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
   const qp = $derived(encodeURIComponent(slot));
@@ -72,8 +73,8 @@
   });
 </script>
 
-<div class="modal-backdrop">
-  <div class="panel modal-body">
+<div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
     <div class="river-header">
       {#if hereId && hasLandmarkIcon(hereId)}
         <LandmarkIcon id={hereId} size={48} />

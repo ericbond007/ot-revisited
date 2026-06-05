@@ -7,6 +7,7 @@
   // No backdrop-close: the server flag persists until a form POST clears it,
   // so a dismiss would just re-open on the next render.
   import type { GameState } from '$lib/game/types';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { state: gs, slot, onclose }: { state: GameState; slot: string; onclose: () => void } = $props();
 
@@ -17,7 +18,7 @@
 </script>
 
 <div class="modal-backdrop">
-  <div class="panel modal-body">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
     <div class="head">
       <span class="head-glyph">🛑</span>
       <div class="head-titles">

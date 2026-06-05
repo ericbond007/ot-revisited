@@ -49,6 +49,7 @@
   // The initial value is captured non-reactively via untrack — the
   // modal opens once per hunt and wagonTrain doesn't change underneath.
   import { untrack } from 'svelte';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
   let mode = $state<Mode>(untrack(() => gameState.wagonTrain != null ? 'company' : 'solo'));
 
   const liveCompanionCount = $derived(
@@ -175,8 +176,8 @@
   ]);
 </script>
 
-<div class="modal-backdrop">
-  <div class="panel modal-body">
+<div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
     <h2 class="modal-title">Hunt or Gather</h2>
     <div class="stats">
       <span><strong>Rifles:</strong> {rifleCount}</span>

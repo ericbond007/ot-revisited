@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GameState, PartyMember } from '$lib/game/types';
   import { icon, ICON } from '$lib/data/icon-dictionary';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { state, onclose, onselect }: {
     state: GameState;
@@ -55,8 +56,8 @@
   const aliveCount = $derived(state.party.filter((p) => !p.dead).length);
 </script>
 
-<div class="modal-backdrop" onclick={onclose} role="presentation">
-  <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
+<div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
     <h2 class="modal-title">🧑‍🤝‍🧑 The Party</h2>
 
     <!-- Morale -->

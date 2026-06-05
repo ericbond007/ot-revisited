@@ -5,6 +5,7 @@
   import type { CampSummary } from '$lib/game/actions/rest';
   import { ITEMS } from '$lib/game/content/items';
   import { ICON, icon } from '$lib/data/icon-dictionary';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { summary, slot }: { summary: CampSummary; slot: string } = $props();
   const qp = $derived(encodeURIComponent(slot));
@@ -42,7 +43,7 @@
 </script>
 
 <div class="modal-backdrop">
-  <div class="panel modal-body">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{}}>
     <div class="head">
       <span class="head-glyph">{icon('camp_scene', 'fire')}</span>
       <div class="head-titles">

@@ -4,6 +4,7 @@
   import { getCondition } from '$lib/game/content/conditions';
   import { ITEMS } from '$lib/game/content/items';
   import { icon, ICON } from '$lib/data/icon-dictionary';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { member, onclose }: { member: PartyMember; onclose: () => void } = $props();
 
@@ -37,8 +38,8 @@
   const hc = $derived(healthColor(member.health));
 </script>
 
-<div class="modal-backdrop" onclick={onclose} role="presentation">
-  <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
+<div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
 
     <!-- Header -->
     <div class="head">

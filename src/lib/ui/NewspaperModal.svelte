@@ -10,13 +10,14 @@
   // is just the mechanic with a respectable parchment feel.
   import type { PaperBatch } from '$lib/game/systems/news';
   import ParchmentBg from './trail-map/trail-map-svg/ParchmentBg.svelte';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { batch, slot }: { batch: PaperBatch; slot: string } = $props();
   const qp = $derived(encodeURIComponent(slot));
 </script>
 
 <div class="modal-backdrop">
-  <div class="paper-shell">
+  <div class="paper-shell" role="dialog" use:dialogA11y={{}}>
     <ParchmentBg>
       <div class="paper">
         <header class="masthead">
