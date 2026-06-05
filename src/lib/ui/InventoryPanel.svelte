@@ -76,9 +76,9 @@
   const dailyFoodLb = $derived(foodConsumedToday(state));
   const foodDays = $derived(dailyFoodLb > 0 ? Math.floor(foodLb / dailyFoodLb) : 0);
   const foodColor = $derived(
-    foodDays >= 30 ? '#8bb96a' :
-    foodDays >= 14 ? '#f5c96a' :
-    foodDays >= 7  ? '#c96a2a' : '#e85a4a'
+    foodDays >= 30 ? 'var(--of-status-good)' :
+    foodDays >= 14 ? 'var(--of-status-warn)' :
+    foodDays >= 7  ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
 
   // Warmth — aggregate clothing score (0-100). Each item warms one
@@ -86,9 +86,9 @@
   const warmth = $derived(warmthFor(state));
   const aliveCount = $derived(state.party.filter((m) => !m.dead).length);
   const warmthColor = $derived(
-    warmth >= 75 ? '#8bb96a' :
-    warmth >= 50 ? '#f5c96a' :
-    warmth >= 25 ? '#c96a2a' : '#e85a4a'
+    warmth >= 75 ? 'var(--of-status-good)' :
+    warmth >= 50 ? 'var(--of-status-warn)' :
+    warmth >= 25 ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
   const warmthTip = $derived(
     `Warmth: ${warmth}/100. Each item warms one body — for a party of ${aliveCount}, ` +
@@ -118,9 +118,9 @@
   );
   const waterPct = $derived(cleanPct + dirtyPct);
   const waterColor = $derived(
-    waterPct >= 70 ? '#8bb96a' :
-    waterPct >= 30 ? '#f5c96a' :
-    waterPct >= 10 ? '#c96a2a' : '#e85a4a'
+    waterPct >= 70 ? 'var(--of-status-good)' :
+    waterPct >= 30 ? 'var(--of-status-warn)' :
+    waterPct >= 10 ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
 
   const totalWeight = $derived(
@@ -129,9 +129,9 @@
   const capacity = $derived(state.wagon.carryCapacity);
   const weightPct = $derived(Math.min(100, Math.round((totalWeight / capacity) * 100)));
   const weightColor = $derived(
-    weightPct < 70 ? '#8bb96a' :
-    weightPct < 90 ? '#f5c96a' :
-    weightPct < 100 ? '#c96a2a' : '#e85a4a'
+    weightPct < 70 ? 'var(--of-status-good)' :
+    weightPct < 90 ? 'var(--of-status-warn)' :
+    weightPct < 100 ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
 </script>
 
@@ -275,7 +275,7 @@
   }
   .cash { font-weight: 700; }
   .water { color: var(--of-ink); }
-  .water-dirty { color: #c96a2a; font-weight: 700; }
+  .water-dirty { color: var(--of-status-mid); font-weight: 700; }
 
   /* Food summary — the at-a-glance "how long will we last?" chip. */
   .food-summary {
@@ -334,8 +334,8 @@
     bottom: 0;
     background: repeating-linear-gradient(
       45deg,
-      #c96a2a,
-      #c96a2a 3px,
+      var(--of-status-mid),
+      var(--of-status-mid) 3px,
       #8a4a1c 3px,
       #8a4a1c 6px
     );

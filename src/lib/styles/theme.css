@@ -73,6 +73,17 @@
   --of-good:         #486c2a;
   --of-warn:         #a86a18;
   --of-bad:          #8a1c0c;
+
+  /* Status-indicator palette (#1225). Brighter than the earthy text tokens
+     above — tuned for morale/health BARS and numeric readouts where a
+     legible green/amber/orange/red gradient matters. Tokenized from the
+     literals that were scattered inline across PartyModal / WagonTrainModal
+     / etc. (art/SVG-fill contexts keep their own hand-tuned hex per the
+     art-exclusion rule). */
+  --of-status-good:  #8bb96a;
+  --of-status-warn:  #f5c96a;
+  --of-status-mid:   #c96a2a;
+  --of-status-bad:   #e85a4a;
   --of-river:        #4a6a8c; /* muted blue — water/ford context (PR9 finale; legacy bridge deleted) */
 
   /* TYPOGRAPHY — period-realistic stack */

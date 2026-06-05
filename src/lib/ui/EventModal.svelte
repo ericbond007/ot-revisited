@@ -237,7 +237,7 @@
     font-size: 0.78em;
     font-weight: 400;
     font-style: italic;
-    color: #e85a4a;
+    color: var(--of-status-bad);
     letter-spacing: 0.02em;
   }
   .choice-card.locked .choice-icon {

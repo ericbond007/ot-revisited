@@ -269,8 +269,8 @@
     gap: 0.3em;
   }
   .stat-val strong { font-weight: 700; }
-  .morale-after.up { color: #8bb96a; }
-  .morale-after.down { color: #e85a4a; }
+  .morale-after.up { color: var(--of-status-good); }
+  .morale-after.down { color: var(--of-status-bad); }
   .stat-val .arrow { color: var(--of-ink-soft); font-weight: normal; }
   .stat-val .small { color: var(--of-ink-soft); font-style: italic; font-size: 0.85em; }
 
@@ -280,8 +280,8 @@
     padding: 0.08em 0.4em;
     border-radius: 10px;
   }
-  .delta.up { color: #8bb96a; background: rgba(139, 185, 106, 0.15); }
-  .delta.down { color: #e85a4a; background: rgba(232, 90, 74, 0.15); }
+  .delta.up { color: var(--of-status-good); background: rgba(139, 185, 106, 0.15); }
+  .delta.down { color: var(--of-status-bad); background: rgba(232, 90, 74, 0.15); }
 
   .section { margin-bottom: 1em; }
   .section-head {
@@ -325,7 +325,7 @@
     border-radius: 2px;
   }
   .party-row.died {
-    border-left: 3px solid #e85a4a;
+    border-left: 3px solid var(--of-status-bad);
     background: rgba(232, 90, 74, 0.08);
   }
   .party-row.dead-before { opacity: 0.5; }
@@ -338,7 +338,7 @@
     padding: 0.2em 0.5em;
     border-radius: 2px;
   }
-  .tag.died { background: #e85a4a; color: var(--of-ink); }
+  .tag.died { background: var(--of-status-bad); color: var(--of-ink); }
   .tag.dead { color: var(--of-ink-soft); font-style: italic; }
 
   .inv-grid {
@@ -353,8 +353,8 @@
     font-weight: 700;
     padding: 0.15em 0;
   }
-  .inv-col-head.gained { color: #8bb96a; }
-  .inv-col-head.consumed { color: #c96a2a; }
+  .inv-col-head.gained { color: var(--of-status-good); }
+  .inv-col-head.consumed { color: var(--of-status-mid); }
   .inv-row {
     display: grid;
     grid-template-columns: 1.3em 1fr auto;
@@ -367,8 +367,8 @@
   .inv-icon { font-size: 0.95em; line-height: 1; }
   .inv-name { color: var(--of-ink); }
   .inv-delta { font-weight: 700; }
-  .inv-delta.up { color: #8bb96a; }
-  .inv-delta.down { color: #e85a4a; }
+  .inv-delta.up { color: var(--of-status-good); }
+  .inv-delta.down { color: var(--of-status-bad); }
 
   .actions {
     display: flex;

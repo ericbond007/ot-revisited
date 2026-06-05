@@ -400,7 +400,7 @@
     color: var(--of-ink);
     font-weight: 700;
   }
-  .stat.tone-good { border-color: #8bb96a; color: #8bb96a; }
+  .stat.tone-good { border-color: var(--of-status-good); color: var(--of-status-good); }
 
   /* Service grid */
   .services {

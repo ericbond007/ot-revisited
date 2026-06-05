@@ -317,7 +317,7 @@
     color: var(--of-ink-soft);
   }
   .cost-val { font-size: 1.4em; font-weight: 700; color: var(--accent); }
-  .cost-val.cant-afford { color: #e85a4a; }
+  .cost-val.cant-afford { color: var(--of-status-bad); }
 
   .actions {
     display: grid;

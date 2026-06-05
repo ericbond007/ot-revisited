@@ -130,8 +130,8 @@
     font-weight: 700;
     letter-spacing: 0.04em;
   }
-  .delta.refund { color: #8bb96a; }
-  .delta.surcharge { color: #c96a2a; }
+  .delta.refund { color: var(--of-status-good); }
+  .delta.surcharge { color: var(--of-status-mid); }
 
   .stats {
     margin: 0;

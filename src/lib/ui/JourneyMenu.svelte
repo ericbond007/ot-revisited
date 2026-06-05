@@ -136,7 +136,7 @@
     padding: 0.3em 0.5em 0.5em 0.5em;
   }
   .dev-head {
-    color: #8bb96a;
+    color: var(--of-status-good);
   }
   .menu-divider {
     height: 1px;
@@ -176,7 +176,7 @@
     border: 2px solid rgba(139, 185, 106, 0.35);
   }
   .dev-item:hover {
-    border-color: #8bb96a;
+    border-color: var(--of-status-good);
     color: var(--of-ink);
   }
   .menu-foot {
@@ -205,7 +205,7 @@
     color: var(--of-ink);
   }
   .item.danger:hover {
-    border-color: #e85a4a;
+    border-color: var(--of-status-bad);
   }
 
   .item-icon {

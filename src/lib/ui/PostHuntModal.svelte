@@ -269,7 +269,7 @@
   .haul-row.liver   { border-left: 3px solid #c94a4a; }
   .haul-row.berries { border-left: 3px solid #7a4a8c; }
   .haul-row.spent   { opacity: 0.8; }
-  .haul-row.injury  { border-left: 3px solid #e85a4a; background: rgba(232, 90, 74, 0.08); }
+  .haul-row.injury  { border-left: 3px solid var(--of-status-bad); background: rgba(232, 90, 74, 0.08); }
 
   .row-glyph {
     font-size: 1.6em;
@@ -291,11 +291,11 @@
     font-size: 0.88em;
   }
   .spoil-warn {
-    color: #c96a2a;
+    color: var(--of-status-mid);
     font-weight: 700;
   }
   .good {
-    color: #8bb96a;
+    color: var(--of-status-good);
     font-weight: 700;
   }
 
@@ -303,7 +303,7 @@
     margin: 0 0 1em 0;
     padding: 0.6em 0.8em;
     background: rgba(201, 106, 42, 0.1);
-    border-left: 3px solid #c96a2a;
+    border-left: 3px solid var(--of-status-mid);
     border-radius: 0 3px 3px 0;
     color: var(--of-ink);
     font-size: 0.9em;
