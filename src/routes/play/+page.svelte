@@ -20,7 +20,6 @@
   import CampStage from '$lib/ui/CampStage.svelte';
   import CampSummaryModal from '$lib/ui/CampSummaryModal.svelte';
   import FordSummaryModal from '$lib/ui/FordSummaryModal.svelte';
-  import TradeReceiptModal from '$lib/ui/TradeReceiptModal.svelte';
   import NewspaperModal from '$lib/ui/NewspaperModal.svelte';
   import LetterModal from '$lib/ui/LetterModal.svelte';
   import WagonModal from '$lib/ui/WagonModal.svelte';
@@ -42,7 +41,6 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
   import type { HuntHaul } from '$lib/game/actions/hunt';
   import type { CampSummary } from '$lib/game/actions/rest';
   import type { FordResult } from '$lib/game/actions/ford';
-  import type { TradeResult } from '$lib/game/actions/trade';
   import type { PaperBatch } from '$lib/game/systems/news';
   import type { PendingLetter } from '$lib/game/systems/letters';
 
@@ -52,7 +50,6 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
   const huntHaul = $derived((gs.flags._huntHaul as unknown as HuntHaul | undefined));
   const campSummary = $derived((gs.flags._campSummary as unknown as CampSummary | undefined));
   const fordResult = $derived((gs.flags._fordResult as unknown as FordResult | undefined));
-  const tradeResult = $derived((gs.flags._tradeResult as unknown as TradeResult | undefined));
   const paperBatch = $derived((gs.flags._paperBatch as unknown as PaperBatch | undefined));
   const pendingLetter = $derived((gs.flags._pendingLetter as unknown as PendingLetter | undefined));
   const mudAbandonPending = $derived(gs.flags._mudAbandonPending === true);
@@ -362,9 +359,6 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
   <FordSummaryModal result={fordResult} slot={data.slot} />
 {/if}
 
-{#if tradeResult && !gs.completed}
-  <TradeReceiptModal result={tradeResult} slot={data.slot} />
-{/if}
 
 {#if paperBatch && !gs.completed}
   <NewspaperModal batch={paperBatch} slot={data.slot} />
