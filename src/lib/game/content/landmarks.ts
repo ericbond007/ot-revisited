@@ -145,6 +145,12 @@ export interface Landmark {
   // ferries, contract operations). Default true — every fort + mission +
   // road ranch pre-1860 ran barter, per Bryant / Royce / Carpenter.
   barterEnabled?: boolean;
+  /** #trade — post pays cash for player goods (sells). Default false:
+   *  HBC/fur posts, missions, and Native camps ran on barter/credit. */
+  buysForCash?: boolean;
+  /** Era flip: post only pays cash from this year onward (control changed
+   *  hands, e.g. Am. Fur Co. -> US Army at Fort Laramie in 1849). */
+  buysForCashFromYear?: number;
 }
 
 /**
@@ -159,6 +165,15 @@ export function isLandmarkAbandoned(landmark: Landmark, year: number): boolean {
   if (typeof landmark.abandonedBeforeYear === 'number' && year < landmark.abandonedBeforeYear) {
     return true;
   }
+  return false;
+}
+
+/** True if this trading post will pay the player cash for goods at `year`. */
+export function postBuysForCash(landmark: Landmark, year: number): boolean {
+  // buysForCash (always-on) takes precedence; buysForCashFromYear is the
+  // era-flip fallback. A landmark should set one or the other, not both.
+  if (landmark.buysForCash) return true;
+  if (typeof landmark.buysForCashFromYear === 'number') return year >= landmark.buysForCashFromYear;
   return false;
 }
 
@@ -238,6 +253,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // docs/historical-pass/13-landmark-visual-references/hollenberg_ranch.md.
     postKind: 'frontier',
     abandonedBeforeYear: 1857,
+    buysForCash: true,
     stockScale: 0.5,
     // Road ranch — sells food, lodging, simple supplies. Doesn't deal
     // in fur-trade specialty.
@@ -259,6 +275,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'rock_creek_station',  name: 'Rock Creek Station',  milesFromPrevious: 27,  terrain: 'prairie',   kind: 'trading_post',
     postKind: 'frontier',
     abandonedBeforeYear: 1857,
+    buysForCash: true,
     stockScale: 0.4,
     services: ['gossip', 'inn'],
     blurb: "A sod-roofed ranch on the Rock Creek crossing. Whiskey, lodging, and the kind of grim hospitality that produced the McCanles shootout in '61. The proprietor watches you with one hand near the rifle.",
@@ -273,6 +290,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // not buy goods from emigrants. Kearny is sell-only (for the player).
     postKind: 'us_army',
     buysFromEmigrants: false,
+    buysForCash: true,
     stockScale: 1.0,
     services: ['gossip', 'blacksmith'],
     blurb: 'Soldiers drill at dawn; emigrants trade at dusk. The post quartermaster sets fair prices — no haggling, no luxuries, and he will not buy from you.',
@@ -344,6 +362,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // Fur-trade origin turned emigrant hub. The broadest selection on the
     // trail — and famously the highest prices.
     postKind: 'frontier',
+    buysForCashFromYear: 1849,
     stockScale: 1.5,
     services: ['gossip', 'blacksmith', 'inn', 'gambling', 'brothel', 'guide', 'bath_house', 'ox_swap'],
     // #915 — Laramie's fur-trade origins meant a permanent appetite
@@ -385,6 +404,7 @@ export const LANDMARKS: readonly Landmark[] = [
     postKind: 'us_army',
     abandonedBeforeYear: 1855,
     buysFromEmigrants: false,
+    buysForCash: true,
     stockScale: 0.6,
     services: ['gossip', 'blacksmith'],
     blurb: 'A two-acre Army post at the bridge over the North Platte. Sutler row, a forge, and a sergeant who eyes every wagon. The Mormons used to run a ferry here; the soldiers now charge a toll on the bridge.',
@@ -470,6 +490,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 30,  terrain: 'prairie',   elevationFt: 6700, kind: 'trading_post',
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
+    buysForCashFromYear: 1858,
     stockScale: 0.45,
     // #276 Bridger 1849 was the period gouge-king — 50% above mid-trail.
     // Period sources: Sage 1846, Frizzell 1852, Bryant 1848 all
@@ -708,6 +729,7 @@ export const LANDMARKS: readonly Landmark[] = [
     // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',
+    buysForCash: true,
     stockScale: 1.3,
     // #276 End-of-trail markup — 30% above mid-trail tier (the blurb
     // says "prices are ruinous" but until now they matched Laramie).

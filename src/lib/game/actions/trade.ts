@@ -59,7 +59,7 @@ export interface TradeOptions {
 
 // Additive stacking: prevents runaway combined discounts. Merchant+Banker
 // together = -25% buy / +30% sell (vs. the old multiplicative -23.5% / +32%).
-function professionDiscount(state: GameState): { buyMult: number; sellMult: number } {
+export function professionDiscount(state: GameState): { buyMult: number; sellMult: number } {
   let buyDiscount = 0;
   let sellBonus = 0;
   if (hasLiveMerchant(state)) { buyDiscount += 0.15; sellBonus += 0.20; }
