@@ -309,6 +309,16 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--of-rust);
   box-shadow: 0 0 0 2px rgba(148,52,14,0.25);
 }
+
+/* Keyboard-focus ring (a11y). Shown only for keyboard / assistive-tech focus,
+   never plain mouse clicks. Restores a visible focus indicator on buttons,
+   links, steppers, and any interactive element without its own focus style.
+   Inputs keep their border + box-shadow focus above (more specific, wins). */
+:focus-visible {
+  outline: 2px solid var(--of-rust);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
 select {
   appearance: none; -webkit-appearance: none; -moz-appearance: none;
   padding: 0.5em 2em 0.5em 0.8em; cursor: pointer;
