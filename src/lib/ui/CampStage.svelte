@@ -380,7 +380,7 @@
     font-size: 0.82em;
     color: var(--of-ink);
   }
-  .budget.over { color: #e85a4a; }
+  .budget.over { color: var(--of-status-bad); }
   .budget strong { color: var(--of-ink); font-weight: 700; }
 
   .clock {

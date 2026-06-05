@@ -18,9 +18,9 @@
       : 0
   );
   const moraleColor = $derived(
-    avgMorale >= 70 ? '#8bb96a' :
-    avgMorale >= 40 ? '#f5c96a' :
-    avgMorale >= 20 ? '#c96a2a' : '#e85a4a'
+    avgMorale >= 70 ? 'var(--of-status-good)' :
+    avgMorale >= 40 ? 'var(--of-status-warn)' :
+    avgMorale >= 20 ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
   const totalSouls = $derived(
     (train?.companions ?? []).reduce(

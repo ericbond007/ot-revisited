@@ -136,7 +136,7 @@
     margin: 0 0 1em 0;
     padding: 0.6em 0.8em;
     background: rgba(201, 106, 42, 0.1);
-    border-left: 3px solid #c96a2a;
+    border-left: 3px solid var(--of-status-mid);
     border-radius: 0 3px 3px 0;
     color: var(--of-ink);
     font-size: 0.9em;
@@ -186,7 +186,7 @@
     margin-bottom: 1em;
   }
   .total strong { color: var(--of-ink); }
-  .total.enough strong { color: #8bb96a; }
+  .total.enough strong { color: var(--of-status-good); }
 
   .actions {
     display: flex;

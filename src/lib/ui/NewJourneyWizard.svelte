@@ -245,8 +245,8 @@
   .close-btn:hover { color: var(--of-rust); }
   .form-error {
     padding: 0.6em 0.9em;
-    border: 2px solid #e85a4a;
-    color: #e85a4a;
+    border: 2px solid var(--of-status-bad);
+    color: var(--of-status-bad);
     font-weight: 700;
     margin-bottom: 0.8em;
     border-radius: 4px;

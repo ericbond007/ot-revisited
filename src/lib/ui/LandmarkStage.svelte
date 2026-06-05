@@ -178,13 +178,13 @@
   /* End: celebratory gold */
   .stage-end {
     background: #3a2a10;
-    color: #f5c96a;
-    border-color: #f5c96a;
+    color: var(--of-status-warn);
+    border-color: var(--of-status-warn);
   }
   .stage-end .kind { color: #e8c89a; }
-  .stage-end .name { color: #f5c96a; }
+  .stage-end .name { color: var(--of-status-warn); }
   .stage-end .meta-head { color: #e8c89a; }
-  .stage-end .meta-val { color: #f5c96a; }
+  .stage-end .meta-val { color: var(--of-status-warn); }
   .stage-end .art-placeholder {
     background: rgba(245, 201, 106, 0.08);
     border-color: rgba(245, 201, 106, 0.4);

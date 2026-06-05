@@ -348,7 +348,7 @@
   /* Contextual highlight on the action panel border per location */
   .panel-trading_post { border-color: var(--of-rust); }
   .panel-river { border-color: #4a8bc9; background: #1a1f28; }
-  .panel-end { border-color: #f5c96a; }
+  .panel-end { border-color: var(--of-status-warn); }
 
   /* Highlight the contextually-relevant action button */
   .highlight:not(:disabled) {

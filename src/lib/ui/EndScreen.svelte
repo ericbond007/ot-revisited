@@ -296,14 +296,14 @@
   /* Arrived --- */
   .arrived-wrap {
     padding: 1.2em 1.4em;
-    border-color: #8bb96a;
+    border-color: var(--of-status-good);
   }
   .big-glyph {
     font-size: 4em;
     line-height: 1;
   }
   .arrived-head {
-    color: #8bb96a;
+    color: var(--of-status-good);
   }
   .roster {
     list-style: none;

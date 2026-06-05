@@ -68,9 +68,9 @@
   const carryCapacity = $derived(state.wagon.carryCapacity);
   const weightPct = $derived(Math.min(100, Math.round((totalWeight / carryCapacity) * 100)));
   const weightColor = $derived(
-    weightPct < 70 ? '#8bb96a' :
-    weightPct < 90 ? '#f5c96a' :
-    weightPct < 100 ? '#c96a2a' : '#e85a4a'
+    weightPct < 70 ? 'var(--of-status-good)' :
+    weightPct < 90 ? 'var(--of-status-warn)' :
+    weightPct < 100 ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
 </script>
 

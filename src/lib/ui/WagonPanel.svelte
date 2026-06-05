@@ -9,15 +9,15 @@
 
   const condition = $derived(Math.round(state.wagon.condition));
   const conditionColor = $derived(
-    condition >= 70 ? '#8bb96a' :
-    condition >= 40 ? '#f5c96a' :
-    condition >= 20 ? '#c96a2a' : '#e85a4a'
+    condition >= 70 ? 'var(--of-status-good)' :
+    condition >= 40 ? 'var(--of-status-warn)' :
+    condition >= 20 ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
   const canvas = $derived(Math.round(state.wagon.canvas));
   const canvasColor = $derived(
-    canvas >= 60 ? '#8bb96a' :
-    canvas >= 40 ? '#f5c96a' :
-    canvas >= 20 ? '#c96a2a' : '#e85a4a'
+    canvas >= 60 ? 'var(--of-status-good)' :
+    canvas >= 40 ? 'var(--of-status-warn)' :
+    canvas >= 20 ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
 
   const aliveOxen = $derived(state.oxen.filter((o) => o.health > 0));

@@ -42,16 +42,16 @@
     return c.party.filter((p) => p.dead).length;
   }
   function moraleColor(m: number): string {
-    if (m >= 70) return '#8bb96a';
-    if (m >= 40) return '#f5c96a';
-    if (m >= 20) return '#c96a2a';
-    return '#e85a4a';
+    if (m >= 70) return 'var(--of-status-good)';
+    if (m >= 40) return 'var(--of-status-warn)';
+    if (m >= 20) return 'var(--of-status-mid)';
+    return 'var(--of-status-bad)';
   }
   function hpColor(h: number): string {
-    if (h >= 70) return '#8bb96a';
-    if (h >= 40) return '#f5c96a';
-    if (h >= 20) return '#c96a2a';
-    return '#e85a4a';
+    if (h >= 70) return 'var(--of-status-good)';
+    if (h >= 40) return 'var(--of-status-warn)';
+    if (h >= 20) return 'var(--of-status-mid)';
+    return 'var(--of-status-bad)';
   }
   function outcomeBadge(c: NpcWagonState): string {
     if (c.outcome === 'wiped') return '✝ wiped';

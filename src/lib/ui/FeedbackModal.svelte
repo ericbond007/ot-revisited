@@ -140,7 +140,7 @@
     display: flex; align-items: center; gap: 0.8em; justify-content: flex-end;
   }
   .count { color: var(--of-ink-soft); font-size: 0.78em; margin-right: auto; }
-  .err { color: #e85a4a; font-weight: 600; font-size: 0.85em; }
+  .err { color: var(--of-status-bad); font-weight: 600; font-size: 0.85em; }
   .send-btn { font-size: 0.95em; padding: 0.55em 1.1em; }
   .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .sent {
