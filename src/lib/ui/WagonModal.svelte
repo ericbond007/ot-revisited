@@ -3,6 +3,7 @@
   import { getWagon } from '$lib/game/content/wagons';
   import ItemTooltip from './ItemTooltip.svelte';
   import WagonIcon from './WagonIcon.svelte';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { state, onclose }: { state: GameState; onclose: () => void } = $props();
 
@@ -36,8 +37,8 @@
   ];
 </script>
 
-<div class="modal-backdrop" onclick={onclose} role="presentation">
-  <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
+<div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
     <h2 class="modal-title wagon-title">
       <WagonIcon size="1.1em" />
       <span>{wagonModel.name}</span>

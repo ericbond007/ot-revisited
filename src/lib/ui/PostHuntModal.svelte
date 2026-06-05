@@ -6,6 +6,7 @@
   // for now this modal is a read + acknowledge step.
   import type { HuntHaul } from '$lib/game/actions/hunt';
   import { ICON } from '$lib/data/icon-dictionary';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   // No backdrop-close on this modal — the server-side flag (_huntHaul)
   // persists until the Continue button's form submission clears it, so
@@ -36,7 +37,7 @@
 </script>
 
 <div class="modal-backdrop">
-  <div class="panel modal-body">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{}}>
     <div class="head">
       <span class="head-glyph">{flavor.glyph}</span>
       <div class="head-titles">

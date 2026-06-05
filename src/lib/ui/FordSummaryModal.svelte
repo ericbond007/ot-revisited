@@ -5,6 +5,7 @@
   import type { FordResult } from '$lib/game/actions/ford';
   import { ITEMS } from '$lib/game/content/items';
   import { ICON } from '$lib/data/icon-dictionary';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { result, slot }: { result: FordResult; slot: string } = $props();
   const qp = $derived(encodeURIComponent(slot));
@@ -38,7 +39,7 @@
 </script>
 
 <div class="modal-backdrop">
-  <div class="panel modal-body">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{}}>
     <div class="head">
       <span class="head-glyph">{METHOD_GLYPH[result.method]}</span>
       <div class="head-titles">

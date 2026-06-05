@@ -22,6 +22,7 @@
   import { POST_THEME } from '$lib/data/post-theme';
   import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
   import TradeItemColumn from './TradeItemColumn.svelte';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { state: gameState, slot, onclose }: {
     state: GameState;
@@ -240,11 +241,11 @@
   const giveLines = $derived(Object.entries(give).filter(([, q]) => q > 0));
 </script>
 
-<div class="trade-backdrop" onclick={onclose} role="presentation">
+<div class="trade-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
   <div
     class="trade-wrap"
-    onclick={(e) => e.stopPropagation()}
-    role="presentation"
+    role="dialog"
+    use:dialogA11y={{ onClose: onclose }}
     style="--post-accent: {theme.accent};"
   >
     <!-- ===== PostHeader ===== -->

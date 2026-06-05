@@ -16,6 +16,7 @@
   import { enhance } from '$app/forms';
   import NumberStepper from './NumberStepper.svelte';
   import { ICON } from '$lib/data/icon-dictionary';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
   import {
     REPAIR_DOLLARS_PER_POINT,
     INN_DOLLARS_PER_PERSON_PER_NIGHT,
@@ -162,8 +163,8 @@
   );
 </script>
 
-<div class="modal-backdrop" onclick={onclose} role="presentation">
-  <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation"
+<div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}
        style="--accent: {meta.accent};">
     <div class="head">
       <span class="head-glyph" aria-hidden="true">{meta.glyph}</span>

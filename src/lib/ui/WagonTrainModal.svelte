@@ -10,6 +10,7 @@
   import { enhance } from '$app/forms';
   import type { GameState, NpcWagonState, PartyMember } from '$lib/game/types';
   import { wagonHasSickMember } from '$lib/game/systems/wagon-train-leader';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { state, slot, onclose }: {
     state: GameState;
@@ -97,8 +98,8 @@
 </script>
 
 {#if train}
-  <div class="modal-backdrop" onclick={onclose} role="presentation">
-    <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
+  <div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
+    <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
       <h2 class="modal-title">🛞 {train.name}</h2>
       <p class="hdr-stats">
         Joined day {train.joinedDay} · {train.companions.length}

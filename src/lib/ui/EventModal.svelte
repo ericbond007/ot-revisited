@@ -5,6 +5,7 @@
   import type { GameState } from '$lib/game/types';
   import { enhance } from '$app/forms';
   import { ICON } from '$lib/data/icon-dictionary';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
 
   let { eventId, slot, gameState, body: bodyOverride }: {
     eventId: string;
@@ -57,7 +58,7 @@
 
 {#if event}
   <div class="modal-backdrop">
-    <div class="panel event-card">
+    <div class="panel event-card" role="dialog" use:dialogA11y={{}}>
       <!-- Header: category label + title -->
       <div class="event-header">
         <div class="cat-chip">

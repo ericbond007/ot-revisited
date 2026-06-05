@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
   import { ITEMS, type ItemCategory } from '$lib/game/content/items';
   import { ICON } from '$lib/data/icon-dictionary';
   import ItemTooltip from './ItemTooltip.svelte';
@@ -73,8 +74,8 @@
   );
 </script>
 
-<div class="modal-backdrop" onclick={onclose} role="presentation">
-  <div class="panel modal-body" onclick={(e) => e.stopPropagation()} role="presentation">
+<div class="modal-backdrop" onclick={(e) => e.target === e.currentTarget && onclose()} role="presentation">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
     <h2 class="modal-title">📦 Inventory</h2>
 
     <!-- Header stats -->

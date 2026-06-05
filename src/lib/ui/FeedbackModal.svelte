@@ -3,7 +3,7 @@
   // form action which writes to the `feedback` table via SavesRepo.
   // Auto-captures the current page URL + UA so triage knows the
   // context. No auth, no identifying fields.
-  import { onMount } from 'svelte';
+  import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
   import { enhance } from '$app/forms';
 
   let { onclose }: { onclose: () => void } = $props();
@@ -17,22 +17,10 @@
   function handleBackdrop(e: MouseEvent) {
     if (e.target === e.currentTarget && !submitting) onclose();
   }
-  function handleKey(e: KeyboardEvent) {
-    if (e.key === 'Escape' && !submitting) onclose();
-  }
-
-  onMount(() => {
-    window.addEventListener('keydown', handleKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', handleKey);
-      document.body.style.overflow = '';
-    };
-  });
 </script>
 
 <div class="modal-backdrop" onclick={handleBackdrop} role="presentation">
-  <div class="panel modal-body" role="dialog" aria-modal="true" aria-label="Send feedback" tabindex="-1">
+  <div class="panel modal-body" role="dialog" use:dialogA11y={{ onClose: onclose }}>
     <header class="modal-head">
       <div class="head-text">
         <span class="head-tag">FEEDBACK</span>
