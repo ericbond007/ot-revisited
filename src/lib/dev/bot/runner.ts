@@ -27,6 +27,7 @@ import { stayAtInn, repairWagon, swapOxen, swapOxenCost } from '../../game/syste
 // guard against inventory drift mid-block.
 import { quoteBarter } from '../../game/systems/barter';
 import { settleTrade } from '../../game/systems/settle-trade';
+import { postRemainingQty } from '../../game/systems/post-stock';
 
 /** Convert a bot buy-list `[{item,qty}]` to a settleTrade `get` map (#1223). */
 function _toGet(arr: Array<{ item: string; qty: number }>): Record<string, number> {
@@ -296,13 +297,27 @@ function buildBotShoppingList(state: GameState, here: Landmark, persona: Persona
     ...persona.pickEquipmentRestockOpts(state),
     waterBagTarget: gapAwareWaterBagTarget(state)
   };
-  return composeShoppingList(
+  const list = composeShoppingList(
     { wagon: state, stock },
     {
       food: persona.pickFoodRestockOpts(state),
       equipment: equipmentOpts
     }
   );
+  // #1223 — the bot buys exactly what a real player can: settleTrade
+  // enforces per-post stock (all-or-nothing — any line over the shelf
+  // throws the whole basket), and the player UI is stock-gated, so the
+  // bot must be too. composeShoppingList sizes to NEED (e.g. ~400 lb
+  // flour for a 90-day cushion); cap each line at the remaining shelf
+  // qty and drop sold-out lines. The unmet need carries to the next
+  // post, same as a player who couldn't fully stock up.
+  const capped: BuyOrder[] = [];
+  for (const o of list) {
+    const avail = postRemainingQty(state, here, o.item);
+    if (avail <= 0) continue;
+    capped.push(o.qty > avail ? { ...o, qty: avail } : o);
+  }
+  return capped;
 }
 
 /** Try to handle the landmark we're parked at. Returns the new state
@@ -380,7 +395,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
         // flour-only-at-affordable-qty.
         if (buys.length > 0) {
           try {
-            s = settleTrade(s, { mode: 'cash', get: _toGet(buys), give: {}, allowOverStock: true }).state;
+            s = settleTrade(s, { mode: 'cash', get: _toGet(buys), give: {} }).state;
             stats.decisionsMade += 1;
           } catch {
             // Trade refused full list — try food-only fallback.
@@ -390,7 +405,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
             );
             if (fallback.length > 0) {
               try {
-                s = settleTrade(s, { mode: 'cash', get: _toGet(fallback), give: {}, allowOverStock: true }).state;
+                s = settleTrade(s, { mode: 'cash', get: _toGet(fallback), give: {} }).state;
                 stats.decisionsMade += 1;
               } catch {
                 // Even the fallback failed — last resort: buy only
@@ -408,7 +423,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
                   const unitCost = 0.5 * postMult;
                   const affordableQty = Math.max(1, Math.floor((s.cash - 2) / unitCost));
                   try {
-                    s = settleTrade(s, { mode: 'cash', get: { flour: Math.min(flourOnly.qty, affordableQty) }, give: {}, allowOverStock: true }).state;
+                    s = settleTrade(s, { mode: 'cash', get: { flour: Math.min(flourOnly.qty, affordableQty) }, give: {} }).state;
                     stats.decisionsMade += 1;
                   } catch {
                     // Truly out of options — skip.
@@ -442,14 +457,14 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           );
           if (medsOnly.length > 0) {
             try {
-              s = settleTrade(s, { mode: 'cash', get: _toGet(medsOnly), give: {}, allowOverStock: true }).state;
+              s = settleTrade(s, { mode: 'cash', get: _toGet(medsOnly), give: {} }).state;
               stats.decisionsMade += 1;
             } catch {
               const essentials = medsOnly.filter((b) =>
                 b.item === 'quinine' || b.item === 'calomel'
               );
               if (essentials.length > 0) {
-                try { s = settleTrade(s, { mode: 'cash', get: _toGet(essentials), give: {}, allowOverStock: true }).state; stats.decisionsMade += 1; } catch { /* skip */ }
+                try { s = settleTrade(s, { mode: 'cash', get: _toGet(essentials), give: {} }).state; stats.decisionsMade += 1; } catch { /* skip */ }
               }
             }
           }
@@ -476,7 +491,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           );
           if (foodOnly.length > 0) {
             try {
-              s = settleTrade(s, { mode: 'cash', get: _toGet(foodOnly), give: {}, allowOverStock: true }).state;
+              s = settleTrade(s, { mode: 'cash', get: _toGet(foodOnly), give: {} }).state;
               stats.decisionsMade += 1;
             } catch {
               // Cash short on the full list — drop to flour + bacon only.
@@ -484,7 +499,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
                 b.item === 'flour' || b.item === 'bacon'
               );
               if (essentials.length > 0) {
-                try { s = settleTrade(s, { mode: 'cash', get: _toGet(essentials), give: {}, allowOverStock: true }).state; stats.decisionsMade += 1; } catch { /* skip */ }
+                try { s = settleTrade(s, { mode: 'cash', get: _toGet(essentials), give: {} }).state; stats.decisionsMade += 1; } catch { /* skip */ }
               }
             }
           }
@@ -562,7 +577,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           const quote = quoteBarter(s, d.give, d.receive);
           if (!quote.fair) continue;
           try {
-            s = settleTrade(s, { mode: 'barter', get: { [d.receive.item]: d.receive.qty }, give: { [d.give.item]: d.give.qty }, allowOverStock: true }).state;
+            s = settleTrade(s, { mode: 'barter', get: { [d.receive.item]: d.receive.qty }, give: { [d.give.item]: d.give.qty } }).state;
             stats.decisionsMade += 1;
           } catch {
             // Inventory drifted, qty cap hit, or another race — skip.
