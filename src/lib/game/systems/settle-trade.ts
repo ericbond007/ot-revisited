@@ -17,6 +17,10 @@ export interface TradeBasket {
   get: Record<string, number>;
   give: Record<string, number>;
   cashOffer?: number;
+  /** Bot/sim escape hatch (#1223): skip the per-post stock ceiling so the
+   *  player-bot can provision to need the way the legacy `trade()` path did.
+   *  The player UI never sets this, so interactive trades stay stock-gated. */
+  allowOverStock?: boolean;
 }
 
 export interface SettleResult {
@@ -57,9 +61,11 @@ export function settleTrade(state: GameState, basket: TradeBasket): SettleResult
     const have = state.inventory[id] ?? 0;
     if (qty > have) throw new Error(`settleTrade: insufficient ${id} (have ${have}, need ${qty})`);
   }
-  for (const [id, qty] of getE) {
-    const remaining = postRemainingQty(state, here, id);
-    if (qty > remaining) throw new Error(`settleTrade: out of stock — ${id} (${remaining} left)`);
+  if (!basket.allowOverStock) {
+    for (const [id, qty] of getE) {
+      const remaining = postRemainingQty(state, here, id);
+      if (qty > remaining) throw new Error(`settleTrade: out of stock — ${id} (${remaining} left)`);
+    }
   }
 
   // Chicken coop cap: can't end up with more birds than the wagon fits.
@@ -73,8 +79,13 @@ export function settleTrade(state: GameState, basket: TradeBasket): SettleResult
     }
   }
 
+  // Profession (merchant/banker) discount applies to the BUY side in CASH
+  // mode only. Barter values goods at plain post price — parity with
+  // applyBarter()/quoteBarter(), which never gave a profession discount on
+  // the goods-for-goods exchange (#1223).
+  const getMult = basket.mode === 'cash' ? pBuy * postMult : postMult;
   let getValue = 0;
-  for (const [id, qty] of getE) getValue += getPrice(id).buy * (pBuy * postMult) * qty;
+  for (const [id, qty] of getE) getValue += getPrice(id).buy * getMult * qty;
 
   let giveValue = 0;
   let newCash: number;

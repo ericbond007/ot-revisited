@@ -75,3 +75,24 @@ describe('settleTrade deliberately uses NET affordability (improves on trade())'
     expect(r.state.cash).toBe(5 - r.netCash);
   });
 });
+
+describe('settleTrade barter == applyBarter for a MERCHANT party (#1223 getValue fix)', () => {
+  it('merchant barter mode (cashOffer 0) still matches applyBarter()', () => {
+    // Before the #1223 fix, settleTrade barter getValue applied the merchant
+    // buy discount, diverging from applyBarter (which never discounts barter).
+    const s0 = createInitialState({
+      seed: 'merch-barter',
+      leader: { name: 'M', profession: 'merchant', sex: 'male' },
+      companions: [{ name: 'B', profession: 'farmer', sex: 'female' }],
+      startDate: { year: 1850, month: 6, day: 15 }, includeStarterKit: false
+    });
+    let s: GameState = { ...s0, cash: 200, inventory: { bacon: 10 },
+      location: { ...s0.location, atLandmarkId: 'ft_hall' } };
+    s = restockPostIfDue(s, getLandmark('ft_hall'));
+    const a = settleTrade(s, { mode: 'barter', get: { flour: 10 }, give: { bacon: 10 } }).state;
+    const b = applyBarter(s, { item: 'bacon', qty: 10 }, { item: 'flour', qty: 10 }, makeRng('x'));
+    expect(a.inventory.flour ?? 0).toBe(b.inventory.flour ?? 0);
+    expect(a.inventory.bacon ?? 0).toBe(b.inventory.bacon ?? 0);
+    expect(a.cash).toBe(b.cash);
+  });
+});
