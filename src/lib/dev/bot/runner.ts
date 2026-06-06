@@ -20,13 +20,20 @@ import { companyRestDecision, type DissentChoice } from '../../game/systems/comp
 import { playerIsCaptain } from '../../game/systems/wagon-train-elections';
 import { rest } from '../../game/actions/rest';
 import { hunt, type HuntTarget, type AmmoBand } from '../../game/actions/hunt';
-import { trade } from '../../game/actions/trade';
 import { ford, type FordMethod, type RiverState } from '../../game/actions/ford';
 import { stayAtInn, repairWagon, swapOxen, swapOxenCost } from '../../game/systems/town-services';
 // #915 — barter at trading posts. Bot consults persona dispositions
 // after the cash trade + ox swap; each disposition is re-quoted to
 // guard against inventory drift mid-block.
-import { quoteBarter, applyBarter } from '../../game/systems/barter';
+import { quoteBarter } from '../../game/systems/barter';
+import { settleTrade } from '../../game/systems/settle-trade';
+
+/** Convert a bot buy-list `[{item,qty}]` to a settleTrade `get` map (#1223). */
+function _toGet(arr: Array<{ item: string; qty: number }>): Record<string, number> {
+  const m: Record<string, number> = {};
+  for (const b of arr) m[b.item] = (m[b.item] ?? 0) + b.qty;
+  return m;
+}
 import { abandonHeavyLoad } from '../../game/systems/item-loss';
 import { joinTrain } from '../../game/systems/wagon-train';
 import { pickHuntTarget } from '../../game/ai/hunt';
@@ -366,13 +373,14 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
         // wishlist of ~1100 lb flour ($1100+ at post prices), failing
         // the 0.25× gate ($412), then skipping the trade ENTIRELY and
         // starving on the Boise → Columbia leg. New behavior: always
-        // attempt the trade if shouldTradeAtPost said yes; if it
-        // throws (cash short for full list), the cull-from-tail loop
-        // inside `trade()` drops items until cost fits, OR fall back
-        // to food-only as before.
+        // attempt the trade if shouldTradeAtPost said yes. settleTrade
+        // throws when cash is short for the full basket (#1223 — unlike
+        // the old `trade()`, it does not cull internally), so the catch
+        // ladder below does the culling: full list → food-only →
+        // flour-only-at-affordable-qty.
         if (buys.length > 0) {
           try {
-            s = trade(s, { buys });
+            s = settleTrade(s, { mode: 'cash', get: _toGet(buys), give: {}, allowOverStock: true }).state;
             stats.decisionsMade += 1;
           } catch {
             // Trade refused full list — try food-only fallback.
@@ -382,12 +390,12 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
             );
             if (fallback.length > 0) {
               try {
-                s = trade(s, { buys: fallback });
+                s = settleTrade(s, { mode: 'cash', get: _toGet(fallback), give: {}, allowOverStock: true }).state;
                 stats.decisionsMade += 1;
               } catch {
                 // Even the fallback failed — last resort: buy only
-                // flour with whatever cash remains. trade() will cull
-                // qty down to fit (#287a NPC pattern).
+                // flour, qty explicitly pared to whatever cash remains
+                // (affordableQty below; #287a NPC pattern).
                 // #963 — flour fallback pared down to fit cash. Period
                 // emigrants at the last forts (Hall, Bridger) bought
                 // whatever flour their dwindling coin could afford —
@@ -400,7 +408,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
                   const unitCost = 0.5 * postMult;
                   const affordableQty = Math.max(1, Math.floor((s.cash - 2) / unitCost));
                   try {
-                    s = trade(s, { buys: [{ item: 'flour', qty: Math.min(flourOnly.qty, affordableQty) }] });
+                    s = settleTrade(s, { mode: 'cash', get: { flour: Math.min(flourOnly.qty, affordableQty) }, give: {}, allowOverStock: true }).state;
                     stats.decisionsMade += 1;
                   } catch {
                     // Truly out of options — skip.
@@ -434,14 +442,14 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           );
           if (medsOnly.length > 0) {
             try {
-              s = trade(s, { buys: medsOnly });
+              s = settleTrade(s, { mode: 'cash', get: _toGet(medsOnly), give: {}, allowOverStock: true }).state;
               stats.decisionsMade += 1;
             } catch {
               const essentials = medsOnly.filter((b) =>
                 b.item === 'quinine' || b.item === 'calomel'
               );
               if (essentials.length > 0) {
-                try { s = trade(s, { buys: essentials }); stats.decisionsMade += 1; } catch { /* skip */ }
+                try { s = settleTrade(s, { mode: 'cash', get: _toGet(essentials), give: {}, allowOverStock: true }).state; stats.decisionsMade += 1; } catch { /* skip */ }
               }
             }
           }
@@ -468,7 +476,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           );
           if (foodOnly.length > 0) {
             try {
-              s = trade(s, { buys: foodOnly });
+              s = settleTrade(s, { mode: 'cash', get: _toGet(foodOnly), give: {}, allowOverStock: true }).state;
               stats.decisionsMade += 1;
             } catch {
               // Cash short on the full list — drop to flour + bacon only.
@@ -476,7 +484,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
                 b.item === 'flour' || b.item === 'bacon'
               );
               if (essentials.length > 0) {
-                try { s = trade(s, { buys: essentials }); stats.decisionsMade += 1; } catch { /* skip */ }
+                try { s = settleTrade(s, { mode: 'cash', get: _toGet(essentials), give: {}, allowOverStock: true }).state; stats.decisionsMade += 1; } catch { /* skip */ }
               }
             }
           }
@@ -554,7 +562,7 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
           const quote = quoteBarter(s, d.give, d.receive);
           if (!quote.fair) continue;
           try {
-            s = applyBarter(s, d.give, d.receive, rng);
+            s = settleTrade(s, { mode: 'barter', get: { [d.receive.item]: d.receive.qty }, give: { [d.give.item]: d.give.qty }, allowOverStock: true }).state;
             stats.decisionsMade += 1;
           } catch {
             // Inventory drifted, qty cap hit, or another race — skip.
