@@ -61,13 +61,24 @@ function writePostStock(
   };
 }
 
-/** Baseline qty for (item × post), independent of what's already been bought. */
+// #1245 — desert-provisioning guarantee. A 4-adult party needs 4 water_bags
+// before a >=200 mi dry gap (gapAwareWaterBagTarget). Low-stockScale posts like
+// Fort Boise (0.6) would otherwise cap at Math.ceil(4 * 0.6) = 3, making the
+// bot's target unreachable. A flat floor of 4 everywhere is harmless: water_bag
+// is a tool (not a balance-sensitive consumable), and 4 vessels is a reasonable
+// minimum shelf at any trading post on the trail.
+const WATER_GEAR_FLOOR = 4;
+
+/** Baseline qty for (item x post), independent of what's already been bought. */
 export function postBaselineQty(landmark: Landmark, itemId: string): number {
   if (!landmark.stock?.includes(itemId)) return 0;
   const scale = landmark.stockScale ?? 1.0;
   const meta = getItem(itemId);
   const base = DEFAULT_STOCK_QTY[meta.category];
-  return Math.max(1, Math.ceil(base * scale));
+  const scaled = Math.max(1, Math.ceil(base * scale));
+  // Apply per-item floors after scaling.
+  if (itemId === 'water_bag') return Math.max(scaled, WATER_GEAR_FLOOR);
+  return scaled;
 }
 
 /** Remaining qty for (item × post) after subtracting what's been bought. */

@@ -818,7 +818,8 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         state = {
           ...state,
           pace: persona.pickPace(state, botRng),
-          rations: persona.pickRations(state, botRng)
+          rations: persona.pickRations(state, botRng),
+          waterRation: persona.pickWaterRation(state, botRng)
         };
         const tick = tickDayPausable(state);
         state = tick.state;

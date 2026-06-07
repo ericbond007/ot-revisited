@@ -50,6 +50,7 @@ function baseState(partyProfs: ProfessionId[] = ['carpenter'], overrides: Partia
     morale: 60,
     pace: 'moderate',
     rations: 'normal',
+    waterRation: 'normal',
     eventLog: [],
     flags: {},
     completed: false,

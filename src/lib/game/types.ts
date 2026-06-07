@@ -5,6 +5,7 @@ import type { PersonaId } from './ai/types';
 
 export type Pace = 'slow' | 'moderate' | 'fast' | 'grueling';
 export type Rations = 'meager' | 'normal' | 'filling';
+export type WaterRation = 'normal' | 'conserve' | 'drycamp';
 
 // Daily weather state (#153). Chosen each morning by tickWeather based
 // on current terrain, season, and yesterday's weather. Drives travel
@@ -207,6 +208,7 @@ export interface GameState {
   moraleHistory?: number[];
   pace: Pace;
   rations: Rations;
+  waterRation: WaterRation;
   /** Today's weather. Re-rolled each morning by tickWeather. */
   weather?: Weather;
   eventLog: LogEntry[];
@@ -341,6 +343,10 @@ export interface NpcWagonState extends WagonStateLike {
    *  'normal' on generation. Per-tick override via `persona.pickRations`
    *  in #895. */
   rations: Rations;
+  /** #1245 — per-wagon water-ration tier. Gap-aware bot (persona.pickWaterRation)
+   *  sets this each travel day. Optional for legacy saves — defaults to
+   *  'normal' where absent (same safe fallback as the engine's waterRation ?? 'normal'). */
+  waterRation?: WaterRation;
   /** #895 — persona variant driving this wagon's daily decisions.
    *  Set from `profile.personaVariantHint` at gen for named profiles;
    *  defaults to 'balanced' for random fillers. Optional for legacy

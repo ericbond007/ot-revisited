@@ -19,6 +19,7 @@ import { applyDehydration } from './systems/dehydration';
 import { applyStarvation } from './systems/starvation';
 import { applyEggLay } from './systems/eggs';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
+import { applyWaterRationStrain } from './systems/water-ration';
 
 export interface PartyPick {
   name: string;
@@ -172,6 +173,7 @@ export function createInitialState(opts: NewGameOptions): GameState {
     morale: 70,
     pace: 'moderate',
     rations: 'normal',
+    waterRation: 'normal',
     eventLog: [],
     flags: {
       hasBoilingKnowledge: false,
@@ -199,6 +201,7 @@ const DAILY_STEPS: TickStep[] = [
   progressConditions,
   (s) => applyEggLay(s), // eggs lay first so they're available to eat
   (s) => applyDailyConsumption(s), // consumption has no Rng param; wrap it
+  (s) => applyWaterRationStrain(s), // #1245 — ration strain (morale + sustained HP) while water > 0
   (s) => applyDietVariety(s),      // +1 morale on multi-group days
   (s) => applyHotDrinks(s),        // coffee/tea brew — +1 morale + disease-mod
   (s, rng) => applyDirtyWaterRisk(s, rng), // disease roll — reads coffee/tea

@@ -57,6 +57,7 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
   const qp = $derived(encodeURIComponent(data.slot));
   const paceAction = $derived(`?/setPace&slot=${qp}`);
   const rationsAction = $derived(`?/setRations&slot=${qp}`);
+  const waterRationAction = $derived(`?/setWaterRation&slot=${qp}`);
 
   const atLandmark = $derived(
     gs.location.atLandmarkId ? getLandmark(gs.location.atLandmarkId) : null
@@ -154,6 +155,11 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
     { value: 'normal',  label: 'Medium', sublabel: '2 lb/person · baseline',     icon: ICON.rations_options.normal },
     { value: 'filling', label: 'High',   sublabel: '3 lb/person · +morale',      icon: ICON.rations_options.filling }
   ];
+  const waterRationOptions: Array<{ value: GameState['waterRation']; label: string; sublabel: string; icon: string }> = [
+    { value: 'normal',   label: 'Normal',   sublabel: '1 gal/person · baseline',              icon: '💧' },
+    { value: 'conserve', label: 'Conserve', sublabel: '½ gal/person · party grumbles',        icon: '🪣' },
+    { value: 'drycamp',  label: 'Drycamp',  sublabel: 'a sip — for crossing dry country',     icon: '🏜️' }
+  ];
 </script>
 
 <div class="play-wrap">
@@ -219,6 +225,14 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
         action={rationsAction}
         current={gs.rations}
         options={rationsOptions}
+      />
+      <StatPicker
+        kind="keg"
+        label="WATER"
+        name="waterRation"
+        action={waterRationAction}
+        current={gs.waterRation ?? 'normal'}
+        options={waterRationOptions}
         align="right"
       />
     </div>

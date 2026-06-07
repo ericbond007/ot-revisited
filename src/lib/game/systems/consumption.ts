@@ -1,4 +1,4 @@
-import type { GameState, Pace, Rations, Terrain, Weather } from '../types';
+import type { GameState, Pace, Rations, Terrain, Weather, WaterRation } from '../types';
 import type { Rng } from '../rng';
 import { foodItemIds } from '../content/items';
 import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
@@ -44,6 +44,14 @@ export const CHILD_FOOD_MULT = 0.6;
 // #1031b — 0.7 → 0.5 to model period-realistic child water rationing.
 export const CHILD_WATER_MULT = 0.5;
 export const WATER_PER_ADULT_GAL = 1;
+
+/** #1245 — daily water draw multiplier by ration tier. Conserve halves,
+ *  drycamp quarters how long the keg lasts (the historical "drycamp"). */
+export const WATER_RATION_MULT: Record<WaterRation, number> = {
+  normal: 1.0,
+  conserve: 0.5,
+  drycamp: 0.25
+};
 const FARMER_FOOD_MULT = 0.9;
 
 // Pace × food multiplier (#267). Period reality: a grueling 14-hour
@@ -121,7 +129,10 @@ export function waterConsumedToday(state: GameState): number {
   const base = adults * WATER_PER_ADULT_GAL + Math.ceil(children * WATER_PER_ADULT_GAL * CHILD_WATER_MULT);
   // Weather (#153) trims for damp-cool (overcast/rain); temperature
   // (#1074) scales continuously up from 70°F to a ×3 cap.
-  return Math.ceil(base * weatherWaterMult(state.weather) * tempWaterMult(state));
+  return Math.ceil(
+    base * weatherWaterMult(state.weather) * tempWaterMult(state)
+      * WATER_RATION_MULT[state.waterRation ?? 'normal']
+  );
 }
 
 /** #926 — passive ambient water refill on travel days. Period reality:

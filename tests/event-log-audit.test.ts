@@ -46,6 +46,7 @@ function baseState(): GameState {
     morale: 60,
     pace: 'moderate',
     rations: 'normal',
+    waterRation: 'normal',
     eventLog: [],
     // Burial event needs _burialPending; we set it manually for that event.
     flags: {},
