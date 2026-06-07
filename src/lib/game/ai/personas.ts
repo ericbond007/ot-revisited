@@ -38,6 +38,7 @@ import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
 import type { BarterDisposition } from './types';
 import { careLevel } from '../systems/care';
 import { defaultWheelBreakResponse, thresholdWheelBreakResponse } from './wheel-break';
+import { TOTAL_TRAIL_MI, suppressCamp, allowsSabbathRest } from './schedule';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
@@ -54,11 +55,6 @@ function projectGapDays(state: GameState, fs: PersonaForesight): number {
     minDays: 0
   });
 }
-
-/** Total trail miles (Independence → Oregon City). See
- *  `content/landmarks.ts` — sum of milesFromPrevious. Used by
- *  #963 trail-progress scaling on food restocks. */
-const TOTAL_TRAIL_MI = 2195;
 
 /** #963 — Trail-progress multiplier on food restock cap.
  *
@@ -613,6 +609,9 @@ export const cautiousPersona: Persona = {
       || oxenWornOut(state);
   },
   shouldHunt(state) {
+    // #1235 — schedule gate: skip discretionary hunt when behind.
+    // Critical override: near-starvation (≤30 lb) is never suppressed.
+    if (suppressCamp(state, this.id, 'hunt', { foodOnHand: foodOnHand(state) })) return false;
     // Hunter alive → hunt earlier (more total trips, +20% yield each).
     // #963 — trigger lifted modestly (150→180 / 200→225). Aggressive
     // values traded too many travel days for marginal extra meat;
@@ -643,6 +642,9 @@ export const cautiousPersona: Persona = {
       && (state.morale < 50 || minPartyHealth(state) < 70);
   },
   shouldFindWater(state) {
+    // #1235 — schedule gate: skip opportunistic water stop when behind.
+    // Critical override: near-empty keg (ratio < 0.25) is never suppressed.
+    if (suppressCamp(state, this.id, 'findWater', { waterRatio: waterRatio(state) })) return false;
     // #920 → 0.5 → 0.30. #926 → 0.30 → 0.15. With passive ambient
     // refill on travel days (river / forest / prairie / mountain
     // terrains) and full keg refill at every ford, the keg now stays
@@ -786,26 +788,26 @@ export const balancedPersona: Persona = {
     // Profession-aware: a Doctor dampens condition damage 30% (engine
     // #154), so the bot can run a thinner HP margin without spiraling.
     // Hunter doesn't change rest — they help food, not health.
-    // #922 — Sabbath observance. Period: most emigrant companies
-    // (Bryant 1846, Carpenter 1857, Palmer 1845) kept Sunday rest by
-    // default. #1040 tested a persona-split (secular personas travel
-    // 7 days per Unruh's "half observed" finding) — it lifted the
-    // bachelor demographic (+10pp) but cratered the period-modal
-    // family wagon (2/2: −8pp, balanced/drinker/hoarder/generous all
-    // ~32% → ~6%). Sunday rest is mechanically load-bearing for
-    // fragile family parties (#922 +10 morale/day + HP recovery is
-    // what keeps a 2-adult-2-child wagon alive — same lesson as the
-    // reverted #1029 rest-discipline experiment). The split is a real
-    // period-vs-mechanics tradeoff deferred to a separate decision;
-    // mainstream personas keep the Sabbath.
+    // #1235 — Sabbath gated by schedule pressure: non-sacred personas
+    // skip Sunday rest when behind; faithful/sunday_rester keep it
+    // sacred (allowsSabbathRest reads persona.id via doctrineFor).
+    // #922 context: Sunday rest is mechanically load-bearing for
+    // fragile family parties; the schedule gate preserves it for
+    // personas whose doctrine marks sabbathSacred=true and suppresses
+    // it only when the secular persona is already behind.
     // #924 — voluntary-rest triggers (HP 25/15, morale 10) still hold.
-    if (isSunday(state.date)) return true;
+    if (isSunday(state.date)) return allowsSabbathRest(state, this.id);
+    // Crisis rest — always allowed (critical override).
     const hpFloor = hasLiveDoctor(state) ? 15 : 25;
-    return minPartyHealth(state) < hpFloor
-      || state.morale < 10
-      || oxenWornOut(state);
+    if (minPartyHealth(state) < hpFloor || oxenWornOut(state)) return true;
+    // Voluntary morale rest — discretionary; suppressed when behind.
+    if (state.morale < 10 && !suppressCamp(state, this.id, 'pan')) return true;
+    return false;
   },
   shouldHunt(state) {
+    // #1235 — schedule gate: skip discretionary hunt when behind.
+    // Critical override: near-starvation (≤30 lb) is never suppressed.
+    if (suppressCamp(state, this.id, 'hunt', { foodOnHand: foodOnHand(state) })) return false;
     // Lifted from <50 in v8 — bot was waiting until it was already
     // starving to hunt. Below 100 lb total, a 3-person party has
     // less than 7 days of food left. Hunt proactively.
@@ -843,6 +845,9 @@ export const balancedPersona: Persona = {
       && (state.morale < 30 || minPartyHealth(state) < 50);
   },
   shouldFindWater(state) {
+    // #1235 — schedule gate: skip opportunistic water stop when behind.
+    // Critical override: near-empty keg (ratio < 0.25) is never suppressed.
+    if (suppressCamp(state, this.id, 'findWater', { waterRatio: waterRatio(state) })) return false;
     // #926 → 0.18 → 0.10. Same logic as cautious — passive ambient
     // refill keeps the keg topped through ordinary travel.
     // #1022 — desert exclusion removed; runner falls back to dig_well.
@@ -854,6 +859,9 @@ export const balancedPersona: Persona = {
     return waterRatio(state) < desertWaterFloor(state, 0.10, 0.20);
   },
   shouldPan(state) {
+    // #1235 — schedule gate: skip opportunistic panning when behind.
+    // No critical override for panning — it is purely discretionary.
+    if (suppressCamp(state, this.id, 'pan')) return false;
     // Balanced tries panning when the timing is right — period:
     // typical emigrant who'd give it an evening at a known creek.
     // Cooldown in canPanForGold prevents weekly spamming.
@@ -1024,6 +1032,9 @@ export const aggressivePersona: Persona = {
     return false;
   },
   shouldHunt(state) {
+    // #1235 — schedule gate: skip discretionary hunt when behind.
+    // Critical override: near-starvation (≤30 lb) is never suppressed.
+    if (suppressCamp(state, this.id, 'hunt', { foodOnHand: foodOnHand(state) })) return false;
     // Aggressive only hunts when starving — burns ammo for nothing
     // otherwise. Time-on-the-trail is the priority.
     return canHunt(state) && foodOnHand(state) < 25;
@@ -1045,6 +1056,9 @@ export const aggressivePersona: Persona = {
   },
   shouldStayAtInn: () => false,
   shouldFindWater(state) {
+    // #1235 — schedule gate: skip opportunistic water stop when behind.
+    // Critical override: near-empty keg (ratio < 0.25) is never suppressed.
+    if (suppressCamp(state, this.id, 'findWater', { waterRatio: waterRatio(state) })) return false;
     // Only when nearly out of water — aggressive doesn't waste time on stops.
     // #1022 — desert exclusion removed; runner falls back to dig_well.
     // #1026 — desert bump 0.20 → 0.25. Aggressive rarely rests, so
@@ -1055,6 +1069,9 @@ export const aggressivePersona: Persona = {
     return waterRatio(state) < desertWaterFloor(state, 0.20, 0.25);
   },
   shouldPan(state) {
+    // #1235 — schedule gate: skip opportunistic panning when behind.
+    // No critical override for panning — it is purely discretionary.
+    if (suppressCamp(state, this.id, 'pan')) return false;
     // Aggressive bot has Gold Rush fever — pans every chance.
     // Period: the desperate-prospector personality, which most often
     // ended up broke or dead.
@@ -1330,10 +1347,6 @@ export const chaosPersona: Persona = {
 export const sundayResterPersona: Persona = {
   ...balancedPersona,
   id: 'sunday_rester',
-  shouldRest(state, rng) {
-    if (isSunday(state.date)) return true;
-    return balancedPersona.shouldRest(state, rng);
-  },
   bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
@@ -1558,10 +1571,6 @@ const SHARE_CHANCE = 0.6;
 export const faithfulPersona: Persona = {
   ...balancedPersona,
   id: 'faithful',
-  shouldRest(state, rng) {
-    if (isSunday(state.date)) return true;
-    return balancedPersona.shouldRest(state, rng);
-  },
   pickEventChoice(state, event, rng) {
     // Prefer scripture / prayer / preacher choices when offered.
     const devout = choiceMatching(
