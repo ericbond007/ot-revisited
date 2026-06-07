@@ -603,10 +603,14 @@ export const cautiousPersona: Persona = {
     // 25→15). With Sunday-rest now default + #922 morale recovery,
     // pre-tune triggers fired 4× period reality. Pushing through low
     // HP with the #922 healingMultiplier softening is now viable.
-    if (isSunday(state.date)) return true;
-    return minPartyHealth(state) < 30
-      || state.morale < 15
-      || oxenWornOut(state);
+    // #1235b — gate cautious's rest (was the only override persona resting
+    // on an UNCONDITIONAL Sunday + a voluntary morale trigger, both
+    // un-clock-aware — a major staller). Sabbath now defers to the gate;
+    // the voluntary morale rest is suppressed when behind. Crisis HP/oxen
+    // rest stays unconditional.
+    if (isSunday(state.date)) return allowsSabbathRest(state, this.id);
+    if (minPartyHealth(state) < 30 || oxenWornOut(state)) return true;
+    return state.morale < 15 && !suppressCamp(state, this.id, 'pan');
   },
   shouldHunt(state) {
     // #1235 — schedule gate: skip discretionary hunt when behind.

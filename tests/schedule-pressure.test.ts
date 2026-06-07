@@ -129,8 +129,11 @@ describe('tooFragileToPush', () => {
       party: [{ dead: false, kind: 'adult', health: 95 }, { dead: false, kind: 'child', health: 95 }]
     }))).toBe(true);
   });
-  it('is true when morale or min HP is below the push floor', () => {
-    expect(tooFragileToPush(behind({ morale: 40 }))).toBe(true);
+  it('morale alone no longer makes a party fragile (#1235b — keyed on HP)', () => {
+    // Healthy but demoralised + behind schedule -> pushable (push on grumpy).
+    expect(tooFragileToPush(behind({ morale: 20 }))).toBe(false);
+  });
+  it('is true when min HP is below the push floor', () => {
     expect(tooFragileToPush(behind({ party: [{ dead: false, kind: 'adult', health: 50 }] }))).toBe(true);
   });
   it('a behind family wagon does not suppress camping (gate stands down)', () => {

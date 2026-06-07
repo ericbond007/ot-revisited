@@ -56,12 +56,13 @@ export function doctrineFor(id: PersonaId): ScheduleDoctrine {
 const CRITICAL_WATER_RATIO = 0.35;
 /** Food (lbs) at/under which hunting is a survival need, never suppressed. */
 const STARVATION_FLOOR = 45;
-/** Below these (but above the death-spiral crisis floors), a party is too
- *  fragile to push: schedule pressure must NOT cut its recovery rest/forage,
- *  or fragile family wagons die instead of stalling alive (#1235 tuning).
- *  Robust parties stay above these and remain gated. */
+/** Below this (but above the death-spiral crisis floor), a party is too
+ *  fragile to push: schedule pressure must NOT cut its recovery rest/forage.
+ *  Keyed on HP only — morale is comfort, not survival, so a demoralised but
+ *  HEALTHY party that's behind should push on grumpy, not rest into the clock
+ *  (#1235b — morale clause dropped; it was disabling the gate for the whole
+ *  morale-sagging late-trail majority). Worn oxen are handled by crisis rest. */
 const MIN_PUSH_HP = 60;
-const MIN_PUSH_MORALE = 55;
 
 function minAliveHealth(state: GameState): number {
   const alive = (state.party ?? []).filter((m) => !m.dead);
@@ -80,7 +81,7 @@ export function tooFragileToPush(state: GameState): boolean {
   // historical child mortality is under-modeled and tracked separately.)
   const hasChild = (state.party ?? []).some((m) => !m.dead && m.kind === 'child');
   if (hasChild) return true;
-  return (state.morale ?? 100) < MIN_PUSH_MORALE || minAliveHealth(state) < MIN_PUSH_HP;
+  return minAliveHealth(state) < MIN_PUSH_HP;
 }
 
 export type DiscretionaryCamp = 'hunt' | 'pan' | 'findWater';

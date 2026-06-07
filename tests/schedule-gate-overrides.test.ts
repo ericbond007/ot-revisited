@@ -249,3 +249,18 @@ describe('#1235 chaos.shouldHunt — exempt from schedule gate', () => {
     expect(chaosPersona.shouldHunt(noRifle, alwaysTrue)).toBe(false);
   });
 });
+
+
+describe('cautious.shouldRest schedule gate (#1235b)', () => {
+  // Sunday, healthy, behind schedule. 1849-06-17 is a Sunday per the engine.
+  const behindSunday = () => ({
+    day: 100, date: { year: 1849, month: 6, day: 17 },
+    location: { milesTraveled: (TOTAL_TRAIL_MI * 100) / 219 },
+    morale: 90, party: [{ dead: false, kind: 'adult', health: 95 }],
+    oxen: [{ alive: true, fatigue: 5, health: 95 }, { alive: true, fatigue: 5, health: 95 }]
+  }) as unknown as Parameters<typeof cautiousPersona.shouldRest>[0];
+
+  it('cautious skips its (formerly unconditional) Sunday rest when behind + healthy', () => {
+    expect(cautiousPersona.shouldRest(behindSunday(), {} as never)).toBe(false);
+  });
+});
