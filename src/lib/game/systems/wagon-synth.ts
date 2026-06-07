@@ -166,6 +166,7 @@ export function synthesizeWagonState(wagon: NpcWagonState, env: TrainEnv): GameS
     moraleHistory: undefined,
     pace: env.pace,
     rations: wagon.rations,
+    waterRation: 'normal',
     weather: env.weather,
     // Empty so engine appends are isolated and captured by the
     // projection — keeps NPC's prior log untouched if the engine

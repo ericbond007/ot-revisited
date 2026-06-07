@@ -31,6 +31,7 @@ function baseState(overrides: Partial<GameState> = {}): GameState {
     morale: 60,
     pace: 'moderate',
     rations: 'normal',
+    waterRation: 'normal',
     eventLog: [],
     flags: {},
     completed: false,

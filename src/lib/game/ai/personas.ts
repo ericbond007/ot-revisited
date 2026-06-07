@@ -34,6 +34,7 @@ import type { FoodRestockOpts } from './shopping';
 import { faithfulBundle } from './bundle';
 import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor } from './foresight';
 import { warmthFor } from '../systems/warmth';
+import { waterConsumedToday } from '../systems/consumption';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
 import type { BarterDisposition } from './types';
 import { careLevel } from '../systems/care';
@@ -223,6 +224,15 @@ function postStocksMissingEquipment(state: GameState, here: Landmark): boolean {
   if (stock.has('rope') && (inv.rope ?? 0) < 1) return true;
   if (stock.has('water_bag') && (inv.water_bag ?? 0) < 1) return true;
   return false;
+}
+
+/** #1245 — Days of dry travel before the next reliable water, at a
+ *  conservative pace. Watered terrain refills ambiently, so only
+ *  desert legs count. */
+function projectedDryDaysToNextWater(state: GameState): number {
+  if (state.location.terrain !== 'desert') return 0;
+  const milesPerDay = 15; // conservative all-in estimate
+  return Math.ceil(effectiveGapMiles(state) / milesPerDay);
 }
 
 /** Gold-panning gate (#313): same axes as the camp action — river
@@ -590,6 +600,17 @@ export const cautiousPersona: Persona = {
     const flour = state.inventory.flour ?? 0;
     return flour > 50 ? 'filling' : 'normal';
   },
+  pickWaterRation(state) {
+    // Cautious uses safetyFactor to ration one rung earlier — bigger
+    // margin before entering a dry stretch.
+    const dryDays = projectedDryDaysToNextWater(state) * this.foresight.safetyFactor;
+    if (dryDays <= 0) return 'normal';
+    const perDay = Math.max(1, waterConsumedToday({ ...state, waterRation: 'normal' }));
+    const daysOfWater = state.resources.water / perDay;
+    if (daysOfWater >= dryDays) return 'normal';
+    if (daysOfWater * 2 >= dryDays) return 'conserve';
+    return 'drycamp';
+  },
   shouldRest(state) {
     // <45 HP / <25 morale tuned in v4. v8 added oxen check — without
     // it, the bot ran 4-ox teams to 100 fatigue by day ~60 and killed
@@ -787,6 +808,15 @@ export const balancedPersona: Persona = {
   },
   pickRations() {
     return 'normal';
+  },
+  pickWaterRation(state) {
+    const dryDays = projectedDryDaysToNextWater(state);
+    if (dryDays <= 0) return 'normal';
+    const perDay = Math.max(1, waterConsumedToday({ ...state, waterRation: 'normal' }));
+    const daysOfWater = state.resources.water / perDay;
+    if (daysOfWater >= dryDays) return 'normal';
+    if (daysOfWater * 2 >= dryDays) return 'conserve';
+    return 'drycamp';
   },
   shouldRest(state) {
     // Profession-aware: a Doctor dampens condition damage 30% (engine
@@ -997,6 +1027,16 @@ export const aggressivePersona: Persona = {
     const foodOk = foodOnHand(state) >= 40;
     return recovering && foodOk ? 'normal' : 'meager';
   },
+  pickWaterRation(state) {
+    // Aggressive uses balanced's body — runs lean on water just like food.
+    const dryDays = projectedDryDaysToNextWater(state);
+    if (dryDays <= 0) return 'normal';
+    const perDay = Math.max(1, waterConsumedToday({ ...state, waterRation: 'normal' }));
+    const daysOfWater = state.resources.water / perDay;
+    if (daysOfWater >= dryDays) return 'normal';
+    if (daysOfWater * 2 >= dryDays) return 'conserve';
+    return 'drycamp';
+  },
   shouldRest(state) {
     // Aggressive still respects oxen — burning the team to extinction
     // is not "aggressive", it's just a stuck wagon.
@@ -1206,6 +1246,10 @@ export const chaosPersona: Persona = {
   pickRations(_state, rng) {
     const rations: GameState['rations'][] = ['meager', 'normal', 'filling'];
     return rations[rng.int(0, rations.length - 1)];
+  },
+  pickWaterRation() {
+    // Chaos ignores the clock entirely — consistent with null schedule doctrine.
+    return 'normal';
   },
   shouldRest(_state, rng) {
     return rng.chance(0.15);

@@ -322,6 +322,25 @@ export function tickNpcWagon(
   const persona = getPersona(next.personaId ?? 'balanced');
   const fauxState = { inventory: next.inventory, party: next.party } as unknown as GameState;
   next = { ...next, rations: persona.pickRations(fauxState, rng) };
+  {
+    // #1245 — water-ration persona decision. Needs location (terrain for
+    // desert check), resources.water (gap-to-keg ratio), weather + date
+    // (waterConsumedToday calls tempWaterMult → dayTempF). Build a richer
+    // faux state from the tick context rather than the minimal inventory-
+    // only shim used for pickRations.
+    const waterFauxState = {
+      inventory: next.inventory,
+      party: next.party,
+      location: ctx.location ?? DEFAULT_TICK_LOCATION,
+      weather: ctx.weather,
+      date: ctx.date ?? DEFAULT_TICK_DATE,
+      pace: ctx.pace,
+      resources: { water: next.water, waterCap: next.waterCap },
+      waterRation: next.waterRation ?? 'normal',
+      flags: {}
+    } as unknown as GameState;
+    next = { ...next, waterRation: persona.pickWaterRation(waterFauxState, rng) };
+  }
 
   // 1d. #937 — persona-driven voluntary rest. On a travel day, if the
   // persona's shouldRest fires (Sunday, worn HP, low morale, worn ox

@@ -65,7 +65,7 @@ describe('save upgrade — wagon model', () => {
       inventory: {}, cash: 300, resources: { water: 20, waterCap: 20 },
       morale: 70, pace: 'moderate', rations: 'normal',
       eventLog: [], flags: {}, completed: false, outcome: 'in-progress'
-    } as GameState;
+    } as unknown as GameState;
   }
 
   it('legacy save (no wagon.model) gets prairie_schooner', () => {

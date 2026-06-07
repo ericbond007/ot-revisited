@@ -24,6 +24,7 @@ import { applyBarter } from '$lib/game/systems/barter';
 import { settleTrade as _settleTrade, type TradeBasket } from '$lib/game/systems/settle-trade';
 import { abandonSelected, droppableHeavyItems } from '$lib/game/systems/item-loss';
 
+import { isWaterRation, setWaterRationOnState } from './water-ration-action';
 export const load: PageServerLoad = async ({ url, locals }) => {
   const slot = url.searchParams.get('slot');
   if (!slot) throw error(400, 'Missing ?slot=<name>');
@@ -542,6 +543,19 @@ export const actions: Actions = {
     const rations: Rations = raw as Rations;
     const state = await loadState(locals, slot);
     const next = { ...state, rations };
+    await locals.repo.save(locals.deviceId, slot, next);
+    return { state: next };
+  },
+
+  // #1245 — Player water ration control. Mirrors setRations exactly.
+  setWaterRation: async ({ url, request, locals }) => {
+    const slot = url.searchParams.get('slot');
+    if (!slot) throw error(400, 'slot required');
+    const fd = await request.formData();
+    const raw = fd.get('waterRation')?.toString() ?? '';
+    if (!isWaterRation(raw)) throw error(400, 'invalid waterRation');
+    const state = await loadState(locals, slot);
+    const next = setWaterRationOnState(state, raw);
     await locals.repo.save(locals.deviceId, slot, next);
     return { state: next };
   },

@@ -79,6 +79,9 @@ export interface Persona {
   pickPace(state: GameState, rng: Rng): GameState['pace'];
   /** Daily rations. */
   pickRations(state: GameState, rng: Rng): GameState['rations'];
+  /** #1245 — daily water-ration choice. Gap-aware: ration down when a dry
+   *  stretch ahead would empty the keg at normal draw before the next water. */
+  pickWaterRation(state: GameState, rng: Rng): GameState['waterRation'];
   /** Should the party rest a day? */
   shouldRest(state: GameState, rng: Rng): boolean;
   /** #1046 B — when the chartered company forces a lay-by, what does
