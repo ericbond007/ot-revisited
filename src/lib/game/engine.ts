@@ -16,6 +16,7 @@ import { reapDead } from './systems/death';
 import { buildStarterKit } from './content/starter-kit';
 import { computeWaterCap } from './systems/water-cap';
 import { applyDehydration } from './systems/dehydration';
+import { applyOxHydration } from './systems/ox-hydration';
 import { applyStarvation } from './systems/starvation';
 import { applyEggLay } from './systems/eggs';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
@@ -207,6 +208,7 @@ const DAILY_STEPS: TickStep[] = [
   (s, rng) => applyDirtyWaterRisk(s, rng), // disease roll — reads coffee/tea
   (s) => applyStarvation(s),       // reads _lastFoodShortfall set above
   tickOxen,
+  (s) => applyOxHydration(s), // #1264 — ox desert thirst; before applyTravel so milesPerDay reads today's hydration
   tickWagon,
   adjustMorale,
   (s) => applyHolidays(s),

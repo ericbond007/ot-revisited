@@ -40,6 +40,7 @@ import type { BarterDisposition } from './types';
 import { careLevel } from '../systems/care';
 import { defaultWheelBreakResponse, thresholdWheelBreakResponse } from './wheel-break';
 import { TOTAL_TRAIL_MI, suppressCamp, allowsSabbathRest } from './schedule';
+import { oxHydration, HYDRATION_AMBER } from '../systems/ox-hydration';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
@@ -233,6 +234,25 @@ function projectedDryDaysToNextWater(state: GameState): number {
   if (state.location.terrain !== 'desert') return 0;
   const milesPerDay = 15; // conservative all-in estimate
   return Math.ceil(effectiveGapMiles(state) / milesPerDay);
+}
+
+/** #1264 — True when the team is parched AND a dry stretch still lies
+ *  ahead — the cue to ease off a grinding pace (you can't rest-recover
+ *  hydration with no water; the only lever is not over-pushing toward
+ *  the next source). */
+function thirstWantsEasedPace(state: GameState): boolean {
+  const alive = state.oxen.filter((o) => o.health > 0);
+  if (alive.length === 0) return false;
+  const avg = alive.reduce((s, o) => s + oxHydration(o), 0) / alive.length;
+  return avg < HYDRATION_AMBER && projectedDryDaysToNextWater(state) > 0;
+}
+
+/** #1264 — Downgrade a grinding pace one rung to protect a parched team.
+ *  Pace union: 'slow' | 'moderate' | 'fast' | 'grueling' (types.ts). */
+function easeThirstPace(pace: GameState['pace']): GameState['pace'] {
+  if (pace === 'grueling') return 'fast';
+  if (pace === 'fast') return 'moderate';
+  return pace;
 }
 
 /** Gold-panning gate (#313): same axes as the camp action — river
@@ -592,8 +612,15 @@ export const cautiousPersona: Persona = {
     // Brown / Pringle 1846 didn't drop to a crawl every time a party
     // member ran a fever — they pushed at moderate until something was
     // genuinely failing.
-    if (minPartyHealth(state) < 20 || oxenWornOut(state)) return 'slow';
-    return 'moderate';
+    //
+    // #1264 — thirst easing: parched team + dry stretch ahead → ease
+    // the base pace one rung (can't hydrate by resting with no water,
+    // so pushing hard just exhausts a team that can't recover).
+    const base = ((): GameState['pace'] => {
+      if (minPartyHealth(state) < 20 || oxenWornOut(state)) return 'slow';
+      return 'moderate';
+    })();
+    return thirstWantsEasedPace(state) ? easeThirstPace(base) : base;
   },
   pickRations(state) {
     // Cautious eats well — generous rations until food is genuinely low.
@@ -987,30 +1014,37 @@ export const aggressivePersona: Persona = {
       ?? defaultChoice(state, event);
   },
   pickPace(state) {
-    if (minPartyHealth(state) < 30) return 'moderate';
-    // #275 v10b — back off pace when oxen are stressed. Period reality:
-    // even hard-driving emigrants (the parties that "pushed" per the
-    // diaries) read the team — a smart driver knew grueling pace on a
-    // worn ox team killed the wagon. Aggressive without this tweak ran
-    // grueling at 70+ fatigue, lost oxen between non-swap posts, and
-    // wiped before Laramie.
-    //
-    // #963c — pace rebalance (was 'grueling'). Period reality: emigrant
-    // "aggressive" was FAST (15-18 mi/day sustained, the Reed/Donner
-    // push out of Truckee), not GRUELING (25+, which only made sense
-    // for true emergencies — outrunning a storm, racing to a ferry).
-    // The grueling default trapped aggressive in fatigue-rest cycles:
-    // 5 days grueling → oxen worn → forced rest → repeat → ox HP drains
-    // → 39% rest days vs 42% travel. Trace-963 confirmed.
-    if (oxenWornOut(state)) return 'moderate';
-    // #963a — preemptive backoff. Step down one rung before fatigue
-    // crosses the worn-out threshold so we don't bounce between
-    // grueling-pace travel days and forced rest days. Trace-963 showed
-    // aggressive was burning ~40% of the calendar resting AFTER hitting
-    // fatigue 70; backing off at 50 keeps the team in continuous
-    // motion at a slightly lower per-day rate but >2× the travel days.
-    if (oxenTired(state)) return 'moderate';
-    return 'fast';
+    // #1264 — thirst easing wraps the base pace. Aggressive already reads
+    // the team (it backs off on worn/tired oxen), so on a parched team with
+    // a dry stretch ahead it eases off 'fast' one rung. pace_pusher, by
+    // contrast, grinds on regardless — that's the persona differential.
+    const base = ((): GameState['pace'] => {
+      if (minPartyHealth(state) < 30) return 'moderate';
+      // #275 v10b — back off pace when oxen are stressed. Period reality:
+      // even hard-driving emigrants (the parties that "pushed" per the
+      // diaries) read the team — a smart driver knew grueling pace on a
+      // worn ox team killed the wagon. Aggressive without this tweak ran
+      // grueling at 70+ fatigue, lost oxen between non-swap posts, and
+      // wiped before Laramie.
+      //
+      // #963c — pace rebalance (was 'grueling'). Period reality: emigrant
+      // "aggressive" was FAST (15-18 mi/day sustained, the Reed/Donner
+      // push out of Truckee), not GRUELING (25+, which only made sense
+      // for true emergencies — outrunning a storm, racing to a ferry).
+      // The grueling default trapped aggressive in fatigue-rest cycles:
+      // 5 days grueling → oxen worn → forced rest → repeat → ox HP drains
+      // → 39% rest days vs 42% travel. Trace-963 confirmed.
+      if (oxenWornOut(state)) return 'moderate';
+      // #963a — preemptive backoff. Step down one rung before fatigue
+      // crosses the worn-out threshold so we don't bounce between
+      // grueling-pace travel days and forced rest days. Trace-963 showed
+      // aggressive was burning ~40% of the calendar resting AFTER hitting
+      // fatigue 70; backing off at 50 keeps the team in continuous
+      // motion at a slightly lower per-day rate but >2× the travel days.
+      if (oxenTired(state)) return 'moderate';
+      return 'fast';
+    })();
+    return thirstWantsEasedPace(state) ? easeThirstPace(base) : base;
   },
   pickRations(state) {
     // #921r — "don't cheap out on rations" means don't starve the

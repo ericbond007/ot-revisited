@@ -18,6 +18,7 @@ import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
 import { applySpoilage, applyHeatSpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
+import { applyOxHydration } from './systems/ox-hydration';
 import { applyEggLay } from './systems/eggs';
 import { applyDairy, applyButterChurn } from './systems/dairy';
 import { applyDietVariety, applyHotDrinks } from './systems/diet';
@@ -188,6 +189,10 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   const companyMode: CompanyRestMode = restDecision?.mode ?? 'travel';
   if (companyMode === 'travel') {
     s = tickOxen(s, rng);
+    // #1264 — ox desert thirst (drain/refill + lethal tail). On travel days,
+    // before applyTravel so milesPerDay reads today's hydration for the pace
+    // penalty. Mirrors the engine.ts/tickDay wiring + the NPC traveled-day tick.
+    s = applyOxHydration(s);
     s = tickWagon(s, rng);
   } else {
     // Lay-by: the team rests rather than pulls — no fatigue, no wagon

@@ -55,6 +55,7 @@ import { applyStarvation as applyEngineStarvation } from './starvation';
 import { tickOxen as tickEngineOxen, recoverOxenFatigue, recoverOxenHealth } from './oxen';
 import { tickWagon as tickEngineWagon, applyAxleGrease as applyEngineAxleGrease } from './wagon';
 import { applyDehydration as applyEngineDehydration } from './dehydration';
+import { applyOxHydration as applyEngineOxHydration } from './ox-hydration';
 import { reapDead as reapDeadEngine } from './death';
 import {
   applyCannibalize,
@@ -546,6 +547,17 @@ export function tickNpcWagon(
     // #963 H1 — passive HP recovery for NPC oxen at low fatigue, same
     // rules as the player path. Without this, NPC ox HP only ever drops.
     next = { ...next, oxen: recoverOxenHealth(next.oxen) };
+  }
+
+  // 5a. #1264 — ox hydration drain/refill (desert thirst). Synth/project
+  // like the dehydration tick; isWateredDay handles refill at water.
+  if (traveled) {
+    const synth = synthesizeWagonState(next, env);
+    const ticked = applyEngineOxHydration(synth);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
   }
 
   // 5b. #300 — wagon condition decay + axle grease.
