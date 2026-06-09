@@ -60,3 +60,59 @@ describe('#1046 A — lay-by rest heal (traveled=false)', () => {
     expect(out.party[1].health).toBe(expected);
   });
 });
+
+describe('#161 travel-day heal boundaries', () => {
+  it('morale 25 meets the gate — condition-free member heals +1', () => {
+    const out = applyDailyRecovery(s0({ morale: 25 }), true);
+    expect(out.party[1].health).toBe(51);
+  });
+  it('morale 24 misses the gate — nobody heals on a travel day', () => {
+    const out = applyDailyRecovery(s0({ morale: 24, sick: true }), true);
+    expect(out.party[0].health).toBe(50);
+    expect(out.party[1].health).toBe(50);
+  });
+  it('grueling condition-free heal floors at +1, never 0', () => {
+    const out = applyDailyRecovery(s0({ pace: 'grueling' }), true);
+    expect(out.party[1].health).toBe(51);
+  });
+  it('fast pace trims tended convalesce to round(5·0.66) = 3', () => {
+    const out = applyDailyRecovery(s0({ sick: true, pace: 'fast' }), true);
+    expect(out.party[0].health).toBe(53);
+  });
+  it('doctor care and grueling pace stack: round(5·1.5·0.5) = 4', () => {
+    const out = applyDailyRecovery(s0({ sick: true, doctor: true, pace: 'grueling' }), true);
+    const sick = out.party.find((m) => m.conditions.length > 0)!;
+    expect(sick.health).toBe(54);
+  });
+  it('empty water keg makes the company untended — zero convalesce', () => {
+    const out = applyDailyRecovery(s0({ sick: true, water: 0 }), true);
+    expect(out.party[0].health).toBe(50); // sick: no care, pure decline
+    expect(out.party[1].health).toBe(51); // healthy +1 is care-independent
+  });
+});
+
+describe('recovery clamps and dead members', () => {
+  it('heals clamp at 100 health', () => {
+    const st = s0();
+    st.party = st.party.map((m) => ({ ...m, health: 97 }));
+    const out = applyDailyRecovery(st, false); // morale 60 → round(8·1.10) = 9
+    for (const m of out.party) expect(m.health).toBe(100);
+  });
+  it('dead members are untouched on travel and lay-by days', () => {
+    const st = s0();
+    st.party = st.party.map((m, i) => (i === 1 ? { ...m, dead: true } : m));
+    expect(applyDailyRecovery(st, true).party[1].health).toBe(50);
+    expect(applyDailyRecovery(st, false).party[1].health).toBe(50);
+  });
+});
+
+describe('#922 lay-by healingMultiplier tiers', () => {
+  it('morale 85 → round(8·1.25) = 10', () => {
+    const out = applyDailyRecovery(s0({ morale: 85 }), false);
+    expect(out.party[0].health).toBe(60);
+  });
+  it('morale 10 → round(8·0.90) = 7 (pins the floor #922 softened from 0.75)', () => {
+    const out = applyDailyRecovery(s0({ morale: 10 }), false);
+    expect(out.party[0].health).toBe(57);
+  });
+});
