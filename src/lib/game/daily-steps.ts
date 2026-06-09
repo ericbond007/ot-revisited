@@ -29,22 +29,33 @@ import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyDailyRecovery } from './systems/travel-recovery';
 import { applyTrainShare } from './systems/train-share';
 import { applyHolidays } from './systems/holidays';
+import { applyNpcMoraleBaseline } from './systems/npc-morale';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 
 /** Per-day context a step may need beyond (state, rng). */
 export interface TickCtx {
   /** True when the wagon travels today (companyMode === 'travel'). */
   traveled: boolean;
+  /** Which driver is ticking: the player wagon or an NPC synth. Required so
+   *  every call site must declare — npm run check finds any omissions. */
+  driver: 'player' | 'npc';
 }
 
 export interface TickStep {
   id: string;
+  /** Default 'all' — a new step reaches BOTH drivers unless explicitly tagged.
+   *  Tag playerOnly only for player-resource/recipient steps. */
+  scope?: 'all' | 'playerOnly' | 'npcOnly';
   run: (s: GameState, rng: Rng, ctx: TickCtx) => GameState;
 }
 
 export function runSteps(steps: readonly TickStep[], s: GameState, rng: Rng, ctx: TickCtx): GameState {
   let next = s;
-  for (const step of steps) next = step.run(next, rng, ctx);
+  for (const step of steps) {
+    if ((step.scope === 'playerOnly' && ctx.driver === 'npc') ||
+        (step.scope === 'npcOnly' && ctx.driver === 'player')) continue;
+    next = step.run(next, rng, ctx);
+  }
   return next;
 }
 
@@ -76,18 +87,19 @@ export const TRAVEL_OX_WAGON_STEPS: readonly TickStep[] = [
 ];
 
 export const POST_BRANCH_STEPS: readonly TickStep[] = [
-  { id: 'adjustMorale',   run: (s, rng) => adjustMorale(s, rng) },
+  { id: 'adjustMorale',   scope: 'playerOnly', run: (s, rng) => adjustMorale(s, rng) }, // NPCs run applyNpcMoraleBaseline instead; stacking both double-counts the daily morale nudge
+  { id: 'applyNpcMoraleBaseline', scope: 'npcOnly', run: (s, _rng, ctx) => (ctx.traveled ? applyNpcMoraleBaseline(s) : s) }, // gate mirrors npc-engine.ts step 1h: runs travel-days only
   { id: 'applyHolidays',  run: (s) => applyHolidays(s) },
 ];
 
 export const PRE_TRAVEL_STEPS: readonly TickStep[] = [
   { id: 'applyDailyRecovery',       run: (s, _rng, ctx) => applyDailyRecovery(s, ctx.traveled) },
-  { id: 'applyTrainShare',          run: (s, rng) => applyTrainShare(s, rng) },
+  { id: 'applyTrainShare',          scope: 'playerOnly', run: (s, rng) => applyTrainShare(s, rng) }, // player-recipient: transfers train food TO the player; no-op on the NPC synth stub
   { id: 'applySabbathTravelDebit',  run: (s, _rng, ctx) => applySabbathTravelDebit(s, ctx.traveled) },
 ];
 
 export const POST_EVENT_TAIL_STEPS: readonly TickStep[] = [
-  { id: 'attemptFire',    run: (s, rng) => attemptFire(s, rng) },
+  { id: 'attemptFire',    scope: 'playerOnly', run: (s, rng) => attemptFire(s, rng) }, // NPC synth stubs firewood to 0 — the cold-camp branch would exposure-drain NPCs nightly; excluded until NPCs carry firewood
   { id: 'applyDehydration', run: (s) => applyDehydration(s) },
   { id: 'reapDead',       run: (s, rng) => reapDead(s, rng) },
 ];

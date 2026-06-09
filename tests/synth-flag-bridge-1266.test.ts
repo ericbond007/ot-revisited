@@ -89,3 +89,16 @@ describe('#1266 — synth bridge unpacks persistent flags on projection', () => 
     expect(out.persistentFlags).toBeUndefined();
   });
 });
+
+describe('#1266 stage2 — synth carries the wagon waterRation', () => {
+  it('a drycamp wagon synthesizes with waterRation drycamp (not hardcoded normal)', () => {
+    const w = wagon({ waterRation: 'drycamp' } as Partial<NpcWagonState>);
+    const synth = synthesizeWagonState(w, env as any);
+    expect(synth.waterRation).toBe('drycamp');
+  });
+  it('a wagon without the field defaults to normal (legacy)', () => {
+    const w = wagon();
+    const synth = synthesizeWagonState(w, env as any);
+    expect(synth.waterRation).toBe('normal');
+  });
+});

@@ -1,28 +1,30 @@
 // #280b Per-wagon engine tick. NPC companion wagons advance through
-// a focused subset of the daily systems alongside the player's
-// state — they eat, get tired, fall sick, and possibly die.
+// the daily systems alongside the player's state — they eat, get
+// tired, fall sick, and die.
 //
-// Scope (this branch):
-//   - daily food consumption (own inventory drains)
-//   - condition tick (cholera/typhoid/etc. — same dailyHealthDelta math)
-//   - ox fatigue accrual on travel days; ox death from overwork
-//   - starvation onset when food runs out
-//   - death reaping (member.health <= 0 → dead)
-//   - outcome update ('wiped' if all party dead; 'in-progress' otherwise)
+// #1266 stage2 — tickNpcWagon consumes the canonical DAILY_STEPS
+// segments (../daily-steps) through the wagon-synth bridge, so NPCs
+// run the FULL player system list. The only exclusions are the
+// scope-tagged playerOnly steps (see daily-steps.ts): attemptFire
+// (synth stubs firewood to 0 — the cold-camp branch would exposure-
+// drain NPCs nightly), applyTrainShare (player-recipient no-op on
+// the synth train stub), and adjustMorale (applyNpcMoraleBaseline is
+// the npcOnly sibling). NPC-only interludes — camp bundle, stray ox,
+// storm damage, NPC events, cannibalize — run as driver code between
+// segments.
 //
-// Out of scope (deferred):
-//   - per-wagon weather effects (#280c)
-//   - per-wagon dirty-water / disease rolls (#280c — needs water tracking)
-//   - bot-driven decisions per wagon (rations, hunt, rest — #280d)
-//   - per-wagon events (#280c — wheel breaks, snake bite, etc.)
-//
-// Why a separate file: existing systems take the full GameState. The
-// NPC tick uses the WagonStateLike subset + an EngineContext for
-// shared/global state (day, terrain, pace, etc.). Future iterations
-// can extract the existing system math into parametric helpers and
-// dedupe with this — but for now a focused reimpl keeps the existing
-// 1400+ tests stable while NPCs come alive.
+// Why a separate file: the engine systems take the full GameState.
+// The NPC tick wraps each wagon in a synthesized GameState
+// (synthesizeWagonState) per segment and projects the wagon-local
+// deltas back (projectWagonDeltas) — see ./wagon-synth.
 
+import {
+  runSteps,
+  MORNING_STEPS,
+  POST_BRANCH_STEPS,
+  TRAVEL_OX_WAGON_STEPS,
+  POST_EVENT_TAIL_STEPS
+} from '../daily-steps';
 import type { Rng } from '../rng';
 import { makeRng } from '../rng';
 import type {
@@ -38,31 +40,18 @@ import type {
 import { getPersona } from '../ai/personas';
 import { bundleCampActions } from '../ai/bundle';
 import { CAMP_ACTIONS_BY_ID } from '../actions/camp-actions';
-import { applySpoilage, applyHeatSpoilage } from './spoilage';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
 import { applySabbathTravelDebit } from './sabbath-travel';
-import { applyHolidays } from './holidays';
 import { rollStrayMorning } from './strays';
-import { applyNpcMoraleBaseline } from './npc-morale';
 import { applyDailyRecovery } from './travel-recovery';
-import { applyDailyConsumption, applyDirtyWaterRisk } from './consumption';
-import { applyEggLay } from './eggs';
-import { applyDairy, applyButterChurn } from './dairy';
-import { applyDietVariety, applyHotDrinks } from './diet';
-import { applyPastryQuality } from './pastry';
-import { progressConditions } from './conditions';
-import { applyStarvation as applyEngineStarvation } from './starvation';
-import { tickOxen as tickEngineOxen, recoverOxenFatigue, recoverOxenHealth } from './oxen';
-import { tickWagon as tickEngineWagon, applyAxleGrease as applyEngineAxleGrease } from './wagon';
-import { applyDehydration as applyEngineDehydration } from './dehydration';
-import { applyOxHydration as applyEngineOxHydration } from './ox-hydration';
-import { reapDead as reapDeadEngine } from './death';
+import { recoverOxenFatigue, recoverOxenHealth } from './oxen';
+import { applyAxleGrease as applyEngineAxleGrease } from './wagon';
 import {
   applyCannibalize,
   findFreshUnconsumedCorpse,
   hasFoodOnHand
 } from './cannibal';
-import { rollDailyTheft, abandonHeavyLoad } from './item-loss';
+import { abandonHeavyLoad } from './item-loss';
 // #939i — `rollNpcEvent` parallel impl removed. NPC event roll now
 // flows through engine `rollEvent` + `resolveEvent` over
 // NPC_ELIGIBLE_EVENTS via the wagon-synth bridge.
@@ -278,57 +267,12 @@ export function tickNpcWagon(
   // switch below flips `traveled` only, which trainEnv doesn't read.
   const env = trainEnv(ctx);
 
-  // 1. Conditions tick + treatment.
-  // #939d — engine `progressConditions` via synth/project. NPC parallel
-  // impl was missing `resolvedByItems` auto-clear (e.g. scurvy ↔
-  // dried_fruit) and `dailyMoraleDelta` (some conditions debit morale
-  // daily). Engine version covers both.
-  {
-    const synth = synthesizeWagonState(next, env);
-    const ticked = progressConditions(synth, rng);
-    next = projectWagonDeltas(ticked, next);
-    for (const entry of ticked.eventLog) {
-      playerLogs.push(`${entry.text} (${next.name})`);
-    }
-  }
-
-  // 1b. #295 — spoilage. Runs BEFORE food consumption (mirrors the
-  // player path) so a rotten pile can't be eaten on its spoil day.
-  // Game meat / eggs / berries / milk rot off their per-pile clock;
-  // bacon + salt_pork take heat attrition (with bran-barrel mitigation
-  // matching the player's mechanic).
-  // #939b — unified tick: invoke the engine's applySpoilage +
-  // applyHeatSpoilage on a synthesized GameState. Wagon-synth packs
-  // wagon.spoilDays into flags._{x}SpoilDay; the engine reads/writes
-  // those, then we project the deltas back. Engine eventLog entries
-  // get name-suffixed and forwarded to player news so the player
-  // still sees "(Sager family)" attribution.
-  {
-    const synth = synthesizeWagonState(next, env);
-    let tickedSpoil = applySpoilage(synth);
-    tickedSpoil = applyHeatSpoilage(tickedSpoil);
-    next = projectWagonDeltas(tickedSpoil, next);
-    for (const entry of tickedSpoil.eventLog) {
-      playerLogs.push(`${entry.text} (${next.name})`);
-    }
-  }
-
-  // 1c. #895 — persona-driven rations decision. Each NPC wagon carries
-  // a `personaId` (set at gen from `profile.personaVariantHint`, or
-  // 'balanced' for fillers). #921r widened the shim: aggressive's
-  // pickRations now also reads party HP (eat normal only while a
-  // member is recovering) on top of `state.inventory`, so `party` is
-  // threaded through too — keeps #298 NPC parity (an NPC aggressive
-  // wagon self-rations the same way the player-bot does).
+  // 1c. #895 — persona-driven rations decision.
   const persona = getPersona(next.personaId ?? 'balanced');
   const fauxState = { inventory: next.inventory, party: next.party } as unknown as GameState;
   next = { ...next, rations: persona.pickRations(fauxState, rng) };
   {
-    // #1245 — water-ration persona decision. Needs location (terrain for
-    // desert check), resources.water (gap-to-keg ratio), weather + date
-    // (waterConsumedToday calls tempWaterMult → dayTempF). Build a richer
-    // faux state from the tick context rather than the minimal inventory-
-    // only shim used for pickRations.
+    // #1245 — water-ration persona decision.
     const waterFauxState = {
       inventory: next.inventory,
       party: next.party,
@@ -339,26 +283,20 @@ export function tickNpcWagon(
       resources: { water: next.water, waterCap: next.waterCap },
       waterRation: next.waterRation ?? 'normal',
       flags: {}
+      // faux state: pickWaterRation reads only resources/location/date/
+      // weather — a structural subset, not a real GameState.
     } as unknown as GameState;
     next = { ...next, waterRation: persona.pickWaterRation(waterFauxState, rng) };
   }
 
-  // 1d. #937 — persona-driven voluntary rest. On a travel day, if the
-  // persona's shouldRest fires (Sunday, worn HP, low morale, worn ox
-  // team), the NPC takes it easier within the train: ox fatigue
-  // recovers instead of accruing, wagon decay + axle grease skipped.
-  // Player-bot uses `shouldRest` to call the engine rest action; NPC
-  // can't lag the train, but it can conserve. Period reality: emigrant
-  // companies that pushed through Sundays were the outliers (Reed);
-  // most rested when the captain's "tireder than you" call came in.
+  // 1d. #937 — persona-driven voluntary rest.
   let traveled = ctx.traveled;
   // #1046 C2 — in a captained train the company's daily decision
   // governs travel/rest coherently for all wagons; skip the
-  // per-persona #937 voluntary-rest gate. Solo wagons (no
-  // companyRestMode) keep #937 behavior unchanged.
+  // per-persona #937 voluntary-rest gate.
   if (traveled && ctx.companyRestMode === undefined) {
     const restFauxState = {
-      date: ctx.date ?? { year: 1849, month: 1, day: 2 }, // Monday — keeps Sunday-rest false when ctx.date absent
+      date: ctx.date ?? { year: 1849, month: 1, day: 2 },
       party: next.party,
       morale: next.morale,
       oxen: next.oxen
@@ -368,93 +306,17 @@ export function tickNpcWagon(
     }
   }
 
-  // 1e. #301 — Sabbath-travel morale debit on the NPC's synth. Mirrors
-  // the player's engine-pausable hook (also factored into
-  // applySabbathTravelDebit). -2 on Sunday travel, -3 with a live
-  // Preacher. companyMode=='sabbath_layby' already flipped `traveled`
-  // to false above, so this naturally skips lay-by days.
+  // MORNING_STEPS segment — conditions + producers + spoilage + cleanliness ×3 +
+  // ambient-water + consumption + water-ration-strain + diet + hot-drinks +
+  // pastry + theft + dirty-water + starvation. One synth round-trip.
+  // #1266 stage2 — 5 previously-skipped systems now fire via this segment:
+  //   decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk (cleanliness ×3)
+  //   applyAmbientWaterRefill, applyWaterRationStrain.
+  // Adopted reorders (parity with player): theft now at its MORNING position
+  // (was dead-last in 7b); producers un-nested to top-of-MORNING.
   {
     const synth = synthesizeWagonState(next, env);
-    const ticked = applySabbathTravelDebit(synth, traveled);
-    next = projectWagonDeltas(ticked, next);
-    for (const entry of ticked.eventLog) {
-      playerLogs.push(`${entry.text} (${next.name})`);
-    }
-  }
-
-  // 1f. #301 — Holiday morale bumps on the NPC's synth (July 4 + Xmas).
-  // applyHolidays is idempotent within a year via per-wagon flags
-  // (_july4Year / _christmasYear).
-  // #1266 — the holiday-year flags now persist via the wagon's
-  // persistentFlags passthrough (NPC_PERSISTENT_FLAG_KEYS), so the
-  // once-per-year idempotency guard sees its own prior marker across
-  // ticks. (Before #1266 these flags were discarded on projection.)
-  {
-    const synth = synthesizeWagonState(next, env);
-    const ticked = applyHolidays(synth);
-    next = projectWagonDeltas(ticked, next);
-    for (const entry of ticked.eventLog) {
-      playerLogs.push(`${entry.text} (${next.name})`);
-    }
-  }
-
-  // 1g. #301 — Stray-oxen morning roll on travel days. NPCs share the
-  // player's #220 mechanic: rare permanent loss of one ox when oxen
-  // wander overnight. Miles multiplier is irrelevant (the train
-  // governs distance), so we discard milesMult and only project the
-  // ox-state delta + the log line.
-  if (traveled) {
-    const synth = synthesizeWagonState(next, env);
-    const roll = rollStrayMorning(synth, rng);
-    if (roll.logLine) playerLogs.push(`${roll.logLine} (${next.name})`);
-    // Only project when ox state changed (permanent loss branch).
-    if (roll.state !== synth) {
-      next = projectWagonDeltas(roll.state, next);
-    }
-  }
-
-  // 1h. #301 — Daily morale baseline drift on travel days only. Small
-  // homeostasis pull toward 50 + alive-ratio nudge + preacher/hunter
-  // profession bonuses. Keeps NPC morale from staying frozen between
-  // events. Gated on `traveled` so a long lay-by stretch doesn't
-  // cascade into earlier dissent than today's behavior — the player's
-  // adjustMorale also runs only when the daily systems pipeline does,
-  // and that's traveled-coupled in practice.
-  if (traveled) {
-    const synth = synthesizeWagonState(next, env);
-    const ticked = applyNpcMoraleBaseline(synth);
-    next = projectWagonDeltas(ticked, next);
-  }
-
-  // 2 + 3. #939c — Food + water + pastry + diet + hot-drinks + dirty-
-  // water risk all run through the engine pipeline on a synthesized
-  // GameState. Engine `applyDailyConsumption` drains BOTH food AND
-  // water (clean + dirty) and sets `_pastryDrawnLb` / `_lastFoodGroups`
-  // / `_lastDirtyWaterDrawn` flags for the downstream systems.
-  //
-  // Bonus: NPCs now gain `applyDietVariety` (+1 morale on multi-group
-  // days) and `applyHotDrinks` (coffee/tea bonus) that the parallel
-  // impl was missing.
-  const eatersAlive = next.party.filter((m) => !m.dead).length;
-  if (eatersAlive > 0) {
-    const synth = synthesizeWagonState(next, env);
-    // #297 — producer ticks run BEFORE consumption so today's egg lay
-    // / milk yield lands in inventory before the family eats it.
-    // Mirrors engine-pausable.ts ordering. No-ops when the wagon
-    // doesn't carry chickens / cows / butter_crock.
-    let producerSynth = applyEggLay(synth);
-    producerSynth = applyDairy(producerSynth);
-    producerSynth = applyButterChurn(producerSynth);
-    let ticked = applyDailyConsumption(producerSynth);
-    ticked = applyDietVariety(ticked);
-    ticked = applyHotDrinks(ticked);
-    ticked = applyPastryQuality(ticked, rng).state;
-    ticked = applyDirtyWaterRisk(ticked, rng);
-    // #939f — engine starvation chained into the consumption synth so
-    // `_lastFoodShortfall` (set by applyDailyConsumption) is fresh.
-    // Accumulating `_starvationDays` counter bridges via wagon-synth
-    // (#941 + this slice's starvationDays addition).
-    ticked = applyEngineStarvation(ticked);
+    const ticked = runSteps(MORNING_STEPS, synth, rng, { traveled, driver: 'npc' });
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);
@@ -465,24 +327,17 @@ export function tickNpcWagon(
   // synth. Mirrors the player-bot's restWithBundle (#927 slice 2): same
   // bundleCampActions dispatcher, same camp-action apply loop.
   //
-  // Slice-3 opt-in gate is WEIGHTS-ONLY (overrides ignored on NPC
-  // engine). Player-bot still honours faithful's override for its
-  // slice-2 gain; NPC engine sees overrides as inert until per-persona
-  // tuning (#927c) ships safe NPC weights. Currently no default persona
-  // has non-zero weights, so NPC bundling is wired-but-inert at master
-  // parity.
+  // Sub-rng so camp-action rolls do NOT advance the main NPC tick rng
+  // stream. Without this, every rest day for any bundling NPC shifts
+  // every downstream system's rng across the whole train — diverging the
+  // deterministic outcome of unrelated wagons + the player.
+  // Sub-seed: day + wagon name + persona is sufficient to stay
+  // deterministic without polluting the main stream.
   if (!traveled) {
     const w = persona.bundleWeights;
     const optsIn = w.survival > 0 || w.food > 0 || w.maintenance > 0
       || w.hygiene > 0 || w.morale > 0;
     if (optsIn) {
-      // Use a derived sub-rng so camp-action rolls (find_water yield,
-      // gather_firewood amount, etc.) do NOT advance the main NPC tick
-      // rng stream. Without this, every rest day for any bundling NPC
-      // shifts every downstream system's rng across the whole train —
-      // diverging the deterministic outcome of unrelated wagons + the
-      // player. Sub-seed: day + wagon name + persona is sufficient to
-      // stay deterministic without polluting the main stream.
       const bundleRng = makeRng(`bundle:${env.day}:${next.name}:${persona.id}`);
       const synth = synthesizeWagonState(next, env);
       try {
@@ -501,76 +356,48 @@ export function tickNpcWagon(
         }
       } catch {
         // Defensive: race between availability and apply on synth state.
-        // Keep wagon unchanged.
       }
     }
   }
 
-  // 3b. #1046 A+D parity — governance-agnostic daily recovery on the synth,
-  // keyed on the NPC's resolved travel flag (already accounts for C2's
-  // companyRestMode + #937 solo voluntary rest). D's natural-course
-  // resolve already rode the step-1 progressConditions synth; this wires
-  // A (convalesce on travel / rest-heal on lay-by) at parity. Synth
-  // carries party/inventory/resources.water/morale/env.pace — every
-  // field applyDailyRecovery reads (the #921r missing-field lesson).
-  // #1046 — runs AFTER consumption (mirrors the player's
-  // progressConditions → applyDailyConsumption → applyDailyRecovery
-  // order at engine-pausable.ts:128/156/221) so a sick NPC convalesces
-  // off post-consumption food/water/morale identically to the player.
+  // POST_BRANCH_STEPS segment — applyNpcMoraleBaseline (npcOnly, travel-gated
+  // via scope entry) + applyHolidays. adjustMorale is playerOnly and filtered.
+  // #1266 stage2 — holidays and morale-baseline now run via the canonical
+  // segment; the standalone 1f/1h blocks are deleted.
   {
     const synth = synthesizeWagonState(next, env);
-    // #1046 §13 (C) — crisis NPC-heal carve-out. In a company
-    // crisis_layby, NPC wagons take NO lay-by rest-heal (exact master
-    // parity: pre-A+D there was no lay-by heal, so fatally-hit wagons
-    // died & reaped & cleared the aggregate). A+D's +8 otherwise keeps
-    // them undead → permanent crisis lock. Travel + maintenance/Sabbath
-    // lay-bys keep the full §8 A+D parity heal; only crisis is carved.
-    if (ctx.companyRestMode !== 'crisis_layby') {
-      const recovered = applyDailyRecovery(synth, traveled);
-      next = projectWagonDeltas(recovered, next);
-    }
-  }
-
-  // 5. Ox tick — fatigue on travel, recovery on rest.
-  // #937 — `traveled` may be flipped to false above by persona.shouldRest.
-  // #939g — engine `tickOxen` for travel days (gets teamster / shoeless
-  // / mule-grain / grazing math the NPC parallel never had);
-  // `recoverOxenFatigue` for rest days (terrain-aware amount).
-  if (traveled) {
-    const synth = synthesizeWagonState(next, env);
-    const ticked = tickEngineOxen(synth, rng);
-    next = projectWagonDeltas(ticked, next);
-    for (const entry of ticked.eventLog) {
-      playerLogs.push(`${entry.text} (${next.name})`);
-    }
-  } else {
-    const recovery = ctx.terrain === 'desert' || ctx.terrain === 'mountains' ? 5 : 15;
-    next = { ...next, oxen: recoverOxenFatigue(next.oxen, recovery) };
-    // #963 H1 — passive HP recovery for NPC oxen at low fatigue, same
-    // rules as the player path. Without this, NPC ox HP only ever drops.
-    next = { ...next, oxen: recoverOxenHealth(next.oxen) };
-  }
-
-  // 5a. #1264 — ox hydration drain/refill (desert thirst). Synth/project
-  // like the dehydration tick; isWateredDay handles refill at water.
-  if (traveled) {
-    const synth = synthesizeWagonState(next, env);
-    const ticked = applyEngineOxHydration(synth);
+    const ticked = runSteps(POST_BRANCH_STEPS, synth, rng, { traveled, driver: 'npc' });
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);
     }
   }
 
-  // 5b. #300 — wagon condition decay + axle grease.
-  // #939h — unified via engine tickWagon + applyAxleGrease. NPCs gain
-  // the carpenter decay mult (CARPENTER_DECAY_MULT) the parallel impl
-  // didn't have. greaseMiles round-trips via flags bridge (#941).
-  // Storm damage stays NPC-only (no player-engine equivalent — player
-  // takes storm damage via the wagon-decay events, not a daily tick).
+  // 1g. #301 — Stray-oxen morning roll on travel days. NPCs share the
+  // player's #220 mechanic: rare permanent loss of one ox when oxen
+  // wander overnight. Miles multiplier is irrelevant (the train
+  // governs distance), so we discard milesMult and only project the
+  // ox-state delta + the log line.
   if (traveled) {
     const synth = synthesizeWagonState(next, env);
-    let ticked = tickEngineWagon(synth, rng);
+    const roll = rollStrayMorning(synth, rng);
+    if (roll.logLine) playerLogs.push(`${roll.logLine} (${next.name})`);
+    if (roll.state !== synth) {
+      next = projectWagonDeltas(roll.state, next);
+    }
+  }
+
+  // TRAVEL_OX_WAGON_STEPS segment — tickOxen + applyOxHydration + tickWagon.
+  // On rest days: NPC-local ox fatigue + health recovery (terrain-aware).
+  // #1266 stage2 — travel segment replaces standalone ox blocks 5/5a + the
+  // tickWagon part of 5b. Storm damage + axle-grease stay below (block 5b
+  // tail — see comment there).
+  if (traveled) {
+    const synth = synthesizeWagonState(next, env);
+    let ticked = runSteps(TRAVEL_OX_WAGON_STEPS, synth, rng, { traveled, driver: 'npc' });
+    // Axle-grease runs after tickWagon in the player path (same block).
+    // Preserve exact ordering: applyAxleGrease still fires here, hanging
+    // off the travel segment synth, not a new round-trip.
     if ((ctx.traveledMiles ?? 0) > 0) {
       ticked = applyEngineAxleGrease(ticked, ctx.traveledMiles ?? 0);
     }
@@ -578,10 +405,41 @@ export function tickNpcWagon(
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);
     }
+  } else {
+    // Rest-day ox recovery — NPC-local, not expressible as a segment step
+    // because it branches on terrain and uses NPC-specific typed fields.
+    const recovery = ctx.terrain === 'desert' || ctx.terrain === 'mountains' ? 5 : 15;
+    next = { ...next, oxen: recoverOxenFatigue(next.oxen, recovery) };
+    // #963 H1 — passive HP recovery for NPC oxen at low fatigue.
+    next = { ...next, oxen: recoverOxenHealth(next.oxen) };
   }
+
+  // 5b tail — Storm damage. NPC-only (player gets storm damage via wagon-decay
+  // events). Stays driver code because there's no player-engine equivalent.
   const stormResult = applyNpcStormDamage(next, ctx.weather, rng);
   next = stormResult.wagon;
   if (stormResult.playerLog) playerLogs.push(stormResult.playerLog);
+
+  // #1266 stage2 residual: PRE_TRAVEL stays driver code here —
+  // applyDailyRecovery needs the NPC crisis-layby guard (not expressible
+  // as step scope) and applyTrainShare is playerOnly. A new PRE_TRAVEL
+  // step will NOT auto-reach NPCs; add it here manually (smallest, most
+  // train-flavored segment).
+  {
+    const synth = synthesizeWagonState(next, env);
+    if (ctx.companyRestMode !== 'crisis_layby') {
+      const recovered = applyDailyRecovery(synth, traveled);
+      next = projectWagonDeltas(recovered, next);
+    }
+  }
+  {
+    const synth = synthesizeWagonState(next, env);
+    const ticked = applySabbathTravelDebit(synth, traveled);
+    next = projectWagonDeltas(ticked, next);
+    for (const entry of ticked.eventLog) {
+      playerLogs.push(`${entry.text} (${next.name})`);
+    }
+  }
 
   // 5c. #939i — NPC event roll via engine event bank (replaces the
   // rollNpcEvent parallel impl). Synthesize a per-wagon GameState,
@@ -589,11 +447,7 @@ export function tickNpcWagon(
   // resolve via persona.pickNpcEventChoice → isDefault → first, project
   // deltas back, suffix log entries with the wagon name.
   //
-  // #929 — wagon_wheel is handled via persona.pickWheelBreakResponse
-  // (the shared 3-choice ladder) instead of pickNpcEventChoice, which
-  // returns null for wagon_wheel on all base personas. This gives each
-  // persona the same choice policy for wheel-breaks that the player bot
-  // uses — aggressive pushes on, cautious rebuilds, etc.
+  // #929 — wagon_wheel is handled via persona.pickWheelBreakResponse.
   {
     const synth = synthesizeWagonState(next, env);
     const event = rollEvent(synth, rng, {
@@ -601,7 +455,6 @@ export function tickNpcWagon(
       fireChance: NPC_FIRE_CHANCE
     });
     if (event) {
-      // #929 — wagon_wheel delegates to the wheel-break persona surface.
       const personaChoice = event.id === 'wagon_wheel'
         ? persona.pickWheelBreakResponse(synth, rng)
         : persona.pickNpcEventChoice(
@@ -614,14 +467,10 @@ export function tickNpcWagon(
         try {
           ticked = resolveEvent(synth, event, choiceId, rng);
         } catch {
-          // pickNpcEventChoice returned an unknown id — fall back.
           if (!fallbackId) throw new Error(`#939i event ${event.id} has no resolvable choice`);
           ticked = resolveEvent(synth, event, fallbackId, rng);
         }
-        // #936b — wagon_stuck `abandon_load` sets `_mudAbandonPending`
-        // (the player gets a modal). NPC wagons have no modal: resolve
-        // it immediately via the persona's own drop order (#298 train
-        // parity — each wagon sheds by its captain's character).
+        // #936b — wagon_stuck `abandon_load` sets `_mudAbandonPending`.
         if (ticked.flags._mudAbandonPending) {
           const order = persona.mudAbandonmentPriority?.();
           ticked = abandonHeavyLoad(ticked, order).state;
@@ -637,30 +486,14 @@ export function tickNpcWagon(
     }
   }
 
-  // 6. Death reaping (catches event-induced deaths too — e.g. an ox
-  // kick to a child after `member_injury` fired earlier this tick).
-  // #939m — engine `reapDead` via synth/project. Sets deathCause from
-  // worst condition (or "Exposure" fallback), hits −8 morale per dead
-  // child immediately, and sets `outcome='wiped'` if every member is
-  // dead — folding what the local `updateOutcome` parallel impl did.
+  // POST_EVENT_TAIL_STEPS segment — attemptFire (playerOnly, filtered) +
+  // applyDehydration + reapDead. Dehydration now runs BEFORE reap
+  // (player tail order — adopted reorder).
+  // #1266 stage2 — this segment replaces the standalone reap block 6,
+  // dehydration block 6b. attemptFire is playerOnly and safely filtered.
   {
     const synth = synthesizeWagonState(next, env);
-    const ticked = reapDeadEngine(synth, rng);
-    next = projectWagonDeltas(ticked, next);
-    for (const entry of ticked.eventLog) {
-      playerLogs.push(`${entry.text} (${next.name})`);
-    }
-  }
-
-  // 6b. Dehydration HP/morale damage when keg=0 at end of tick (#303e).
-  // #939k — engine `applyDehydration` via synth/project. Terrain
-  // multiplier is read from `state.location.terrain` against
-  // dehydration.ts TERRAIN_MULT table; flag bridge for
-  // `_dehydrationDays` from #941. Engine version has the same desert
-  // 1.5× / forest 0.85× shape the parallel impl used.
-  {
-    const synth = synthesizeWagonState(next, env);
-    const ticked = applyEngineDehydration(synth);
+    const ticked = runSteps(POST_EVENT_TAIL_STEPS, synth, rng, { traveled, driver: 'npc' });
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);
@@ -669,28 +502,14 @@ export function tickNpcWagon(
 
   // 7. NPC auto-cannibalism (#288). When food=0 AND there's a fresh
   // adult corpse, the survivors take the body. Donner Party precedent.
-  // Silent for the wagon (no player choice — they're NPCs); a grim
-  // log line surfaces to the player.
   const cannibalResult = maybeCannibalize(next, ctx, rng);
   next = cannibalResult.wagon;
   if (cannibalResult.playerLog) playerLogs.push(cannibalResult.playerLog);
 
-  // 7b. Daily theft (#306 phase 2 NPC parity).
-  // #939k — engine `rollDailyTheft` via synth/project. Reads
-  // `state.wagonTrain` for share-watch halving (already 0.0025/day
-  // when in a train — and the SYNTH_TRAIN_STUB always provides one).
-  {
-    const synth = synthesizeWagonState(next, env);
-    const result = rollDailyTheft(synth, rng);
-    next = projectWagonDeltas(result.state, next);
-    for (const entry of result.state.eventLog) {
-      playerLogs.push(`${entry.text} (${next.name})`);
-    }
-  }
-
-  // #939m — `updateOutcome` removed: engine `reapDead` above sets
-  // `outcome='wiped'` whenever the last member dies, and projection
-  // copies `ticked.outcome` back onto the wagon.
+  // #939m — `updateOutcome` removed: engine `reapDead` (inside
+  // POST_EVENT_TAIL_STEPS above) sets `outcome='wiped'` whenever the
+  // last member dies, and projection copies `ticked.outcome` back onto
+  // the wagon.
 
   return { wagon: next, playerLogs };
 }
