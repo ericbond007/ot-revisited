@@ -6,7 +6,8 @@ import {
   PRE_TRAVEL_STEPS,
   POST_EVENT_TAIL_STEPS,
   runSteps,
-  type TickCtx
+  type TickCtx,
+  type TickStep
 } from '../src/lib/game/daily-steps';
 import type { GameState } from '../src/lib/game/types';
 import { makeRng } from '../src/lib/game/rng';
@@ -25,7 +26,7 @@ describe('#1266 — daily-steps spine order is locked', () => {
     expect(TRAVEL_OX_WAGON_STEPS.map((s) => s.id)).toEqual(['tickOxen', 'applyOxHydration', 'tickWagon']);
   });
   it('POST_BRANCH_STEPS exact order', () => {
-    expect(POST_BRANCH_STEPS.map((s) => s.id)).toEqual(['adjustMorale', 'applyHolidays']);
+    expect(POST_BRANCH_STEPS.map((s) => s.id)).toEqual(['adjustMorale', 'applyNpcMoraleBaseline', 'applyHolidays']);
   });
   it('PRE_TRAVEL_STEPS exact order', () => {
     expect(PRE_TRAVEL_STEPS.map((s) => s.id)).toEqual(['applyDailyRecovery', 'applyTrainShare', 'applySabbathTravelDebit']);
@@ -43,9 +44,33 @@ describe('#1266 — runSteps', () => {
       run: (s: GameState) => { calls.push(id); return { ...s, morale: s.morale + 1 }; }
     });
     const s0 = { morale: 0 } as unknown as GameState;
-    const ctx: TickCtx = { traveled: true };
+    const ctx: TickCtx = { traveled: true, driver: 'player' };
     const out = runSteps([fake('a'), fake('b'), fake('c')], s0, makeRng('t'), ctx);
     expect(calls).toEqual(['a', 'b', 'c']);
     expect(out.morale).toBe(3);
+  });
+});
+
+describe('#1266 stage2 — scope filtering', () => {
+  it('playerOnly steps are skipped for the npc driver (and vice versa)', () => {
+    const calls: string[] = [];
+    const steps: TickStep[] = [
+      { id: 'a', run: (s: GameState) => { calls.push('a'); return s; } },
+      { id: 'p', scope: 'playerOnly' as const, run: (s: GameState) => { calls.push('p'); return s; } },
+      { id: 'n', scope: 'npcOnly' as const, run: (s: GameState) => { calls.push('n'); return s; } }
+    ];
+    const s0 = { morale: 0 } as unknown as GameState;
+    runSteps(steps, s0, makeRng('t'), { traveled: true, driver: 'npc' });
+    expect(calls).toEqual(['a', 'n']);
+    calls.length = 0;
+    runSteps(steps, s0, makeRng('t'), { traveled: true, driver: 'player' });
+    expect(calls).toEqual(['a', 'p']);
+  });
+  it('tags: trainShare/attemptFire/adjustMorale playerOnly; npcMoraleBaseline npcOnly', () => {
+    const tag = (arr: readonly TickStep[], id: string) => arr.find((x) => x.id === id)?.scope;
+    expect(tag(PRE_TRAVEL_STEPS, 'applyTrainShare')).toBe('playerOnly');
+    expect(tag(POST_EVENT_TAIL_STEPS, 'attemptFire')).toBe('playerOnly');
+    expect(tag(POST_BRANCH_STEPS, 'adjustMorale')).toBe('playerOnly');
+    expect(tag(POST_BRANCH_STEPS, 'applyNpcMoraleBaseline')).toBe('npcOnly');
   });
 });

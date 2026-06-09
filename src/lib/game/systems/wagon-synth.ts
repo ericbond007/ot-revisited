@@ -192,7 +192,11 @@ export function synthesizeWagonState(wagon: NpcWagonState, env: TrainEnv): GameS
     moraleHistory: undefined,
     pace: env.pace,
     rations: wagon.rations,
-    waterRation: 'normal',
+    // #1266 stage2 — carry the wagon's persona-picked tier so the engine's
+    // applyWaterRationStrain can fire on the synth. The engine never mutates
+    // waterRation during a tick, so no projection back is needed (the NPC
+    // preamble's persona pick owns the field).
+    waterRation: wagon.waterRation ?? 'normal',
     weather: env.weather,
     // Empty so engine appends are isolated and captured by the
     // projection — keeps NPC's prior log untouched if the engine

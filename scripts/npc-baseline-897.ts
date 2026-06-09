@@ -119,15 +119,30 @@ function applyPostVisit(
 
 function buildCtx(day: number): NpcTickContext {
   const rest = day % 7 === 0;
-  // Survivable prairie schedule — isolates rations math from
-  // desert/storm noise. Once more persona surface is wired (#896
-  // follow-ups) the harness can layer terrain/weather variance back
-  // in to test those paths.
+  // #1266 stage2 — every other rest day is a RIVER camp (fortnightly),
+  // matching real trail cadence (the Platte/Sweetwater/Snake legs hug
+  // water). Without river camps the cleanliness systems (which NPCs now
+  // run) have no wash opportunity and the schedule becomes an unwinnable
+  // filth spiral for player and NPC alike — the pre-#1266 pure-prairie
+  // schedule was only survivable because NPCs skipped cleanliness.
+  // Weekly river camps: the Platte/Sweetwater/Snake legs camped at water
+  // most nights; one watered camp per week is conservative-realistic.
+  const riverCamp = rest;
+  const terrain = riverCamp ? ('river' as const) : ('prairie' as const);
   return {
     day,
     traveled: !rest,
     pace: 'moderate',
-    terrain: 'prairie',
+    terrain,
+    // The synth reads location.terrain (NOT ctx.terrain) — pass a real
+    // location so river camps reach the bundle's wash scoring.
+    location: {
+      trailPosition: day * 14,
+      nextLandmarkId: 'lone_elm_campground',
+      previousLandmarkId: null,
+      milesTraveled: day * 14,
+      terrain
+    },
     weather: day % 19 === 0 ? 'rain' : 'clear',
     traveledMiles: rest ? 0 : 14
   };
@@ -183,6 +198,13 @@ function runPersona(persona: PersonaId, days: number, year: number): PersonaResu
     const ctx = buildCtx(d);
     const { wagon: next } = tickNpcWagon(wagon, ctx, tickRng);
     wagon = next;
+    // River camp = water access: top the keg up to cap, as a real wagon
+    // would (player equivalent: the #1039 water-source refills + nightly
+    // camps at the river). Without this, mortal wagons dehydrate on the
+    // harness's synthetic schedule no matter what they do.
+    if (ctx.terrain === 'river') {
+      wagon = { ...wagon, water: wagon.waterCap, dryDays: 0 };
+    }
     rationsHistogram[wagon.rations] += 1;
     lastDay = d;
     if (wagon.outcome !== 'in-progress') break;

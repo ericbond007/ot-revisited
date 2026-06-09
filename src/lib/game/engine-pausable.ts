@@ -121,7 +121,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // (search for "Sabbath-breaking morale debit" below).
 
   // ctx unused by morning steps; companyMode not yet decided
-  s = runSteps(MORNING_STEPS, s, rng, { traveled: false });
+  s = runSteps(MORNING_STEPS, s, rng, { traveled: false, driver: 'player' });
   // #review (lay-by oxen) — decide travel-vs-lay-by BEFORE today's ox /
   // wagon wear, so a company lay-by day doesn't tire the oxen or age the
   // wagon (this mirrors the NPC `traveled` gate in tickNpcWagon). Solo
@@ -130,7 +130,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // are still persisted further down, reusing `restDecision`.
   const restDecision = s.wagonTrain ? companyRestDecision(s) : null;
   const companyMode: CompanyRestMode = restDecision?.mode ?? 'travel';
-  const ctx: TickCtx = { traveled: companyMode === 'travel' };
+  const ctx: TickCtx = { traveled: companyMode === 'travel', driver: 'player' };
   if (companyMode === 'travel') {
     s = runSteps(TRAVEL_OX_WAGON_STEPS, s, rng, ctx);
   } else {
@@ -376,10 +376,10 @@ export function applyCompanyDissent(
     // #1266 stage1b — an override-to-travel day charges the same wear as any
     // travel day: ox fatigue + hydration + wagon wear. The morning's lay-by
     // recovery stays — the team rested while the company argued, then pushed on.
-    s = runSteps(TRAVEL_OX_WAGON_STEPS, s, rng, { traveled: true });
+    s = runSteps(TRAVEL_OX_WAGON_STEPS, s, rng, { traveled: true, driver: 'player' });
     s = applyTravel(s, rng);
   }
-  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: travels });
+  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: travels, driver: 'player' });
   const trainResult = advanceTrain(s, travels);
   s = trainResult.state;
   s = pushMoraleHistory(s);
@@ -398,7 +398,7 @@ export function applyPendingChoice(
   s = { ...s, flags: { ...s.flags, _lastEventDay: s.day } };
 
   // Finish the day
-  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: true });
+  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: true, driver: 'player' });
 
   // #280b/#288 — advance NPC wagons. Event-day still counts as travel
   // for them. NPC starvation crisis events that arise here are NOT
