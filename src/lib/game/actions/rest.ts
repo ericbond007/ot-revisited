@@ -3,20 +3,19 @@ import { makeRng } from '../rng';
 import { hasLiveFarmer, hasLiveTeamster, hasLivePreacher, hasLiveBlacksmith } from '../professions/predicates';
 import { TEAMSTER_RECOVERY_MULT, consumeOxenFeed } from '../systems/oxen';
 import { upgradeState } from '../upgrade';
-import { applyDailyConsumption, applyDirtyWaterRisk } from '../systems/consumption';
-import { applyStarvation } from '../systems/starvation';
 import { tickWeather } from '../systems/weather';
-import { progressConditions } from '../systems/conditions';
-import { adjustMorale, healingMultiplier } from '../systems/morale';
-import { REST_HEAL_PER_DAY } from '../systems/travel-recovery';
 import { advanceTrain } from '../systems/wagon-train';
 import { recoverOxenFatigue, recoverOxenHealth } from '../systems/oxen';
-import { attemptFire } from '../systems/fire';
-import { reapDead } from '../systems/death';
-import { applyDehydration } from '../systems/dehydration';
-import { applyEggLay } from '../systems/eggs';
 import { setSpoilClock } from '../systems/spoilage';
-import { applyDietVariety, applyHotDrinks } from '../systems/diet';
+import { pushMoraleHistory } from '../systems/morale';
+import {
+  runSteps,
+  MORNING_STEPS,
+  POST_BRANCH_STEPS,
+  PRE_TRAVEL_STEPS,
+  POST_EVENT_TAIL_STEPS,
+  type TickCtx
+} from '../daily-steps';
 import {
   getCampAction,
   hourCostFor,
@@ -24,11 +23,13 @@ import {
 } from './camp-actions';
 
 // Rest is the unified "stationary day" action. 1+ days of no travel with:
-//   - condition progression + consumption + morale adjust (each day)
-//   - accelerated healing scaled by morale
-//   - ox fatigue recovery (25/day)
-//   - Farmer auto-forage if present
-//   - optional camp actions applied on the first day (12-hour budget)
+//   - canonical daily-steps segments (MORNING_STEPS, POST_BRANCH_STEPS,
+//     PRE_TRAVEL_STEPS, POST_EVENT_TAIL_STEPS) — same as tickDayPausable
+//     lay-by path, so every system (spoilage, cleanliness, holidays,
+//     theft, train share, etc.) runs on rest days too (#1266 stage 3).
+//   - rest-specific interludes between segments: ox feed/recovery,
+//     farmer forage, +10 base morale, preacher +1, camp actions (day 0).
+//   - pushMoraleHistory called each day (drives party-panel sparkline).
 // Camp actions are drawn from the unified registry in camp-actions.ts —
 // shovel work (dig_well/dig_grave/dig_out) is part of that registry, so
 // this file doesn't special-case any action.
@@ -120,30 +121,18 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
 
   for (let i = 0; i < days; i++) {
     const rng = makeRng(`${s.seed}:action:rest:${s.day}:0`);
+    const ctx: TickCtx = { traveled: false, driver: 'player' };
 
     s = tickWeather(s, rng);
-    s = progressConditions(s, rng);
-    s = applyEggLay(s);
-    s = applyDailyConsumption(s);
-    s = applyDietVariety(s);
-    s = applyHotDrinks(s);
-    s = applyDirtyWaterRisk(s, rng);
-    s = applyStarvation(s);
-    s = adjustMorale(s, rng);
 
-    const mult = healingMultiplier(s.morale);
-    s = {
-      ...s,
-      party: s.party.map((m) => {
-        if (m.dead) return m;
-        const gain = Math.round(REST_HEAL_PER_DAY * mult);
-        return { ...m, health: Math.min(100, m.health + gain) };
-      })
-    };
+    // MORNING_STEPS: conditions, eggs, dairy, butter, spoilage×2,
+    // cleanliness×3, ambient-water, consumption, water-strain, diet,
+    // hot-drinks, pastry, theft, dirty-water, starvation.
+    s = runSteps(MORNING_STEPS, s, rng, ctx);
 
     // Resting consumes grain on poor-grazing terrain too — oxen
     // standing in camp still need calories. Recovery scales with the
-    // resulting effective grazing (well-fed team rests off ~25 fatigue;
+    // resulting effective grazing (well-fed team rests off ~30 fatigue;
     // unfed team on poor grass barely heals).
     const restFeed = consumeOxenFeed(s);
     s = restFeed.state;
@@ -164,7 +153,9 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     // start meaningful HP recovery (matches Bryant 1846 at Bridger).
     s = { ...s, oxen: recoverOxenHealth(s.oxen) };
 
-    s = attemptFire(s, rng);
+    // POST_BRANCH_STEPS: adjustMorale (playerOnly) + applyHolidays.
+    // Holidays are NEW on rest days via this consolidation (#1266 s3).
+    s = runSteps(POST_BRANCH_STEPS, s, rng, ctx);
 
     // Farmer foraging — wild berries Apr–Sep when plants are bearing.
     // Off-season (Oct–Mar) the farmer's bonus is just the food efficiency
@@ -220,11 +211,16 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
       }
     }
 
-    // Dehydration runs AFTER camp actions so dig_well water refills
-    // clear the dry-day counter the same tick they're earned.
-    s = applyDehydration(s);
+    // PRE_TRAVEL_STEPS: applyDailyRecovery(traveled=false) = layByRecovery
+    // (replaces the old inline REST_HEAL block — identical formula),
+    // applyTrainShare (playerOnly, NEW in camp, self-gates),
+    // applySabbathTravelDebit (no-op: traveled=false).
+    s = runSteps(PRE_TRAVEL_STEPS, s, rng, ctx);
 
-    s = reapDead(s, rng);
+    // POST_EVENT_TAIL_STEPS: attemptFire (playerOnly) + applyDehydration
+    // + reapDead. Camp actions (dig_well) refill water BEFORE this tail
+    // so dig_well clears the dry-day counter the same tick it runs.
+    s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, ctx);
 
     // #280b/#288 — NPC wagons tick on rest days too (food still
     // drains, conditions still progress, but no ox fatigue accrual).
@@ -233,6 +229,7 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     // log line is enough — they re-queue for the next travel tick.
     s = advanceTrain(s, false).state;
 
+    s = pushMoraleHistory(s);
     s = { ...s, day: s.day + 1, date: advanceOneDay(s.date) };
   }
 

@@ -6,7 +6,7 @@
 // train orchestration are driver control-flow, not list entries. Order within
 // each segment is LOAD-BEARING (shared rng stream) — see the spine-order
 // test. Do not reorder without a determinism re-baseline.
-import type { GameState } from './types';
+import type { CompanyRestMode, GameState } from './types';
 import type { Rng } from './rng';
 import { applyAmbientWaterRefill, applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { applyPastryQuality } from './systems/pastry';
@@ -39,6 +39,10 @@ export interface TickCtx {
   /** Which driver is ticking: the player wagon or an NPC synth. Required so
    *  every call site must declare — npm run check finds any omissions. */
   driver: 'player' | 'npc';
+  /** Read by applyDailyRecovery's NPC crisis-layby carve (#1046 §13 C).
+   *  When driver==='npc' && companyRestMode==='crisis_layby', recovery is
+   *  suppressed to prevent undead-crisis lock. */
+  companyRestMode?: CompanyRestMode;
 }
 
 export interface TickStep {
@@ -93,7 +97,9 @@ export const POST_BRANCH_STEPS: readonly TickStep[] = [
 ];
 
 export const PRE_TRAVEL_STEPS: readonly TickStep[] = [
-  { id: 'applyDailyRecovery',       run: (s, _rng, ctx) => applyDailyRecovery(s, ctx.traveled) },
+  { id: 'applyDailyRecovery',
+    // crisis carve — no NPC lay-by heal, else undead crisis lock (#1046 §13 C)
+    run: (s, _rng, ctx) => (ctx.driver === 'npc' && ctx.companyRestMode === 'crisis_layby') ? s : applyDailyRecovery(s, ctx.traveled) },
   { id: 'applyTrainShare',          scope: 'playerOnly', run: (s, rng) => applyTrainShare(s, rng) }, // player-recipient: transfers train food TO the player; no-op on the NPC synth stub
   { id: 'applySabbathTravelDebit',  run: (s, _rng, ctx) => applySabbathTravelDebit(s, ctx.traveled) },
 ];

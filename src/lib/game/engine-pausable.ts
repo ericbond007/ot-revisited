@@ -7,8 +7,6 @@ import { recoverOxenFatigue, recoverOxenHealth } from './systems/oxen';
 import { pushMoraleHistory } from './systems/morale';
 import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
-import { applyDailyRecovery } from './systems/travel-recovery';
-import { applyTrainShare } from './systems/train-share';
 import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
 import { companyRestDecision, dissentTrigger, resolveCompanyDissent } from './systems/company-rest';
 import type { DissentChoice } from './systems/company-rest';
@@ -85,7 +83,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     && !normalized.wagonTrain
   ) {
     const actions = defaultSabbathActions(normalized);
-    return { state: pushMoraleHistory(sundayLayBy(normalized, actions)), pendingEvent: undefined };
+    return { state: sundayLayBy(normalized, actions), pendingEvent: undefined };
   }
 
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
@@ -337,6 +335,10 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   const trainResult = advanceTrain(s, companyMode === 'travel', milesTraveledToday);
   s = trainResult.state;
   if (trainResult.pendingEvent) {
+    // #1266 stage3 — the tail (POST_EVENT_TAIL_STEPS) + advanceTrain already
+    // ran this tick; stamp the day so applyPendingChoice doesn't double-apply
+    // them on resume.
+    s = { ...s, flags: { ...s.flags, _tailRanDay: s.day } };
     return { state: s, pendingEvent: trainResult.pendingEvent };
   }
 
@@ -366,12 +368,11 @@ export function applyCompanyDissent(
   s = { ...s, flags: clearedFlags };
   const dc = s.wagonTrain?.companyDecisionBlock?.dissentChoice;
   const travels = !s.wagonTrain || dc === 'override' || dc === 'lobby_ok';
-  s = applyDailyRecovery(s, travels);
-  // #910 — generous-driven food sharing at company camp. Self-gates;
-  // on a press-on/override (travels=true) the block is travel and the
-  // system no-ops, on an abide/lobby_fail the block stays a lay-by
-  // and the share may fire (once per block).
-  s = applyTrainShare(s, rng);
+  // #1266 stage3 — PRE_TRAVEL via the spine: lay-by recovery (kept even on
+  // override — the team rested while the company argued), #910 train share
+  // (self-gates to lay-by blocks), and the Sabbath debit — previously skipped
+  // here, so an override on a Sabbath lay-by dodged the morale cost.
+  s = runSteps(PRE_TRAVEL_STEPS, s, rng, { traveled: travels, driver: 'player' });
   if (travels) {
     // #1266 stage1b — an override-to-travel day charges the same wear as any
     // travel day: ox fatigue + hydration + wagon wear. The morning's lay-by
@@ -397,18 +398,34 @@ export function applyPendingChoice(
   // Mark cooldown to prevent the same-day re-roll
   s = { ...s, flags: { ...s.flags, _lastEventDay: s.day } };
 
-  // Finish the day
-  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: true, driver: 'player' });
+  // #1266 stage3 — NPC-crisis double-tail guard.
+  // When the pause came from advanceTrain (not from rollEvent / arrival /
+  // approach), tickDayPausable already ran POST_EVENT_TAIL_STEPS AND
+  // advanceTrain before returning.  If we run them again here we double-
+  // apply dehydration, fire, and every NPC wagon's daily tick.
+  // Detection: _tailRanDay is stamped with s.day by the crisis pause site.
+  const tailAlreadyRan = s.flags._tailRanDay === s.day;
+  if (tailAlreadyRan) {
+    // Clear the stamp so it doesn't persist into tomorrow.
+    const clearedFlags = { ...s.flags };
+    delete (clearedFlags as Record<string, unknown>)._tailRanDay;
+    s = { ...s, flags: clearedFlags };
+  }
 
-  // #280b/#288 — advance NPC wagons. Event-day still counts as travel
-  // for them. NPC starvation crisis events that arise here are NOT
-  // re-surfaced (would chain modals on the same tick); they queue
-  // for tomorrow's tickDayPausable.
-  // #300 — NPC axle-grease cycle skips a small slice on event-paused
-  // days (we don't thread the miles delta through the early-return).
-  // ~3% asymmetry per event vs travel-day; the 500-mi cycle absorbs it.
-  const trainResult = advanceTrain(s, true);
-  s = trainResult.state;
+  if (!tailAlreadyRan) {
+    // Finish the day — normal event path (rollEvent / arrival / approach):
+    // tail and advanceTrain haven't run yet.
+    // #280b/#288 — advance NPC wagons. Event-day still counts as travel
+    // for them. NPC starvation crisis events that arise here are NOT
+    // re-surfaced (would chain modals on the same tick); they queue
+    // for tomorrow's tickDayPausable.
+    // #300 — NPC axle-grease cycle skips a small slice on event-paused
+    // days (we don't thread the miles delta through the early-return).
+    // ~3% asymmetry per event vs travel-day; the 500-mi cycle absorbs it.
+    s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: true, driver: 'player' });
+    const trainResult = advanceTrain(s, true);
+    s = trainResult.state;
+  }
 
   s = pushMoraleHistory(s);
   return {

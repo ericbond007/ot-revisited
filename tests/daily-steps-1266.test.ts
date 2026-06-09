@@ -74,3 +74,58 @@ describe('#1266 stage2 — scope filtering', () => {
     expect(tag(POST_BRANCH_STEPS, 'applyNpcMoraleBaseline')).toBe('npcOnly');
   });
 });
+
+
+describe('#1266 stage3 — companyRestMode on TickCtx (PRE_TRAVEL NPC carve)', () => {
+  // Minimal GameState stub: healthy enough to trigger layByRecovery.
+  // morale=50 → healingMultiplier=1.0 → gain = Math.round(8 * 1.0) = 8.
+  // Member at health=50, no conditions, alive → will gain +8 on a lay-by.
+  const member = {
+    name: 'Test',
+    health: 50,
+    conditions: [],
+    dead: false,
+    profession: 'farmer',
+    sex: 'M',
+    age: 30
+  };
+  function makeStub(overrides: Partial<{ morale: number; pace: string }> = {}) {
+    return {
+      morale: overrides.morale ?? 50,
+      pace: overrides.pace ?? 'moderate',
+      party: [{ ...member }],
+      // Fields applyDailyRecovery doesn't read but runSteps touches via other steps
+      // are irrelevant here — PRE_TRAVEL_STEPS steps other than applyDailyRecovery
+      // are either playerOnly (applyTrainShare, filtered) or (applySabbathTravelDebit
+      // which returns state unchanged when !isRestSunday && !traveled).
+      date: { year: 1849, month: 6, day: 15 }, // not a Sunday — no Sabbath debit
+      flags: {},
+      resources: { water: 100 },
+      inventory: { flour: 100 },
+      oxen: [],
+      wagon: { condition: 100, capacity: 1600 },
+      waterRation: 'normal'
+    } as unknown as import('../src/lib/game/types').GameState;
+  }
+
+  it('npc + crisis_layby skips daily recovery (health stays 50)', () => {
+    const s = makeStub();
+    const ctx: TickCtx = { traveled: false, driver: 'npc', companyRestMode: 'crisis_layby' };
+    const out = runSteps(PRE_TRAVEL_STEPS, s, makeRng('t'), ctx);
+    expect(out.party[0].health).toBe(50);
+  });
+
+  it('npc + maintenance_layby keeps the heal (health rises from 50)', () => {
+    const s = makeStub();
+    const ctx: TickCtx = { traveled: false, driver: 'npc', companyRestMode: 'maintenance_layby' };
+    const out = runSteps(PRE_TRAVEL_STEPS, s, makeRng('t'), ctx);
+    expect(out.party[0].health).toBeGreaterThan(50);
+  });
+
+  it('player heals even in crisis_layby (crisis carve is NPC-only)', () => {
+    const s = makeStub();
+    const ctx: TickCtx = { traveled: false, driver: 'player', companyRestMode: 'crisis_layby' };
+    const out = runSteps(PRE_TRAVEL_STEPS, s, makeRng('t'), ctx);
+    expect(out.party[0].health).toBeGreaterThan(50);
+  });
+});
