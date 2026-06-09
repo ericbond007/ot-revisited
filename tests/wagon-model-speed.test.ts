@@ -97,6 +97,39 @@ describe('load helpers', () => {
     s.inventory = { flour: 5000 }; // 200%
     expect(wagonHazardMult(s)).toBeCloseTo(3);
   });
+
+  it('totalInventoryWeight skips unknown item ids and zero quantities', () => {
+    const s = baseGame();
+    // Stale saves can carry ids dropped from the catalog — the ITEMS guard
+    // must skip them (and zero-qty entries) rather than NaN the total.
+    s.inventory = { bogus_item: 5, flour: 0 };
+    expect(totalInventoryWeight(s)).toBe(0);
+  });
+
+  it('loadPct is 0 when carryCapacity is 0 (no divide-by-zero)', () => {
+    const s = baseGame();
+    s.wagon = { ...s.wagon, carryCapacity: 0 };
+    s.inventory = { flour: 100 };
+    expect(loadPct(s)).toBe(0);
+  });
+
+  it('loadSpeedMult engages the 0.40 floor exactly at 175% load', () => {
+    const s = baseGame();
+    s.inventory = { flour: 4375 }; // 175% — quadratic gives 0.325, floor wins
+    expect(loadSpeedMult(s)).toBe(0.4);
+  });
+
+  it('loadFatigueMult doubles at 200% load (doc-comment anchor)', () => {
+    const s = baseGame();
+    s.inventory = { flour: 5000 };
+    expect(loadFatigueMult(s)).toBeCloseTo(2.0);
+  });
+
+  it('wagonHazardMult is 1.50 at 150% load (doc-comment anchor)', () => {
+    const s = baseGame();
+    s.inventory = { flour: 3750 };
+    expect(wagonHazardMult(s)).toBeCloseTo(1.5);
+  });
 });
 
 describe('milesPerDay with wagon models', () => {

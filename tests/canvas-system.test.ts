@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState, tickDay } from '../src/lib/game/engine';
+import { createInitialState } from '../src/lib/game/engine';
 import { tickWeather } from '../src/lib/game/systems/weather';
 import { getCampAction } from '../src/lib/game/actions/camp-actions';
 import { tickWagon } from '../src/lib/game/systems/wagon';

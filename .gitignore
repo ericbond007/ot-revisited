@@ -36,9 +36,18 @@ dev.db-*
 # Playwright MCP scratch — accessibility snapshots dropped here during
 # UI audits. Per-session noise, never source.
 .playwright-mcp/
-# Ad-hoc screenshot files dropped at the repo root by `mcp__playwright`
-# screenshot calls during audits.
-/wagon-audit-*.png
+# Ad-hoc screenshots dropped at the repo root during UI audits/sessions —
+# kept on disk for reference, never tracked. (Subsumes the old
+# /wagon-audit-*.png rule; no production PNG lives at repo root.)
+/*.png
+
+# Source 3D models for the render pipeline — canonical on-disk location
+# (see hoosiertrail-render-pipeline skill), but 8–36 MB binaries stay out
+# of git. covered-wagon-labels.json next to them stays tracked.
+tools/blender/models/*.glb
+
+# Python bytecode from blender tooling
+__pycache__/
 
 # wagon-bg pipeline scratch
 # 2.5GB of LoRA training data — produced once, lives outside git
