@@ -1,26 +1,9 @@
 import type { GameDate, GameState, MemberKind, PartyMember, ProfessionId, Sex } from './types';
 import { DEFAULT_WAGON_MODEL, getWagon, type WagonModelId } from './content/wagons';
-import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
-import { tickWeather } from './systems/weather';
-import { progressConditions } from './systems/conditions';
-import { adjustMorale, pushMoraleHistory } from './systems/morale';
-import { applyHolidays } from './systems/holidays';
-import { tickOxen } from './systems/oxen';
-import { tickWagon } from './systems/wagon';
-import { makeRng, type Rng } from './rng';
-import { upgradeState } from './upgrade';
-import { applyTravel } from './systems/travel';
-import { attemptFire } from './systems/fire';
-import { fireEvent } from './systems/events';
-import { reapDead } from './systems/death';
+import { makeRng } from './rng';
 import { buildStarterKit } from './content/starter-kit';
 import { computeWaterCap } from './systems/water-cap';
-import { applyDehydration } from './systems/dehydration';
-import { applyOxHydration } from './systems/ox-hydration';
-import { applyStarvation } from './systems/starvation';
-import { applyEggLay } from './systems/eggs';
-import { applyDietVariety, applyHotDrinks } from './systems/diet';
-import { applyWaterRationStrain } from './systems/water-ration';
+import { tickDayPausable, applyPendingChoice, applyCompanyDissent } from './engine-pausable';
 
 export interface PartyPick {
   name: string;
@@ -54,31 +37,6 @@ export interface NewGameOptions {
    *  players get the helper kit. Veterans who toggle off get +$250
    *  refund cash and provision themselves at the outfitter. */
   includeStarterKit?: boolean;
-}
-
-const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-}
-
-function daysInMonth(year: number, month: number): number {
-  if (month === 2 && isLeapYear(year)) return 29;
-  return DAYS_IN_MONTH[month - 1];
-}
-
-function advanceDate(d: GameDate): GameDate {
-  let { year, month, day } = d;
-  day += 1;
-  if (day > daysInMonth(year, month)) {
-    day = 1;
-    month += 1;
-    if (month > 12) {
-      month = 1;
-      year += 1;
-    }
-  }
-  return { year, month, day };
 }
 
 function makeMember(
@@ -193,46 +151,19 @@ export function createInitialState(opts: NewGameOptions): GameState {
   };
 }
 
-// --- system step signature ---
-export type TickStep = (state: GameState, rng: Rng) => GameState;
-
-// --- composition ---
-const DAILY_STEPS: TickStep[] = [
-  tickWeather,                     // first so every downstream system reads today's weather
-  progressConditions,
-  (s) => applyEggLay(s), // eggs lay first so they're available to eat
-  (s) => applyDailyConsumption(s), // consumption has no Rng param; wrap it
-  (s) => applyWaterRationStrain(s), // #1245 — ration strain (morale + sustained HP) while water > 0
-  (s) => applyDietVariety(s),      // +1 morale on multi-group days
-  (s) => applyHotDrinks(s),        // coffee/tea brew — +1 morale + disease-mod
-  (s, rng) => applyDirtyWaterRisk(s, rng), // disease roll — reads coffee/tea
-  (s) => applyStarvation(s),       // reads _lastFoodShortfall set above
-  tickOxen,
-  (s) => applyOxHydration(s), // #1264 — ox desert thirst; before applyTravel so milesPerDay reads today's hydration
-  tickWagon,
-  adjustMorale,
-  (s) => applyHolidays(s),
-  applyTravel,
-  fireEvent,        // <-- new step between travel and fire
-  attemptFire,
-  // Dehydration runs late — after any step that might have gained water
-  // (events, fire attempts with cooking). Any drop of water resets the
-  // counter; zero water at this point counts as a dry day.
-  (s) => applyDehydration(s),
-  reapDead
-];
-
+/** Headless day-advance: the REAL engine (tickDayPausable) with pauses
+ *  auto-resolved by the default choice. Tests and headless sims exercise the
+ *  exact live pipeline. (#1266 — replaces the stale parallel DAILY_STEPS.) */
 export function tickDay(state: GameState): GameState {
-  const normalized = upgradeState(state);
-  const rng = makeRng(`${normalized.seed}:${normalized.day}`);
-  let s = normalized;
-  for (const step of DAILY_STEPS) {
-    s = step(s, rng);
+  const ticked = tickDayPausable(state);
+  if (ticked.pendingEvent) {
+    const ev = ticked.pendingEvent;
+    const choice = ev.choices.find((c) => c.isDefault) ?? ev.choices[0];
+    return applyPendingChoice(ticked.state, ev, choice.id);
   }
-  s = pushMoraleHistory(s);
-  return {
-    ...s,
-    day: s.day + 1,
-    date: advanceDate(s.date)
-  };
+  if (ticked.state.flags?._companyDissentPending) {
+    const rng = makeRng(`${ticked.state.seed}:dissent:${ticked.state.day}`);
+    return applyCompanyDissent(ticked.state, 'abide', rng);
+  }
+  return ticked.state;
 }

@@ -2,31 +2,13 @@ import type { GameState, CompanyRestMode } from './types';
 import { makeRng } from './rng';
 import type { Rng } from './rng';
 import { upgradeState } from './upgrade';
-import { applyAmbientWaterRefill, applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
-import { applyPastryQuality } from './systems/pastry';
-import { rollDailyTheft } from './systems/item-loss';
-import { applyStarvation } from './systems/starvation';
 import { tickWeather } from './systems/weather';
-import { progressConditions } from './systems/conditions';
-import { tickOxen, recoverOxenFatigue, recoverOxenHealth } from './systems/oxen';
-import { tickWagon } from './systems/wagon';
-import { adjustMorale, pushMoraleHistory } from './systems/morale';
-import { applySabbathTravelDebit } from './systems/sabbath-travel';
+import { recoverOxenFatigue, recoverOxenHealth } from './systems/oxen';
+import { pushMoraleHistory } from './systems/morale';
 import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
-import { attemptFire } from './systems/fire';
-import { reapDead } from './systems/death';
-import { applySpoilage, applyHeatSpoilage } from './systems/spoilage';
-import { applyDehydration } from './systems/dehydration';
-import { applyWaterRationStrain } from './systems/water-ration';
-import { applyOxHydration } from './systems/ox-hydration';
-import { applyEggLay } from './systems/eggs';
-import { applyDairy, applyButterChurn } from './systems/dairy';
-import { applyDietVariety, applyHotDrinks } from './systems/diet';
 import { applyDailyRecovery } from './systems/travel-recovery';
 import { applyTrainShare } from './systems/train-share';
-import { applyHolidays } from './systems/holidays';
-import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
 import { companyRestDecision, dissentTrigger, resolveCompanyDissent } from './systems/company-rest';
 import type { DissentChoice } from './systems/company-rest';
@@ -39,6 +21,7 @@ import { pickApproachEvent, approachFiredFlag } from './content/landmark-approac
 import { pickText } from './content/text-pools';
 import { isSunday } from './utils/calendar';
 import { sundayLayBy, defaultSabbathActions } from './actions/sunday-lay-by';
+import { runSteps, MORNING_STEPS, TRAVEL_OX_WAGON_STEPS, POST_BRANCH_STEPS, PRE_TRAVEL_STEPS, POST_EVENT_TAIL_STEPS, type TickCtx } from './daily-steps';
 
 function advanceDate(d: { year: number; month: number; day: number }) {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -102,7 +85,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     && !normalized.wagonTrain
   ) {
     const actions = defaultSabbathActions(normalized);
-    return { state: sundayLayBy(normalized, actions), pendingEvent: undefined };
+    return { state: pushMoraleHistory(sundayLayBy(normalized, actions)), pendingEvent: undefined };
   }
 
   const rng = makeRng(`${normalized.seed}:${normalized.day}`);
@@ -137,50 +120,8 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // companyMode === 'travel' and applied after the decision is known
   // (search for "Sabbath-breaking morale debit" below).
 
-  s = progressConditions(s, rng);
-  // Eggs lay at dawn so today's yield is available for today's meal.
-  s = applyEggLay(s);
-  // Milk cow yield (#139) — runs alongside egg lay so today's milk is
-  // available for today's meal. Sets a weather-sensitive 1-4 day spoil
-  // clock; spoilage tick below clears any pile that's gone past.
-  s = applyDairy(s);
-  // Wagon-pail butter churn (#222) — runs BEFORE consumption so the
-  // morning's surplus lands in butter, not breakfast. Period reality:
-  // women set the crock at dawn before anyone drank coffee. Inside
-  // tickDayPausable = travel day (camp/visit go through different
-  // routes), so the wagon will be jostling either way.
-  s = applyButterChurn(s);
-  // Spoilage runs BEFORE consumption so the party can't eat rotten meat
-  // on its spoil-day. Any remaining fresh game_meat / eggs / berries
-  // are zeroed out first; heat-day rancidity nibbles bacon + salt_pork.
-  s = applySpoilage(s);
-  s = applyHeatSpoilage(s);
-  // Cleanliness (#230) — decay first, then threshold morale + filth
-  // disease before consumption so today's dirt nicks today's mood.
-  s = decayCleanliness(s);
-  s = applyDirtyMorale(s);
-  s = applyFilthDiseaseRisk(s, rng);
-  // #926 — passive ambient water refill on travel days. Period:
-  // crossing creeks / springs / mud-pools tops the keg without a
-  // deliberate stop. Terrain-keyed (river > forest > prairie > mountains
-  // > desert=0). Runs BEFORE consumption so today's gain is drinkable.
-  s = applyAmbientWaterRefill(s, rng);
-  s = applyDailyConsumption(s);
-  s = applyWaterRationStrain(s); // #1245/#1266 — ration morale/HP strain (was test-engine-only)
-  s = applyDietVariety(s);
-  s = applyHotDrinks(s);
-  // #304 + #305 — pastry quality. Reads `_pastryDrawnLb` flag set by
-  // applyDailyConsumption; consumes saleratus + applies morale modifier
-  // when flour/cornmeal eaten. Order: after diet+hot-drinks so daily
-  // morale state is settled before the pastry check.
-  s = applyPastryQuality(s, rng).state;
-  // #306 phase 2 — daily theft / pilferage. Bryant 1846 + Hancock
-  // 1852: overnight theft was a small but real worry. Train share-
-  // watch (Bryant 1846 explicit) halves the rate — built into the
-  // helper itself (reads `state.wagonTrain`).
-  s = rollDailyTheft(s, rng).state;
-  s = applyDirtyWaterRisk(s, rng);
-  s = applyStarvation(s);
+  // ctx unused by morning steps; companyMode not yet decided
+  s = runSteps(MORNING_STEPS, s, rng, { traveled: false });
   // #review (lay-by oxen) — decide travel-vs-lay-by BEFORE today's ox /
   // wagon wear, so a company lay-by day doesn't tire the oxen or age the
   // wagon (this mirrors the NPC `traveled` gate in tickNpcWagon). Solo
@@ -189,13 +130,9 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // are still persisted further down, reusing `restDecision`.
   const restDecision = s.wagonTrain ? companyRestDecision(s) : null;
   const companyMode: CompanyRestMode = restDecision?.mode ?? 'travel';
+  const ctx: TickCtx = { traveled: companyMode === 'travel' };
   if (companyMode === 'travel') {
-    s = tickOxen(s, rng);
-    // #1264 — ox desert thirst (drain/refill + lethal tail). On travel days,
-    // before applyTravel so milesPerDay reads today's hydration for the pace
-    // penalty. Mirrors the engine.ts/tickDay wiring + the NPC traveled-day tick.
-    s = applyOxHydration(s);
-    s = tickWagon(s, rng);
+    s = runSteps(TRAVEL_OX_WAGON_STEPS, s, rng, ctx);
   } else {
     // Lay-by: the team rests rather than pulls — no fatigue, no wagon
     // wear. Mirror the NPC rest-day recovery (terrain-aware fatigue +
@@ -203,8 +140,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     const recovery = s.location.terrain === 'desert' || s.location.terrain === 'mountains' ? 5 : 15;
     s = { ...s, oxen: recoverOxenHealth(recoverOxenFatigue(s.oxen, recovery)) };
   }
-  s = adjustMorale(s, rng);
-  s = applyHolidays(s);
+  s = runSteps(POST_BRANCH_STEPS, s, rng, ctx);
 
   // Snapshot which landmark we'd already passed before today's travel —
   // used below to detect a fresh arrival.
@@ -245,30 +181,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     return { state: s };
   }
 
-  // #1046 A+D — governance-agnostic daily recovery, keyed on whether
-  // the company actually moves today. Travel => #161 +1 + convalesce;
-  // lay-by => the rest-day heal (this is what makes the C2/B company
-  // lay-by finally pay off). Runs here (not in the daily-systems block)
-  // because on a dissent day "did we move" is only known after the
-  // player's choice — applyCompanyDissent applies it for that path.
-  s = applyDailyRecovery(s, companyMode === 'travel');
-  // #910 — generous-driven food sharing at company camp. The system
-  // self-gates (no-op unless block.mode is sabbath/maintenance_layby
-  // and sharedThisBlock is still false), so it's safe to call every
-  // day; only fires once per lay-by block.
-  s = applyTrainShare(s, rng);
-
-  // #1055 — Sabbath-breaking morale debit, gated on companyMode==='travel'.
-  // Religious diaries from Catherine Sager to the Reed family record the
-  // guilt of traveling Sundays; pragmatic captains argued miles over
-  // scripture. -2 morale per Sunday Travel (-3 with a live Preacher —
-  // they amplify both directions of the choice). The +morale bump for
-  // choosing the lay-by lives in actions/sunday-lay-by.ts; this debit
-  // fires only when the company actually pushed through a Sabbath.
-  // Solo wagons keep companyMode='travel' as the default so behavior is
-  // unchanged for them; devout companies that lay-by on Sunday now
-  // correctly skip the debit (the entire point of the devout doctrine).
-  s = applySabbathTravelDebit(s, companyMode === 'travel');
+  s = runSteps(PRE_TRAVEL_STEPS, s, rng, ctx);
 
   // #300 — capture miles before travel so advanceTrain can drive the
   // NPC axle-grease consumption cycle off the same daily delta.
@@ -414,9 +327,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   }
 
   // No event — continue.
-  s = attemptFire(s, rng);
-  s = applyDehydration(s);
-  s = reapDead(s, rng);
+  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, ctx);
 
   // #280b/#288 — advance NPC wagons one day alongside the player.
   // traveled = whether the company actually moved today (#1046 C2).
@@ -461,9 +372,14 @@ export function applyCompanyDissent(
   // system no-ops, on an abide/lobby_fail the block stays a lay-by
   // and the share may fire (once per block).
   s = applyTrainShare(s, rng);
-  if (travels) s = applyTravel(s, rng);
-  s = attemptFire(s, rng);
-  s = reapDead(s, rng);
+  if (travels) {
+    // #1266 stage1b — an override-to-travel day charges the same wear as any
+    // travel day: ox fatigue + hydration + wagon wear. The morning's lay-by
+    // recovery stays — the team rested while the company argued, then pushed on.
+    s = runSteps(TRAVEL_OX_WAGON_STEPS, s, rng, { traveled: true });
+    s = applyTravel(s, rng);
+  }
+  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: travels });
   const trainResult = advanceTrain(s, travels);
   s = trainResult.state;
   s = pushMoraleHistory(s);
@@ -482,9 +398,7 @@ export function applyPendingChoice(
   s = { ...s, flags: { ...s.flags, _lastEventDay: s.day } };
 
   // Finish the day
-  s = attemptFire(s, rng);
-  s = applyDehydration(s); // #1266 stage1a — event-resume day still owes a dehydration tick
-  s = reapDead(s, rng);
+  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: true });
 
   // #280b/#288 — advance NPC wagons. Event-day still counts as travel
   // for them. NPC starvation crisis events that arise here are NOT
