@@ -67,3 +67,13 @@ export function adjustMorale(state: GameState, _rng: Rng): GameState {
   const morale = Math.max(floor, Math.min(100, state.morale + delta));
   return { ...state, morale };
 }
+
+/** Roll the 7-day morale-history buffer forward. Call at end-of-tick after
+ *  every system has settled `s.morale`. Drives the party-panel sparkline.
+ *  (Moved from engine.ts in #1266 so every day-advance path can call it.) */
+const MORALE_HISTORY_LEN = 7;
+export function pushMoraleHistory(s: GameState): GameState {
+  const prior = Array.isArray(s.moraleHistory) ? s.moraleHistory : [];
+  const next = [...prior, s.morale].slice(-MORALE_HISTORY_LEN);
+  return { ...s, moraleHistory: next };
+}
