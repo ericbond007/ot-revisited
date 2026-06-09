@@ -126,8 +126,9 @@ rm -rf /home/eric/projects/hoosierTrail-<task-name>
 ```
 
 A PreToolUse hook at `.claude/hooks/block-default-workspace-edits.sh` enforces
-this — `Edit` / `Write` / `MultiEdit` fail in the default workspace with a
-reminder. Override (you really mean to edit the shared default): export
+this — `Edit` / `Write` / `MultiEdit` fail when the edit *targets* a file in
+the default workspace (judged by `tool_input.file_path`; edits to sibling
+workspaces, plan files, and memory files pass). Override (you really mean to edit the shared default): export
 `CLAUDE_ALLOW_DEFAULT_WS=1`.
 
 ### Existing long-lived workspaces — do not disturb
