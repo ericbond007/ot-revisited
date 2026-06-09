@@ -13,7 +13,7 @@ decision in §5 is deliberately OPEN, gated on the Deck spike + this doc.*
 | Multiplayer shape | Co-op shared wagon train, live sessions primary, 2–8+ players. |
 | MP identity | Lightweight accounts first; Steam/platform identity migration later. |
 | MP build timing | Deferred — designed here so nothing blocks it, built later. |
-| Engine path | **OPEN** — wrapper vs Godot, decided after the Deck spike (§5). |
+| Engine path | **DECIDED 2026-06-09: Path B — Godot.** See §5 decision record. |
 
 ## 1. Where the codebase stands
 
@@ -126,11 +126,30 @@ loop, lobby/join UI, in-game presence surfaces, recap UX).
 ~100–150 KB recompress for the itch web build, aggressive tier + lazy
 fetch-and-cache for mobile. *~days, mostly batch scripting.*
 
-## 5. The "real game" question: wrapper vs Godot — open, evidence pending
+## 5. The "real game" question: wrapper vs Godot — DECIDED: Path B (Godot)
 
-Two honest paths to "a real game on the Steam Deck," with the asymmetry
-spelled out. **Decision gate: Dave's Deck spike verdict (tools/deck-spike/)
-plus this doc.**
+**Decision record (2026-06-09, Dave):** Path B — Godot, called in-session
+after the controller-nav and mobile discussions, without the Deck spike
+(superseded; the spike package remains usable for playing the current game
+on the Deck). Deciding factors: built-in controller/focus UI (the Deck-feel
+linchpin), first-class Android export for a stores-first mobile strategy,
+and the coherent headless-dedicated-server end-state for multiplayer.
+Accepted costs, eyes open: the multi-month port valley, rebuilding the
+2,647-test suite in a Godot test framework, GDScript's looser typing vs the
+zero-`as any` TS discipline, and the browser demoting from best platform to
+effectively retired (mobile browser surrendered entirely; web distribution
+becomes stores + desktop downloads). HAL's recommendation was Path A; Dave
+chose B. Both paths are preserved below as the record of the analysis.
+
+**Port-strategy notes for the migration plan (next effort):** GDScript (not
+C#) if any web export hope is retained; query current Godot 4.x version at
+scaffold time (never from memory, per fleet rule); pick gdUnit4 vs GUT during
+planning; port the sim FIRST and use the TS engine as a golden-master oracle —
+replay seeded action logs through both engines and diff serialized state until
+byte-parity, which carries the determinism guarantee across the port; UI
+rebuild second; MP last via Godot headless dedicated server on wanda.
+
+The original analysis follows.
 
 ### Path A — polished wrapper (TS stays canonical)
 
@@ -193,16 +212,22 @@ the paid game — a headline patch, not DLC.
 
 ## Appendix: order of operations
 
+Revised 2026-06-09 for the Path B decision:
+
 ```
-now      → code-health PR (done alongside this doc) + Deck spike verdict
-gate     → engine-path decision (this doc §5 + spike findings)
-phase 1  → action vocabulary (§2)            ~1–2 wk
-phase 2  → multiplayer v1 (§3)               ~3–6 wk
-phase 3  → client-side solo core (§4.1)      ~2–4 wk
-phase 4  → asset tiers + itch launch (§4.2)  ~1–2 wk
-phase 5  → Steam + controller nav (§4.3)     ~3–5 wk
-phase 6  → Android (§4.4)                    on demand
+done     → code-health PR #249, hook fix #250, this doc
+decided  → #1269: Path B (Godot)
+phase 1  → Godot migration plan (own brainstorm/plan effort; scaffold,
+           version pin, test framework, oracle-testing harness)
+phase 2  → sim port, TS engine as golden-master oracle      months-scale
+phase 3  → UI rebuild in Godot + controller/input config
+phase 4  → asset tiers + itch launch (Godot desktop builds) ~1–2 wk
+phase 5  → Steam + Deck Verified pass
+phase 6  → Android (first-class Godot export)
+phase 7  → multiplayer via Godot headless server on wanda
 ```
 
-*Effort figures are working-session weeks at Claude pace, not calendar
-promises; phases 1–2 and the asset workstream can interleave.*
+The TS web game stays live (maintenance-only) through the port valley and
+retires at paid launch. Asset slimming runs parallel, engine-agnostic.
+Effort figures are working-session estimates at Claude pace, not calendar
+promises.
