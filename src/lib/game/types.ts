@@ -394,6 +394,14 @@ export interface NpcWagonState extends WagonStateLike {
    *  pre-#300 saves treat missing as 0 (a fresh dose is one travel
    *  day away). */
   greaseMiles?: number;
+  /** #1266 — generic passthrough for persistent `flags._*` the engine
+   *  writes that aren't one of the typed counters above. The synth bridge
+   *  packs these into the engine `flags` blob and unpacks them back each
+   *  tick, so multi-day flag state (hot-drink clock, holiday-year markers,
+   *  cannibalism count) survives the per-tick synth round-trip. Keys are
+   *  the magic-string flag names; see NPC_PERSISTENT_FLAG_KEYS. Optional —
+   *  absent on legacy saves and whenever no persistent flag is set. */
+  persistentFlags?: Record<string, number>;
 }
 
 export type GameStateFlag =

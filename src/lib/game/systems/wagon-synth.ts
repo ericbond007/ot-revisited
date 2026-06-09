@@ -58,6 +58,18 @@ const FLAG_GREASE_SINCE_LAST_DOSE = '_greaseSinceLastDose';
  *  `wagon.starvationDays`. */
 const FLAG_STARVATION_DAYS = '_starvationDays';
 
+/** #1266 — persistent `flags._*` the engine writes across multiple days
+ *  that the synth bridge must carry (the typed counters spoilDays/dryDays/
+ *  greaseMiles/starvationDays are handled separately above). Add a key here
+ *  when a new daily system introduces a multi-day flag; same-tick flags
+ *  (consumed within one synth) do NOT belong here. */
+export const NPC_PERSISTENT_FLAG_KEYS = [
+  '_hotDrinkClock',   // diet.ts — accumulating oz toward the next lb of coffee/tea
+  '_july4Year',       // holidays.ts — last year the July 4 bump fired
+  '_christmasYear',   // holidays.ts — last year the Christmas bump fired
+  '_cannibalismCount' // cannibal.ts / camp-actions.ts — running tally
+] as const;
+
 /** Build the engine-shaped `flags` blob for an NPC wagon: pack the
  *  typed counters (`spoilDays`, `dryDays`, `greaseMiles`) into the
  *  magic-string keys the engine systems read. */
@@ -77,6 +89,13 @@ function npcFlagsFromWagon(wagon: NpcWagonState): GameState['flags'] {
   }
   if (typeof wagon.starvationDays === 'number' && wagon.starvationDays > 0) {
     flags[FLAG_STARVATION_DAYS] = wagon.starvationDays;
+  }
+  if (wagon.persistentFlags) {
+    for (const key of NPC_PERSISTENT_FLAG_KEYS) {
+      const k: string = key;
+      const v = wagon.persistentFlags[k];
+      if (typeof v === 'number') flags[k] = v;
+    }
   }
   return flags;
 }
@@ -102,7 +121,7 @@ function npcFlagsFromWagon(wagon: NpcWagonState): GameState['flags'] {
 function npcFieldsFromFlags(
   ticked: GameState,
   original: NpcWagonState
-): Pick<NpcWagonState, 'spoilDays' | 'dryDays' | 'greaseMiles' | 'starvationDays'> {
+): Pick<NpcWagonState, 'spoilDays' | 'dryDays' | 'greaseMiles' | 'starvationDays' | 'persistentFlags'> {
   const spoilDays: Record<string, number> = {};
   for (const rule of SPOIL_RULES) {
     const v = ticked.flags[rule.flagKey];
@@ -113,13 +132,20 @@ function npcFieldsFromFlags(
   const dry = ticked.flags[FLAG_DEHYDRATION_DAYS];
   const grease = ticked.flags[FLAG_GREASE_SINCE_LAST_DOSE];
   const starv = ticked.flags[FLAG_STARVATION_DAYS];
+  const persistentFlags: Record<string, number> = {};
+  for (const key of NPC_PERSISTENT_FLAG_KEYS) {
+    const k: string = key;
+    const v = ticked.flags[k];
+    if (typeof v === 'number') persistentFlags[k] = v;
+  }
   return {
     spoilDays,
     dryDays: typeof dry === 'number' ? dry : 0,
     greaseMiles: typeof grease === 'number' ? grease : original.greaseMiles,
     // Engine deletes `_starvationDays` on a fed day — match by
     // clearing wagon.starvationDays (undefined = none) when missing.
-    starvationDays: typeof starv === 'number' ? starv : 0
+    starvationDays: typeof starv === 'number' ? starv : 0,
+    persistentFlags: Object.keys(persistentFlags).length > 0 ? persistentFlags : undefined
   };
 }
 
@@ -212,6 +238,7 @@ export function projectWagonDeltas(
     spoilDays: fromFlags.spoilDays,
     dryDays: fromFlags.dryDays,
     greaseMiles: fromFlags.greaseMiles,
-    starvationDays: fromFlags.starvationDays
+    starvationDays: fromFlags.starvationDays,
+    persistentFlags: fromFlags.persistentFlags
   };
 }

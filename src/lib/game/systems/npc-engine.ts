@@ -384,9 +384,11 @@ export function tickNpcWagon(
 
   // 1f. #301 — Holiday morale bumps on the NPC's synth (July 4 + Xmas).
   // applyHolidays is idempotent within a year via per-wagon flags
-  // (_july4Year / _christmasYear), which the synth carries through
-  // npcFlagsFromWagon / projectWagonDeltas — each wagon gets the
-  // bump exactly once per holiday per calendar year.
+  // (_july4Year / _christmasYear).
+  // #1266 — the holiday-year flags now persist via the wagon's
+  // persistentFlags passthrough (NPC_PERSISTENT_FLAG_KEYS), so the
+  // once-per-year idempotency guard sees its own prior marker across
+  // ticks. (Before #1266 these flags were discarded on projection.)
   {
     const synth = synthesizeWagonState(next, env);
     const ticked = applyHolidays(synth);
