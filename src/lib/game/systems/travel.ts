@@ -9,6 +9,7 @@ import { applyAxleGrease } from './wagon';
 import { rollStrayMorning } from './strays';
 import { hasLiveScout, hasLiveLawyer } from '../professions/predicates';
 import { weatherTravelMult } from './weather';
+import { hydrationPaceMult } from './ox-hydration';
 
 // Base mileage per pace, before terrain / oxen / weather modifiers.
 // Calibrated against the #119 audit: with these values + the (c) terrain
@@ -131,8 +132,9 @@ export function milesPerDay(state: GameState): number {
 
   // #929 — wagon wheel impairment halves pace.
   const impairmentMult = state.wagon.impairment?.paceMult ?? 1;
+  const hydrationMult = hydrationPaceMult(aliveTeam);
 
-  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult * cowMult * impairmentMult);
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult * cowMult * impairmentMult * hydrationMult);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.

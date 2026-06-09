@@ -4,6 +4,7 @@
   import ItemTooltip from './ItemTooltip.svelte';
   import WagonIcon from './WagonIcon.svelte';
   import { dialogA11y } from '$lib/ui/actions/dialog-a11y';
+  import { oxHydration } from '$lib/game/systems/ox-hydration';
 
   let { state, onclose }: { state: GameState; onclose: () => void } = $props();
 
@@ -85,6 +86,11 @@
               <div class="ox-bar-label">FATIGUE</div>
               <div class="ox-bar"><div class="ox-bar-fill" style="width: {ox.fatigue}%; background: var(--of-status-mid);"></div></div>
               <span class="ox-bar-num">{ox.fatigue}</span>
+            </div>
+            <div class="ox-bar-group">
+              <div class="ox-bar-label">WATER</div>
+              <div class="ox-bar"><div class="ox-bar-fill" style="width: {oxHydration(ox)}%; background: #4a90c2;"></div></div>
+              <span class="ox-bar-num">{oxHydration(ox)}</span>
             </div>
             <span class="ox-shoe" title={ox.shod ? 'Shod' : 'Barefoot — slower travel'}>
               {ox.shod ? '🔩' : '⚠'}
@@ -208,7 +214,7 @@
   }
   .ox-row {
     display: grid;
-    grid-template-columns: 2em 1.5em 1fr 1fr auto;
+    grid-template-columns: 2em 1.5em 1fr 1fr 1fr auto; /* #1264 — 3 bar groups: HEALTH/FATIGUE/WATER */
     gap: 0.5em;
     align-items: center;
     padding: 0.3em 0.5em;

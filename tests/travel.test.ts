@@ -162,3 +162,20 @@ describe('applyTravel', () => {
     expect(next.location.milesTraveled).toBeGreaterThan(300);
   });
 });
+
+describe('milesPerDay honors ox hydration', () => {
+  it('a parched team travels fewer miles than a watered one, all else equal', () => {
+    const base = newGame();
+    // Put the team on a desert leg so hydration matters (non-desert is watered = mult 1.0).
+    const desertState = { ...base, location: { ...base.location, terrain: 'desert' as const } };
+    const watered = {
+      ...desertState,
+      oxen: desertState.oxen.map((o) => ({ ...o, hydration: 100 }))
+    };
+    const parched = {
+      ...desertState,
+      oxen: desertState.oxen.map((o) => ({ ...o, hydration: 20 }))
+    };
+    expect(milesPerDay(parched)).toBeLessThan(milesPerDay(watered));
+  });
+});

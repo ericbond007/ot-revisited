@@ -98,6 +98,8 @@ export interface Ox {
   id: string;
   health: number; // 0..100
   fatigue: number; // 0..100
+  /** 0-100, 100 = freshly watered. Optional/legacy → read with `oxHydration()`. */
+  hydration?: number;
   shod: boolean;
   // Defaults to 'ox' when missing (legacy saves, older test fixtures).
   kind?: DraftKind;

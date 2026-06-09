@@ -2,6 +2,7 @@
   import type { GameState } from '$lib/game/types';
   import { getWagon } from '$lib/game/content/wagons';
   import { grazingQuality, hitchedOxenCount } from '$lib/game/systems/oxen';
+  import { oxHydration } from '$lib/game/systems/ox-hydration';
 
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
 
@@ -31,6 +32,14 @@
       ? Math.round(aliveOxen.reduce((s, o) => s + o.fatigue, 0) / aliveOxen.length)
       : 0
   );
+  const avgOxWater = $derived(
+    aliveOxen.length > 0
+      ? Math.round(aliveOxen.reduce((s, o) => s + oxHydration(o), 0) / aliveOxen.length)
+      : 100
+  );
+  // Parched warning — surfaces when the team's average water runs low on a
+  // dry desert stretch. Refills at the next real water (river / Salmon Falls).
+  const showParchedWarn = $derived(aliveOxen.length > 0 && avgOxWater < 30);
   const shoelessOxen = $derived(aliveOxen.filter((o) => !o.shod).length);
 
   // Thin-grass warning — surfaces only on poor terrain. Players carry
@@ -93,6 +102,7 @@
     </span>
     <span class="ox-stat" title="Average ox health">❤ {avgOxHealth}</span>
     <span class="ox-stat" title="Average ox fatigue">⚡ {avgOxFatigue}</span>
+    <span class="ox-stat" title="Average ox water — drops on dry desert legs, refills at real water">💧 {avgOxWater}</span>
     {#if aliveOxen.length < wagonModel.minTeam}
       <span class="ox-warn" title="Below the wagon's min team — you can't move">⛔ stranded</span>
     {:else if aliveOxen.length < wagonModel.optimalTeam}
@@ -103,6 +113,9 @@
     {/if}
     {#if showGrazingWarn}
       <span class="ox-warn" title="Grass is thin here — carry grain to keep oxen fed">⚠ thin grass</span>
+    {/if}
+    {#if showParchedWarn}
+      <span class="ox-warn" title="The team is parched — reach water before they fail">⚠ parched</span>
     {/if}
     {#if unhitched > 0}
       <span class="ox-warn" title="Need 1 yoke per pair of oxen — buy yokes at any major post">⚠ {unhitched} unyoked</span>
