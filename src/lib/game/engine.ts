@@ -3,7 +3,7 @@ import { DEFAULT_WAGON_MODEL, getWagon, type WagonModelId } from './content/wago
 import { applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
 import { tickWeather } from './systems/weather';
 import { progressConditions } from './systems/conditions';
-import { adjustMorale } from './systems/morale';
+import { adjustMorale, pushMoraleHistory } from './systems/morale';
 import { applyHolidays } from './systems/holidays';
 import { tickOxen } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
@@ -221,16 +221,6 @@ const DAILY_STEPS: TickStep[] = [
   (s) => applyDehydration(s),
   reapDead
 ];
-
-// Roll the 7-day morale history forward. Called at end-of-tick, after
-// every system has had its say, so `s.morale` is the day's settled
-// value. Drives the party-panel sparkline.
-const MORALE_HISTORY_LEN = 7;
-function pushMoraleHistory(s: GameState): GameState {
-  const prior = Array.isArray(s.moraleHistory) ? s.moraleHistory : [];
-  const next = [...prior, s.morale].slice(-MORALE_HISTORY_LEN);
-  return { ...s, moraleHistory: next };
-}
 
 export function tickDay(state: GameState): GameState {
   const normalized = upgradeState(state);

@@ -10,7 +10,7 @@ import { tickWeather } from './systems/weather';
 import { progressConditions } from './systems/conditions';
 import { tickOxen, recoverOxenFatigue, recoverOxenHealth } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
-import { adjustMorale } from './systems/morale';
+import { adjustMorale, pushMoraleHistory } from './systems/morale';
 import { applySabbathTravelDebit } from './systems/sabbath-travel';
 import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
@@ -18,6 +18,7 @@ import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
 import { applySpoilage, applyHeatSpoilage } from './systems/spoilage';
 import { applyDehydration } from './systems/dehydration';
+import { applyWaterRationStrain } from './systems/water-ration';
 import { applyOxHydration } from './systems/ox-hydration';
 import { applyEggLay } from './systems/eggs';
 import { applyDairy, applyButterChurn } from './systems/dairy';
@@ -165,6 +166,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // > desert=0). Runs BEFORE consumption so today's gain is drinkable.
   s = applyAmbientWaterRefill(s, rng);
   s = applyDailyConsumption(s);
+  s = applyWaterRationStrain(s); // #1245/#1266 — ration morale/HP strain (was test-engine-only)
   s = applyDietVariety(s);
   s = applyHotDrinks(s);
   // #304 + #305 — pastry quality. Reads `_pastryDrawnLb` flag set by
@@ -427,6 +429,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     return { state: s, pendingEvent: trainResult.pendingEvent };
   }
 
+  s = pushMoraleHistory(s);
   return {
     state: {
       ...s,
@@ -463,6 +466,7 @@ export function applyCompanyDissent(
   s = reapDead(s, rng);
   const trainResult = advanceTrain(s, travels);
   s = trainResult.state;
+  s = pushMoraleHistory(s);
   return { ...s, day: s.day + 1, date: advanceDate(s.date) };
 }
 
@@ -479,6 +483,7 @@ export function applyPendingChoice(
 
   // Finish the day
   s = attemptFire(s, rng);
+  s = applyDehydration(s); // #1266 stage1a — event-resume day still owes a dehydration tick
   s = reapDead(s, rng);
 
   // #280b/#288 — advance NPC wagons. Event-day still counts as travel
@@ -491,6 +496,7 @@ export function applyPendingChoice(
   const trainResult = advanceTrain(s, true);
   s = trainResult.state;
 
+  s = pushMoraleHistory(s);
   return {
     ...s,
     day: s.day + 1,
