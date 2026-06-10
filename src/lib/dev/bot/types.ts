@@ -5,7 +5,7 @@
 // with arrival outcome, deaths, events fired, and a heuristic "fun score"
 // that grades whether the run had drama, variety, and meaningful choices.
 
-import type { Outcome, ProfessionId } from '../../game/types';
+import type { GameState, Outcome, ProfessionId } from '../../game/types';
 // #302 — PersonaId moved to game/ai/types. Re-exported here so existing
 // importers (scripts/bot.ts CLI, BotRunOpts consumers) keep working.
 import type { PersonaId } from '../../game/ai/types';
@@ -93,4 +93,19 @@ export interface BotRunReport {
     survival: number;
     boredomPenalty: number;
   };
+  /** Supply flow over the whole run, accumulated per loop iteration
+   *  (a multi-day rest aggregates into one sample; totals are exact). */
+  supplies: {
+    /** Food lbs that left the inventory (eaten + spoiled + stolen + shared). */
+    foodConsumedLb: number;
+    /** Food lbs that entered the inventory (hunts, forage, trade, gifts). */
+    foodAcquiredLb: number;
+    gunpowderUsedLb: number;
+    leadBallsUsed: number;
+    cashSpent: number;
+    cashEarned: number;
+  };
+  /** Full end-of-run state — drives location/death/inventory detail in
+   *  stats harnesses without widening this report for every field. */
+  finalState: GameState;
 }
