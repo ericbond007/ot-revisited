@@ -149,6 +149,19 @@ replay seeded action logs through both engines and diff serialized state until
 byte-parity, which carries the determinism guarantee across the port; UI
 rebuild second; MP last via Godot headless dedicated server on wanda.
 
+**Engine survey addendum (2026-06-09, same day, Dave + HAL):** before
+committing, the wider field was surveyed — Unity 6 (ruled out by Dave:
+"too big"; closed source + account tether against the fleet ethos, despite
+the best port language in C#), Defold (tiny HTML5/web builds + free official
+console access, but GUI is primitives-only and d-pad focus nav stays DIY —
+weakest on the decisive axis), LÖVE/Love2D (Balatro precedent, but no UI
+system at all), GameMaker (GML + console paywall, eliminated), MonoGame /
+Unreal / Bevy / Heaps (dismissed on fit). **Godot CONFIRMED**: the only
+candidate whose strongest subsystem — built-in focus/controller UI — is this
+game's center of gravity. Genre proof: Slay the Spire 2 (deterministic
+card/menu game) ships on Godot. Defold remains the documented fallback if a
+browser channel or self-serve console SKU ever becomes a priority.
+
 The original analysis follows.
 
 ### Path A — polished wrapper (TS stays canonical)
