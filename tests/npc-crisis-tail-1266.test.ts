@@ -55,6 +55,12 @@ function crisisState(): GameState {
     // Suppress rollEvent / arrival / approach so tickDayPausable reaches the
     // no-event path and calls advanceTrain before pausing.
     flags: { ...withTrain.flags, _lastEventDay: withTrain.day },
+    // Re-baseline (T2 #1281): pin to an unflagged leg (willow_springs —
+    // prairie, no corridor) so the corridor branch in MORNING_STEPS does
+    // NOT refill water before applyDehydration runs.  The default location
+    // (kansas_river, now clean corridor) would add +5 gal and prevent the
+    // dehydration signal this test relies on.
+    location: { ...withTrain.location, nextLandmarkId: 'willow_springs' },
     wagonTrain: {
       ...withTrain.wagonTrain!,
       companions: withTrain.wagonTrain!.companions.map((c, i) =>

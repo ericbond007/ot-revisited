@@ -879,7 +879,9 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         // low, cure_meat when meat is spoiling, etc.). Subsumes the
         // earlier v8 water-chain and #963 firewood-piggyback heuristics.
         const cap = state.resources.waterCap ?? 20;
-        const ratio = cap > 0 ? state.resources.water / cap : 1;
+        // #1281 — dehydration runs on total (#1136); clean-only ratio burned
+        // find_water days on full-but-dirty Platte kegs.
+        const ratio = cap > 0 ? (state.resources.water + (state.resources.dirtyWater ?? 0)) / cap : 1;
         const primary: CampActionId | null = ratio < 0.6 ? 'find_water' : null;
         try {
           state = restWithBundle(state, persona, primary, botRng, stats);

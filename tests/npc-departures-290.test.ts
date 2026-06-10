@@ -176,6 +176,12 @@ describe('#290 wagon-train morale + departures', () => {
     let s = inTrain();
     // Strip food from all companions so they starve, lose morale,
     // and start departing. Player isn't preacher → no damper.
+    // Re-baseline (T2 #1281 + #1279): the #1279 level-trigger fires
+    // immediately on inventory:{} wagons (wasFood was never >0), emitting
+    // npc_starvation_wagon-0 every tick and permanently blocking the
+    // departure check.  Mark crisisAskedDay=day-1 on every companion so
+    // the level-trigger treats the crisis as already presented; the wagons
+    // remain starving → morale collapses → departures fire normally.
     s = {
       ...s,
       wagonTrain: {
@@ -183,7 +189,8 @@ describe('#290 wagon-train morale + departures', () => {
         companions: s.wagonTrain!.companions.map((c) => ({
           ...c,
           inventory: {} as Record<string, number>,
-          morale: 20
+          morale: 20,
+          crisisAskedDay: s.day - 1
         }))
       }
     };

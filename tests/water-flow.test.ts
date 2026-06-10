@@ -48,20 +48,22 @@ describe('dirty water disease risk', () => {
     const s0 = {
       ...newGame(),
       resources: { water: 0, waterCap: 30, dirtyWater: 10, firewood: 100 },
-      flags: { _lastDirtyWaterDrawn: 2, hasBoilingKnowledge: false, hadFireLastNight: false }
+      // #1281 re-baseline: full-dirty day (fraction lever = 1) and the halved
+      // base chance (0.025) — 100 seeds so the expected ~5 hits are stable.
+      flags: { _lastDirtyWaterDrawn: 6, hasBoilingKnowledge: false, hadFireLastNight: false }
     };
     let infections = 0;
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 100; i++) {
       const next = applyDirtyWaterRisk(s0, makeRng(`r-${i}`));
       const hasNew = next.party.some((m) =>
         m.conditions.some((c) => c.id === 'cholera' || c.id === 'dysentery')
       );
       if (hasNew) infections++;
     }
-    // 5% per adult × 2 adults ≈ 10% any-infected. Across 30 seeds we
-    // should see at least one but not all.
+    // #1281: 2.5% per adult × 2 adults ≈ 5% any-infected at fraction 1.
+    // Across 100 fixed seeds we should see a few but nowhere near all.
     expect(infections).toBeGreaterThan(0);
-    expect(infections).toBeLessThan(30);
+    expect(infections).toBeLessThan(50);
   });
 
   it('skips when no dirty water was drawn (clean only)', () => {

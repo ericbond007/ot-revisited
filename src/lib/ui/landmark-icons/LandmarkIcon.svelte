@@ -233,5 +233,13 @@
     'salmon_falls',
     'burnt_river_canyon',
     'flagstaff_hill',
+    // #1281 — new point-access landmarks (Snake ×2, Columbia plateau ×4).
+    // No bespoke SVG icons yet — Icons/Backgrounds follow-up ticket pending.
+    'american_falls',
+    'rock_creek_snake',
+    'umatilla_river',
+    'willow_creek_or',
+    'john_day_river',
+    'deschutes_river',
   ]);
 </script>

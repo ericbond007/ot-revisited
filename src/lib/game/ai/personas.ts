@@ -326,11 +326,15 @@ function foodOnHand(state: GameState): number {
     + (inv.pemmican ?? 0) + (inv.dried_fruit ?? 0) + (inv.cornmeal ?? 0);
 }
 
-/** Water-keg fill ratio (0-1). Used by water-low check. */
+/** Total water-keg fill ratio (0-1) including dirty water.
+ *  #1281 — dehydration runs on total (#1136); clean-only ratio burned
+ *  find_water days on full-but-dirty Platte kegs. Used by shouldFindWater
+ *  (scarcity gate) and suppressCamp findWater gate. NOT used by
+ *  pickWaterRation also reads TOTAL (clean+dirty) for its dry-day projection — see the inline #1281 note there. */
 function waterRatio(state: GameState): number {
   const cap = state.resources.waterCap ?? 20;
   if (cap === 0) return 1;
-  return state.resources.water / cap;
+  return (state.resources.water + (state.resources.dirtyWater ?? 0)) / cap;
 }
 
 /** Average fatigue across alive oxen (0-100). Returns 0 when no oxen
@@ -648,7 +652,11 @@ export const cautiousPersona: Persona = {
     const dryDays = projectedDryDaysToNextWater(state) * this.foresight.safetyFactor;
     if (dryDays <= 0) return 'normal';
     const perDay = Math.max(1, waterConsumedToday({ ...state, waterRation: 'normal' }));
-    const daysOfWater = state.resources.water / perDay;
+    // #1281 — TOTAL water (clean + dirty): dirty hydrates fully (#1136);
+    // rationing is about quantity, quality is the disease channel. Clean-only
+    // had personas drycamp-rationing for ~50 days while camped ON the Platte
+    // (murky-corridor kegs are full-but-dirty) — daily strain collapsed morale.
+    const daysOfWater = (state.resources.water + (state.resources.dirtyWater ?? 0)) / perDay;
     if (daysOfWater >= dryDays) return 'normal';
     if (daysOfWater * 2 >= dryDays) return 'conserve';
     return 'drycamp';
@@ -855,7 +863,11 @@ export const balancedPersona: Persona = {
     const dryDays = projectedDryDaysToNextWater(state);
     if (dryDays <= 0) return 'normal';
     const perDay = Math.max(1, waterConsumedToday({ ...state, waterRation: 'normal' }));
-    const daysOfWater = state.resources.water / perDay;
+    // #1281 — TOTAL water (clean + dirty): dirty hydrates fully (#1136);
+    // rationing is about quantity, quality is the disease channel. Clean-only
+    // had personas drycamp-rationing for ~50 days while camped ON the Platte
+    // (murky-corridor kegs are full-but-dirty) — daily strain collapsed morale.
+    const daysOfWater = (state.resources.water + (state.resources.dirtyWater ?? 0)) / perDay;
     if (daysOfWater >= dryDays) return 'normal';
     if (daysOfWater * 2 >= dryDays) return 'conserve';
     return 'drycamp';
@@ -1081,7 +1093,11 @@ export const aggressivePersona: Persona = {
     const dryDays = projectedDryDaysToNextWater(state);
     if (dryDays <= 0) return 'normal';
     const perDay = Math.max(1, waterConsumedToday({ ...state, waterRation: 'normal' }));
-    const daysOfWater = state.resources.water / perDay;
+    // #1281 — TOTAL water (clean + dirty): dirty hydrates fully (#1136);
+    // rationing is about quantity, quality is the disease channel. Clean-only
+    // had personas drycamp-rationing for ~50 days while camped ON the Platte
+    // (murky-corridor kegs are full-but-dirty) — daily strain collapsed morale.
+    const daysOfWater = (state.resources.water + (state.resources.dirtyWater ?? 0)) / perDay;
     if (daysOfWater >= dryDays) return 'normal';
     if (daysOfWater * 2 >= dryDays) return 'conserve';
     return 'drycamp';

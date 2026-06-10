@@ -5,6 +5,7 @@ import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
 import { weatherWaterMult } from './weather';
 import { waterborneDiseaseModifier } from './water-purity';
 import { dayTempF } from './temperature';
+import { getLandmark } from '../content/landmarks';
 
 // Food → nutrition group mapping for the varied-diet bonus (#110).
 // Drawing from ≥2 of these groups in one day = +1 morale that day.
@@ -135,6 +136,37 @@ export function waterConsumedToday(state: GameState): number {
   );
 }
 
+/** #1281 — gallons added per day on a river corridor (deterministic, no rng
+ *  roll; the water is right there beside the road). */
+export const CORRIDOR_REFILL_GAL = 5;
+
+/** #1281 — corridor classification for the leg being traveled, read off the
+ *  landmark the party is approaching. Null nextLandmarkId (end of trail) or
+ *  unknown id → no corridor. */
+export function corridorForLeg(state: GameState): 'clean' | 'murky' | undefined {
+  const nextId = state.location.nextLandmarkId;
+  if (!nextId) return undefined;
+  try { return getLandmark(nextId).waterCorridor; } catch { return undefined; }
+}
+
+/** #1281 — daily corridor refill. Clean tops the keg; murky fills dirtyWater
+ *  (clamped so water + dirtyWater <= waterCap) — drinkable (#1136: dirty
+ *  counts as hydration) but it feeds applyDirtyWaterRisk. */
+export function applyCorridorRefill(state: GameState, kind: 'clean' | 'murky'): GameState {
+  const { water, waterCap } = state.resources;
+  const dirty = state.resources.dirtyWater ?? 0;
+  if (kind === 'clean') {
+    const added = Math.min(Math.max(0, waterCap - water), CORRIDOR_REFILL_GAL);
+    if (added <= 0) return state;
+    return { ...state, resources: { ...state.resources, water: water + added } };
+  }
+  // murky
+  const room = Math.max(0, waterCap - water - dirty);
+  const added = Math.min(room, CORRIDOR_REFILL_GAL);
+  if (added <= 0) return state;
+  return { ...state, resources: { ...state.resources, dirtyWater: dirty + added } };
+}
+
 /** #926 — passive ambient water refill on travel days. Period reality:
  *  emigrants topped kegs at creek crossings, springs, runoff pools
  *  without making a deliberate "find water" stop. The frequency
@@ -152,6 +184,13 @@ export function waterConsumedToday(state: GameState): number {
  *  The refill doesn't apply on rest days — `rest()` handles its own
  *  water mechanics via the find_water camp action. */
 export function applyAmbientWaterRefill(state: GameState, rng: Rng): GameState {
+  // #1281 — corridor branch: deterministic (no rng roll), takes priority over
+  // the terrain table. Deliberately consumes NO rng slots so the rng stream is
+  // identical for unflagged legs — all legs until T2 catalog changes land here,
+  // keeping T1 behavior-inert.
+  const corridor = corridorForLeg(state);
+  if (corridor) return applyCorridorRefill(state, corridor);
+
   const terrain: Terrain = state.location.terrain;
   // Each tuple: gain on a hit, hit probability (river is deterministic).
   const params: Record<Terrain, { gain: number; chance: number }> = {
@@ -236,9 +275,14 @@ export function applyDailyConsumption(state: GameState): GameState {
   };
 }
 
-/** Doctor halves the per-adult disease chance from drinking dirty water. */
-export const DIRTY_WATER_DISEASE_CHANCE = 0.05;
-export const DIRTY_WATER_DISEASE_CHANCE_DOCTOR = 0.025;
+/** Doctor halves the per-adult disease chance from drinking dirty water.
+ *  #1281 — halved from 0.05/0.025: the old constants were tuned for
+ *  EPISODIC dirty water (an occasional find_water slough fill). Murky
+ *  corridors make exposure CHRONIC (~50 straight Platte days), and at
+ *  the old rate disease lay-bys tipped cap-edge runs over the 220-day
+ *  limit wholesale (T6 gate: train personas 46% -> 7% arrivals). */
+export const DIRTY_WATER_DISEASE_CHANCE = 0.025;
+export const DIRTY_WATER_DISEASE_CHANCE_DOCTOR = 0.0125;
 
 /** Roll waterborne illness for each adult drinking dirty water today.
  *  At most one new infection per day to avoid wipe-out spirals. */
@@ -248,10 +292,15 @@ export function applyDirtyWaterRisk(state: GameState, rng: { chance: (p: number)
   const baseChance = hasLiveDoctor(state)
     ? DIRTY_WATER_DISEASE_CHANCE_DOCTOR
     : DIRTY_WATER_DISEASE_CHANCE;
+  // #1281 spec §2 lever — scale by the FRACTION of today's water drunk
+  // dirty: a party mixing post-bought clean water with corridor water
+  // dilutes its risk; a sip from the slough isn't a full day's exposure.
+  const waterNeededToday = waterConsumedToday(state);
+  const dirtyFraction = waterNeededToday > 0 ? Math.min(1, dirtyDrawn / waterNeededToday) : 1;
   // Boiling water for coffee/tea cuts the disease odds — they don't
   // know why it works, just that the brew tastes better and they
   // get sick less. modifier is 1.0 when no coffee/tea.
-  const chance = baseChance * waterborneDiseaseModifier(state);
+  const chance = baseChance * dirtyFraction * waterborneDiseaseModifier(state);
   const adults = state.party.filter((m) => !m.dead && m.kind === 'adult');
   for (const adult of adults) {
     if (rng.chance(chance)) {
