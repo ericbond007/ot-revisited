@@ -61,8 +61,26 @@ describe('every event choice produces an outcome log entry', () => {
   for (const event of EVENTS) {
     for (const choice of event.choices) {
       it(`${event.id} / ${choice.id}`, () => {
+        // encounter_salmon_band needs _salmonBand* flags + enough goods so the
+        // enabled predicate on accept_goods passes (25% of targetValue). One
+        // blanket ($1.50 sell) is enough for a 10-lb offer ($4.00 × 0.25 = $1.00).
+        const salmonBandState = {
+          ...baseState(),
+          inventory: {
+            ...baseState().inventory,
+            blanket: 2, tobacco: 3
+          },
+          flags: {
+            _salmonBandOffer: 10,
+            _salmonBandTribeId: 'bannock',
+            _salmonBandGoodsPrice: 4.0,
+            _salmonBandCashPrice: 5.2
+          }
+        };
         const state = event.id === 'personal_burial'
           ? { ...baseState(), flags: { _burialPending: true } }
+          : event.id === 'encounter_salmon_band'
+          ? salmonBandState
           : baseState();
         const before = state.eventLog.length;
         const after = resolveEvent(state, event, choice.id, makeRng(`audit:${event.id}:${choice.id}`));
@@ -83,8 +101,12 @@ describe('every event choice produces an outcome log entry', () => {
 
         if (choice.silentLog) {
           // Audited: apply itself adds outcome line(s); no auto-append.
+          // Escape regex metacharacters from user-facing strings before
+          // building the pattern (labels can contain parens, +, etc.).
+          const escTitle = event.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const escLabel = (choice.label ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           for (const entry of after.eventLog.slice(before)) {
-            expect(entry.text).not.toMatch(new RegExp(`^${event.title}:\\s+${choice.label}\\.?$`));
+            expect(entry.text).not.toMatch(new RegExp(`^${escTitle}:\\s+${escLabel}\\.?$`));
           }
         }
       });

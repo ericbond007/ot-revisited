@@ -122,7 +122,13 @@ const FOOD_RATES_LB_PER_DAY: Record<string, number> = {
   // the ratio. Item is `category: 'tool'` in the catalog (it's also
   // used for stomach-settling + alkali water) but for restock purposes
   // it's a kitchen-staple — belongs adjacent to the period basket.
-  saleratus: 0.015
+  saleratus: 0.015,
+  // #1284 — dried_salmon is a shelf-stable protein supplement, not a
+  // baseline staple — emigrants bought it when available, not at every
+  // post. Rate matches bacon (0.3 lb/soul/day) since it's a calorie-
+  // equivalent meat protein; the low FOOD_PRIORITY position means bots
+  // only buy it when the more critical basket is already covered.
+  dried_salmon: 0.3
 };
 
 /** Food restock priority order — matches Marcy 1859's enumeration
@@ -130,7 +136,10 @@ const FOOD_RATES_LB_PER_DAY: Record<string, number> = {
  *  priority (most parties shipped beans from home, rarely restocked).
  *  Saleratus added per #308 audit — bot was running out around day
  *  135 and taking −1 morale daily for the rest of the journey. */
-const FOOD_PRIORITY = ['flour', 'bacon', 'sugar', 'beans', 'coffee', 'salt', 'saleratus'] as const;
+// #1284 — dried_salmon appended last: it's an opportunistic supplement
+// available only at fishery posts (salmon_falls, the_dalles, whitman_mission).
+// Kept lowest-priority so bots only buy it after the core basket is covered.
+const FOOD_PRIORITY = ['flour', 'bacon', 'sugar', 'beans', 'coffee', 'salt', 'saleratus', 'dried_salmon'] as const;
 
 export interface FoodRestockOpts {
   /** Days-per-soul "low" floor — only restock when current food (in

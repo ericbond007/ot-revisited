@@ -323,7 +323,32 @@ function foodOnHand(state: GameState): number {
   const inv = state.inventory;
   return (inv.flour ?? 0) + (inv.beans ?? 0) + (inv.bacon ?? 0)
     + (inv.salt_pork ?? 0) + (inv.hardtack ?? 0) + (inv.jerky ?? 0)
-    + (inv.pemmican ?? 0) + (inv.dried_fruit ?? 0) + (inv.cornmeal ?? 0);
+    + (inv.pemmican ?? 0) + (inv.dried_fruit ?? 0) + (inv.cornmeal ?? 0)
+    + (inv.dried_salmon ?? 0); // #1284 — shelf-stable protein supplement
+}
+
+/** #1284 T4 — Estimated days of food remaining at current rations.
+ *  Uses live adult count × rations rate (meager=1, normal=2, filling=3
+ *  lb/adult/day). Children eat half — a simplification that errs on
+ *  the cautious side and won't be noticed in bot simulations.
+ *  Returns Infinity when daily consumption is 0 (everyone dead). */
+function daysOfFoodOnHand(state: GameState): number {
+  const food = foodOnHand(state);
+  const liveAdults = state.party.filter((m) => !m.dead && m.kind === 'adult').length;
+  const liveChildren = state.party.filter((m) => !m.dead && m.kind === 'child').length;
+  const rateMap: Record<string, number> = { meager: 1, normal: 2, filling: 3 };
+  const rate = rateMap[state.rations] ?? 2;
+  const daily = liveAdults * rate + liveChildren * (rate / 2);
+  if (daily === 0) return Infinity;
+  return food / daily;
+}
+
+/** #1284 T4 — True when the party has a spare ox above the yoke minimum
+ *  and can slaughter without stranding. Used by shouldSlaughterOx in every
+ *  persona to avoid repeating the import. */
+function hasSpareOxAboveMinimum(state: GameState): boolean {
+  const model = getWagon(state.wagon.model);
+  return state.oxen.length > model.minTeam;
 }
 
 /** Total water-keg fill ratio (0-1) including dirty water.
@@ -551,6 +576,68 @@ function defaultPickBarterDispositions(
 // `shopping.ts:composeShoppingList`, so the one consumer reads from
 // the one surface.
 
+// #1284 — Salmon band encounter bot routing.
+//
+// Accept when food-on-hand is below ~10 days of consumption for a 4-person
+// party at normal rations (4 × 2 lb/day = 8 lb/day × 10 = 80 lb).
+// Payment priority is persona-flavored:
+//   hoarder — cash_first (guards goods)
+//   generous — accept_goods (freely trades)
+//   others  — goods if any on hand, else cash
+//
+// The accept threshold (80 lb) is generous by design: dried salmon is
+// shelf-stable and the encounter only fires in the late corridor where
+// supplemental protein has real value. A bot that always declines when
+// food > 80 lb is still not triggering on most non-starving days.
+
+const SALMON_BAND_FOOD_THRESHOLD_LB = 80; // ~10 days for 4 adults at normal
+
+/** True if the party has barter goods they could offer. */
+function hasTradableGoods(state: GameState): boolean {
+  const inv = state.inventory;
+  return (inv.tobacco ?? 0) > 0
+    || (inv.beads ?? 0) > 0
+    || (inv.blanket ?? 0) > 0
+    || (inv.fishing_line ?? 0) > 0;
+}
+
+/** Pick a choice for the salmon-band encounter.
+ *  `cashFirst`: hoarder persona prefers paying cash over parting with goods.
+ *  `goodsFirst`: generous persona prefers goods trades. */
+function pickSalmonBandChoice(
+  state: GameState,
+  event: GameEvent,
+  { cashFirst = false, goodsFirst = false } = {}
+): string {
+  // Only buy when food is low.
+  if (foodOnHand(state) >= SALMON_BAND_FOOD_THRESHOLD_LB) {
+    return 'decline';
+  }
+  // Can we pay?
+  const cashPrice = state.flags._salmonBandCashPrice as number | undefined;
+  const hasCash = cashPrice !== undefined
+    ? state.cash >= cashPrice
+    : state.cash >= 5;
+  const hasGoods = hasTradableGoods(state);
+
+  if (cashFirst) {
+    // Hoarder: cash > goods.
+    if (hasCash) return 'accept_cash';
+    if (hasGoods) return 'accept_goods';
+    return 'decline'; // broke and no goods — nothing we can do
+  }
+  if (goodsFirst) {
+    // Generous: goods > cash.
+    if (hasGoods) return 'accept_goods';
+    if (hasCash) return 'accept_cash';
+    return 'decline';
+  }
+  // Default: goods if surplus, else cash.
+  if (hasGoods) return 'accept_goods';
+  if (hasCash) return 'accept_cash';
+  return 'decline';
+}
+
 /** Has a working rifle + ammo? Required for hunt(). */
 function canHunt(state: GameState): boolean {
   const inv = state.inventory;
@@ -610,6 +697,13 @@ export const cautiousPersona: Persona = {
   // many slow-pace days that no longer fire.
   foresight: { paceMiPerDay: 10, safetyFactor: 1.5 },
   pickEventChoice(state, event) {
+    // #1284 — salmon-band encounter: route through the dedicated picker
+    // so food-threshold logic and the 25%-goods-min gate are honored.
+    // Without this, /trade/i below would unconditionally pick accept_goods
+    // regardless of food level or whether the goods are sufficient.
+    if (event.id === 'encounter_salmon_band') {
+      return pickSalmonBandChoice(state, event);
+    }
     // Cautious avoids violence + chronic disease. Prefer safety on
     // health events first, then the cooperative-trade patterns, then
     // the marked default. Period reality: emigrant captains who
@@ -806,6 +900,11 @@ export const cautiousPersona: Persona = {
     // remained. Personality refusal lives in #287 (preacher).
     return true;
   },
+  shouldSlaughterOx(state) {
+    // Cautious slaughters early — food security over team redundancy.
+    // Threshold: 7 days. Preserves a spare above yoke minimum.
+    return hasSpareOxAboveMinimum(state) && daysOfFoodOnHand(state) < 7;
+  },
   pickNpcEventChoice() {
     // Surface only — no current choice-bearing NPC events.
     return null;
@@ -847,6 +946,11 @@ export const balancedPersona: Persona = {
   id: 'balanced',
   foresight: { paceMiPerDay: 10, safetyFactor: 1.2 },
   pickEventChoice(state, event) {
+    // #1284 — salmon-band encounter: accept when food is low, prefer
+    // goods-if-available else cash. Balanced is the default path.
+    if (event.id === 'encounter_salmon_band') {
+      return pickSalmonBandChoice(state, event);
+    }
     // Balanced takes the marked default for most events but still
     // routes around the "risk-drink" health trap — period emigrants
     // (and any sane modern player) chose the upstream walk over the
@@ -1008,6 +1112,11 @@ export const balancedPersona: Persona = {
   },
   shouldJoinTrain: defaultShouldJoinTrain,
   shouldCannibalize: () => true,
+  shouldSlaughterOx(state) {
+    // Balanced: slaughter when food drops below ~5 days. Team redundancy
+    // valued but not over survival. Default threshold per spec §3.
+    return hasSpareOxAboveMinimum(state) && daysOfFoodOnHand(state) < 5;
+  },
   pickNpcEventChoice: () => null,
   pickBarterDispositions: defaultPickBarterDispositions,
   shouldDissent() {
@@ -1036,6 +1145,12 @@ export const aggressivePersona: Persona = {
   // balanced's — it plans properly, it just also travels faster.
   foresight: { paceMiPerDay: 12, safetyFactor: 1.2 },
   pickEventChoice(state, event) {
+    // #1284 — salmon-band encounter: route through the dedicated picker
+    // so food-threshold logic is honored. Without this, /wave/i below
+    // would unconditionally pick decline regardless of food level.
+    if (event.id === 'encounter_salmon_band') {
+      return pickSalmonBandChoice(state, event);
+    }
     // Aggressive refuses tolls, pushes through, hoards.
     return choiceMatching(state, event, /refuse/i, /push/i, /pass/i, /ignore/i, /wave/i)
       ?? defaultChoice(state, event);
@@ -1249,6 +1364,11 @@ export const aggressivePersona: Persona = {
   // wait at Independence for one to form.
   shouldStartInTrain: () => false,
   shouldCannibalize: () => true,
+  shouldSlaughterOx(state) {
+    // Aggressive holds out longer — team = speed. Only slaughters at
+    // ~3 days remaining, prioritizing pace over food buffer.
+    return hasSpareOxAboveMinimum(state) && daysOfFoodOnHand(state) < 3;
+  },
   pickNpcEventChoice: () => null,
   pickBarterDispositions(state, here, _rng) {
     // Aggressive packs lean and only barters when cash is genuinely
@@ -1413,6 +1533,12 @@ export const chaosPersona: Persona = {
   // post-arrival path.
   shouldStartInTrain: () => false,
   shouldCannibalize: () => true,
+  shouldSlaughterOx(state) {
+    // Chaos: balanced threshold — 5 days. Consistent with its
+    // opportunistic profile (not hoarding oxen for speed, not
+    // sacrificing them preemptively).
+    return hasSpareOxAboveMinimum(state) && daysOfFoodOnHand(state) < 5;
+  },
   pickNpcEventChoice() {
     return null; // surface-only
   },
@@ -1548,6 +1674,12 @@ export const pacePusherPersona: Persona = {
     });
     return pickOxSwapCountFor(state, 1, healthFloor);
   },
+  shouldSlaughterOx(state) {
+    // Pace pusher values team size for speed — same as aggressive,
+    // holds until only ~3 days of food remain. Period: Reed
+    // wouldn't sacrifice a healthy ox until the larder was empty.
+    return hasSpareOxAboveMinimum(state) && daysOfFoodOnHand(state) < 3;
+  },
   shouldDissent(_state, decision) {
     return decision.mode === 'travel' ? 'abide' : 'press_on';
   },
@@ -1568,6 +1700,14 @@ export const pacePusherPersona: Persona = {
 export const hoarderPersona: Persona = {
   ...balancedPersona,
   id: 'hoarder',
+  pickEventChoice(state, event, rng) {
+    // #1284 — hoarder guards goods; pays cash for salmon rather than
+    // trading trade goods out of the stash.
+    if (event.id === 'encounter_salmon_band') {
+      return pickSalmonBandChoice(state, event, { cashFirst: true });
+    }
+    return balancedPersona.pickEventChoice(state, event, rng);
+  },
   pickFoodRestockOpts() {
     // Tight floor + tight cap (pre-#909 behavior, kept until #912
     // bumps the cap to match a stockpiler's deeper stash). #909 —
@@ -1670,6 +1810,14 @@ export const generousPersona: Persona = {
     if ((state.inventory.flour ?? 0) < SHARE_FLOUR_RESERVE) return null;
     if (!rng.chance(SHARE_CHANCE)) return null;
     return { item: 'flour', qty: SHARE_FLOUR_QTY };
+  },
+  pickEventChoice(state, event, rng) {
+    // #1284 — generous prefers to pay in goods (trade relations over
+    // cash reserves); Donner-style: spend social capital freely.
+    if (event.id === 'encounter_salmon_band') {
+      return pickSalmonBandChoice(state, event, { goodsFirst: true });
+    }
+    return balancedPersona.pickEventChoice(state, event, rng);
   },
   bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };

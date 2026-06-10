@@ -20,6 +20,8 @@ import { pickText } from './content/text-pools';
 import { isSunday } from './utils/calendar';
 import { sundayLayBy, defaultSabbathActions } from './actions/sunday-lay-by';
 import { runSteps, MORNING_STEPS, TRAVEL_OX_WAGON_STEPS, POST_BRANCH_STEPS, PRE_TRAVEL_STEPS, POST_EVENT_TAIL_STEPS, type TickCtx } from './daily-steps';
+import { hasFoodOnHand } from './systems/cannibal';
+import { canSlaughterOx } from './actions/camp-actions';
 
 function advanceDate(d: { year: number; month: number; day: number }) {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -31,6 +33,50 @@ function advanceDate(d: { year: number; month: number; day: number }) {
   if (month > 12) { month = 1; year += 1; }
   return { year, month, day };
 }
+
+// #1284 T4 — Player-facing ox-slaughter starvation prompt.
+// Fires as a level-trigger (same pattern as #1279 NPC crisis): when food
+// hits 0 AND a slaughterable spare ox exists AND we haven't asked this
+// spell yet (_oxSlaughterAskedDay unset). One shot per zero-food spell;
+// re-arms when food recovers (cleared in morning steps below when hasFoodOnHand).
+// The 'slaughter' choice applies the camp action directly; 'hold_out'
+// dismisses and day advances normally. This surfaces the §3 mechanic so
+// no player starves not knowing the lever exists.
+const OX_SLAUGHTER_PROMPT_EVENT: GameEvent = {
+  id: 'ox_slaughter_prompt',
+  category: 'health',
+  title: 'The flour sack is empty',
+  body: 'The flour sack is empty. Old Bright looks back at you.',
+  weight: 0, // synthetic — never rolls from the random-event bank
+  choices: [
+    {
+      id: 'slaughter_now',
+      label: 'Slaughter the weakest ox',
+      apply: (s) => {
+        // Directly apply the slaughter_ox action effect inline so we don't
+        // need to import the action object — avoids a circular dep on rng.
+        if (!canSlaughterOx(s)) return s;
+        const sorted = s.oxen.slice().sort((a, b) => {
+          if (a.health !== b.health) return a.health - b.health;
+          return b.fatigue - a.fatigue;
+        });
+        const victim = sorted[0];
+        const oxen = s.oxen.filter((o) => o.id !== victim.id);
+        const inventory = { ...s.inventory, game_meat: (s.inventory.game_meat ?? 0) + 325 };
+        const flags = { ...s.flags, _gameMeatSpoilDay: s.day + 3 };
+        return {
+          ...s, oxen, inventory, flags,
+          eventLog: [...s.eventLog, { day: s.day, text: `Slaughtered ${victim.id}. Dressed out ~325 lb of beef. Eat it fresh or cure it within 3 days.` }]
+        };
+      }
+    },
+    {
+      id: 'hold_out',
+      label: 'Hold out — not yet',
+      apply: (s) => s
+    }
+  ]
+};
 
 export interface PausableTickResult {
   state: GameState;
@@ -120,6 +166,17 @@ export function tickDayPausable(state: GameState): PausableTickResult {
 
   // ctx unused by morning steps; companyMode not yet decided
   s = runSteps(MORNING_STEPS, s, rng, { traveled: false, driver: 'player' });
+
+  // #1284 T4 — Spell-clear: if the player now has food again (found a post,
+  // traded for salmon, hunted, etc.), clear the ox-slaughter asked flag so
+  // a future empty spell will re-fire the prompt. Mirrors the NPC
+  // crisisAskedDay clear in wagon-train.ts:advanceTrain.
+  if (hasFoodOnHand(s) && s.flags._oxSlaughterAskedDay !== undefined) {
+    const cleared = { ...s.flags };
+    delete (cleared as Record<string, unknown>)._oxSlaughterAskedDay;
+    s = { ...s, flags: cleared };
+  }
+
   // #review (lay-by oxen) — decide travel-vs-lay-by BEFORE today's ox /
   // wagon wear, so a company lay-by day doesn't tire the oxen or age the
   // wagon (this mirrors the NPC `traveled` gate in tickNpcWagon). Solo
@@ -357,6 +414,44 @@ export function tickDayPausable(state: GameState): PausableTickResult {
       };
     }
     return { state: s, pendingEvent: trainResult.pendingEvent };
+  }
+
+  // #1284 T4 — Ox-slaughter starvation prompt (player-side).
+  // Level-trigger: fires while food=0 AND a slaughterable spare ox exists
+  // AND we haven't asked this spell yet. Once per zero-food spell; the
+  // _oxSlaughterAskedDay flag is cleared in engine-pausable.ts (morning
+  // steps) when food recovers (same pattern as NPC crisisAskedDay).
+  // Only fires if the party is still alive (wiped state skips it).
+  //
+  // PLACEMENT: checked AFTER POST_EVENT_TAIL_STEPS and advanceTrain have
+  // both run. This matches the NPC-crisis pause invariant exactly, so
+  // applyPendingChoice's _tailRanDay guard correctly skips tail + advanceTrain
+  // on resume without also skipping the day-advance. Placing it before
+  // advanceTrain (the original position) would have meant advanceTrain never
+  // ran before the pause — stamping _tailRanDay there would have caused
+  // applyPendingChoice to skip advanceTrain on resume too (NPC wagons
+  // wouldn't tick that day). Placing it after advanceTrain avoids all of
+  // this: both systems ran, _tailRanDay correctly reflects that, and
+  // resume skips them as designed.
+  if (
+    s.outcome === 'in-progress'
+    && !hasFoodOnHand(s)
+    && canSlaughterOx(s)
+    && s.flags._oxSlaughterAskedDay === undefined
+    && s.party.some((p) => !p.dead)
+  ) {
+    // Stamp _oxSlaughterAskedDay so the spell doesn't re-fire while modal is live.
+    // Stamp _tailRanDay so applyPendingChoice skips tail + advanceTrain on resume
+    // (both already ran above — same invariant as the NPC crisis pause).
+    s = {
+      ...s,
+      flags: {
+        ...s.flags,
+        _oxSlaughterAskedDay: s.day,
+        _tailRanDay: s.day
+      }
+    };
+    return { state: s, pendingEvent: OX_SLAUGHTER_PROMPT_EVENT };
   }
 
   s = pushMoraleHistory(s);

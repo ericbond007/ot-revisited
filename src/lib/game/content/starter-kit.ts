@@ -28,7 +28,7 @@ export interface StarterKit {
 //  - Wagon spare-parts — players buy at outfitter on their own weight
 //    budget (#107 honesty).
 export const BASE_KIT: StarterKit = {
-  cash: 400,
+  cash: 500,
   // #963b1 — starter oxen 4 → 6. Historical norm for a 4-soul party
   // was 4 working + 2 spare (Marcy 1859: "an extra yoke for emergency
   // replacement should be considered indispensable on long crossings").
@@ -39,27 +39,45 @@ export const BASE_KIT: StarterKit = {
   // emigrants brought 8-10; this is a conservative middle ground.
   oxen: 6,
   inventory: {
-    // #963 — starter food provisions calibrated against Palmer 1845
-    // (the canonical emigrant guidebook). Old kit was 380 lb total
-    // food — about 24% of Palmer's per-adult × 4-soul recommendation
-    // and barely 50 days of normal rations. Bots ran out of food and
-    // cash mid-Snake every run. The new kit lands at ~905 lb staples,
-    // ~60% Palmer scaled for a typical 4-adult party + matching the
-    // medium wagon's 2,500 lb capacity (still ~45% loaded after kit
-    // + clothing + yokes — leaves room for hunts, water, spare parts).
+    // #1284 — starter food reshaped to ~87% of Palmer 1845 guidance and
+    // corrected for the inverted fat ratio (#963 had 6:1 flour:bacon,
+    // period emigrants over-carried fat — Ware 1849 spec'd MORE bacon
+    // than flour; the 1849 jettison-pile lists are famously full of
+    // "piles of most beautiful bacon" but never flour).
     //
-    // Palmer 1845 per adult: 200 lb flour, 75 lb bacon, 30 lb beans,
-    // 30 lb hardtack, 60 lb dried fruit, 25 lb sugar, 10 lb coffee
-    // (≈400 lb total). We scale that to a 4-soul family at ~60% so
-    // post resupply remains a real strategic choice, not optional.
-    flour:     600,
-    beans:      80,
-    bacon:     100,
-    hardtack:   50,
-    dried_fruit: 40,
-    sugar:      25,
-    coffee:      4,
-    salt:        2,
+    // Research appendix: docs/superpowers/specs/2026-06-10-food-economy-research.md
+    // Key finding: the inverted-fat-ratio is the most period-unfaithful
+    // aspect of the old kit; fixing it also changes the late-trail
+    // failure mode from "out of flour" to "out of the dense calorie
+    // reserve," which is historically correct.
+    //
+    // New kit (4-soul scale, lb):
+    //   flour     700  175/adult (Palmer 200 per adult)
+    //   bacon     320   80/adult — fixes the inverted fat ratio
+    //   cornmeal   80  grain variety (diet groups), period-cheap
+    //   beans     110
+    //   hardtack   80
+    //   dried_fruit 70  scurvy-aware guides pushed this
+    //   sugar      60
+    //   coffee     10  waterborne-0.6× + morale payload
+    //   salt       12  enables curing a full ox (§3 #1284) + hunts (#122)
+    //   ──────────────
+    //   total   1,442 lb staples (~67% of medium-wagon 2,500 lb capacity
+    //           after full kit — safely under 75% overload threshold)
+    //
+    // Cash bumped 400 → 500 (#1284): outfit budget stays honest — full
+    // Palmer was rejected partly because it broke the bankroll. After
+    // buying the outfit a family typically left Independence with $50–150
+    // in hand; the $500 baseline preserves that feel with the richer kit.
+    flour:      700,
+    bacon:      320,
+    cornmeal:    80,
+    beans:      110,
+    hardtack:    80,
+    dried_fruit: 70,
+    sugar:       60,
+    coffee:      10,
+    salt:        12,
     // #305 saleratus — period baking soda. 4 units (2 lb) lasts a
     // 3-eater family ~4 months at 1 lb flour/eater/day; player needs
     // to refill at one post mid-trip for a full Independence→Oregon
@@ -102,11 +120,11 @@ export interface BuildStarterKitOpts {
   /** #888b — when false, skip the BASE_KIT layer entirely. Player
    *  veterans who want to provision themselves at the outfitter pick
    *  this. Default true (the wizard checkbox defaults ON). When false,
-   *  the player gets +$250 cash (BASE_KIT outfitter-replacement value)
-   *  on top of the $400 baseline so they can re-buy what they need.
-   *  Total: $650 cash, no flour, no medicine, no rifle, no clothing,
-   *  no tent. Player provisions from scratch at the Independence
-   *  outfitter. */
+   *  the player gets +$650 cash (BASE_KIT outfitter-replacement value,
+   *  #1284 recalibrated) on top of the $500 baseline so they can
+   *  re-buy what they need. Total: $1,150 cash, no flour, no medicine,
+   *  no rifle, no clothing, no tent. Player provisions from scratch at
+   *  the Independence outfitter. */
   includeStarterKit?: boolean;
 }
 
@@ -114,14 +132,22 @@ export interface BuildStarterKitOpts {
  *  starter kit. Calibrated against the cost of buying the BASE_KIT
  *  contents at Independence prices for a 4-soul reference family.
  *
- *  #963 recalibration: post-food-bump kit costs ~$390 at Independence
- *  prices (food $225 + medicine $80 + rifle/ammo $40 + tent/rope $20
- *  + per-soul clothing $25).
+ *  #1284 recalibration: post-#1284 guide-shaped kit costs ~$537 at
+ *  Independence prices:
+ *    food      $399.50  (flour $140 + bacon $128 + cornmeal $8 +
+ *                        beans $27.50 + hardtack $12 + dried_fruit $42
+ *                        + sugar $21 + coffee $3 + salt $18)
+ *    medicine   $34.20  (quinine + calomel + laudanum + paregoric +
+ *                        bandages + saleratus)
+ *    rifle/ammo $22.10  (rifle $20 + ammo $2.10)
+ *    equipment  $21.00  (tent + rope + shovel + cookware)
+ *    clothing   $48.00  (coat + boots + blanket × 4 souls)
+ *    yokes      $12.00  (2 × $6 for prairie schooner)
  *
- *  #963b1: starter oxen 4 → 6 adds ~$60 of kit value (Independence ox
- *  was ~$25-30/head, 2 extra = $50-60). Refund bumped 440 → 500 so the
- *  skip-the-kit path still covers buy-back at the outfitter. */
-const STARTER_KIT_REFUND = 500;
+ *  Oxen (6): ~$25-30/head; 2 extra above min-team ≈ $50-60.
+ *  Total replacement ≈ $597. Rounded up to $650 so the skip-the-kit
+ *  path still fully covers buy-back at the outfitter. */
+const STARTER_KIT_REFUND = 650;
 
 export function buildStarterKit(
   professions: ProfessionId[],

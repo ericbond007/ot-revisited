@@ -42,7 +42,7 @@ describe('starter kit', () => {
     expect(BASE_KIT.inventory.boots ?? 0).toBe(0);
   });
 
-  it('includeStarterKit=false skips BASE_KIT entirely + refunds $500 (#963b1)', () => {
+  it('includeStarterKit=false skips BASE_KIT entirely + refunds $650 (#1284)', () => {
     const kit = buildStarterKit(['blacksmith'], 'prairie_schooner', { includeStarterKit: false });
     // BASE staples NOT present
     expect(kit.inventory.flour ?? 0).toBe(0);
@@ -50,10 +50,11 @@ describe('starter kit', () => {
     expect(kit.inventory.rifle ?? 0).toBe(0);
     expect(kit.inventory.tent ?? 0).toBe(0);
     expect(kit.inventory.coat ?? 0).toBe(0);
-    // Cash baseline + refund (#963 bumped refund 250 → 440 to match
-    // the new food-rich BASE_KIT value at Independence prices.
-    // #963b1 bumped 440 → 500 to cover the +2 starter oxen at ~$30/head.)
-    expect(kit.cash).toBe(BASE_KIT.cash + 500);
+    // Cash baseline + refund (#1284 recalibrated: richer kit (food 901→1442 lb)
+    // raises replacement value from ~$450 to ~$597; refund bumped 500 → 650
+    // so the skip-the-kit path still fully covers buy-back at the outfitter.
+    // total = BASE_KIT.cash($500) + STARTER_KIT_REFUND($650) = $1,150)
+    expect(kit.cash).toBe(BASE_KIT.cash + 650);
     // Profession.starterGear still applied (blacksmith identity)
     expect(kit.inventory.iron_toolkit).toBe(1);
     expect(kit.inventory.ox_shoes).toBe(10);
@@ -112,7 +113,7 @@ describe('starter kit', () => {
 
   it('banker adds starting cash', () => {
     // #276 follow-up — period-realistic banker wealth $1500–3000.
-    // BASE $400 + Banker $1000 = $1400 total (was $400 + $600).
+    // BASE $500 + Banker $1000 = $1500 total (#1284: BASE bumped $400→$500).
     const kit = buildStarterKit(['banker']);
     expect(kit.cash).toBe(BASE_KIT.cash + 1000);
   });

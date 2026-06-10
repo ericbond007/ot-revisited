@@ -78,6 +78,13 @@ export const ITEMS: Record<string, ItemMeta> = {
   // staples (after flour, before beans) — emigrants ate stewed fruit
   // every meal. Audit pass #266 corrected this from a draw order of 5.
   dried_fruit: { id: 'dried_fruit', name: 'Dried fruit',  category: 'food', weightLbPerUnit: 1, foodDrawOrder: 1.5, description: 'Apples, peaches, plums. Eaten daily with the staples — wards off scurvy.' },
+  // Dried salmon — Snake/Columbia fishery staple. Shoshone and Cayuse bands
+  // dried thousands of salmon each summer on racks above the falls. Period
+  // record: Nesmith 1843 "coming daily to sell dried salmon." Frizzell 1852
+  // traded a Barlow knife for an 8-lb fish at these same falls. No spoil clock
+  // — that is the entire point of the drying racks. foodDrawOrder 3.7 puts it
+  // between jerky (3.5) and hardtack (4) — a durable protein staple.
+  dried_salmon: { id: 'dried_salmon', name: 'Dried salmon', category: 'food', weightLbPerUnit: 1, foodDrawOrder: 3.7, description: 'Snake River salmon, split and dried on native racks. Keeps indefinitely. Traded at the fishery posts past Fort Hall.' },
   pemmican:    { id: 'pemmican',    name: 'Pemmican',     category: 'food', weightLbPerUnit: 1, foodDrawOrder: 6, description: 'Native-prepared dried meat + fat. Never spoils.' },
   // Period sugar — sold as conical loaves (a.k.a. "loaf" or "lump" sugar)
   // wrapped in blue paper, broken off with sugar-nips. Treated as the

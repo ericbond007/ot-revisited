@@ -1,10 +1,12 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
+import { makeRng } from '../rng';
 import type { GameEvent } from './events';
 import { inTerrain, yearAtLeast, milesBetween, and } from './event-gating';
 import { tribesAtMile, type Tribe } from './tribes';
 import {
   getTribeAttitude,
+  getTribeAttitudeLevel,
   adjustTribeAttitude,
   hasGiftedTribe,
   markGiftedTribe
@@ -12,6 +14,7 @@ import {
 import { addNews, effectHuntBonus, effectCholeraScare } from '../systems/news';
 import { hasLiveIndianTrader } from '../professions/predicates';
 import { setSpoilClock } from '../systems/spoilage';
+import { getPrice } from './prices';
 
 // Random trail encounters — wagon trains, soldiers, traders, natives.
 // These fire through the same rollEvent pipeline as weather / wagon
@@ -1237,6 +1240,323 @@ const raid_revenge: GameEvent = {
   ]
 };
 
+// #1284 — Roadside salmon-band encounter. spec §2 "roadside band encounter".
+//
+// Snake/Columbia corridor (Fort Hall → The Dalles). Historically the
+// Shoshone-Bannock, Nez Perce, Cayuse, Walla Walla, and Umatilla bands
+// traded dried salmon from their racks directly with emigrant trains on
+// the road — the fish had already been cured (cedar-smoked, wind-dried)
+// so the exchange was shelf-stable dried salmon for trade goods or cash.
+// Unlike `native_salmon_trade` (which yields fresh game_meat from a
+// riverside encounter), this encounter surfaces the dried, preserved
+// product that sustained families through the Blue Mountains.
+//
+// Design:
+//   - Corridor: milesTraveled in [FT_HALL_MILE, THE_DALLES_MILE]
+//   - Daily chance: SALMON_BAND_BASE_CHANCE (~10%), multiplied ×2.5
+//     within one leg (~40 mi) of salmon_falls or the_dalles fisheries.
+//   - The probability roll is done inside the gate using a sub-rng
+//     derived as makeRng(`salmon:${seed}:${day}`) — isolated from the
+//     shared rng stream so the encounter doesn't shift the daily roll
+//     sequence of any other event.
+//   - Offer qty: 10 lb (wary) / 18 lb (neutral) / 25 lb (friendly) /
+//     30 lb (allied), written to flags._salmonBandOffer at gate-time.
+//   - Goods payment: deduct trade goods at their sell value totaling
+//     the salmon buy-price. Falls back to cash path if no goods.
+//   - Cash payment: salmon buy-price × CASH_RATE_MARKUP (~1.30).
+//   - Hostile → gate returns false; encounter never fires.
+//   - Attitude adjustment: +2 on accept_goods (cordial trade),
+//     +1 on accept_cash, -1 on decline (mild slight).
+
+/** Cumulative trail mile for Fort Hall. Derived from LANDMARKS array sum.
+ *  Comment will update if the landmark list changes — the test pins it. */
+const SALMON_CORRIDOR_START_MILE = 1290; // ft_hall
+/** Cumulative trail mile for The Dalles. */
+const SALMON_CORRIDOR_END_MILE = 1950;   // the_dalles
+/** Fishery proximity boost zone: within this many miles of salmon_falls
+ *  (mile 1380) or the_dalles (mile 1950). One typical Snake-country leg ≈ 40 mi. */
+const SALMON_FISHERY_PROXIMITY_MI = 40;
+/** Mile of salmon_falls fishery (from LANDMARKS cumulative sum). */
+const SALMON_FALLS_MILE = 1380;
+
+/** Base daily fire-chance inside the corridor (10%). */
+const SALMON_BAND_BASE_CHANCE = 0.10;
+/** Multiplier when within one fishery leg. Results in ~25% daily chance. */
+const SALMON_BAND_FISHERY_MULT = 2.5;
+/** Cash rate markup vs goods-equivalent (period: cash was worth more to
+ *  some bands, but fewer emigrants had it — set ~+30%). */
+const SALMON_CASH_RATE_MARKUP = 1.30;
+
+/** Salmon offer qty (lb) by attitude level. */
+const SALMON_OFFER_BY_ATTITUDE: Record<string, number> = {
+  wary: 10,
+  neutral: 18,
+  friendly: 25,
+  allied: 30
+};
+
+/** Return the best non-hostile tribe attitude in corridor range, or null. */
+function bestCorridorTribe(
+  s: GameState
+): { tribe: Tribe; attitude: string } | null {
+  const here = tribesAtMile(s.location.milesTraveled);
+  let best: { tribe: Tribe; attitude: string } | null = null;
+  let bestScore = -1;
+  for (const t of here) {
+    const score = getTribeAttitude(s, t.id);
+    const level = getTribeAttitudeLevel(s, t.id);
+    if (level === 'hostile') continue;
+    if (score > bestScore) {
+      bestScore = score;
+      best = { tribe: t, attitude: level };
+    }
+  }
+  return best;
+}
+
+/** Compute the goods cost for `qty` lb of dried salmon (at buy price).
+ *  Returns the total $ value the trade goods must cover. */
+function salmonGoodsValue(qty: number): number {
+  return qty * getPrice('dried_salmon').buy;
+}
+
+/** Deduct trade goods from inventory to cover `targetValue` $.
+ *  Priority: tobacco > beads > blanket (period-preferred barter order).
+ *  Returns { inventory, paid } — `paid` is the value actually deducted
+ *  (may be less than targetValue if inventory is short). */
+function deductGoods(
+  inv: Record<string, number>,
+  targetValue: number
+): { inventory: Record<string, number>; paid: number } {
+  const updated = { ...inv };
+  let remaining = targetValue;
+  let paid = 0;
+  // Barter items in descending unit-sell-value order so we spend the
+  // least number of items.
+  const barterOrder: Array<{ id: string }> = [
+    { id: 'blanket' },    // sell 1.50/unit
+    { id: 'tobacco' },    // sell 0.50/unit
+    { id: 'beads' },      // sell 0.15/unit
+    { id: 'fishing_line' }, // sell ~0.20/unit
+  ];
+  for (const { id } of barterOrder) {
+    if (remaining <= 0) break;
+    const have = updated[id] ?? 0;
+    if (have === 0) continue;
+    const unitSell = getPrice(id).sell;
+    const maxFromItem = have * unitSell;
+    if (maxFromItem <= remaining) {
+      // Use all of this item
+      paid += maxFromItem;
+      remaining -= maxFromItem;
+      updated[id] = 0;
+    } else {
+      // Use partial units (round up to nearest whole unit)
+      const unitsNeeded = Math.ceil(remaining / unitSell);
+      const valuePaid = unitsNeeded * unitSell;
+      paid += valuePaid;
+      remaining = 0;
+      updated[id] = have - unitsNeeded;
+    }
+  }
+  return { inventory: updated, paid };
+}
+
+/** True if the party has any barter goods worth offering. */
+function hasBarterGoods(inv: Record<string, number>): boolean {
+  return (inv.tobacco ?? 0) > 0
+    || (inv.beads ?? 0) > 0
+    || (inv.blanket ?? 0) > 0
+    || (inv.fishing_line ?? 0) > 0;
+}
+
+/** Minimum fraction of targetValue that must be coverable by goods for
+ *  the accept_goods choice to be enabled. Prevents "one bead → full salmon"
+ *  exploits: a party needs at least this fraction of the ask in tradeable
+ *  goods before the band will deal with them. 25% ensures meaningful
+ *  trade value while still being achievable with a modest barter kit. */
+const SALMON_GOODS_MIN_FRACTION = 0.25;
+
+/** Compute total goods value the party can offer for a given targetValue.
+ *  Uses the same barterOrder as deductGoods. Returns the maximum $ covered. */
+function maxGoodsValue(inv: Record<string, number>): number {
+  const barterOrder: Array<{ id: string }> = [
+    { id: 'blanket' },
+    { id: 'tobacco' },
+    { id: 'beads' },
+    { id: 'fishing_line' },
+  ];
+  let total = 0;
+  for (const { id } of barterOrder) {
+    const have = inv[id] ?? 0;
+    if (have > 0) total += have * getPrice(id).sell;
+  }
+  return total;
+}
+
+export const ENCOUNTER_SALMON_BAND: GameEvent = {
+  id: 'encounter_salmon_band',
+  category: 'encounter',
+  title: 'Dried salmon offered',
+  body: "A small band at the roadside — drying racks behind them, cedar smoke still on the fish. They hold up a bundle of dried salmon, pointing at your trade goods.",
+  weight: 4,
+  // Gate: corridor + non-hostile tribe + deterministic daily chance via sub-rng.
+  gate: (s) => {
+    const m = s.location.milesTraveled;
+    // Corridor bounds: Fort Hall (1290) → The Dalles (1950).
+    if (m < SALMON_CORRIDOR_START_MILE || m > SALMON_CORRIDOR_END_MILE) return false;
+    // Must have at least one non-hostile tribe at this mile.
+    if (!bestCorridorTribe(s)) return false;
+    // Fishery proximity boost.
+    const nearSalmonFalls =
+      Math.abs(m - SALMON_FALLS_MILE) <= SALMON_FISHERY_PROXIMITY_MI;
+    const nearTheDalles =
+      Math.abs(m - SALMON_CORRIDOR_END_MILE) <= SALMON_FISHERY_PROXIMITY_MI;
+    const chance = (nearSalmonFalls || nearTheDalles)
+      ? SALMON_BAND_BASE_CHANCE * SALMON_BAND_FISHERY_MULT
+      : SALMON_BAND_BASE_CHANCE;
+    // Sub-rng so this roll doesn't shift the shared stream. Key includes
+    // seed + day so the outcome is deterministic per replay but varies daily.
+    const rng = makeRng(`salmon:${s.seed}:${s.day}`);
+    return rng.chance(chance);
+  },
+  // prepare: write the offer qty into flags so choices can read it
+  // without re-computing attitude at apply-time (avoids any rng
+  // inconsistency between gate-time and apply-time).
+  prepare: (s, rng) => {
+    const best = bestCorridorTribe(s);
+    if (!best) return s; // should not happen (gate checked), be safe
+    const offerQty = SALMON_OFFER_BY_ATTITUDE[best.attitude] ?? 10;
+    const goodsValue = salmonGoodsValue(offerQty);
+    const cashPrice = Math.ceil(goodsValue * SALMON_CASH_RATE_MARKUP * 100) / 100;
+    return {
+      ...s,
+      flags: {
+        ...s.flags,
+        _salmonBandOffer: offerQty,
+        _salmonBandTribeId: best.tribe.id,
+        _salmonBandGoodsPrice: goodsValue,
+        _salmonBandCashPrice: cashPrice
+      }
+    };
+  },
+  choices: [
+    {
+      id: 'accept_goods',
+      icon: '🐟',
+      label: 'Trade goods for dried salmon',
+      isDefault: true,
+      silentLog: true,
+      // Enabled only when the party has barter goods worth at least 25% of
+      // the offer price. This prevents a single bead/coin of goods from
+      // generating a full salmon haul via proportional scaling. A party
+      // truly bereft of trade goods must pay cash or decline.
+      enabled: (s) => {
+        const qty = (s.flags._salmonBandOffer as number | undefined) ?? 10;
+        const targetValue = salmonGoodsValue(qty);
+        return maxGoodsValue(s.inventory as Record<string, number>) >= targetValue * SALMON_GOODS_MIN_FRACTION;
+      },
+      apply: (s, rng) => {
+        const qty = (s.flags._salmonBandOffer as number | undefined) ?? 10;
+        const tribeId = (s.flags._salmonBandTribeId as string | undefined) ?? '';
+        const targetValue = salmonGoodsValue(qty);
+        const { inventory: invAfter, paid } = deductGoods(
+          s.inventory as Record<string, number>,
+          targetValue
+        );
+        // Scale the granted salmon proportionally to how much value was
+        // actually tendered. floor() so we never grant fractional lb.
+        // When fully covered (paid >= targetValue), grantedQty === qty.
+        // When partially covered, the band accepts what's offered and
+        // hands over a commensurate share.
+        const grantedQty = paid >= targetValue
+          ? qty
+          : Math.max(1, Math.floor(qty * (paid / targetValue)));
+        let next: GameState = {
+          ...s,
+          inventory: {
+            ...invAfter,
+            dried_salmon: ((invAfter.dried_salmon as number | undefined) ?? 0) + grantedQty
+          }
+        };
+        // Clear the per-encounter flags now that the choice is resolved
+        // (belt-and-suspenders; the server cleanup also deletes them).
+        const flags = { ...next.flags };
+        delete (flags as Record<string, unknown>)._salmonBandOffer;
+        delete (flags as Record<string, unknown>)._salmonBandTribeId;
+        delete (flags as Record<string, unknown>)._salmonBandGoodsPrice;
+        delete (flags as Record<string, unknown>)._salmonBandCashPrice;
+        next = { ...next, flags };
+        if (tribeId) next = adjustTribeAttitude(next, tribeId, 2);
+        const paidStr = paid.toFixed(2);
+        const note = grantedQty < qty
+          ? ` (short ${(qty - grantedQty)} lb — goods covered only $${paidStr}/$${targetValue.toFixed(2)})`
+          : '';
+        return logLine(
+          next,
+          `Traded ~$${paidStr} in goods for ${grantedQty} lb of dried salmon. Shelf-stable — no spoil clock. Relations +2.${note}`
+        );
+      }
+    },
+    {
+      id: 'accept_cash',
+      icon: '💵',
+      label: 'Pay cash for dried salmon (+30% vs goods)',
+      silentLog: true,
+      // Enabled when party has cash to cover the price.
+      enabled: (s) => {
+        const price = s.flags._salmonBandCashPrice as number | undefined;
+        return (price !== undefined ? s.cash >= price : s.cash >= 5);
+      },
+      apply: (s, rng) => {
+        const qty = (s.flags._salmonBandOffer as number | undefined) ?? 10;
+        const tribeId = (s.flags._salmonBandTribeId as string | undefined) ?? '';
+        const cashPrice = (s.flags._salmonBandCashPrice as number | undefined)
+          ?? Math.ceil(salmonGoodsValue(qty) * SALMON_CASH_RATE_MARKUP * 100) / 100;
+        let next: GameState = {
+          ...s,
+          cash: s.cash - cashPrice,
+          inventory: {
+            ...s.inventory,
+            dried_salmon: ((s.inventory.dried_salmon as number | undefined) ?? 0) + qty
+          }
+        };
+        // Clear the per-encounter flags (belt-and-suspenders; server cleanup also deletes them).
+        const flags = { ...next.flags };
+        delete (flags as Record<string, unknown>)._salmonBandOffer;
+        delete (flags as Record<string, unknown>)._salmonBandTribeId;
+        delete (flags as Record<string, unknown>)._salmonBandGoodsPrice;
+        delete (flags as Record<string, unknown>)._salmonBandCashPrice;
+        next = { ...next, flags };
+        if (tribeId) next = adjustTribeAttitude(next, tribeId, 1);
+        return logLine(
+          next,
+          `Paid $${cashPrice.toFixed(2)} cash for ${qty} lb of dried salmon. Relations +1.`
+        );
+      }
+    },
+    {
+      id: 'decline',
+      icon: '✋',
+      label: 'Wave them off — keep moving',
+      silentLog: true,
+      apply: (s, _rng) => {
+        const tribeId = (s.flags._salmonBandTribeId as string | undefined) ?? '';
+        let next = s;
+        if (tribeId) next = adjustTribeAttitude(next, tribeId, -1);
+        // Clear the per-encounter flags (belt-and-suspenders; server cleanup also deletes them).
+        const flags = { ...next.flags };
+        delete (flags as Record<string, unknown>)._salmonBandOffer;
+        delete (flags as Record<string, unknown>)._salmonBandTribeId;
+        delete (flags as Record<string, unknown>)._salmonBandGoodsPrice;
+        delete (flags as Record<string, unknown>)._salmonBandCashPrice;
+        next = { ...next, flags };
+        return logLine(next, 'Waved the salmon offer away. Relations -1.');
+      }
+    }
+  ]
+};
+
 /** All trail-encounter events. events.ts spreads these into its
  *  EVENTS registry on module load. */
 export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
@@ -1252,5 +1572,6 @@ export const ENCOUNTER_EVENTS: readonly GameEvent[] = [
   native_hunters_sharing,
   native_hide_trade,
   native_salmon_trade,
+  ENCOUNTER_SALMON_BAND,
   raid_revenge
 ];

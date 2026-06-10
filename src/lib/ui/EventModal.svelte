@@ -38,6 +38,20 @@
     return { disabled: true, reason: req.reason, icon: req.icon };
   }
 
+  // Resolve a choice's enabled-predicate gate against the current state.
+  // Returns {disabled, reason} so the render loop can show the lock state.
+  // This is separate from requireStatus because `enabled` accepts an arbitrary
+  // state predicate (e.g. cash >= price), whereas `requires` checks a named
+  // item ID. Both can be independently disabled — the stricter one wins.
+  function enabledStatus(enabledFn: ((state: typeof gameState) => boolean) | undefined): {
+    disabled: boolean;
+    reason?: string;
+  } {
+    if (!enabledFn) return { disabled: false };
+    if (enabledFn(gameState)) return { disabled: false };
+    return { disabled: true, reason: 'You cannot choose this option.' };
+  }
+
   // Category-based flavor
   const categoryIcon = ICON.event_categories;
 
@@ -75,6 +89,9 @@
       <div class="choices">
         {#each event.choices.filter((c) => !c.hidden?.(gameState)) as c, i}
           {@const req = requireStatus(c.requires)}
+          {@const ena = enabledStatus(c.enabled)}
+          {@const isLocked = req.disabled || ena.disabled}
+          {@const lockReason = req.disabled ? (req.reason ?? '') : (ena.disabled ? (ena.reason ?? '') : '')}
           <form
             method="POST"
             action="?/resolveEvent&slot={qp}"
@@ -89,9 +106,9 @@
               type="submit"
               class="choice-card"
               class:default={c.isDefault}
-              class:locked={req.disabled}
-              disabled={submitting || req.disabled}
-              title={req.disabled ? req.reason : ''}
+              class:locked={isLocked}
+              disabled={submitting || isLocked}
+              title={isLocked ? lockReason : ''}
               style="animation-delay: {40 + i * 60}ms;"
             >
               {#if req.icon || c.icon}
@@ -100,8 +117,8 @@
                 <span class="choice-icon" aria-hidden="true">{req.icon ?? c.icon}</span>
               {/if}
               <span class="choice-label-text">{c.label}</span>
-              {#if req.disabled && req.reason}
-                <span class="choice-reason">{req.reason}</span>
+              {#if isLocked && lockReason}
+                <span class="choice-reason">{lockReason}</span>
               {/if}
             </button>
           </form>

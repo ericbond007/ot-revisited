@@ -63,10 +63,11 @@ function crisisState(): GameState {
     location: { ...withTrain.location, nextLandmarkId: 'willow_springs' },
     wagonTrain: {
       ...withTrain.wagonTrain!,
+      // Pin to yoke minimum so #1284 maybeSlaughterOx doesn't intercept the starvation signal.
       companions: withTrain.wagonTrain!.companions.map((c, i) =>
         i === 0
-          ? { ...c, inventory: { flour: 1 } as Record<string, number> }
-          : { ...c, inventory: {} as Record<string, number> }
+          ? { ...c, oxen: c.oxen.slice(0, 2), inventory: { flour: 1 } as Record<string, number> }
+          : { ...c, oxen: c.oxen.slice(0, 2), inventory: {} as Record<string, number> }
       )
     }
   };

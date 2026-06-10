@@ -866,6 +866,19 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         } catch (err) {
           stats.errors.push(`steal: ${(err as Error).message}`);
         }
+      } else if (persona.shouldSlaughterOx(state)) {
+        // #1284 T4 — proactive ox-slaughter camp action. Fires when
+        // persona threshold is met (5 days for balanced, 7 for cautious,
+        // 3 for aggressive/pace_pusher). One day rest with slaughter_ox
+        // as the sole action; bundler picks up other urgency actions too.
+        actionType = 'rest';
+        try {
+          state = rest(state, 1, { campActions: ['slaughter_ox'] });
+          stats.decisionsMade += 1;
+          firedEventToday = true;
+        } catch (err) {
+          stats.errors.push(`slaughter: ${(err as Error).message}`);
+        }
       } else if (persona.shouldHunt(state, botRng)) {
         actionType = 'hunt';
         state = doBotHunt(state, stats);
