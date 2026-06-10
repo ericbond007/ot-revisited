@@ -22,6 +22,7 @@ import {
   runSteps,
   MORNING_STEPS,
   POST_BRANCH_STEPS,
+  PRE_TRAVEL_STEPS,
   TRAVEL_OX_WAGON_STEPS,
   POST_EVENT_TAIL_STEPS
 } from '../daily-steps';
@@ -41,9 +42,7 @@ import { getPersona } from '../ai/personas';
 import { bundleCampActions } from '../ai/bundle';
 import { CAMP_ACTIONS_BY_ID } from '../actions/camp-actions';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
-import { applySabbathTravelDebit } from './sabbath-travel';
 import { rollStrayMorning } from './strays';
-import { applyDailyRecovery } from './travel-recovery';
 import { recoverOxenFatigue, recoverOxenHealth } from './oxen';
 import { applyAxleGrease as applyEngineAxleGrease } from './wagon';
 import {
@@ -420,21 +419,12 @@ export function tickNpcWagon(
   next = stormResult.wagon;
   if (stormResult.playerLog) playerLogs.push(stormResult.playerLog);
 
-  // #1266 stage2 residual: PRE_TRAVEL stays driver code here —
-  // applyDailyRecovery needs the NPC crisis-layby guard (not expressible
-  // as step scope) and applyTrainShare is playerOnly. A new PRE_TRAVEL
-  // step will NOT auto-reach NPCs; add it here manually (smallest, most
-  // train-flavored segment).
+  // #1266 stage3 — PRE_TRAVEL via the spine. applyTrainShare is playerOnly
+  // (filtered); the crisis-layby recovery carve (#1046 §13 C) lives in the
+  // step itself, keyed off ctx.companyRestMode.
   {
     const synth = synthesizeWagonState(next, env);
-    if (ctx.companyRestMode !== 'crisis_layby') {
-      const recovered = applyDailyRecovery(synth, traveled);
-      next = projectWagonDeltas(recovered, next);
-    }
-  }
-  {
-    const synth = synthesizeWagonState(next, env);
-    const ticked = applySabbathTravelDebit(synth, traveled);
+    const ticked = runSteps(PRE_TRAVEL_STEPS, synth, rng, { traveled, driver: 'npc', companyRestMode: ctx.companyRestMode });
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);
