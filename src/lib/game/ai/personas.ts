@@ -160,6 +160,21 @@ function gapAwareRepairTrigger(
 }
 
 /** Lowest-health alive party member's HP. Defaults to 100 when nobody alive. */
+/** #1280 L1 — crisis-rest with convalesce-in-motion. A single sick member
+ *  under TENDED/DOCTOR care heals 5-7.5 HP/day while TRAVELING (#1046 A);
+ *  period trains kept rolling with the sick riding in the wagon. Stop only
+ *  when HP is critical (<15), multiple members are down, or care is absent.
+ *  This was the dominant calendar leak: each infection cost ~10-15 lay-by
+ *  days under the old unconditional min-HP rest. */
+function crisisRestNeeded(state: GameState, floor: number): boolean {
+  const min = minPartyHealth(state);
+  if (min >= floor) return false;
+  if (min < 15) return true;
+  const down = state.party.filter((m) => !m.dead && m.health < floor).length;
+  if (down >= 2) return true;
+  return careLevel(state) === 'untended';
+}
+
 function minPartyHealth(state: GameState): number {
   const alive = state.party.filter((m) => !m.dead);
   if (alive.length === 0) return 100;
@@ -657,7 +672,7 @@ export const cautiousPersona: Persona = {
     // the voluntary morale rest is suppressed when behind. Crisis HP/oxen
     // rest stays unconditional.
     if (isSunday(state.date)) return allowsSabbathRest(state, this.id);
-    if (minPartyHealth(state) < 30 || oxenWornOut(state)) return true;
+    if (crisisRestNeeded(state, 30) || oxenWornOut(state)) return true;
     return state.morale < 15 && !suppressCamp(state, this.id, 'pan');
   },
   shouldHunt(state) {
@@ -860,7 +875,7 @@ export const balancedPersona: Persona = {
     if (isSunday(state.date)) return allowsSabbathRest(state, this.id);
     // Crisis rest — always allowed (critical override).
     const hpFloor = hasLiveDoctor(state) ? 15 : 25;
-    if (minPartyHealth(state) < hpFloor || oxenWornOut(state)) return true;
+    if (crisisRestNeeded(state, hpFloor) || oxenWornOut(state)) return true;
     // Voluntary morale rest — discretionary; suppressed when behind.
     if (state.morale < 10 && !suppressCamp(state, this.id, 'pan')) return true;
     return false;
@@ -1074,7 +1089,7 @@ export const aggressivePersona: Persona = {
   shouldRest(state) {
     // Aggressive still respects oxen — burning the team to extinction
     // is not "aggressive", it's just a stuck wagon.
-    if (minPartyHealth(state) < 20 || oxenWornOut(state)) return true;
+    if (crisisRestNeeded(state, 20) || oxenWornOut(state)) return true;
     // #921r — post-shock recovery rebalance. The dominant aggressive
     // failure was NOT death (13% wiped) — it was 68% STRANDED: a
     // desert dehydration / ox loss around mile 1300-1600, then the
@@ -1495,7 +1510,7 @@ export const pacePusherPersona: Persona = {
     // pace_pusher misses the trend until oxen actually die. Avg-80
     // is the 'time to stop and recover' signal.
     return (
-      minPartyHealth(state) < 30
+      crisisRestNeeded(state, 30)
       || oxenWornOut(state)
       || anyOxStrained(state)
     );
