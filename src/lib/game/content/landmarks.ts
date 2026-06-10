@@ -151,6 +151,11 @@ export interface Landmark {
   /** Era flip: post only pays cash from this year onward (control changed
    *  hands, e.g. Am. Fur Co. -> US Army at Fort Laramie in 1849). */
   buysForCashFromYear?: number;
+  /** #1281 — the LEG ARRIVING AT this landmark runs beside accessible water.
+   *  'clean' = potable (Sweetwater, Boise, Bear); 'murky' = accessible but
+   *  filthy (the Platte — refills dirtyWater, the 1849 cholera story).
+   *  Absent = rim/point/dry: ambient refill stays terrain-based. */
+  waterCorridor?: 'clean' | 'murky';
 }
 
 /**
@@ -228,20 +233,23 @@ export const LANDMARKS: readonly Landmark[] = [
   // follow-up.
   { id: 'lone_elm_campground', name: 'Lone Elm Campground', milesFromPrevious: 40,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'kansas_river',        name: 'Kansas River',        milesFromPrevious: 60,  terrain: 'river',     kind: 'river',
+    waterCorridor: 'clean', // Kansas/Blue creek country (research table: corridor)
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 3 } },
   // #243 — Vieux's Crossing on the Vermillion (mile ~145, KS). Louis
   // Vieux ran a toll bridge across the Vermillion 1840s+. Iconic 1849
   // cholera cemetery sprung up around the crossing — diary after diary
   // mentions the line of fresh graves on the rise above the toll. The
   // year-gated cholera flavor event is a follow-up.
-  { id: 'vieux_crossing',      name: "Vieux's Crossing",    milesFromPrevious: 24,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'alcove_spring',       name: 'Alcove Spring',       milesFromPrevious: 24,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'vieux_crossing',      name: "Vieux's Crossing",    milesFromPrevious: 24,  terrain: 'prairie',   kind: 'landmark', waterCorridor: 'clean' }, // Kansas/Blue creek country
+  { id: 'alcove_spring',       name: 'Alcove Spring',       milesFromPrevious: 24,  terrain: 'prairie',   kind: 'landmark', waterCorridor: 'clean' }, // Blue River valley
   // Alcove Spring sits at the Big Blue ford; the named camp and the
   // crossing are essentially collocated. 5 mi covers wagons rolling
   // down from the spring to the river bank.
   { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 2,   terrain: 'river',     kind: 'river',
+    waterCorridor: 'clean', // Big Blue valley
     river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
   { id: 'hollenberg_ranch',    name: 'Hollenberg Ranch',    milesFromPrevious: 30,  terrain: 'prairie',   kind: 'trading_post',
+    waterCorridor: 'clean', // Cottonwood Creek / Little Blue valley road
     // Private road ranch built 1857 on Cottonwood Creek at the junction
     // of the Independence and St. Joseph roads. Long frame building on a
     // stone foundation — store, kitchen, family quarters, post office,
@@ -273,6 +281,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // Year-gated abandonedBeforeYear: 1857 so pre-1857 starts see open
   // prairie. Sparse stock — frontier ranch, not a hub.
   { id: 'rock_creek_station',  name: 'Rock Creek Station',  milesFromPrevious: 27,  terrain: 'prairie',   kind: 'trading_post',
+    waterCorridor: 'clean', // Little Blue / Rock Creek valley road
     postKind: 'frontier',
     abandonedBeforeYear: 1857,
     buysForCash: true,
@@ -285,6 +294,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'rope', 'tobacco', 'whiskey'
     ] },
   { id: 'ft_kearny',           name: 'Fort Kearny',         milesFromPrevious: 112, terrain: 'prairie',   elevationFt: 2200, kind: 'trading_post',
+    waterCorridor: 'murky', // Platte corridor: Little Blue→Platte (murky Platte water, 1849 cholera route)
     // U.S. Army post. Quartermaster-issue basics — no luxuries.
     // Historical note: Army quartermasters issued to soldiers; they did
     // not buy goods from emigrants. Kearny is sell-only (for the player).
@@ -312,7 +322,8 @@ export const LANDMARKS: readonly Landmark[] = [
   // behind. Period diaries describe taking three to four hours per
   // wagon. The ox-fatigue / wagon-damage descent mechanic is a
   // follow-up; for now, just a flavor landmark before Ash Hollow.
-  { id: 'windlass_hill',       name: 'Windlass Hill',       milesFromPrevious: 92, terrain: 'mountains', kind: 'landmark' },
+  { id: 'windlass_hill',       name: 'Windlass Hill',       milesFromPrevious: 92, terrain: 'mountains', kind: 'landmark',
+    waterCorridor: 'murky' }, // #1281 gate fix: ~70 of this leg's 92 mi are Platte south-bank road (murky corridor); only the final ~22-mi Ash Hollow ridgeback is dry — that dryness lives on the NEXT leg (ash_hollow arrival, unflagged). Unflagged here cratered the leg: 266 deaths/2500 in the T6 gate.
   { id: 'ash_hollow',          name: 'Ash Hollow',          milesFromPrevious: 2,   terrain: 'prairie',   kind: 'landmark' },
   // #246 — Rachel Pattison's grave (mile ~516, NE). 1849 cholera
   // death — a 19-year-old bride from Iowa, buried with a sandstone
@@ -326,13 +337,16 @@ export const LANDMARKS: readonly Landmark[] = [
   // as "not yet built/dug"). Historical refs:
   // docs/historical-pass/13-landmark-visual-references/ash_hollow.md.
   { id: 'rachel_pattison_grave', name: "Rachel Pattison's Grave", milesFromPrevious: 2, terrain: 'prairie', kind: 'landmark',
+    waterCorridor: 'murky', // North Platte valley, back on river; 1849 cholera epicenter
     abandonedBeforeYear: 1849 },
   { id: 'north_platte_1',      name: 'North Platte crossing (east)', milesFromPrevious: 30, terrain: 'river', kind: 'river',
+    waterCorridor: 'murky', // North Platte ford
     river: { depthFt: 2.5, currentMph: 2, ferryPrice: 4 } },
-  { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 27, terrain: 'prairie', kind: 'landmark' },
-  { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 20,  terrain: 'prairie',   elevationFt: 4200, kind: 'landmark' },
-  { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'courthouse_rock',     name: 'Courthouse & Jail Rocks', milesFromPrevious: 27, terrain: 'prairie', kind: 'landmark', waterCorridor: 'murky' }, // North Platte valley
+  { id: 'chimney_rock',        name: 'Chimney Rock',        milesFromPrevious: 20,  terrain: 'prairie',   elevationFt: 4200, kind: 'landmark', waterCorridor: 'murky' }, // North Platte valley
+  { id: 'scotts_bluff',        name: 'Scotts Bluff',        milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark', waterCorridor: 'murky' }, // North Platte valley
   { id: 'robidoux_post',       name: 'Robidoux Trading Post', milesFromPrevious: 6, terrain: 'prairie',  kind: 'trading_post',
+    waterCorridor: 'murky', // North Platte valley / spring at Robidoux Pass
     // Joseph E. Robidoux's small log shanty at Robidoux Pass, just south
     // of Scotts Bluff. Forge-end + grog-end under one roof (Stansbury 1849,
     // 75¢/hour blacksmith). Narrow historical window: built ~1849 for
@@ -359,6 +373,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'mirror', 'awl', 'thimble', 'pocket_knife'
     ] },
   { id: 'ft_laramie',          name: 'Fort Laramie',        milesFromPrevious: 132,  terrain: 'prairie',   elevationFt: 4300, kind: 'trading_post',
+    waterCorridor: 'murky', // North Platte valley road
     // Fur-trade origin turned emigrant hub. The broadest selection on the
     // trail — and famously the highest prices.
     postKind: 'frontier',
@@ -390,8 +405,8 @@ export const LANDMARKS: readonly Landmark[] = [
     ] },
   // Register Cliff sits ~60 mi past Laramie near present-day Guernsey.
   // The wagon ruts at Guernsey are a couple miles further along.
-  { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 3,  terrain: 'prairie',   kind: 'landmark' },
-  { id: 'guernsey_ruts',       name: 'Guernsey Ruts',       milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
+  { id: 'register_cliff',      name: 'Register Cliff',      milesFromPrevious: 3,  terrain: 'prairie',   kind: 'landmark', waterCorridor: 'murky' }, // North Platte valley near Guernsey
+  { id: 'guernsey_ruts',       name: 'Guernsey Ruts',       milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark', waterCorridor: 'murky' }, // North Platte bench
   // #247 — Mormon Ferry / Fort Caspar (mile ~810, WY). Brigham Young's
   // Mormons opened a ferry on the North Platte west crossing in 1847
   // and ran it until a bridge replaced it in 1853. The Army built
@@ -401,6 +416,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // 1855+ get a quartermaster stop. The era-gated ferry-vs-bridge
   // pricing on north_platte_2 itself is a follow-up.
   { id: 'ft_caspar',           name: 'Fort Caspar',         milesFromPrevious: 114,  terrain: 'prairie',   kind: 'trading_post',
+    waterCorridor: 'murky', // North Platte valley road, last reliable river stretch before the alkali
     postKind: 'us_army',
     abandonedBeforeYear: 1855,
     buysFromEmigrants: false,
@@ -419,10 +435,11 @@ export const LANDMARKS: readonly Landmark[] = [
   // to Willow Springs, not after Martin's Cove (the prior code order
   // was the geographic-sequence quirk #1040 deferred).
   { id: 'north_platte_2',      name: 'North Platte (west crossing)', milesFromPrevious: 3, terrain: 'river', kind: 'river',
+    waterCorridor: 'murky', // River ford at Caspar bridge; still on the river (research table: corridor)
     river: { depthFt: 4.0, currentMph: 3, ferryPrice: 5 } },
   { id: 'willow_springs',      name: 'Willow Springs',      milesFromPrevious: 37,  terrain: 'prairie',   kind: 'landmark' },
   { id: 'independence_rock',   name: 'Independence Rock',   milesFromPrevious: 5,  terrain: 'prairie',   elevationFt: 6000, kind: 'landmark' },
-  { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark' },
+  { id: 'devils_gate',         name: "Devil's Gate",        milesFromPrevious: 5,   terrain: 'mountains', kind: 'landmark', waterCorridor: 'clean' }, // Sweetwater corridor begins
   // #248 — Martin's Cove (mile ~822, WY). Site of the 1856 Mormon
   // handcart disaster — the Martin Company was caught by an October
   // blizzard and 56 of 576 died of exposure at the cove. Memorial
@@ -434,8 +451,10 @@ export const LANDMARKS: readonly Landmark[] = [
   // before independence_rock with mFP 30; reordered to here for the
   // correct geographic sequence.)
   { id: 'martins_cove',        name: "Martin's Cove",       milesFromPrevious: 2,  terrain: 'mountains', kind: 'landmark',
+    waterCorridor: 'clean', // Sweetwater's first bend; on the river
     abandonedBeforeYear: 1856 },
   { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 8, terrain: 'river',    kind: 'river',
+    waterCorridor: 'clean', // Sweetwater crossing; "good grass on the banks… water actively pleasant"
     river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
   // Cheyenne summer camp on the Sweetwater plains (#202). Cheyenne
   // bands ranged the high country south of the Black Hills west to
@@ -444,6 +463,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // hide-for-robe at a favorable rate — Cheyenne women tanned the
   // finest robes on the plains.
   { id: 'cheyenne_camp',       name: 'Cheyenne Summer Camp', milesFromPrevious: 30, terrain: 'prairie',   kind: 'trading_post',
+    waterCorridor: 'clean', // Sweetwater valley; river itself always good, adjacent alkali ponds are stock hazard not a water-access issue
     postKind: 'native',
     tribeId: 'cheyenne',
     stockScale: 0.4,
@@ -454,12 +474,12 @@ export const LANDMARKS: readonly Landmark[] = [
       'beads', 'blanket', 'jerky'
     ],
     excludeBuyCategories: ['wagon_part', 'tool'] },
-  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark' },
+  { id: 'ice_slough',          name: 'Ice Slough',          milesFromPrevious: 20,  terrain: 'prairie',   kind: 'landmark', waterCorridor: 'clean' }, // Sweetwater plain; river still near
   // South Pass is the broad sage flat saddle of the Continental Divide
   // — wagons rolled through, not over. Treat as prairie for travel
   // pacing despite the elevation. Same for the rolling sage country
   // out to Fort Bridger.
-  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 35,  terrain: 'prairie',   elevationFt: 7400, kind: 'landmark' },
+  { id: 'south_pass',          name: 'South Pass',          milesFromPrevious: 35,  terrain: 'prairie',   elevationFt: 7400, kind: 'landmark', waterCorridor: 'clean' }, // Sweetwater corridor to its head; research table: "corridor to the head"
   { id: 'pacific_springs',     name: 'Pacific Springs',     milesFromPrevious: 3,   terrain: 'prairie',   kind: 'landmark' },
   // Parting of the Ways — the fork where the Sublette/Greenwood Cutoff
   // diverges from the main Fort Bridger road. The cutoff didn't exist
@@ -471,6 +491,7 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'parting_of_ways',     name: 'Parting of the Ways', milesFromPrevious: 7,  terrain: 'prairie',   kind: 'landmark',
     abandonedBeforeYear: 1844 },
   { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 50, terrain: 'river',    kind: 'river',
+    waterCorridor: 'clean', // Research table: "corridor at the Green"; note: spec §1 says "Big Sandy/Green stretch: unflagged" — TABLE wins
     river: {
       depthFt: 4.5, currentMph: 4, ferryPrice: 8,
       // Shoshone bull-boat at the Green. Bead trade is the period
@@ -486,8 +507,9 @@ export const LANDMARKS: readonly Landmark[] = [
   // skids. Period diaries describe it as "the worst hill we have yet
   // seen." Ox-fatigue / wagon-damage descent mechanic is a follow-up;
   // for now, scenic landmark only.
-  { id: 'big_hill',            name: 'Big Hill',            milesFromPrevious: 35,  terrain: 'mountains', kind: 'landmark' },
+  { id: 'big_hill',            name: 'Big Hill',            milesFromPrevious: 35,  terrain: 'mountains', kind: 'landmark', waterCorridor: 'clean' }, // Entering Bear valley; well-watered mountain meadow country
   { id: 'ft_bridger',          name: 'Fort Bridger',        milesFromPrevious: 30,  terrain: 'prairie',   elevationFt: 6700, kind: 'trading_post',
+    waterCorridor: 'clean', // Black's Fork of the Green; braided clear mountain streams
     // Jim Bridger's mountain post. Famously sparse — take what you can get.
     postKind: 'mountain',
     buysForCashFromYear: 1858,
@@ -522,6 +544,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // is excellent: Washakie's people maintained warm relations with
   // emigrants from the Lewis & Clark generation onward.
   { id: 'shoshone_camp',       name: 'Shoshone Summer Camp', milesFromPrevious: 45, terrain: 'prairie',   kind: 'trading_post',
+    waterCorridor: 'clean', // Bear River valley; "grass, willows, cottonwoods, cool clear water"
     postKind: 'native',
     tribeId: 'shoshone',
     stockScale: 0.5,
@@ -533,9 +556,11 @@ export const LANDMARKS: readonly Landmark[] = [
     ],
     excludeBuyCategories: ['wagon_part', 'tool'] },
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 10,  terrain: 'river',     kind: 'river',
+    waterCorridor: 'clean', // Bear River ford; open mountain valley, clear water
     river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
-  { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   elevationFt: 5800, kind: 'landmark' },
+  { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   elevationFt: 5800, kind: 'landmark', waterCorridor: 'clean' }, // Bear River valley; effervescent springs on the Bear
   { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 145,  terrain: 'prairie',   elevationFt: 4500, kind: 'trading_post',
+    waterCorridor: 'clean', // Snake/Portneuf bottomland oasis; last easy-water landmark before the Snake canyon plateau
     // Hudson's Bay Company (HBC — British fur-trade firm) post on the Snake.
     // Well-supplied with British imports via HBC supply lines (tea, quality
     // wool blankets, manufactured goods). California Trail splits here.
@@ -571,7 +596,15 @@ export const LANDMARKS: readonly Landmark[] = [
       // HBC supply lines kept abundant Plains trade goods on hand.
       'beads', 'mirror', 'vermilion', 'awl', 'thimble', 'calico', 'pocket_knife'
     ] },
-  // #250 — "Gate of Death" / later Massacre Rocks (mile ~1335, ID).
+  // #1281 — American Falls (mile ~1300, ID). The first reachable
+  // descent to the Snake River below Fort Hall; a major waterfall and
+  // standard emigrant water/camp stop. The road crossed the plain ~10
+  // mi past Hall and briefly touched the river at the falls before
+  // climbing back onto the canyon rim. Period diaries (Frizzell 1852,
+  // Carpenter 1857) mention watering at the falls. No art yet — GAP
+  // placeholder in UI; Icons/Backgrounds follow-up ticket pending.
+  { id: 'american_falls',      name: 'American Falls',      milesFromPrevious: 10,  terrain: 'desert',    kind: 'landmark', waterSource: true },
+  // #250 — "Gate of Death" / later Massacre Rocks (mile ~1335 → ~1345 post-#1281, ID).
   // During the 1843-1860 emigration window the narrow basalt gap on
   // the Snake was known as "Gate of Death" — emigrants feared (and
   // wrote about) ambushes there. The "Massacre Rocks" name only
@@ -584,8 +617,20 @@ export const LANDMARKS: readonly Landmark[] = [
   // (#1180 — reordered from pre-ft_hall to here. Geographically Gate
   // of Death is ~10 mi SW of American Falls, just downstream of Fort
   // Hall — not upstream as the prior LANDMARKS order had it.)
-  { id: 'massacre_rocks',      name: 'Gate of Death',       milesFromPrevious: 45,   terrain: 'mountains', kind: 'landmark' },
-  // #251 — Salmon Falls (mile ~1380, ID). Shoshone fishery on the
+  // (#1281 — mFP reduced from 45 to 35; american_falls absorbs the
+  // first 10 mi of this leg.)
+  { id: 'massacre_rocks',      name: 'Gate of Death',       milesFromPrevious: 35,   terrain: 'mountains', kind: 'landmark' },
+  // #1281 — Rock Creek (Snake) (mile ~1367 post-#1281, ID). A tributary
+  // canyon where emigrants descended to the Snake for water and grass,
+  // roughly mid-way between Gate of Death and Salmon Falls. The named
+  // relief between the two better-known descents; attested in period
+  // diaries as a watering stop. "Snake" suffix distinguishes this from
+  // rock_creek_station (Kansas, mile ~230). No art yet — GAP
+  // placeholder in UI; Icons/Backgrounds follow-up ticket pending.
+  // (#1281 — splits the massacre_rocks→salmon_falls leg (was 45 mi):
+  // rock_creek_snake takes 22 mi, salmon_falls reduced to 23 mi.)
+  { id: 'rock_creek_snake',    name: 'Rock Creek',          milesFromPrevious: 22,  terrain: 'desert',    kind: 'landmark', waterSource: true },
+  // #251 — Salmon Falls (mile ~1380 → ~1389 post-#1281, ID). Shoshone fishery on the
   // upper Snake — bands speared and dried thousands of salmon every
   // summer. Period emigrants traded knives, beads, and tobacco for
   // fresh fish. The salmon-trade encounter (#239) already covers the
@@ -603,7 +648,8 @@ export const LANDMARKS: readonly Landmark[] = [
   // behind the Hall→Boise dehydration-wipe cluster (audit #1039: 6 of
   // 11 family-wagon dehydration wipes died on this 110-mi leg with no
   // water access). The descent to the falls is the historical relief.
-  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 45, terrain: 'desert',    kind: 'landmark', waterSource: true },
+  // (#1281 — mFP reduced from 45 to 23; rock_creek_snake absorbs 22 mi.)
+  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 23, terrain: 'desert',    kind: 'landmark', waterSource: true },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 30, terrain: 'river',   kind: 'river',
     river: {
       depthFt: 5.0, currentMph: 3, ferryPrice: 6,
@@ -615,6 +661,7 @@ export const LANDMARKS: readonly Landmark[] = [
       nativeFerry: { tribeId: 'shoshone', priceItem: 'beads', priceQty: 4, blurb: 'Bannock-Shoshone raft — 4 strings of beads' }
     } },
   { id: 'ft_boise',            name: 'Fort Boise',          milesFromPrevious: 160, terrain: 'desert',    elevationFt: 2100, kind: 'trading_post',
+    waterCorridor: 'clean', // Boise River valley (north/wet route); "lush and well-watered… the water is good"
     // Small HBC station. Modest stock, not a major resupply. HBC abandoned
     // it in 1855 after 1853 floods damaged the adobe walls + 1854 Ward
     // Massacre (~20 emigrants killed nearby by Bannock) made operations
@@ -644,22 +691,53 @@ export const LANDMARKS: readonly Landmark[] = [
       'canvas', 'spare_plank', 'ox_shoes', 'grain', 'water_bag',
       'moccasins', 'buffalo_robe'
     ] },
-  // #252 — Burnt River Canyon (mile ~1680, OR). Tortured zigzag
+  // #1281 T4 — Farewell Bend geography fix. The historical sequence
+  // leaving the Snake is: Farewell Bend (last camp ON the Snake) →
+  // Burnt River Canyon (up the gorge) → Flagstaff Hill (Baker Valley
+  // overlook) → Blue Mountains. The catalog had them backwards
+  // (Burnt River first, Farewell Bend last — reversed geography).
+  // Fixed per research doc §Catalog Corrections (confidence HIGH,
+  // Franzwa/Haines geography). Mileage redistribution:
+  //   old legs: burnt_river_canyon(50) + flagstaff_hill(30) +
+  //             farewell_bend(10) = 90 mi total
+  //   new legs: farewell_bend(40) + burnt_river_canyon(25) +
+  //             flagstaff_hill(15) = 80 mi total
+  //   difference: –10 mi; blue_mountains mFP adjusted 60 → 70 to
+  //   preserve the canonical 2170-mile total.
+  //
+  // farewell_bend: terrain 'prairie' — it SITS on the Snake, but
+  //   terrain 'river' is reserved for ford legs (TERRAIN_MULTIPLIER
+  //   zeroes travel on river terrain; a non-ford landmark with it
+  //   walls the trail — caught by the #1281 T6 gate, 100% stalls).
+  //   The water story rides waterSource (top-off) + waterCorridor
+  //   'clean' (ft_boise→farewell_bend = Boise valley + Snake return).
+  // burnt_river_canyon: mFP reduced 50→25 (Burnt R. gorge is the
+  //   short climbs, not the long flat-desert leg it was before).
+  //   waterCorridor 'murky' preserved from T2.
+  // flagstaff_hill: mFP reduced 30→15 (dry ridge climb into Baker
+  //   Valley); unflagged (keep-point per research table).
+  { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 40,  terrain: 'prairie',   kind: 'landmark',
+    waterSource: true,
+    waterCorridor: 'clean' }, // Last camp on the Snake; Boise River valley + Snake return leg = clean
+  // #252 — Burnt River Canyon (mile ~1650 post-#1281, OR). Tortured zigzag
   // through a brushy gorge — diaries describe oxen hung up on snags,
   // wagons banged off rocks, repeated unyokings. Wagon-damage / ox-
   // fatigue penalty mechanic is a follow-up.
-  { id: 'burnt_river_canyon',  name: 'Burnt River Canyon',  milesFromPrevious: 50,  terrain: 'mountains', kind: 'landmark' },
-  // #253 — Flagstaff Hill (mile ~1720, OR). First view of the Blue
-  // Mountains for westbound emigrants. Some parties cried at the
+  // (#1281 — mFP 50→25; now correctly the short Burnt River gorge after
+  // Farewell Bend, not a long desert leg before it.)
+  { id: 'burnt_river_canyon',  name: 'Burnt River Canyon',  milesFromPrevious: 25,  terrain: 'mountains', kind: 'landmark', waterCorridor: 'murky' }, // Burnt River creek; brackish gorge water (task spec: Burnt River legs 'murky')
+  // #253 — Flagstaff Hill (mile ~1675 post-#1281, OR). First view of the
+  // Blue Mountains for westbound emigrants. Some parties cried at the
   // sight; others built cairns. A morale-bump arrival event is a
   // follow-up.
-  { id: 'flagstaff_hill',      name: 'Flagstaff Hill',      milesFromPrevious: 30,  terrain: 'mountains', kind: 'landmark' },
-  { id: 'farewell_bend',       name: 'Farewell Bend',       milesFromPrevious: 10,  terrain: 'desert',    kind: 'landmark' },
-  // Blue Mountains landmark fires when wagons enter the foothills, ~60
-  // mi west of Farewell Bend; the actual crossing into Grande Ronde
-  // takes another ~50 mi over the divide.
-  { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 60,  terrain: 'mountains', kind: 'landmark' },
-  { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 25,  terrain: 'forest',    kind: 'landmark' },
+  // (#1281 — mFP 30→15; now correctly the ridge climb above Baker
+  // Valley, not a long stretch after farewell_bend.)
+  { id: 'flagstaff_hill',      name: 'Flagstaff Hill',      milesFromPrevious: 15,  terrain: 'mountains', kind: 'landmark' },
+  // Blue Mountains landmark fires when wagons enter the foothills.
+  // (#1281 — mFP 60→70 to absorb the –10 mi from the T4 farewell_bend
+  // reorder and preserve the canonical 2170-mile total.)
+  { id: 'blue_mountains',      name: 'Blue Mountains',      milesFromPrevious: 70,  terrain: 'mountains', kind: 'landmark', waterCorridor: 'clean' }, // Powder River / mountain stream country
+  { id: 'grande_ronde',        name: 'Grande Ronde Valley', milesFromPrevious: 25,  terrain: 'forest',    kind: 'landmark', waterCorridor: 'clean' }, // Grande Ronde River; well-watered mountain valley
   // Methodist mission at Waiilatpu, headwaters of the Walla Walla. Marcus
   // + Narcissa Whitman ran it as both medical aid and a layover for
   // emigrants — Marcus was a physician, the farm produced wheat /
@@ -669,6 +747,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // mode and triggers ruin styling for later parties. Sparse on dry
   // goods and ammunition — the Whitmans were missionaries, not traders.
   { id: 'whitman_mission',     name: 'Whitman Mission',     milesFromPrevious: 85,  terrain: 'prairie',   elevationFt: 800, kind: 'trading_post',
+    waterCorridor: 'clean', // Walla Walla River corridor; mission on the river cottonwood corridor
     postKind: 'mission',
     abandonedAfterYear: 1847,
     stockScale: 0.5,
@@ -704,6 +783,7 @@ export const LANDMARKS: readonly Landmark[] = [
   // Fort Walla Walla sat ~25 mi west of the mission, on the Columbia
   // (the HBC post, not the later Army fort of the same name).
   { id: 'ft_walla_walla',      name: 'Fort Walla Walla',    milesFromPrevious: 25,  terrain: 'prairie',   elevationFt: 700, kind: 'trading_post',
+    waterCorridor: 'clean', // Walla Walla River to the Columbia; research table: "corridor (river corridor)". Note: spec §1 says "Whitman→Dalles: unflagged" but TABLE wins
     // HBC river post (Wallula, on the Columbia at the Walla Walla mouth).
     // Basic but reliable stock. Native trade goods specialty here. HBC
     // abandoned the adobe fort November 1855 during the Yakima War — the
@@ -725,7 +805,26 @@ export const LANDMARKS: readonly Landmark[] = [
       'canvas', 'tongue', 'grain',
       'moccasins', 'buffalo_robe', 'beads'
     ] },
-  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 95, terrain: 'prairie',   elevationFt: 100, kind: 'trading_post',
+  // #1281 — Columbia plateau access points (ft_walla_walla → the_dalles, 95 mi).
+  // The road ran INLAND across the dry Columbia plateau; emigrants reached water
+  // only at these four river crossings. Without them, the engine treats the full
+  // 95-mi plateau leg as bone-dry — the same failure class as the pre-#1039
+  // Snake leg. Research source: research doc §Columbia plateau section;
+  // whitman_mission.md establishes the dry-plateau character.
+  // No art yet — GAP placeholder in UI; Icons/Backgrounds follow-up ticket.
+  //
+  // Leg split: original ft_walla_walla→the_dalles 95 mi →
+  //   umatilla_river(25) + willow_creek_or(15) + john_day_river(30) +
+  //   deschutes_river(15) + the_dalles(10) = 95 mi.
+  //
+  // "willow_creek_or" suffix: distinguishes from willow_springs (Sweetwater
+  // approach, mile ~866). The Oregon one is not commonly called just "Willow
+  // Creek" in the trail LANDMARKS namespace.
+  { id: 'umatilla_river',      name: 'Umatilla River',      milesFromPrevious: 25,  terrain: 'prairie',   kind: 'landmark', waterSource: true },
+  { id: 'willow_creek_or',     name: 'Willow Creek',        milesFromPrevious: 15,  terrain: 'prairie',   kind: 'landmark', waterSource: true },
+  { id: 'john_day_river',      name: 'John Day River',      milesFromPrevious: 30,  terrain: 'prairie',   kind: 'landmark', waterSource: true },
+  { id: 'deschutes_river',     name: 'Deschutes River',     milesFromPrevious: 15,  terrain: 'prairie',   kind: 'landmark', waterSource: true },
+  { id: 'the_dalles',          name: 'The Dalles',          milesFromPrevious: 10, terrain: 'prairie',   elevationFt: 100, kind: 'trading_post',
     // End-of-trail Columbia gorge town. Everything you forgot plus end-of-
     // trail comforts — fiddles, Bibles, nice boots. Prices are ruinous.
     postKind: 'end_of_trail',

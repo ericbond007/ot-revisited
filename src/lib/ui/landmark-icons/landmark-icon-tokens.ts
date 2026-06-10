@@ -95,4 +95,13 @@ export type LandmarkIconId =
   // (Independence, MO — start of trail). Note: this is distinct from
   // `independence_rock` above (the Wyoming granite landmark).
   | 'independence_mo'
-  | 'oregon_city';
+  | 'oregon_city'
+  // #1281 — new point-access landmarks (Snake ×2, Columbia plateau ×4).
+  // No bespoke SVG icons yet — render the "?" placeholder until the
+  // Icons/Backgrounds follow-up task delivers the art.
+  | 'american_falls'
+  | 'rock_creek_snake'
+  | 'umatilla_river'
+  | 'willow_creek_or'
+  | 'john_day_river'
+  | 'deschutes_river';
