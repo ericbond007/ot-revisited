@@ -43,7 +43,7 @@ import { pickRestCampChain } from '../../game/ai/rest';
 import { bundleCampActions } from '../../game/ai/bundle';
 import { CAMP_ACTIONS_BY_ID, hourCostFor, type CampActionId } from '../../game/actions/camp-actions';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
-import { getLandmark, type Landmark } from '../../game/content/landmarks';
+import { getLandmark, LANDMARKS, type Landmark } from '../../game/content/landmarks';
 import { foodItemIds } from '../../game/content/items';
 import type { GameState, ProfessionId } from '../../game/types';
 import type { Rng } from '../../game/rng';
@@ -64,7 +64,24 @@ import type { BotRunOpts, BotRunReport } from './types';
 // a structural problem (rest-loop, event day-burn, disease cycle),
 // not a slow-but-valid run. Pre-#924 cap was 365 (~1 yr) which let
 // 73/75 bot runs cook in calendar-burn rest-loops past period reality.
-const DEFAULT_MAX_DAYS = 220;
+// #1280 L2 — 220 → 260. There is NO in-game day cap or winter mechanic;
+// 220 sat only ~20 days above the typical 200-day run and conflated
+// synthetic cutoffs with real stalls (every friction mechanic 'failed' the
+// gate by eating the margin). 260 measures the game, not the harness;
+// the arrival score still rewards speed. The honest long-term wall is a
+// designed late-season snow mechanic (VK winter-wall ticket).
+const DEFAULT_MAX_DAYS = 260;
+
+// #1280 L3' — total trail miles for the food-reserve calc.
+const TRAIL_TOTAL_MILES = LANDMARKS.reduce((s, l) => s + l.milesFromPrevious, 0);
+/** Cash held back from full-basket post shopping, proportional to miles
+ *  remaining (~$65 at the jump-off, ~$26 at Fort Hall, $0 at the end).
+ *  Gate data: every persona reached Boise/Walla Walla with ~$10 while
+ *  Whitman sells flour at 0.9x base — the bankroll, not prices, strands
+ *  the back half foodless. Food-only fallbacks may spend INTO the reserve. */
+function foodReserve(state: GameState): number {
+  return Math.round(Math.max(0, TRAIL_TOTAL_MILES - state.location.milesTraveled) * 0.03);
+}
 
 interface RunningStats {
   eventsFiredById: Record<string, number>;
@@ -439,7 +456,13 @@ function handleLandmark(state: GameState, persona: Persona, stats: RunningStats,
         // flour-only-at-affordable-qty.
         if (buys.length > 0) {
           try {
-            s = settleTrade(s, { mode: 'cash', get: _toGet(buys), give: {} }).state;
+            // #1280 L3' — attempt the FULL basket against (cash - reserve) so
+            // non-food outfitting can't strand the back half foodless; the
+            // food-only fallbacks below run against full cash (the reserve is
+            // FOR food). On success the held-back reserve is restored.
+            const reserve = Math.min(foodReserve(s), Math.max(0, s.cash - 5));
+            const settled = settleTrade({ ...s, cash: s.cash - reserve }, { mode: 'cash', get: _toGet(buys), give: {} }).state;
+            s = { ...settled, cash: settled.cash + reserve };
             stats.decisionsMade += 1;
           } catch {
             // Trade refused full list — try food-only fallback.
