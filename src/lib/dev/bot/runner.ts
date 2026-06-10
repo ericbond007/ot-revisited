@@ -44,6 +44,7 @@ import { bundleCampActions } from '../../game/ai/bundle';
 import { CAMP_ACTIONS_BY_ID, hourCostFor, type CampActionId } from '../../game/actions/camp-actions';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
 import { getLandmark, type Landmark } from '../../game/content/landmarks';
+import { foodItemIds } from '../../game/content/items';
 import type { GameState, ProfessionId } from '../../game/types';
 import type { Rng } from '../../game/rng';
 import {
@@ -78,6 +79,8 @@ interface RunningStats {
    *  attributes its day delta (state.day - dayBefore) to whichever
    *  action ran. */
   actionDays: BotRunReport['actionDays'];
+  /** Supply flow accumulated from per-iteration inventory deltas. */
+  supplies: BotRunReport['supplies'];
 }
 
 function newStats(): RunningStats {
@@ -90,8 +93,34 @@ function newStats(): RunningStats {
     deathsByCause: {},
     deadIds: new Set<string>(),
     errors: [],
-    actionDays: { travel: 0, rest: 0, findWater: 0, hunt: 0, ford: 0, tradingPost: 0, eventChoice: 0, other: 0 }
+    actionDays: { travel: 0, rest: 0, findWater: 0, hunt: 0, ford: 0, tradingPost: 0, eventChoice: 0, other: 0 },
+    supplies: { foodConsumedLb: 0, foodAcquiredLb: 0, gunpowderUsedLb: 0, leadBallsUsed: 0, cashSpent: 0, cashEarned: 0 }
   };
+}
+
+/** Total food lbs in an inventory — same id set the consumption system eats from. */
+function totalFoodLb(inv: Record<string, number>): number {
+  return foodItemIds().reduce((sum, id) => sum + (inv[id] ?? 0), 0);
+}
+
+/** Accumulate one loop-iteration's inventory/cash deltas into supply flow.
+ *  Signed deltas split into consumed/used (down) vs acquired/earned (up) —
+ *  totals are exact even when one iteration spans multiple days. */
+function recordSupplyFlow(
+  before: { food: number; gunpowder: number; leadBalls: number; cash: number },
+  state: GameState,
+  stats: RunningStats
+): void {
+  const dFood = totalFoodLb(state.inventory) - before.food;
+  if (dFood < 0) stats.supplies.foodConsumedLb += -dFood;
+  else stats.supplies.foodAcquiredLb += dFood;
+  const dPowder = (state.inventory.gunpowder ?? 0) - before.gunpowder;
+  if (dPowder < 0) stats.supplies.gunpowderUsedLb += -dPowder;
+  const dBalls = (state.inventory.lead_balls ?? 0) - before.leadBalls;
+  if (dBalls < 0) stats.supplies.leadBallsUsed += -dBalls;
+  const dCash = state.cash - before.cash;
+  if (dCash < 0) stats.supplies.cashSpent += -dCash;
+  else stats.supplies.cashEarned += dCash;
 }
 
 function recordDeaths(state: GameState, stats: RunningStats): void {
@@ -730,6 +759,12 @@ export function runBot(opts: BotRunOpts): BotRunReport {
   while (!state.completed && dayCount < maxDays) {
     dayCount += 1;
     const dayBefore = state.day;
+    const supplyBefore = {
+      food: totalFoodLb(state.inventory),
+      gunpowder: state.inventory.gunpowder ?? 0,
+      leadBalls: state.inventory.lead_balls ?? 0,
+      cash: state.cash
+    };
     let actionType: keyof RunningStats['actionDays'] = 'other';
     try {
       let firedEventToday = false;
@@ -881,6 +916,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
       const delta = state.day - dayBefore;
       if (delta > 0) stats.actionDays[actionType] += delta;
 
+      recordSupplyFlow(supplyBefore, state, stats);
       recordDeaths(state, stats);
       prevLowHealthIds = recordHealthDrama(state, prevLowHealthIds, stats);
       prevLiveOxen = recordOxDeaths(state, prevLiveOxen, stats);
@@ -945,6 +981,8 @@ export function runBot(opts: BotRunOpts): BotRunReport {
     arrivalScore,
     funScore: funScore.total,
     funBreakdown: funScore.breakdown,
-    actionDays: stats.actionDays
+    actionDays: stats.actionDays,
+    supplies: stats.supplies,
+    finalState: state
   };
 }
