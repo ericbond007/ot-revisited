@@ -105,6 +105,21 @@ export interface BotRunReport {
     cashSpent: number;
     cashEarned: number;
   };
+  /** #1280/#1281 — per-trail-leg telemetry. Key = previousLandmarkId at the
+   *  start of each runner iteration ('start' before the first landmark).
+   *  Days split by action family; keg level + dry days weighted by day. */
+  legStats: Record<string, {
+    days: number;
+    travelDays: number;
+    restDays: number;
+    findWaterDays: number;
+    otherDays: number;
+    miles: number;
+    dryDays: number;
+    kegPctSum: number;
+    kegSamples: number;
+    deaths: number;
+  }>;
   /** Full end-of-run state — drives location/death/inventory detail in
    *  stats harnesses without widening this report for every field. */
   finalState: GameState;

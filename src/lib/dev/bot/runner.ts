@@ -81,6 +81,10 @@ interface RunningStats {
   actionDays: BotRunReport['actionDays'];
   /** Supply flow accumulated from per-iteration inventory deltas. */
   supplies: BotRunReport['supplies'];
+  /** #1280/#1281 — per-trail-leg day + water telemetry. Key = the leg's
+   *  previousLandmarkId at the START of the iteration ('start' before the
+   *  first landmark). */
+  legStats: BotRunReport['legStats'];
 }
 
 function newStats(): RunningStats {
@@ -94,8 +98,19 @@ function newStats(): RunningStats {
     deadIds: new Set<string>(),
     errors: [],
     actionDays: { travel: 0, rest: 0, findWater: 0, hunt: 0, ford: 0, tradingPost: 0, eventChoice: 0, other: 0 },
-    supplies: { foodConsumedLb: 0, foodAcquiredLb: 0, gunpowderUsedLb: 0, leadBallsUsed: 0, cashSpent: 0, cashEarned: 0 }
+    supplies: { foodConsumedLb: 0, foodAcquiredLb: 0, gunpowderUsedLb: 0, leadBallsUsed: 0, cashSpent: 0, cashEarned: 0 },
+    legStats: {}
   };
+}
+
+/** Get-or-create the per-leg accumulator. */
+function legBucket(stats: RunningStats, key: string): BotRunReport['legStats'][string] {
+  let b = stats.legStats[key];
+  if (!b) {
+    b = { days: 0, travelDays: 0, restDays: 0, findWaterDays: 0, otherDays: 0, miles: 0, dryDays: 0, kegPctSum: 0, kegSamples: 0, deaths: 0 };
+    stats.legStats[key] = b;
+  }
+  return b;
 }
 
 /** Total food lbs in an inventory — same id set the consumption system eats from. */
@@ -765,6 +780,9 @@ export function runBot(opts: BotRunOpts): BotRunReport {
       leadBalls: state.inventory.lead_balls ?? 0,
       cash: state.cash
     };
+    const legBefore = state.location.previousLandmarkId ?? 'start';
+    const milesBefore = state.location.milesTraveled;
+    const deadBefore = state.party.filter((m) => m.dead).length;
     let actionType: keyof RunningStats['actionDays'] = 'other';
     try {
       let firedEventToday = false;
@@ -917,6 +935,25 @@ export function runBot(opts: BotRunOpts): BotRunReport {
       if (delta > 0) stats.actionDays[actionType] += delta;
 
       recordSupplyFlow(supplyBefore, state, stats);
+      {
+        // #1280/#1281 — attribute this iteration's days/miles/water state to
+        // the trail leg where it STARTED (multi-day rests aggregate there).
+        const legDelta = state.day - dayBefore;
+        const b = legBucket(stats, legBefore);
+        b.days += legDelta;
+        if (actionType === 'travel' || actionType === 'eventChoice') b.travelDays += legDelta;
+        else if (actionType === 'rest') b.restDays += legDelta;
+        else if (actionType === 'findWater') b.findWaterDays += legDelta;
+        else b.otherDays += legDelta;
+        b.miles += state.location.milesTraveled - milesBefore;
+        if (legDelta > 0) {
+          const cap = state.resources.waterCap || 1;
+          b.kegPctSum += (state.resources.water / cap) * legDelta;
+          b.kegSamples += legDelta;
+          if (state.resources.water <= 0) b.dryDays += legDelta;
+        }
+        b.deaths += state.party.filter((m) => m.dead).length - deadBefore;
+      }
       recordDeaths(state, stats);
       prevLowHealthIds = recordHealthDrama(state, prevLowHealthIds, stats);
       prevLiveOxen = recordOxDeaths(state, prevLiveOxen, stats);
@@ -983,6 +1020,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
     funBreakdown: funScore.breakdown,
     actionDays: stats.actionDays,
     supplies: stats.supplies,
+    legStats: stats.legStats,
     finalState: state
   };
 }
