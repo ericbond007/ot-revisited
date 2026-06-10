@@ -238,6 +238,9 @@ export function buildStarvationCrisisEvent(target: NpcWagonState): GameEvent {
     // advanceTrain's pendingEvent return. The gate would never
     // be true via random selection.
     gate: () => false,
-    choices: [shareSmall, shareMedium, shareLarge, sellChoice, refuseChoice]
+    choices: [shareSmall, shareMedium, shareLarge, sellChoice, refuseChoice],
+    // #1279 — identifies the target wagon so tickDayPausable can mark
+    // crisisAskedDay on the right companion at the surfacing site.
+    npcWagonId: wagonId
   };
 }

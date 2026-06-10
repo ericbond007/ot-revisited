@@ -199,23 +199,37 @@ export function advanceTrain(
   let pendingEvent: GameEvent | undefined;
   let pendingCrisisIdx = -1;
   for (const c of prepped.wagonTrain!.companions) {
-    const wasFood = totalFood(c.inventory);
     const rng = makeRng(`${c.seed}:${prepped.day}`);
     const result = tickNpcWagon(c, ctx, rng);
-    companions.push(result.wagon);
+    const nowFood = totalFood(result.wagon.inventory);
+    // #1279 — spell-clear: when a wagon that had crisisAskedDay set
+    // now has food again, clear the marker so a future empty spell
+    // will re-fire. Do this before pushing so the updated wagon is
+    // what goes into companions[].
+    let wagon = result.wagon;
+    if (nowFood > 0 && wagon.crisisAskedDay !== undefined) {
+      const { crisisAskedDay: _cleared, ...rest } = wagon;
+      wagon = rest as typeof wagon;
+    }
+    companions.push(wagon);
     for (const text of result.playerLogs) {
       playerLogs.push({ day: prepped.day, text });
     }
-    // Crisis detection: only fire if a wagon transitioned from
-    // having food to having none today. Limit to one crisis per
-    // tick — others naturally re-queue tomorrow if still empty.
-    const nowFood = totalFood(result.wagon.inventory);
+    // #1279 Crisis detection: level-trigger — fires while food is
+    // empty AND the player hasn't been asked this spell
+    // (crisisAskedDay unset). The marker is set at the
+    // tickDayPausable surfacing site; continuations that DROP the
+    // event (applyCompanyDissent, applyPendingChoice tailAlreadyRan)
+    // do NOT mark, so the event re-fires next tick. Cleared when the
+    // wagon gets food again (new spell). Limit to one crisis per tick
+    // — the second foodless wagon fires next tick after the first is
+    // marked.
     if (
-      !pendingEvent
-      && wasFood > 0
+      pendingCrisisIdx === -1
       && nowFood === 0
-      && result.wagon.outcome === 'in-progress'
-      && result.wagon.party.some((p) => !p.dead)
+      && wagon.crisisAskedDay === undefined
+      && wagon.outcome === 'in-progress'
+      && wagon.party.some((p) => !p.dead)
     ) {
       // Stash the index — we'll run the other-wagon contribution
       // pass below before deciding whether to surface a player ask.
@@ -291,7 +305,11 @@ export function advanceTrain(
         });
       } else {
         // Train chipped in but it wasn't enough — surface the player
-        // ask so they can decide on the rest.
+        // ask so they can decide on the rest. Note: the target now
+        // has some food (flour+bacon > 0), so if this event is
+        // dropped by a continuation, next tick the wagon will have
+        // food and its (unset) crisisAskedDay won't re-fire — the
+        // train partially solved it, which is acceptable. (#1279)
         pendingEvent = buildStarvationCrisisEvent(updated[pendingCrisisIdx]);
       }
     } else {
