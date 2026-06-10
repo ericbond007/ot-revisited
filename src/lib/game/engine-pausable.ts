@@ -339,6 +339,23 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     // ran this tick; stamp the day so applyPendingChoice doesn't double-apply
     // them on resume.
     s = { ...s, flags: { ...s.flags, _tailRanDay: s.day } };
+    // #1279 — mark crisisAskedDay on the target companion so the
+    // level-trigger doesn't re-fire this spell while the modal is
+    // live. The continuations that DROP the event (applyCompanyDissent,
+    // applyPendingChoice's tailAlreadyRan path) do NOT mark — so a
+    // dropped event re-fires next tick via the unmarked crisisAskedDay.
+    const npcWagonId = trainResult.pendingEvent.npcWagonId;
+    if (npcWagonId && s.wagonTrain) {
+      s = {
+        ...s,
+        wagonTrain: {
+          ...s.wagonTrain,
+          companions: s.wagonTrain.companions.map((c) =>
+            c.id === npcWagonId ? { ...c, crisisAskedDay: s.day } : c
+          )
+        }
+      };
+    }
     return { state: s, pendingEvent: trainResult.pendingEvent };
   }
 
@@ -381,6 +398,9 @@ export function applyCompanyDissent(
     s = applyTravel(s, rng);
   }
   s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: travels, driver: 'player' });
+  // #1279 — applyCompanyDissent drops any pendingEvent from advanceTrain
+  // (no crisis modal on dissent days). The unmarked crisisAskedDay means
+  // the level-trigger re-fires next tick — the player will see it then.
   const trainResult = advanceTrain(s, travels);
   s = trainResult.state;
   s = pushMoraleHistory(s);
@@ -417,8 +437,9 @@ export function applyPendingChoice(
     // tail and advanceTrain haven't run yet.
     // #280b/#288 — advance NPC wagons. Event-day still counts as travel
     // for them. NPC starvation crisis events that arise here are NOT
-    // re-surfaced (would chain modals on the same tick); they queue
-    // for tomorrow's tickDayPausable.
+    // re-surfaced (would chain modals on the same tick); the dropped event
+    // leaves crisisAskedDay unset and re-fires on tomorrow's tickDayPausable
+    // via the #1279 level-trigger.
     // #300 — NPC axle-grease cycle skips a small slice on event-paused
     // days (we don't thread the miles delta through the early-return).
     // ~3% asymmetry per event vs travel-day; the 500-mi cycle absorbs it.

@@ -87,6 +87,10 @@ export interface GameEvent {
    *  even if its category is in the NPC allow-list. Use for events whose
    *  `apply()` reads player-only state the wagon-synth doesn't bridge. */
   npcSkip?: boolean;
+  /** #1279 — set on NPC-crisis events built by buildStarvationCrisisEvent;
+   *  identifies the target companion wagon so the surfacing driver can mark
+   *  crisisAskedDay on it. */
+  npcWagonId?: string;
 }
 
 // The full registry is built up in Tasks 2-5. Task 1 ships an empty-or-placeholder

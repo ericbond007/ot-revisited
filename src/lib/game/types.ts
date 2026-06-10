@@ -402,6 +402,11 @@ export interface NpcWagonState extends WagonStateLike {
    *  the magic-string flag names; see NPC_PERSISTENT_FLAG_KEYS. Optional —
    *  absent on legacy saves and whenever no persistent flag is set. */
   persistentFlags?: Record<string, number>;
+  /** #1279 — day the starvation-crisis modal was last SURFACED to the player
+   *  for the current out-of-food spell. Set at the tickDayPausable surfacing
+   *  site (continuations that drop the event don't mark, so it re-fires next
+   *  tick); cleared whenever the wagon has food again. */
+  crisisAskedDay?: number;
 }
 
 export type GameStateFlag =
