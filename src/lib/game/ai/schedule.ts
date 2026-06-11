@@ -1,4 +1,4 @@
-import type { GameState } from '../types';
+import type { CaptainDoctrine, GameState, Pace } from '../types';
 import type { PersonaId } from './types';
 import { LANDMARKS } from '../content/landmarks';
 import { getWagon } from '../content/wagons';
@@ -537,4 +537,72 @@ export function allowsSabbathRest(state: GameState, personaId: PersonaId): boole
   }
   if (tooFragileToPush(state)) return true;
   return pressure === 'ok';
+}
+
+// ── #1304 T2 — Captain-level pressure + train pace cap ────────────────────
+//
+// Location: schedule.ts (not company-rest.ts) because wagon-train.ts must
+// import companyPaceCap, and wagon-train.ts ↔ company-rest.ts is a cycle
+// (company-rest already imports leaveTrain from wagon-train). Moving both
+// helpers here breaks the cycle cleanly: schedule.ts is a leaf node that
+// imports only from ../types, ./types, and ../content/landmarks.
+
+/** Doctrine-to-persona proxy used to read the captain's schedule pressure.
+ *  company-rest.ts carries the same map; kept in sync — when a future slice
+ *  stores captainPersonaId on WagonTrain directly, read it there instead. */
+const CAPTAIN_DOCTRINE_PERSONA: Record<CaptainDoctrine, PersonaId> = {
+  hard_driver: 'pace_pusher',
+  devout:      'faithful',
+  prudent:     'balanced'
+};
+
+/**
+ * #1304 T2 — Pure helper: the captain's schedule pressure for the current
+ * state.  Extracted from the T4 season term in companyRestDecision so both
+ * the rest-decision engine and the pace-cap helper share the same brain.
+ *
+ * Returns 'ok' when there is no train (no captain to be pressured).
+ * companyPaceCap handles the no-train case separately; callers that only
+ * want the captain's pressure signal should guard for !state.wagonTrain
+ * themselves.
+ */
+export function captainPressure(state: GameState): SchedulePressure {
+  const train = state.wagonTrain;
+  if (!train) return 'ok';
+  const captainPersona = CAPTAIN_DOCTRINE_PERSONA[train.doctrine];
+  const captainDoctrine = doctrineFor(captainPersona);
+  return schedulePressure(state, captainDoctrine.targetArrivalDay);
+}
+
+/**
+ * #1304 T2 — Pure helper: the maximum Pace the wagon train will march at,
+ * given the captain's current schedule pressure.
+ *
+ * No train → 'grueling' (the no-cap sentinel; the caller, clampedPace, only
+ * consults this when wagonTrain is non-null, so this branch is a safety net).
+ *
+ * ok       → 'moderate' (today's behavior — trains move at the slowest
+ *            member's pace; the player forfeits the grueling-push option).
+ * behind   → 'fast'  (captain orders longer marching days; never grueling —
+ * critical → 'fast'   the ox-attrition cost of true grueling in a large
+ *                      company is too high; Scharmann 1849 / Marcy 1859).
+ *
+ * Period anchors:
+ *   Breen Oct 1846 — Donner debate: push vs. rest; the cost was ox attrition.
+ *   Willie Company Florence Aug 1856 — company vote accelerated from moderate
+ *     to long-day marches (effectually 'fast') once the schedule slipped.
+ *   Scharmann 1849 — recorded that rushed companies lost draft animals to
+ *     overwork, confirming the 'never grueling in a company' ceiling.
+ *
+ * The per-wagon winterPaceBoost ox-fatigue ceilings (T6d) still govern
+ * whether a *solo* wagon's pressure-driven upgrade is sustainable; this cap
+ * is the *company-level* ceiling on top of that.
+ */
+export function companyPaceCap(state: GameState): Pace {
+  if (!state.wagonTrain) return 'grueling'; // no cap — solo wagon
+  const pressure = captainPressure(state);
+  if (pressure === 'ok') return 'moderate';
+  // behind or critical: captain pushes to fast. Never grueling — companies
+  // lengthened days, they did not record-pace push.
+  return 'fast';
 }

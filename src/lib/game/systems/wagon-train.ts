@@ -6,6 +6,7 @@
 // callers should never mutate the train state directly.
 
 import type { GameState, NpcWagonState, Ox, Pace, WagonTrain } from '../types';
+import { companyPaceCap } from '../ai/schedule';
 import type { Rng } from '../rng';
 import { generateTrain, trainHasProfession } from '../content/trains';
 import { hasLiveBlacksmith } from '../professions/predicates';
@@ -48,13 +49,21 @@ export function hasBlacksmithSupport(state: GameState): boolean {
   return hasLiveBlacksmith(state) || trainHasProfession(state.wagonTrain, 'blacksmith');
 }
 
-/** While in a train, the party's pace is clamped to `moderate` —
- *  trains move at the slowest member's pace, so the player forfeits
- *  the grueling-push option. The trade is the safety net (services,
- *  share-watch, morale +1/day). */
+/** While in a train, the party's pace is clamped to at most `companyPaceCap`.
+ *  Under normal (ok) schedule pressure the cap is 'moderate'; under
+ *  behind/critical pressure the captain orders longer marching days and the
+ *  cap rises to 'fast' (never 'grueling' in company — see companyPaceCap).
+ *  The trade is the safety net (services, share-watch, morale +1/day).
+ *
+ *  #1304 T2 — DRY: the inline duplicate in milesPerDay (travel.ts) was
+ *  removed; it now calls this function. */
 export function clampedPace(state: GameState): Pace {
   if (!isInTrain(state)) return state.pace;
-  if (state.pace === 'fast' || state.pace === 'grueling') return 'moderate';
+  const cap = companyPaceCap(state);
+  // Pace ordering: slow=0, moderate=1, fast=2, grueling=3.
+  // Cap the player's picked pace at the captain's company cap.
+  const PACE_ORDER: Record<Pace, number> = { slow: 0, moderate: 1, fast: 2, grueling: 3 };
+  if (PACE_ORDER[state.pace] > PACE_ORDER[cap]) return cap;
   return state.pace;
 }
 

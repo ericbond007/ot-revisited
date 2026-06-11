@@ -27,7 +27,11 @@ describe('#1266 — daily-steps spine order is locked', () => {
   });
   it('POST_BRANCH_STEPS exact order', () => {
     // #1304-T3: checkSnowNews appended (sub-rng, scope='all' — no rng-stream disturbance).
-    expect(POST_BRANCH_STEPS.map((s) => s.id)).toEqual(['adjustMorale', 'applyNpcMoraleBaseline', 'applyHolidays', 'checkSnowNews']);
+    // #1304-T2: checkTrainPaceLift appended (scope='playerOnly', no rng consumed, level-trigger).
+    // Re-baselined per docs/superpowers/specs/2026-06-11-train-governance-research.md.
+    expect(POST_BRANCH_STEPS.map((s) => s.id)).toEqual([
+      'adjustMorale', 'applyNpcMoraleBaseline', 'applyHolidays', 'checkSnowNews', 'checkTrainPaceLift'
+    ]);
   });
   it('PRE_TRAVEL_STEPS exact order', () => {
     expect(PRE_TRAVEL_STEPS.map((s) => s.id)).toEqual(['applyDailyRecovery', 'applyTrainShare', 'applySabbathTravelDebit']);

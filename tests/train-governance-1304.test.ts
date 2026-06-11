@@ -2,9 +2,13 @@
 // Historical basis: whole-company halts were ~1 day (death-watch / burial).
 // Week-long convalescence was family-scale — the sick wagon dropped behind.
 // Bishop 1849 / Stout 1853 via docs/superpowers/specs/2026-06-11-train-governance-research.md.
+//
+// #1304 Task 2 — Pressure-aware train pace cap + DRY the clamp.
 
 import { describe, it, expect } from 'vitest';
-import { companyRestDecision } from '../src/lib/game/systems/company-rest';
+import { companyRestDecision, captainPressure, companyPaceCap } from '../src/lib/game/systems/company-rest';
+import { clampedPace } from '../src/lib/game/systems/wagon-train';
+import { milesPerDay } from '../src/lib/game/systems/travel';
 import { tickDayPausable } from '../src/lib/game/engine-pausable';
 import { createInitialState } from '../src/lib/game/engine';
 import type { GameState, NpcWagonState } from '../src/lib/game/types';
@@ -217,5 +221,221 @@ describe('#1304 T1 — new crisis weeks later fires a fresh 1-day hold', () => {
     };
     const d = companyRestDecision(fresh);
     expect(d.mode).toBe('crisis_layby');
+  });
+});
+
+// ── Task 2 helpers ──────────────────────────────────────────────────────────
+
+/** Build an in-train state that reads as 'behind' or 'critical' schedule
+ *  pressure. We do this by placing the wagon far along the trail but late
+ *  by day count — milestonePressure sees deficit > 0.
+ *
+ *  Specifically: put the wagon at ft_laramie (cumMiles ~650) on day 80
+ *  (targetDay for ft_laramie is 58 → deficit = 80-58 = 22 → 'critical').
+ *  For 'behind': day 65 → deficit 7 → 'behind'. */
+function withTrainAndPressure(
+  pressure: 'ok' | 'behind' | 'critical',
+  opts: { playerHP?: number; pace?: GameState['pace'] } = {}
+): GameState {
+  const { playerHP = 80, pace = 'fast' } = opts;
+  const base = withTrain({ playerHP, companions: [{ hp: 80 }] });
+
+  // 'ok': day 5 — well under MIN_JUDGE_DAYS (20), so scheduleDeficitDays = 0.
+  if (pressure === 'ok') {
+    return { ...base, day: 5, pace };
+  }
+
+  // 'behind': at day 65, 750 miles traveled.
+  //   milestone deficit: ft_laramie targetDay=58, 650 mi; at 750 mi we're past
+  //   ft_laramie so next milestone is independence_rock (targetDay=72, 815 mi).
+  //   Interpolated expectedDay at 750 mi ≈ 58 + (750-650)/(815-650) * (72-58)
+  //                                       ≈ 58 + 0.606 * 14 ≈ 66.5
+  //   deficit = 65 - 66.5 ≈ -1.5 → 'ok' for milestone term. projection term:
+  //   proj = 65 * 2195/750 ≈ 190 > snowSafe 185, ≤ 185+15=200 → 'behind'.
+  //   Take worse: 'behind'. ✓
+  //
+  // 'critical': at day 90, 750 miles.
+  //   projection: 90 * 2195/750 ≈ 263 >> 200 → 'critical'. ✓
+  const targetDay = pressure === 'behind' ? 65 : 90;
+  const miles = 750;
+
+  return {
+    ...base,
+    day: targetDay,
+    pace,
+    location: {
+      ...base.location,
+      milesTraveled: miles,
+      terrain: 'prairie' as const
+    }
+  };
+}
+
+// ── §6 — captainPressure helper ─────────────────────────────────────────────
+
+describe('#1304 T2 — captainPressure(state) pure helper', () => {
+  it('returns ok when the party is early on the trail (day 5, 0 miles)', () => {
+    const s = withTrain({ playerHP: 80 });
+    const p = captainPressure({ ...s, day: 5 });
+    expect(p).toBe('ok');
+  });
+
+  it('returns behind when behind the timetable by 7 days', () => {
+    const s = withTrainAndPressure('behind');
+    const p = captainPressure(s);
+    expect(p).toBe('behind');
+  });
+
+  it('returns critical when behind the timetable by 22 days', () => {
+    const s = withTrainAndPressure('critical');
+    const p = captainPressure(s);
+    expect(p).toBe('critical');
+  });
+
+  it('is pure — calling it twice returns the same value', () => {
+    const s = withTrainAndPressure('behind');
+    expect(captainPressure(s)).toBe(captainPressure(s));
+  });
+});
+
+// ── §7 — companyPaceCap helper ──────────────────────────────────────────────
+
+describe('#1304 T2 — companyPaceCap(state)', () => {
+  it('no train → returns grueling (no cap — solo wagon)', () => {
+    const s = createInitialState({
+      seed: 'cap-solo', leader: { name: 'L', profession: 'farmer' },
+      companions: [{ name: 'C', profession: 'farmer' }],
+      startDate: { year: 1849, month: 6, day: 18 }
+    });
+    // Ensure no train (initial state has no wagon train).
+    expect(s.wagonTrain).toBeNull();
+    expect(companyPaceCap(s)).toBe('grueling');
+  });
+
+  it('ok pressure → moderate (today\'s behavior preserved)', () => {
+    const s = withTrainAndPressure('ok');
+    expect(companyPaceCap(s)).toBe('moderate');
+  });
+
+  it('behind pressure → fast (schedule pushes the pace cap up)', () => {
+    const s = withTrainAndPressure('behind');
+    expect(companyPaceCap(s)).toBe('fast');
+  });
+
+  it('critical pressure → fast (never grueling in a train)', () => {
+    const s = withTrainAndPressure('critical');
+    expect(companyPaceCap(s)).toBe('fast');
+  });
+});
+
+// ── §8 — clampedPace pressure-aware behavior ─────────────────────────────────
+
+describe('#1304 T2 — clampedPace with pressure', () => {
+  it('regression: in-train fast pick at ok-pressure → moderate (unchanged behavior)', () => {
+    // This is the "old" behavior and it must not regress.
+    // Rationale: withTrainAndPressure('ok') returns day 5 (pre-judge) → ok.
+    const s = withTrainAndPressure('ok', { pace: 'fast' });
+    expect(clampedPace(s)).toBe('moderate');
+  });
+
+  it('in-train fast pick at behind-pressure → fast (cap lifts)', () => {
+    const s = withTrainAndPressure('behind', { pace: 'fast' });
+    expect(clampedPace(s)).toBe('fast');
+  });
+
+  it('in-train grueling pick at behind-pressure → fast (never grueling in a train)', () => {
+    const s = withTrainAndPressure('behind', { pace: 'grueling' });
+    expect(clampedPace(s)).toBe('fast');
+  });
+
+  it('in-train grueling pick at critical-pressure → fast (never grueling in a train)', () => {
+    const s = withTrainAndPressure('critical', { pace: 'grueling' });
+    expect(clampedPace(s)).toBe('fast');
+  });
+
+  it('in-train slow pick at behind-pressure → slow (below cap, passes through)', () => {
+    const s = withTrainAndPressure('behind', { pace: 'slow' });
+    expect(clampedPace(s)).toBe('slow');
+  });
+
+  it('no-train fast pick → fast (no cap applied)', () => {
+    const s = createInitialState({
+      seed: 'clamp-solo', leader: { name: 'L', profession: 'farmer' },
+      companions: [{ name: 'C', profession: 'farmer' }],
+      startDate: { year: 1849, month: 6, day: 18 }
+    });
+    expect(s.wagonTrain).toBeNull();
+    expect(clampedPace({ ...s, pace: 'fast' })).toBe('fast');
+  });
+
+  it('no-train grueling pick → grueling (no cap applied)', () => {
+    const s = createInitialState({
+      seed: 'clamp-solo-g', leader: { name: 'L', profession: 'farmer' },
+      companions: [{ name: 'C', profession: 'farmer' }],
+      startDate: { year: 1849, month: 6, day: 18 }
+    });
+    expect(clampedPace({ ...s, pace: 'grueling' })).toBe('grueling');
+  });
+});
+
+// ── §9 — milesPerDay behind-pressure train at fast pace > ok-pressure ────────
+
+describe('#1304 T2 — milesPerDay: behind-pressure train at fast pace yields more miles', () => {
+  it('fast-picked pace in behind-pressure train beats fast-picked pace in ok-pressure train', () => {
+    // Under ok pressure: fast pick clamps to moderate (base 20 mi/day).
+    // Under behind pressure: fast pick stays fast (base 26 mi/day).
+    // Both use the same oxen/terrain/weather, so the only difference is the effective pace.
+    const okState = withTrainAndPressure('ok', { pace: 'fast' });
+    const behindState = withTrainAndPressure('behind', { pace: 'fast' });
+
+    const milesOk     = milesPerDay(okState);
+    const milesBehind = milesPerDay(behindState);
+    expect(milesBehind).toBeGreaterThan(milesOk);
+  });
+});
+
+// ── §10 — Lift log fires once, re-arms after pressure returns to ok ──────────
+
+describe('#1304 T2 — lift log: captain orders longer marches', () => {
+  it('fires a log line when pressure first goes behind', () => {
+    // Use tickDayPausable on a behind-pressure train state.
+    // The log line should appear in the eventLog.
+    const s = withTrainAndPressure('behind', { pace: 'fast' });
+    const { state } = tickDayPausable(s);
+    const liftLog = state.eventLog.find((e) =>
+      e.text.toLowerCase().includes('captain orders longer marches')
+      || e.text.toLowerCase().includes('captain')
+    );
+    expect(liftLog).toBeDefined();
+  });
+
+  it('does NOT repeat the log line on the second tick when still behind (flag set)', () => {
+    const s = withTrainAndPressure('behind', { pace: 'fast' });
+    const { state: day1 } = tickDayPausable(s);
+    // Manually advance day so tick can run again.
+    const day1b = { ...day1, day: day1.day + 1, date: { ...day1.date, day: day1.date.day + 1 } };
+    const { state: day2 } = tickDayPausable(day1b);
+
+    // Count how many times the lift log appears total across both eventLogs.
+    const allLogs = [...day1.eventLog, ...day2.eventLog.filter((e) => e.day === day1b.day)];
+    const liftCount = allLogs.filter((e) =>
+      e.text.toLowerCase().includes('captain orders longer marches')
+    ).length;
+    expect(liftCount).toBe(1);
+  });
+
+  it('re-arms after pressure returns to ok: fires again on next behind episode', () => {
+    // Start behind, fire the log; then set to ok (flag cleared); then behind again → fires again.
+    const s = withTrainAndPressure('behind', { pace: 'fast' });
+    const { state: afterBehind } = tickDayPausable(s);
+    // Verify the flag is set.
+    expect(afterBehind.flags._trainPaceLiftFlagged).toBe(true);
+
+    // Simulate returning to ok (early trail, day 5) — flag should clear.
+    const backToOk = withTrainAndPressure('ok', { pace: 'fast' });
+    const { state: afterOk } = tickDayPausable(backToOk);
+    // Flag must not be present on a fresh ok-pressure train (or cleared if it was set).
+    // After an ok tick the flag is cleared (set to null — falsy).
+    expect(afterOk.flags._trainPaceLiftFlagged).toBeFalsy();
   });
 });

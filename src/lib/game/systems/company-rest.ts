@@ -12,7 +12,12 @@ import type { PersonaId } from '../ai/types';
 import type { Rng } from '../rng';
 import { isSunday } from '../utils/calendar';
 import { leaveTrain } from './wagon-train';
-import { schedulePressure, doctrineFor } from '../ai/schedule';
+import { schedulePressure, doctrineFor, captainPressure, companyPaceCap } from '../ai/schedule';
+// #1304 T2 — captainPressure + companyPaceCap live in ai/schedule.ts to avoid
+// the company-rest ↔ wagon-train import cycle (company-rest already imports
+// leaveTrain from wagon-train). Re-exported here so callers that naturally
+// reach for company-rest as the governance module still find them in one place.
+export { captainPressure, companyPaceCap };
 
 /** Captain persona → chartered doctrine. aggressive-family pushes
  *  (hard_driver); the devotion/caution personas keep the Sabbath
@@ -345,4 +350,58 @@ export function resolveCompanyDissent(
     eventLog: [...state.eventLog,
       { day: state.day, text: `The captain refused your appeal. (−${LOBBY_FAIL_MORALE_COST} morale)` }]
   });
+}
+
+// ── #1304 T2 — Lift-log: captain orders longer marches ────────────────────
+//
+// Level-trigger: fires once when pressure first crosses into behind/critical
+// for an episode, then stays silent until pressure returns to ok (flag clears).
+// Pure in the "same inputs → same outputs" sense; the side-effect is appending
+// to eventLog + toggling a flag, but there is no I/O.
+//
+// Called from the daily-steps spine (POST_BRANCH_STEPS) so both player and
+// bot runs emit the log on the same code path — same contract as checkSnowNews.
+
+/**
+ * #1304 T2 — Emit a one-time "captain orders longer marches" event log entry
+ * when schedule pressure first rises above 'ok' for a new episode.
+ *
+ * State flags:
+ *   _trainPaceLiftFlagged  true while the lift-log has been emitted and
+ *                          pressure is still behind/critical.  Cleared when
+ *                          pressure returns to 'ok' so the next behind/critical
+ *                          episode re-arms the log.
+ *
+ * Period anchor: the Donner Party's decision to push vs. rest at Truckee
+ * (Breen Oct 1846); the Willie Company Florence vote (Aug 1856) — company
+ * assembled, captain announced longer marching days.
+ */
+export function checkTrainPaceLift(state: GameState): GameState {
+  if (!state.wagonTrain) return state; // solo — no captain
+  if (state.completed) return state;
+
+  const pressure = captainPressure(state);
+  const flagged = !!state.flags._trainPaceLiftFlagged;
+
+  // Re-arm: pressure returned to ok — clear the flag so next episode re-fires.
+  if (pressure === 'ok' && flagged) {
+    return { ...state, flags: { ...state.flags, _trainPaceLiftFlagged: null } };
+  }
+
+  // Lift: pressure first crosses above ok in this episode — log once.
+  if (pressure !== 'ok' && !flagged) {
+    return {
+      ...state,
+      flags: { ...state.flags, _trainPaceLiftFlagged: true },
+      eventLog: [
+        ...state.eventLog,
+        {
+          day: state.day,
+          text: `The captain orders longer marches — the company fears the snows in the passes.`
+        }
+      ]
+    };
+  }
+
+  return state;
 }
