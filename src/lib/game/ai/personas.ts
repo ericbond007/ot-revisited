@@ -393,7 +393,15 @@ function avgOxFatigue(state: GameState): number {
 function oxenWornOut(state: GameState): boolean {
   const alive = state.oxen.filter((o) => o.health > 0).length;
   if (alive === 0) return true;
-  const fatigueLimit = hasLiveTeamster(state) ? 55 : 70;
+  // #1304 SO-tuning — 70 → 60 default, 55 → 50 teamster. The SO gate
+  // split cleanly on this one threshold: every teamster archetype
+  // arrived ≥89%, every non-teamster ≤43% (the 70-wall wagon travels at
+  // ~47 avg fatigue, fitness ~0.75, and pays multi-day recoveries; the
+  // lower-wall team rests early and short). Period: stock-first
+  // husbandry was UNIVERSAL emigrant knowledge, not specialist skill
+  // (Marcy 1859 — "short and easy drives"; "the health of the oxen came
+  // first"). The teamster keeps a 10-point edge.
+  const fatigueLimit = hasLiveTeamster(state) ? 50 : 60;
   return avgOxFatigue(state) > fatigueLimit;
 }
 

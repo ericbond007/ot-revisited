@@ -138,7 +138,7 @@ function classifyRest(before: GameState): { cause: RestCause; childIsMin: boolea
   const childIsMin = minAliveHealth(before, 'child') < minAdult;
   if (isSunday(before.date)) return { cause: 'sabbath', childIsMin: false };
   if (minHp < Math.max(hpFloor, 30)) return { cause: 'crisisHp', childIsMin };
-  const fatigueLimit = hasLiveProf(before, 'teamster') ? 55 : 70;
+  const fatigueLimit = hasLiveProf(before, 'teamster') ? 50 : 60;
   const aliveOxen = before.oxen.filter((o) => o.health > 0).length;
   if (aliveOxen === 0 || avgOxFatigue(before) > fatigueLimit) return { cause: 'oxenWorn', childIsMin: false };
   if (before.morale < 15) return { cause: 'morale', childIsMin: false };
