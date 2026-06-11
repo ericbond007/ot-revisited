@@ -1,18 +1,24 @@
-// #1388 T1/T2 — Tests for seasonal river depth helper, ford() risk
+// #1388 T1/T2/T3 — Tests for seasonal river depth helper, ford() risk
 // sensitivity, persona pickFordMethod season-awareness, mountain-gap
-// foresight, ox-health + repair trigger escalation, and dead-ox bump.
+// foresight, ox-health + repair trigger escalation, dead-ox bump, and
+// event choices reading party composition (children / Doctor).
 //
-// TDD: T2 tests were written before the implementation was in place.
+// TDD: T2 + T3 tests were written before the implementation was in place.
 // They describe the intended behavior; the impl must make them pass.
 
 import { describe, it, expect } from 'vitest';
 import { effectiveRiverDepth } from '../src/lib/game/systems/river-season';
 import { ford, type RiverState } from '../src/lib/game/actions/ford';
-import { cautiousPersona, balancedPersona, aggressivePersona, hoarderPersona, chaosPersona } from '../src/lib/game/ai/personas';
+import {
+  cautiousPersona, balancedPersona, aggressivePersona,
+  hoarderPersona, chaosPersona,
+  partyRiskAversion
+} from '../src/lib/game/ai/personas';
 import { mountainMilesInNextGap } from '../src/lib/game/ai/foresight';
 import { createInitialState } from '../src/lib/game/engine';
 import type { Rng } from '../src/lib/game/rng';
-import type { GameState, GameDate, Weather } from '../src/lib/game/types';
+import type { GameState, GameDate, Weather, PartyMember } from '../src/lib/game/types';
+import type { GameEvent } from '../src/lib/game/content/events';
 import type { Landmark } from '../src/lib/game/content/landmarks';
 
 /** Stub Rng for persona tests that need the 3rd arg but don't use rng logic. */
@@ -731,5 +737,237 @@ describe('#1388 T2 — dead-ox panic bump (+1 want when ≥ 2 dead)', () => {
     const rng = { chance: () => false, int: () => 1 } as unknown as Parameters<typeof chaosPersona.pickOxSwapCount>[2];
     const state = stateWithDeadOxen(2, 4);
     expect(chaosPersona.pickOxSwapCount(state, OX_SWAP_POST, rng)).toBe(1); // rng.int always 1
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 11 — #1388 T3: partyRiskAversion helper
+// ---------------------------------------------------------------------------
+
+/** Minimal alive adult party member. */
+function makeAdult(id: string, profession?: PartyMember['profession']): PartyMember {
+  return {
+    id,
+    name: id,
+    profession,
+    sex: 'male',
+    kind: 'adult',
+    isLeader: false,
+    age: 30,
+    health: 100,
+    conditions: [],
+    dead: false
+  };
+}
+
+/** Minimal alive child party member. */
+function makeChild(id: string): PartyMember {
+  return {
+    id,
+    name: id,
+    sex: 'female',
+    kind: 'child',
+    isLeader: false,
+    age: 8,
+    health: 100,
+    conditions: [],
+    dead: false
+  };
+}
+
+/** Base state with only adults (farmer + spouse). No children. */
+function baseAdultsOnly(): GameState {
+  const s = createInitialState({
+    seed: 'risk-aversion-test',
+    leader: { name: 'Isaac', profession: 'farmer' },
+    companions: [{ name: 'Ruth', profession: 'farmer', sex: 'female' }],
+    startDate: { year: 1848, month: 5, day: 1 }
+  });
+  return { ...s, cash: 100, party: s.party.map((m) => ({ ...m, health: 100 })) };
+}
+
+/** Same base but with one alive child added to the party. */
+function baseWithChild(): GameState {
+  const s = baseAdultsOnly();
+  return {
+    ...s,
+    party: [...s.party, makeChild('little-eliza')]
+  };
+}
+
+/** Adults-only party with a live Doctor member. */
+function baseWithDoctor(): GameState {
+  const s = createInitialState({
+    seed: 'risk-aversion-test-doctor',
+    leader: { name: 'Ezra', profession: 'doctor' },
+    companions: [{ name: 'Mary', profession: 'farmer', sex: 'female' }],
+    startDate: { year: 1848, month: 5, day: 1 }
+  });
+  return { ...s, cash: 100, party: s.party.map((m) => ({ ...m, health: 100 })) };
+}
+
+describe('#1388 T3 — partyRiskAversion helper', () => {
+  it('returns "normal" when party has no children', () => {
+    expect(partyRiskAversion(baseAdultsOnly())).toBe('normal');
+  });
+
+  it('returns "high" when party has one alive child', () => {
+    expect(partyRiskAversion(baseWithChild())).toBe('high');
+  });
+
+  it('returns "normal" when the only child is dead', () => {
+    const s = baseWithChild();
+    const deadChild: GameState = {
+      ...s,
+      party: s.party.map((m) => m.kind === 'child' ? { ...m, dead: true } : m)
+    };
+    expect(partyRiskAversion(deadChild)).toBe('normal');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 12 — #1388 T3: healthish event fixture
+// ---------------------------------------------------------------------------
+//
+// The cholera-scare event (category: 'health', title contains 'foul') is the
+// canonical test case for saferHealthChoice. Its two choices are:
+//   'risk_drink'  (isDefault: true)   — aggressive's normal pick
+//   'wait'                            — saferHealthChoice returns this
+//                                       (/upstream/ + /wait/ patterns match)
+
+/** Minimal synthetic healthish event identical in shape to health_cholera. */
+const HEALTH_EVENT: GameEvent = {
+  id: 'test_health_cholera',
+  category: 'health',
+  title: 'Water tastes foul downstream',
+  body: 'The river here smells off.',
+  weight: 1,
+  choices: [
+    {
+      id: 'risk_drink',
+      label: 'Drink anyway',
+      isDefault: true,
+      apply: (s) => s
+    },
+    {
+      id: 'wait',
+      label: 'Travel upstream before drinking',
+      apply: (s) => s
+    }
+  ]
+};
+
+/** Non-health event: aggressive should keep its own logic. */
+const NON_HEALTH_EVENT: GameEvent = {
+  id: 'test_toll_bridge',
+  category: 'encounter',
+  title: 'Toll bridge operator demands a fee',
+  body: 'A man blocks the road with his hand out.',
+  weight: 1,
+  choices: [
+    {
+      id: 'pay',
+      label: 'Pay the toll',
+      isDefault: true,
+      apply: (s) => s
+    },
+    {
+      id: 'refuse',
+      label: 'Refuse and push past',
+      apply: (s) => s
+    }
+  ]
+};
+
+// ---------------------------------------------------------------------------
+// Section 13 — #1388 T3: aggressive pickEventChoice with / without children
+// ---------------------------------------------------------------------------
+
+describe('#1388 T3 — aggressive pickEventChoice reads party composition', () => {
+  it('aggressive WITHOUT children picks the risky default on a health event (regression pin)', () => {
+    // Today's behavior: aggressive returns choiceMatching(/refuse/…) ?? defaultChoice.
+    // On health_cholera neither /refuse/ etc. match, so it falls to defaultChoice
+    // which returns 'risk_drink' (isDefault: true). No children → no change.
+    const state = baseAdultsOnly();
+    const choice = aggressivePersona.pickEventChoice(state, HEALTH_EVENT, RNG_STUB);
+    expect(choice).toBe('risk_drink');
+  });
+
+  it('aggressive WITH a child aboard picks the safe choice on a health event', () => {
+    // Children aboard → partyRiskAversion 'high' → aggressive routes through
+    // saferHealthChoice before the aggressive default.
+    // saferHealthChoice finds 'wait' (/upstream/ matches). → 'wait'.
+    const state = baseWithChild();
+    const choice = aggressivePersona.pickEventChoice(state, HEALTH_EVENT, RNG_STUB);
+    expect(choice).toBe('wait');
+  });
+
+  it('aggressive WITH a child keeps its usual aggressive choice on non-health events', () => {
+    // partyRiskAversion check only gates saferHealthChoice on healthish events.
+    // For a non-health event, aggressive still prefers /refuse/ etc.
+    const state = baseWithChild();
+    const choice = aggressivePersona.pickEventChoice(state, NON_HEALTH_EVENT, RNG_STUB);
+    expect(choice).toBe('refuse');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 14 — #1388 T3: cautious/balanced unchanged with and without children
+// ---------------------------------------------------------------------------
+
+describe('#1388 T3 — cautious/balanced unchanged by children (already safe)', () => {
+  it('cautious picks safe choice WITHOUT children (pre-existing behavior)', () => {
+    const state = baseAdultsOnly();
+    const choice = cautiousPersona.pickEventChoice(state, HEALTH_EVENT, RNG_STUB);
+    expect(choice).toBe('wait');
+  });
+
+  it('cautious picks safe choice WITH children (behavior unchanged)', () => {
+    const state = baseWithChild();
+    const choice = cautiousPersona.pickEventChoice(state, HEALTH_EVENT, RNG_STUB);
+    expect(choice).toBe('wait');
+  });
+
+  it('balanced picks safe choice WITHOUT children (pre-existing behavior)', () => {
+    const state = baseAdultsOnly();
+    const choice = balancedPersona.pickEventChoice(state, HEALTH_EVENT, RNG_STUB);
+    expect(choice).toBe('wait');
+  });
+
+  it('balanced picks safe choice WITH children (behavior unchanged)', () => {
+    const state = baseWithChild();
+    const choice = balancedPersona.pickEventChoice(state, HEALTH_EVENT, RNG_STUB);
+    expect(choice).toBe('wait');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 15 — #1388 T3: Doctor nuance — no extra timidity without children
+// ---------------------------------------------------------------------------
+
+describe('#1388 T3 — Doctor nuance: no extra timidity without children', () => {
+  it('aggressive WITH a live Doctor but NO children still picks risky default (regression pin)', () => {
+    // Plan spec: "with a live Doctor and no children, behavior unchanged."
+    // Doctor can treat what goes wrong — no additional risk-aversion beyond today.
+    const state = baseWithDoctor();
+    const choice = aggressivePersona.pickEventChoice(state, HEALTH_EVENT, RNG_STUB);
+    expect(choice).toBe('risk_drink');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 16 — #1388 T3: chaos untouched
+// ---------------------------------------------------------------------------
+
+describe('#1388 T3 — chaos pickEventChoice is unaffected by party composition', () => {
+  it('chaos ignores children — its rng-seeded pool still applies', () => {
+    // chaos.pickEventChoice always rolls from the visible choice pool via rng.int.
+    // With int returning 0 → first visible choice ('risk_drink').
+    // Children do NOT redirect chaos through saferHealthChoice.
+    const rng = { chance: () => false, int: () => 0 } as unknown as Rng;
+    const state = baseWithChild();
+    const choice = chaosPersona.pickEventChoice(state, HEALTH_EVENT, rng);
+    // chaos picks choice at index 0 from the visible pool → 'risk_drink'
+    expect(choice).toBe('risk_drink');
   });
 });

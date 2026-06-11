@@ -773,6 +773,25 @@ function saferHealthChoice(state: GameState, event: GameEvent): string | null {
   );
 }
 
+/** Returns 'high' when at least one alive child is aboard, 'normal' otherwise.
+ *
+ *  Period anchor: children in the wagon was the single biggest documented
+ *  risk-aversion driver (Faragher 1979 / Unruh 1979 family-size analysis;
+ *  Sager family, 1844 — six children under 14 drove every decision). The
+ *  #1235 winter-wall family margin is inverted precisely because families
+ *  with children push HARDER to avoid being caught in October — the risk
+ *  asymmetry runs both ways. Here it applies to health events where the
+ *  immediate hazard (cholera, foul water) falls hardest on children.
+ *
+ *  Doctor nuance: a live Doctor reduces but does not eliminate disease risk
+ *  (30% relief per engine #154). The function does not consult the Doctor
+ *  flag; callers that want the "Doctor grants confidence" logic check it
+ *  separately (see aggressive.pickEventChoice). */
+export function partyRiskAversion(state: GameState): 'high' | 'normal' {
+  const hasLiveChild = state.party.some((m) => !m.dead && m.kind === 'child');
+  return hasLiveChild ? 'high' : 'normal';
+}
+
 export const cautiousPersona: Persona = {
   id: 'cautious',
   // #1028 — paceMiPerDay 8 → 10 (matches balanced). Slow trigger
@@ -1334,6 +1353,20 @@ export const aggressivePersona: Persona = {
     // would unconditionally pick decline regardless of food level.
     if (event.id === 'encounter_salmon_band') {
       return pickSalmonBandChoice(state, event);
+    }
+    // #1388 T3 — children aboard raise risk aversion on health events.
+    // Period reality: children were the dominant risk-aversion driver
+    // (Faragher 1979 family-size analysis; see partyRiskAversion doc comment).
+    // When partyRiskAversion is 'high' AND a live Doctor is NOT aboard,
+    // route through saferHealthChoice before the aggressive default so the
+    // captain avoids the cholera roll rather than gambling with the kids.
+    // Doctor nuance: with a Doctor present and NO children, skip the gate —
+    // the Doctor can treat what goes wrong (no extra timidity vs today).
+    // When partyRiskAversion is 'normal' (no children), behavior is
+    // byte-identical to the pre-#1388 code path.
+    if (partyRiskAversion(state) === 'high' && !hasLiveDoctor(state)) {
+      const safe = saferHealthChoice(state, event);
+      if (safe !== null) return safe;
     }
     // Aggressive refuses tolls, pushes through, hoards.
     return choiceMatching(state, event, /refuse/i, /push/i, /pass/i, /ignore/i, /wave/i)
