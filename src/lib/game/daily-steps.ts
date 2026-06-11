@@ -31,6 +31,8 @@ import { applyTrainShare } from './systems/train-share';
 import { applyHolidays } from './systems/holidays';
 import { applyNpcMoraleBaseline } from './systems/npc-morale';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
+import { checkSnowNews } from './systems/news';
+import { checkTrainPaceLift } from './systems/company-rest';
 
 /** Per-day context a step may need beyond (state, rng). */
 export interface TickCtx {
@@ -94,6 +96,18 @@ export const POST_BRANCH_STEPS: readonly TickStep[] = [
   { id: 'adjustMorale',   scope: 'playerOnly', run: (s, rng) => adjustMorale(s, rng) }, // NPCs run applyNpcMoraleBaseline instead; stacking both double-counts the daily morale nudge
   { id: 'applyNpcMoraleBaseline', scope: 'npcOnly', run: (s, _rng, ctx) => (ctx.traveled ? applyNpcMoraleBaseline(s) : s) }, // gate mirrors npc-engine.ts step 1h: runs travel-days only
   { id: 'applyHolidays',  run: (s) => applyHolidays(s) },
+  // #1304-T3 — Seasonal snow-news schedule.  Uses sub-rng `snownews:${seed}`
+  // so it never disturbs the main daily RNG stream.  scope='all' so both
+  // player AND bot runs receive the signal on the same tick path — the
+  // identical code path is what makes the estimator signal-honest (T4).
+  { id: 'checkSnowNews',  run: (s) => checkSnowNews(s) },
+  // #1304-T2 — level-trigger: emits a one-time log when the captain's
+  // schedule pressure first crosses above 'ok' for an episode; clears the
+  // flag when pressure returns to 'ok' so the next episode re-arms.
+  // scope='playerOnly' — the player's eventLog carries this; NPC synths do
+  // not persist flags across ticks (projectWagonDeltas doesn't sync flags),
+  // so running it on NPC synths would silently no-op every tick anyway.
+  { id: 'checkTrainPaceLift', scope: 'playerOnly' as const, run: (s) => checkTrainPaceLift(s) },
 ];
 
 export const PRE_TRAVEL_STEPS: readonly TickStep[] = [

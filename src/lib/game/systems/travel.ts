@@ -1,6 +1,8 @@
 import type { GameState, Pace, Terrain } from '../types';
 import type { Rng } from '../rng';
+import { clampedPace } from './wagon-train';
 import { oxenSpeedFactorFor } from './oxen';
+import { isPassClosed } from './winter';
 import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../content/landmarks';
 import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
@@ -83,14 +85,11 @@ export function milesPerDay(state: GameState): number {
   // Hard gate: under wagon's minTeam, the wagon simply can't be pulled.
   if (aliveTeam.length < wagon.minTeam) return 0;
 
-  // #176 — while in a wagon train, pace is clamped to moderate. The
-  // train moves at the slowest member's pace, so 'fast' / 'grueling'
-  // selections silently downgrade. The trade is the safety net
-  // (services, share-watch, morale +1/day).
-  const effectivePace = state.wagonTrain
-    && (state.pace === 'fast' || state.pace === 'grueling')
-    ? 'moderate'
-    : state.pace;
+  // #176 / #1304 T2 — pace is clamped by the captain's schedule pressure
+  // via clampedPace (wagon-train.ts). Under ok pressure the cap is 'moderate';
+  // under behind/critical it rises to 'fast'. The inline duplicate that was
+  // here previously was removed in #1304 T2 (DRY the clamp).
+  const effectivePace = clampedPace(state);
   const base = PACE_BASE_MILES[effectivePace];
   let terrain = TERRAIN_MULTIPLIER[state.location.terrain];
   const oxen = oxenSpeedFactorFor(state);
@@ -163,6 +162,24 @@ function isBypassed(state: GameState, landmarkId: string): boolean {
 
 export function applyTravel(state: GameState, rng: Rng): GameState {
   if (state.completed) return state;
+
+  // #1304 — pass closed. The wagon camps in place; no miles advance.
+  // Resources continue to drain through the normal daily systems above
+  // (consumption, oxen, etc.) — the party burns supplies waiting for the
+  // pass to clear. The closure window is tracked in `_passClosedUntil`.
+  if (isPassClosed(state)) {
+    const closedUntil = state.flags._passClosedUntil as number;
+    return {
+      ...state,
+      eventLog: [
+        ...state.eventLog,
+        {
+          day: state.day,
+          text: `The pass is closed — camped in place. Clears in ${closedUntil - state.day} day${closedUntil - state.day === 1 ? '' : 's'}.`
+        }
+      ]
+    };
+  }
 
   // If we were parked at a landmark from a previous day, "depart" before moving.
   let startState = state;

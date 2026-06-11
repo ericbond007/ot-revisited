@@ -44,7 +44,7 @@ import { CAMP_ACTIONS_BY_ID } from '../actions/camp-actions';
 import { getWagon } from '../content/wagons';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
 import { rollStrayMorning } from './strays';
-import { recoverOxenFatigue, recoverOxenHealth } from './oxen';
+import { recoverOxenFatigue, recoverOxenHealth, snowCoverGrazingMult } from './oxen';
 import { applyAxleGrease as applyEngineAxleGrease } from './wagon';
 import {
   applyCannibalize,
@@ -453,7 +453,19 @@ export function tickNpcWagon(
   } else {
     // Rest-day ox recovery — NPC-local, not expressible as a segment step
     // because it branches on terrain and uses NPC-specific typed fields.
-    const recovery = ctx.terrain === 'desert' || ctx.terrain === 'mountains' ? 5 : 15;
+    //
+    // #1304 T6b — seasonal/calendar multiplier REMOVED from rest-day path for
+    // NPC parity with the player fix.  Deliberate lay-by on cured autumn range
+    // is genuinely restorative (Marcy 1859, lines 2583–2587 —
+    // "will fatten upon it even in mid-winter").
+    //
+    // #1304 T6c — snow COVER applies on rest days too.  A team trapped in a
+    // snowed pass starves because the cured grass is buried.  snowCoverGrazingMult
+    // is the same function used by restGrazingQuality() on the player path.
+    // TrainEnv carries weather — no faux-state synthesis needed.
+    const coverMult = snowCoverGrazingMult(ctx.weather);
+    const baseRecovery = ctx.terrain === 'desert' || ctx.terrain === 'mountains' ? 5 : 15;
+    const recovery = Math.round(baseRecovery * coverMult);
     next = { ...next, oxen: recoverOxenFatigue(next.oxen, recovery) };
     // #963 H1 — passive HP recovery for NPC oxen at low fatigue.
     next = { ...next, oxen: recoverOxenHealth(next.oxen) };

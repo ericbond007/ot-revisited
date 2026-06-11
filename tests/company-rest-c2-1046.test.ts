@@ -112,29 +112,33 @@ it('a freshly generated train starts with no decision block; first tick sets it'
   expect(t.companyDecisionBlock).toBeUndefined();
 });
 
-it('a held lay-by block keeps its original blockStartDay + logs only once across ticks', () => {
+it('a held maintenance lay-by block keeps its original blockStartDay + logs only once across ticks', () => {
+  // #1304 T1 re-baseline: the original test used crisis_layby to exercise the
+  // hysteresis-hold invariant (blockStartDay stable while a mode persists,
+  // no double "lays by" log). Crisis blocks now hold for only 1 day
+  // (CRISIS_HOLD_DAYS=1 — Bishop 1849/Stout 1853), so they clear on tick 2.
+  // The same blockStartDay invariant applies to maintenance_layby, which
+  // has genuine multi-day hysteresis — pivot the test there to preserve coverage.
+  //
+  // Build a maintenance scenario: high ox fatigue pins the train in
+  // maintenance_layby via hysteresis even after the ox recovers some fatigue
+  // on the rest day (recovery < hysteresis margin of 15).
   const s = gameInTrain('prudent');
-  // #1046 A+D — scenario hardened so the lay-by rest-heal doesn't exit
-  // the crisis band on tick 2; original hysteresis-hold intent
-  // preserved under A+D recovery. Pre-A+D a lay-by day had no heal so
-  // health=15 trivially stayed in crisis; post-A+D layByRecovery (+8×
-  // morale-mult ≈ +9/tick) would lift 15→24 and reclassify
-  // crisis_layby→maintenance_layby (a real mode change ⇒ new block —
-  // correct A+D "the lay-by pays off"). Starting deeper in crisis
-  // (health 8) means even after the tick-1 heal (8→17) and tick-2 heal
-  // (17→26 while the held block + hysteresis pin the mode) the company
-  // genuinely STAYS in crisis_layby across both ticks, so the
-  // hysteresis-hold invariant (blockStartDay stable within a held mode,
-  // only re-stamped on a real mode change) is actually exercised.
-  s.party[0].health = 8; // deep crisis → crisis_layby; one rest-heal can't exit → block HOLDS
+  s.date = { year: 1849, month: 6, day: 18 }; // Monday — no Sabbath
+  // fatigue 55 > maintOxFatigue(prudent)=50 → maintenance_layby on tick 1.
+  // After one rest day ox fatigue drops by ~10–15 (terrain recovery);
+  // hysteresis threshold = 50-15 = 35; fatigue ~40 > 35 → block HOLDS tick 2.
+  s.oxen.forEach((o) => (o.fatigue = 55));
+  s.wagonTrain!.companions.forEach((w) => w.oxen.forEach((o) => (o.fatigue = 55)));
+
   const t1 = tickDayPausable(s).state;
   const block1 = t1.wagonTrain!.companyDecisionBlock!;
-  expect(block1.mode).toBe('crisis_layby');
+  expect(block1.mode).toBe('maintenance_layby');
   const laysByLogs1 = t1.eventLog.filter((e) => e.text.includes('lays by')).length;
 
   const t2 = tickDayPausable(t1).state;
   const block2 = t2.wagonTrain!.companyDecisionBlock!;
-  expect(block2.mode).toBe('crisis_layby');
+  expect(block2.mode).toBe('maintenance_layby');
   expect(block2.blockStartDay).toBe(block1.blockStartDay); // held, not re-stamped
   const laysByLogs2 = t2.eventLog.filter((e) => e.text.includes('lays by')).length;
   expect(laysByLogs2).toBe(laysByLogs1); // no second "lays by" line while the block holds

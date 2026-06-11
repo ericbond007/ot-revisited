@@ -39,7 +39,14 @@ import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
 import type { BarterDisposition } from './types';
 import { careLevel } from '../systems/care';
 import { defaultWheelBreakResponse, thresholdWheelBreakResponse } from './wheel-break';
-import { TOTAL_TRAIL_MI, suppressCamp, allowsSabbathRest } from './schedule';
+import {
+  TOTAL_TRAIL_MI,
+  suppressCamp,
+  allowsSabbathRest,
+  winterPaceBoost,
+  schedulePressure,
+  doctrineFor
+} from './schedule';
 import { oxHydration, HYDRATION_AMBER } from '../systems/ox-hydration';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
@@ -386,7 +393,15 @@ function avgOxFatigue(state: GameState): number {
 function oxenWornOut(state: GameState): boolean {
   const alive = state.oxen.filter((o) => o.health > 0).length;
   if (alive === 0) return true;
-  const fatigueLimit = hasLiveTeamster(state) ? 55 : 70;
+  // #1304 SO-tuning — 70 → 60 default, 55 → 50 teamster. The SO gate
+  // split cleanly on this one threshold: every teamster archetype
+  // arrived ≥89%, every non-teamster ≤43% (the 70-wall wagon travels at
+  // ~47 avg fatigue, fitness ~0.75, and pays multi-day recoveries; the
+  // lower-wall team rests early and short). Period: stock-first
+  // husbandry was UNIVERSAL emigrant knowledge, not specialist skill
+  // (Marcy 1859 — "short and easy drives"; "the health of the oxen came
+  // first"). The teamster keeps a 10-point edge.
+  const fatigueLimit = hasLiveTeamster(state) ? 50 : 60;
   return avgOxFatigue(state) > fatigueLimit;
 }
 
@@ -729,11 +744,15 @@ export const cautiousPersona: Persona = {
     // #1264 — thirst easing: parched team + dry stretch ahead → ease
     // the base pace one rung (can't hydrate by resting with no water,
     // so pushing hard just exhausts a team that can't recover).
+    //
+    // #1304-T4 — winter pressure: health/oxen floors apply FIRST (emergency
+    // slow stays slow); then thirst easing; then winter boost on the result.
     const base = ((): GameState['pace'] => {
       if (minPartyHealth(state) < 20 || oxenWornOut(state)) return 'slow';
       return 'moderate';
     })();
-    return thirstWantsEasedPace(state) ? easeThirstPace(base) : base;
+    const thirstAdjusted = thirstWantsEasedPace(state) ? easeThirstPace(base) : base;
+    return winterPaceBoost(state, this.id, thirstAdjusted);
   },
   pickRations(state) {
     // Cautious eats well — generous rations until food is genuinely low.
@@ -775,6 +794,9 @@ export const cautiousPersona: Persona = {
     // rest stays unconditional.
     if (isSunday(state.date)) return allowsSabbathRest(state, this.id);
     if (crisisRestNeeded(state, 30) || oxenWornOut(state)) return true;
+    // #1304 SO-tuning — preemptive team rest at the soft limit (see the
+    // balanced shouldRest note; same rest-early-rest-short rationale).
+    if (oxenTired(state)) return true;
     return state.morale < 15 && !suppressCamp(state, this.id, 'pan');
   },
   shouldHunt(state) {
@@ -957,8 +979,12 @@ export const balancedPersona: Persona = {
     // cholera roll. Aggressive overrides this; balanced doesn't.
     return saferHealthChoice(state, event) ?? defaultChoice(state, event);
   },
-  pickPace() {
-    return 'moderate';
+  pickPace(state) {
+    // #1304-T4 — winter pressure: upgrade pace when behind/critical.
+    // Base pace is 'moderate'; health/oxen floors are not separately checked
+    // here (balanced's shouldRest handles the worn-team case). The boost
+    // never pushes balanced past 'fast' (see winterPaceBoost cap).
+    return winterPaceBoost(state, this.id, 'moderate');
   },
   pickRations() {
     return 'normal';
@@ -992,6 +1018,14 @@ export const balancedPersona: Persona = {
     // Crisis rest — always allowed (critical override).
     const hpFloor = hasLiveDoctor(state) ? 15 : 25;
     if (crisisRestNeeded(state, hpFloor) || oxenWornOut(state)) return true;
+    // #1304 SO-tuning — preemptive team recovery one rung before
+    // worn-out, mirroring pace_pusher's #963a pattern. Rest-early-rest-
+    // short beats run-to-the-wall: the 60-wall wagon travels at ~47 avg
+    // fatigue (fitness ~0.75) and pays multi-day recoveries; resting at
+    // the soft limit keeps the team's duty cycle high. Stock-first
+    // husbandry was universal emigrant practice (Marcy 1859), not a
+    // push-persona specialty.
+    if (oxenTired(state)) return true;
     // Voluntary morale rest — discretionary; suppressed when behind.
     if (state.morale < 10 && !suppressCamp(state, this.id, 'pan')) return true;
     return false;
@@ -1160,33 +1194,20 @@ export const aggressivePersona: Persona = {
     // the team (it backs off on worn/tired oxen), so on a parched team with
     // a dry stretch ahead it eases off 'fast' one rung. pace_pusher, by
     // contrast, grinds on regardless — that's the persona differential.
+    //
+    // #1304-T4 — winter pressure: aggressive already runs 'fast' as the
+    // default, and winterPaceBoost caps at 'fast', so behind/critical
+    // pressure on an unencumbered aggressive effectively changes nothing
+    // (they're already there). Health/oxen floors still win if the team is
+    // failing. The boost is here for parity — it still respects the cap.
     const base = ((): GameState['pace'] => {
       if (minPartyHealth(state) < 30) return 'moderate';
-      // #275 v10b — back off pace when oxen are stressed. Period reality:
-      // even hard-driving emigrants (the parties that "pushed" per the
-      // diaries) read the team — a smart driver knew grueling pace on a
-      // worn ox team killed the wagon. Aggressive without this tweak ran
-      // grueling at 70+ fatigue, lost oxen between non-swap posts, and
-      // wiped before Laramie.
-      //
-      // #963c — pace rebalance (was 'grueling'). Period reality: emigrant
-      // "aggressive" was FAST (15-18 mi/day sustained, the Reed/Donner
-      // push out of Truckee), not GRUELING (25+, which only made sense
-      // for true emergencies — outrunning a storm, racing to a ferry).
-      // The grueling default trapped aggressive in fatigue-rest cycles:
-      // 5 days grueling → oxen worn → forced rest → repeat → ox HP drains
-      // → 39% rest days vs 42% travel. Trace-963 confirmed.
       if (oxenWornOut(state)) return 'moderate';
-      // #963a — preemptive backoff. Step down one rung before fatigue
-      // crosses the worn-out threshold so we don't bounce between
-      // grueling-pace travel days and forced rest days. Trace-963 showed
-      // aggressive was burning ~40% of the calendar resting AFTER hitting
-      // fatigue 70; backing off at 50 keeps the team in continuous
-      // motion at a slightly lower per-day rate but >2× the travel days.
       if (oxenTired(state)) return 'moderate';
       return 'fast';
     })();
-    return thirstWantsEasedPace(state) ? easeThirstPace(base) : base;
+    const thirstAdjusted = thirstWantsEasedPace(state) ? easeThirstPace(base) : base;
+    return winterPaceBoost(state, this.id, thirstAdjusted);
   },
   pickRations(state) {
     // #921r — "don't cheap out on rations" means don't starve the
@@ -1625,14 +1646,21 @@ export const pacePusherPersona: Persona = {
     // he regretted not banking ox HP at Bridger before the Sublette
     // push; the team that crossed was the team that died in the
     // Sierra.
-    if (minPartyHealth(state) >= 70 && !oxenWornOut(state)) {
-      const longGapAhead = nextSupplyDistance(state) > 200;
-      const teamFresh = avgOxFatigue(state) < 25;
-      if (longGapAhead && !teamFresh) return 'moderate';
-      return oxenTired(state) ? 'moderate' : 'fast';
-    }
-    if (minPartyHealth(state) >= 50) return oxenTired(state) ? 'slow' : 'moderate';
-    return 'slow';
+    // #1304-T4 — winterPaceBoost: health/oxen floors apply first (slow
+    // stays slow). pace_pusher already runs 'fast' when healthy/fresh;
+    // boost is mostly a no-op for them at 'fast' (cap holds) but ensures
+    // the function is consistently wired across all heuristic personas.
+    const base = ((): GameState['pace'] => {
+      if (minPartyHealth(state) >= 70 && !oxenWornOut(state)) {
+        const longGapAhead = nextSupplyDistance(state) > 200;
+        const teamFresh = avgOxFatigue(state) < 25;
+        if (longGapAhead && !teamFresh) return 'moderate';
+        return oxenTired(state) ? 'moderate' : 'fast';
+      }
+      if (minPartyHealth(state) >= 50) return oxenTired(state) ? 'slow' : 'moderate';
+      return 'slow';
+    })();
+    return winterPaceBoost(state, this.id, base);
   },
   shouldRest(state) {
     // Only rest when the team is actually failing — not on the cautious

@@ -3,11 +3,12 @@ import { makeRng } from './rng';
 import type { Rng } from './rng';
 import { upgradeState } from './upgrade';
 import { tickWeather } from './systems/weather';
-import { recoverOxenFatigue, recoverOxenHealth } from './systems/oxen';
+import { checkClosure, isPassClosed, winterZoneAt } from './systems/winter';
+import { recoverOxenFatigue, recoverOxenHealth, snowCoverGrazingMult } from './systems/oxen';
 import { pushMoraleHistory } from './systems/morale';
 import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
-import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
+import { advanceTrain, applyNpcPostRestock, leaveTrain } from './systems/wagon-train';
 import { companyRestDecision, dissentTrigger, resolveCompanyDissent } from './systems/company-rest';
 import type { DissentChoice } from './systems/company-rest';
 import { maybeElectCaptain, forceElection } from './systems/wagon-train-elections';
@@ -136,6 +137,43 @@ export function tickDayPausable(state: GameState): PausableTickResult {
 
   let s = tickWeather(normalized, rng);
 
+  // #1304 — closure check. After weather is known, if the party is in a
+  // winter zone and today is a snowstorm past CLOSURE_START_DOY, roll to see
+  // if the pass closes. Uses sub-rng `winter:${seed}:${day}` — does NOT
+  // disturb the main daily rng. If snowed_in triggers, the tick returns early
+  // (completed game, no further systems run). Log line for closure + snowed_in.
+  if (!s.completed && winterZoneAt(s.location.milesTraveled)) {
+    const closureResult = checkClosure(s);
+    if (closureResult.closureTriggered) {
+      const closedUntil = closureResult.state.flags._passClosedUntil as number;
+      const duration = closedUntil - s.day;
+      if (closureResult.snowedIn) {
+        s = {
+          ...closureResult.state,
+          eventLog: [
+            ...closureResult.state.eventLog,
+            {
+              day: s.day,
+              text: `The pass is closed by a deep winter storm. The company is trapped.`
+            }
+          ]
+        };
+        return { state: s };
+      } else {
+        s = {
+          ...closureResult.state,
+          eventLog: [
+            ...closureResult.state.eventLog,
+            {
+              day: s.day,
+              text: `The pass is snowed in — the way is impassable for ${duration} day${duration === 1 ? '' : 's'}.`
+            }
+          ]
+        };
+      }
+    }
+  }
+
   // #285 phase 2 — crisis-triggered re-election. Consumed at the top of
   // the next tick after the trigger was set (currently the only
   // trigger is refusing a starvation share; see npc-crisis-events).
@@ -190,9 +228,14 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     s = runSteps(TRAVEL_OX_WAGON_STEPS, s, rng, ctx);
   } else {
     // Lay-by: the team rests rather than pulls — no fatigue, no wagon
-    // wear. Mirror the NPC rest-day recovery (terrain-aware fatigue +
-    // passive HP at low fatigue).
-    const recovery = s.location.terrain === 'desert' || s.location.terrain === 'mountains' ? 5 : 15;
+    // wear.  Uses terrain × snow-cover recovery (same as rest.ts + NPC path
+    // post-T6b/T6c): no calendar/seasonal term, but snow cover applies
+    // because a trapped team in a snowed pass starves (Marcy cured-grass
+    // principle + 2578–2581 pawing-through snow).
+    const coverMult = snowCoverGrazingMult(s.weather ?? 'clear');
+    const recovery = Math.round(
+      (s.location.terrain === 'desert' || s.location.terrain === 'mountains' ? 5 : 15) * coverMult
+    );
     s = { ...s, oxen: recoverOxenHealth(recoverOxenFatigue(s.oxen, recovery)) };
   }
   s = runSteps(POST_BRANCH_STEPS, s, rng, ctx);
@@ -210,20 +253,72 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // Persist the updated decision block for tomorrow's hysteresis + slice-B
   // dissent. No train → nothing to persist; solo behaviour unchanged.
   if (s.wagonTrain && restDecision) {
-    const block = s.wagonTrain.companyDecisionBlock;
-    const isNewBlock = !block || block.mode !== restDecision.mode;
-    s = {
-      ...s,
-      wagonTrain: {
-        ...s.wagonTrain,
-        companyDecisionBlock: isNewBlock
-          ? { mode: restDecision.mode, blockStartDay: s.day }
-          : block
-      },
-      eventLog: isNewBlock
-        ? [...s.eventLog, { day: s.day, text: `The company ${restDecision.mode === 'travel' ? 'breaks camp' : 'lays by'} — ${restDecision.reason}.` }]
-        : s.eventLog
-    };
+    // #1304 T1 — before stamping the block, drop any sick companion wagons
+    // that the decision has flagged. These wagons nurse their own and the
+    // company rolls on; each earns a period-voiced log line. Done first so
+    // the day proceeds as a genuine travel day with the slimmed roster.
+    if (restDecision.dropWagonIds && restDecision.dropWagonIds.length > 0) {
+      const dropSet = new Set(restDecision.dropWagonIds);
+      const toLog: string[] = [];
+      const remaining = s.wagonTrain.companions.filter((w) => {
+        if (dropSet.has(w.id)) {
+          // Capitalize the wagon name for period-voiced log sentence.
+          const displayName = w.name.charAt(0).toUpperCase() + w.name.slice(1);
+          toLog.push(`${displayName} drops behind to nurse their sick. The company rolls on.`);
+          return false;
+        }
+        return true;
+      });
+      const dropEntries = toLog.map((text) => ({ day: s.day, text }));
+      s = {
+        ...s,
+        wagonTrain: { ...s.wagonTrain, companions: remaining },
+        eventLog: [...s.eventLog, ...dropEntries]
+      };
+
+      // #1304 review Finding 4 — if every companion just dropped, dissolve
+      // the train entirely. The player continues alone; train-level perks
+      // (TRAIN_MORALE_PER_DAY, night-risk halving, pace cap) must not persist
+      // with an empty companions list.
+      if (s.wagonTrain && s.wagonTrain.companions.length === 0) {
+        s = leaveTrain(s);
+        // leaveTrain appends its own "Split off…" log; append the dissolve note.
+        s = {
+          ...s,
+          eventLog: [
+            ...s.eventLog,
+            {
+              day: s.day,
+              text: `The last wagons have fallen behind — the company is no more. The family travels alone.`
+            }
+          ]
+        };
+        // wagonTrain is now null; the block-stamp below would read s.wagonTrain
+        // which is null — skip it by jumping past the if(s.wagonTrain) guard.
+        // restDecision block ends here; nothing more to stamp.
+      }
+    }
+
+    // Re-read wagonTrain after the possible drop/dissolve mutation above.
+    // If dissolve fired (all companions dropped), wagonTrain is now null —
+    // skip the block-stamp entirely; there is no captain to update.
+    if (s.wagonTrain) {
+      const train = s.wagonTrain;
+      const block = train.companyDecisionBlock;
+      const isNewBlock = !block || block.mode !== restDecision.mode;
+      s = {
+        ...s,
+        wagonTrain: {
+          ...train,
+          companyDecisionBlock: isNewBlock
+            ? { mode: restDecision.mode, blockStartDay: s.day }
+            : block
+        },
+        eventLog: isNewBlock
+          ? [...s.eventLog, { day: s.day, text: `The company ${restDecision.mode === 'travel' ? 'breaks camp' : 'lays by'} — ${restDecision.reason}.` }]
+          : s.eventLog
+      };
+    }
   }
 
   // #1046 B — dissent. On a forced lay-by the player hasn't answered

@@ -4,6 +4,7 @@ import { makeRng } from './rng';
 import { buildStarterKit } from './content/starter-kit';
 import { computeWaterCap } from './systems/water-cap';
 import { tickDayPausable, applyPendingChoice, applyCompanyDissent } from './engine-pausable';
+import { rollWinterSeverity } from './systems/winter';
 
 export interface PartyPick {
   name: string;
@@ -141,7 +142,12 @@ export function createInitialState(opts: NewGameOptions): GameState {
       // When true, the engine fires sundayLayBy automatically on Sundays
       // during tickDayPausable instead of advancing the day normally.
       // Players can toggle this via the ?/toggleAutoSabbath action.
-      _autoSabbathRest: true
+      _autoSabbathRest: true,
+      // #1304 — hidden winter severity (early/normal/late, weighted 25/50/25).
+      // Shifts all winter gate dates by ±WINTER_SEVERITY_SHIFT_DAYS days.
+      // NEVER surfaced in any UI string or agent decision — leaks only through
+      // observable signals (T3). Rolled deterministically from the run seed.
+      _winterSeverity: rollWinterSeverity(opts.seed)
     },
     completed: false,
     outcome: 'in-progress',

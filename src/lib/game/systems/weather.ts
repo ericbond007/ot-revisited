@@ -6,6 +6,7 @@ import {
   rollCanvasSupplyDamage,
   applyCanvasSupplyDamage
 } from './canvas';
+import { inZoneSnowFloor } from './winter';
 
 // Daily weather (#153) — Markov-ish picker driven by terrain × season,
 // with a stickiness bias toward yesterday's pattern (weather doesn't
@@ -74,13 +75,31 @@ export function pickWeather(state: GameState, rng: Rng): Weather {
   const base = BASE_WEIGHTS[state.location.terrain][season];
   const yesterday = state.weather ?? 'clear';
 
+  // #1304 — in-zone October+ snow floor. When the party is inside a winter
+  // zone (Blues or Cascades) past the storm-floor start date, add extra weight
+  // to 'snow' on top of the base Markov weights. This does NOT disturb
+  // out-of-zone weights — the existing fall/winter table is unchanged when
+  // snowFloor === 0.
+  const snowFloor = inZoneSnowFloor(state);
+
   // Build today's weighted pool. Apply stickiness to yesterday's kind.
   const weights: WeatherWeights = {};
   let total = 0;
   for (const [kind, w] of Object.entries(base) as Array<[Weather, number]>) {
-    const adjusted = kind === yesterday ? w * STICKINESS_MULT : w;
+    let adjusted = kind === yesterday ? w * STICKINESS_MULT : w;
+    if (kind === 'snow' && snowFloor > 0) {
+      // Floor ensures a minimum snow weight; additive on top of any
+      // existing base weight (mountains already have snow: 2 in fall).
+      adjusted = Math.max(adjusted, (base.snow ?? 0) + snowFloor);
+    }
     weights[kind] = adjusted;
     total += adjusted;
+  }
+  // Inject 'snow' with just the floor if it wasn't in the base table at all
+  // (e.g. desert / prairie in fall don't have snow in BASE_WEIGHTS).
+  if (snowFloor > 0 && weights.snow === undefined) {
+    weights.snow = snowFloor;
+    total += snowFloor;
   }
   if (total <= 0) return 'clear';
 

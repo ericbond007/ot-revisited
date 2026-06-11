@@ -12,6 +12,12 @@ import type { PersonaId } from '../ai/types';
 import type { Rng } from '../rng';
 import { isSunday } from '../utils/calendar';
 import { leaveTrain } from './wagon-train';
+import { schedulePressure, doctrineFor, captainPressure, companyPaceCap } from '../ai/schedule';
+// #1304 T2 — captainPressure + companyPaceCap live in ai/schedule.ts to avoid
+// the company-rest ↔ wagon-train import cycle (company-rest already imports
+// leaveTrain from wagon-train). Re-exported here so callers that naturally
+// reach for company-rest as the governance module still find them in one place.
+export { captainPressure, companyPaceCap };
 
 /** Captain persona → chartered doctrine. aggressive-family pushes
  *  (hard_driver); the devotion/caution personas keep the Sabbath
@@ -106,12 +112,15 @@ const CRISIS_MIN_HP = 20;
  *  company in a permanent crisis. Starting value; slice-5 sweep-tuned. */
 const EFFECTIVE_DEAD_HP = 3;
 
-/** #1046 §13 (cap) — a crisis_layby block held this long without
- *  clearing means an unrecoverable wagon; the company stops waiting and
- *  travels (it dies en route and reaps). Defense-in-depth behind B.
- *  Legitimate crises self-resolve in days. Starting value; slice-5
- *  sweep-tuned. */
-const CRISIS_MAX_DAYS = 12;
+/** #1304 T1 — the company stands a one-day death-watch/burial halt
+ *  (Bishop 1849 near Torrington WY: company stopped, he died at 1 p.m.,
+ *  military funeral the same day; Stout 1853: one short day for Mr.
+ *  Houlett). Extended convalescence is the sick family's own affair —
+ *  they drop behind and the train rolls on (Martha Read 1852: one week
+ *  roadside, passing trains did not join). Replaces the ahistorical
+ *  12-day cap that was serially re-stamped, costing ~47 days/run.
+ *  See docs/superpowers/specs/2026-06-11-train-governance-research.md. */
+const CRISIS_HOLD_DAYS = 1;
 
 /** Hysteresis: once a maintenance lay-by is called it holds until
  *  avg ox-fatigue drops a margin below the trigger (and HP recovers a
@@ -132,47 +141,135 @@ export function companyRestDecision(state: GameState): CompanyRestDecision {
     const block = train.companyDecisionBlock;
     const crisisHeld =
       block?.mode === 'crisis_layby' ? state.day - block.blockStartDay : 0;
-    if (crisisHeld >= CRISIS_MAX_DAYS) {
-      // #1046 §13 cap — held in crisis ≥CRISIS_MAX_DAYS without
-      // clearing ⇒ an unrecoverable wagon. Stop waiting and TRAVEL
-      // (decisively — not maintenance, or the company never moves);
-      // the failing wagon dies en route and reaps. Defense-in-depth
-      // behind B's viable-wagon aggregate.
-      return { mode: 'travel', reason: `crisis cap (${crisisHeld}d) — company breaks camp` };
+
+    if (crisisHeld >= CRISIS_HOLD_DAYS) {
+      // #1304 T1 — one-day death-watch is over; the train breaks camp.
+      // Identify NPC companion wagons still in crisis (min alive-member HP
+      // < CRISIS_MIN_HP, or no alive members). These wagons drop behind to
+      // nurse their own — period reality: week-long convalescence was
+      // family-scale (Martha Read 1852; Bruff's company never sent relief).
+      // Dead members are excluded — only alive HP counts for the drop test.
+      const dropWagonIds = train.companions
+        .filter((w) => {
+          const alive = w.party.filter((m) => !m.dead);
+          if (alive.length === 0) return true; // no survivors — not viable
+          return alive.some((m) => m.health < CRISIS_MIN_HP);
+        })
+        .map((w) => w.id);
+
+      if (dropWagonIds.length > 0) {
+        return {
+          mode: 'travel',
+          reason: 'sick wagons drop behind to nurse their own',
+          dropWagonIds
+        };
+      }
+      // Player-party-only crisis: the company will not wait (Bruff's
+      // company never sent the promised relief). The player's own
+      // persona rest logic handles their family lay-by.
+      return { mode: 'travel', reason: 'crisis hold complete — company breaks camp' };
     }
     return { mode: 'crisis_layby', reason: `crisis: min HP ${Math.round(agg.minPartyHP)}` };
   }
 
+  // #1304 review — corpse-in-motion sweep: wagons whose every alive member is
+  // at or below EFFECTIVE_DEAD_HP are excluded from trainAggregate (viable-wagon
+  // rule), so they never trigger a crisis. Sweep for them here, outside the
+  // crisis branch, and drop them immediately — no death-watch day (there is
+  // nobody to watch; abandonment of the hopeless is documented: Martha Read
+  // 1852 noted week-long convalescences where passing trains did not stop).
+  const corpseIds = train.companions
+    .filter((w) => {
+      const alive = w.party.filter((m) => !m.dead);
+      // Wagon with no alive members, or all alive at/below EFFECTIVE_DEAD_HP.
+      if (alive.length === 0) return true;
+      return alive.every((m) => m.health <= EFFECTIVE_DEAD_HP);
+    })
+    .map((w) => w.id);
+
+  if (corpseIds.length > 0) {
+    return {
+      mode: 'travel',
+      reason: 'a hopeless wagon is left behind',
+      dropWagonIds: corpseIds
+    };
+  }
+
   const params = DOCTRINE_PARAMS[train.doctrine];
 
+  // #1304-T4 — Season term: compute schedule pressure from the captain's
+  // perspective. The captain is represented by `train.doctrine` but the
+  // persona target/estimate needs a GameState reference. We derive pressure
+  // using the captain's persona doctrine (if known) or fall back to
+  // 'prudent' (balanced doctrine). This is the same estimator the player
+  // UI chip and per-wagon pace logic uses — shared brain.
+  //
+  // Identify the captain's persona from the doctrine. We don't store
+  // captain personaId directly — map from doctrine as a proxy:
+  //   hard_driver → aggressive (target 175) or pace_pusher (165); use
+  //     the doctrine-keyed personaId that best represents it.
+  //   devout → faithful / sunday_rester (target 195)
+  //   prudent → balanced (target 185) as the middle ground
+  //
+  // This is a first approximation. When a train stores captainPersonaId
+  // in a future slice, read it directly. For now the mapping is:
+  //   hard_driver → pace_pusher (tighter target, more conservative estimate)
+  //   devout      → faithful
+  //   prudent     → balanced
+  const DOCTRINE_PERSONA: Record<CaptainDoctrine, PersonaId> = {
+    hard_driver: 'pace_pusher',
+    devout:      'faithful',
+    prudent:     'balanced'
+  };
+  const captainPersona = DOCTRINE_PERSONA[train.doctrine];
+  const captainDoctrine = doctrineFor(captainPersona);
+  const pressure = schedulePressure(state, captainDoctrine.targetArrivalDay);
+
   // 2. Sabbath — devout doctrine on the Sabbath day.
+  //
+  // #1304-T4 season term: suppress Sabbath lay-bys when behind+ unless
+  // doctrine is devout AND pressure is merely 'behind' (not critical).
+  // devout + critical → push (the pass > the Sabbath, period reality).
+  // dissent system surfaces the drama: devout members still dissent.
   if (params.sabbath && isSunday(state.date)) {
-    return { mode: 'sabbath_layby', reason: 'Sabbath observance' };
+    // Devout + ok/behind → keep the Sabbath as before.
+    // Devout + critical → do NOT call a Sabbath lay-by (push).
+    if (pressure !== 'critical') {
+      return { mode: 'sabbath_layby', reason: 'Sabbath observance' };
+    }
+    // Fall through to travel — devout captain breaks Sabbath when critical.
+    // (No early return; travel will be returned at the end.)
   }
 
   // 3. Maintenance — condition-driven, with hysteresis. If we're
   //    already mid maintenance/crisis block, hold until the company
   //    clears the trigger by a margin (no 1-day-thrash). Otherwise,
   //    fire when the doctrine's threshold is first crossed.
-  const inLaybyBlock =
-    train.companyDecisionBlock?.mode === 'maintenance_layby' ||
-    train.companyDecisionBlock?.mode === 'crisis_layby';
+  //
+  // #1304-T4 season term: under behind+ pressure, defer maintenance
+  // lay-bys unless the crisis floor fires (which is handled above).
+  // The company pushes through maintainable wear when the clock is ticking.
+  if (pressure === 'ok') {
+    const inLaybyBlock =
+      train.companyDecisionBlock?.mode === 'maintenance_layby' ||
+      train.companyDecisionBlock?.mode === 'crisis_layby';
 
-  const oxTrigger = inLaybyBlock
-    ? params.maintOxFatigue - HYSTERESIS_OXFAT
-    : params.maintOxFatigue;
-  const hpTrigger = inLaybyBlock
-    ? params.maintMinHP - HYSTERESIS_HP
-    : params.maintMinHP;
+    const oxTrigger = inLaybyBlock
+      ? params.maintOxFatigue - HYSTERESIS_OXFAT
+      : params.maintOxFatigue;
+    const hpTrigger = inLaybyBlock
+      ? params.maintMinHP - HYSTERESIS_HP
+      : params.maintMinHP;
 
-  if (agg.avgOxFatigue > oxTrigger || agg.minPartyHP < hpTrigger) {
-    const why = agg.avgOxFatigue > oxTrigger
-      ? `maintenance: avg ox-fatigue ${Math.round(agg.avgOxFatigue)}`
-      : `maintenance: min HP ${Math.round(agg.minPartyHP)}`;
-    return { mode: 'maintenance_layby', reason: why };
+    if (agg.avgOxFatigue > oxTrigger || agg.minPartyHP < hpTrigger) {
+      const why = agg.avgOxFatigue > oxTrigger
+        ? `maintenance: avg ox-fatigue ${Math.round(agg.avgOxFatigue)}`
+        : `maintenance: min HP ${Math.round(agg.minPartyHP)}`;
+      return { mode: 'maintenance_layby', reason: why };
+    }
   }
 
-  return { mode: 'travel', reason: 'no rest trigger' };
+  return { mode: 'travel', reason: pressure !== 'ok' ? `season pressure: ${pressure}` : 'no rest trigger' };
 }
 
 // ── #1046 B: Dissent trigger + resolution ────────────────────────────────────
@@ -276,4 +373,58 @@ export function resolveCompanyDissent(
     eventLog: [...state.eventLog,
       { day: state.day, text: `The captain refused your appeal. (−${LOBBY_FAIL_MORALE_COST} morale)` }]
   });
+}
+
+// ── #1304 T2 — Lift-log: captain orders longer marches ────────────────────
+//
+// Level-trigger: fires once when pressure first crosses into behind/critical
+// for an episode, then stays silent until pressure returns to ok (flag clears).
+// Pure in the "same inputs → same outputs" sense; the side-effect is appending
+// to eventLog + toggling a flag, but there is no I/O.
+//
+// Called from the daily-steps spine (POST_BRANCH_STEPS) so both player and
+// bot runs emit the log on the same code path — same contract as checkSnowNews.
+
+/**
+ * #1304 T2 — Emit a one-time "captain orders longer marches" event log entry
+ * when schedule pressure first rises above 'ok' for a new episode.
+ *
+ * State flags:
+ *   _trainPaceLiftFlagged  true while the lift-log has been emitted and
+ *                          pressure is still behind/critical.  Cleared when
+ *                          pressure returns to 'ok' so the next behind/critical
+ *                          episode re-arms the log.
+ *
+ * Period anchor: the Donner Party's decision to push vs. rest at Truckee
+ * (Breen Oct 1846); the Willie Company Florence vote (Aug 1856) — company
+ * assembled, captain announced longer marching days.
+ */
+export function checkTrainPaceLift(state: GameState): GameState {
+  if (!state.wagonTrain) return state; // solo — no captain
+  if (state.completed) return state;
+
+  const pressure = captainPressure(state);
+  const flagged = !!state.flags._trainPaceLiftFlagged;
+
+  // Re-arm: pressure returned to ok — clear the flag so next episode re-fires.
+  if (pressure === 'ok' && flagged) {
+    return { ...state, flags: { ...state.flags, _trainPaceLiftFlagged: null } };
+  }
+
+  // Lift: pressure first crosses above ok in this episode — log once.
+  if (pressure !== 'ok' && !flagged) {
+    return {
+      ...state,
+      flags: { ...state.flags, _trainPaceLiftFlagged: true },
+      eventLog: [
+        ...state.eventLog,
+        {
+          day: state.day,
+          text: `The captain orders longer marches — the company fears the snows in the passes.`
+        }
+      ]
+    };
+  }
+
+  return state;
 }

@@ -12,8 +12,8 @@ import {
 import type { GameState } from '../src/lib/game/types';
 import type { PersonaId } from '../src/lib/game/ai/types';
 
-function stateAt(day: number, miles: number): GameState {
-  return { day, location: { milesTraveled: miles } } as unknown as GameState;
+function stateAt(day: number, miles: number, extra: Partial<GameState> = {}): GameState {
+  return { day, location: { milesTraveled: miles }, flags: {}, party: [], ...extra } as unknown as GameState;
 }
 
 describe('projectedArrivalDay', () => {
@@ -101,17 +101,30 @@ describe('suppressCamp', () => {
 });
 
 describe('allowsSabbathRest', () => {
-  const behindState = stateAt(100, (TOTAL_TRAIL_MI * 100) / 210);
+  // behindState: projected ≈ 210 → effectiveTarget = min(persona.target, 185)
+  //   For faithful: target=195 → effective=185; 210 > 185+15=200 → 'critical'
+  //   For balanced: target=185 → effective=185; 210 > 185+15=200 → 'critical'
+  const criticalState = stateAt(100, (TOTAL_TRAIL_MI * 100) / 210);
+  // behindOnlyState: projected ≈ 192 → effective=185; 192 > 185 but ≤200 → 'behind'
+  const behindOnlyState = stateAt(100, (TOTAL_TRAIL_MI * 100) / 192);
   const onTimeState = stateAt(100, TOTAL_TRAIL_MI * 0.67);
   it('allows Sabbath when on schedule for everyone', () => {
     expect(allowsSabbathRest(onTimeState, 'balanced')).toBe(true);
   });
   it('cuts Sabbath for non-sacred personas when behind', () => {
-    expect(allowsSabbathRest(behindState, 'balanced')).toBe(false);
+    expect(allowsSabbathRest(behindOnlyState, 'balanced')).toBe(false);
   });
-  it('keeps Sabbath sacred for faithful + sunday_rester even when behind', () => {
-    expect(allowsSabbathRest(behindState, 'faithful')).toBe(true);
-    expect(allowsSabbathRest(behindState, 'sunday_rester')).toBe(true);
+  it('#1304-T4 (re-baseline #1235) — sacred personas keep Sabbath at "behind" pressure', () => {
+    // At 'behind' (projected ~192, past effective=185 but within margin 185+15=200),
+    // faithful and sunday_rester still observe the Sabbath — the hesitation holds.
+    expect(allowsSabbathRest(behindOnlyState, 'faithful')).toBe(true);
+    expect(allowsSabbathRest(behindOnlyState, 'sunday_rester')).toBe(true);
+  });
+  it('#1304-T4 — sacred personas break Sabbath at "critical" pressure', () => {
+    // At 'critical' (projected ~210, past effective=185+15=200), even sacred break.
+    // The mountain deadline supersedes the Sabbath — period reality, one line.
+    expect(allowsSabbathRest(criticalState, 'faithful')).toBe(false);
+    expect(allowsSabbathRest(criticalState, 'sunday_rester')).toBe(false);
   });
 });
 
@@ -124,10 +137,16 @@ describe('tooFragileToPush', () => {
   it('is false for a robust adult-only party', () => {
     expect(tooFragileToPush(behind({}))).toBe(false);
   });
-  it('is true when any living child is present (family wagons not pushed)', () => {
+  it('#1304-T4 (re-baseline #1235) — child present no longer exempts; family TIGHTENS estimate instead', () => {
+    // #1304-T4 inverts the #1235 family exemption. Previously tooFragileToPush
+    // returned true when a child was present (family wagons exempt from schedule
+    // push). Now: families are subject to pressure just like any wagon — but
+    // estimateSnowSafeDay tightens their deadline by FAMILY_MARGIN_DAYS so the
+    // pressure fires sooner and harder. The health floor (MIN_PUSH_HP=60) still
+    // protects a genuinely fragile party. This family has health=95 → not fragile.
     expect(tooFragileToPush(behind({
       party: [{ dead: false, kind: 'adult', health: 95 }, { dead: false, kind: 'child', health: 95 }]
-    }))).toBe(true);
+    }))).toBe(false);
   });
   it('morale alone no longer makes a party fragile (#1235b — keyed on HP)', () => {
     // Healthy but demoralised + behind schedule -> pushable (push on grumpy).
@@ -136,9 +155,19 @@ describe('tooFragileToPush', () => {
   it('is true when min HP is below the push floor', () => {
     expect(tooFragileToPush(behind({ party: [{ dead: false, kind: 'adult', health: 50 }] }))).toBe(true);
   });
-  it('a behind family wagon does not suppress camping (gate stands down)', () => {
+  it('#1304-T4 (re-baseline #1235) — behind family wagon IS subject to schedule pressure', () => {
+    // #1304-T4: family wagons are no longer exempt (tooFragileToPush drops the
+    // child guard). A healthy family (health=95) in a behind-schedule state IS
+    // pushed by suppressCamp. The tightened estimate from FAMILY_MARGIN_DAYS
+    // means family wagons typically reach 'behind' sooner than childless wagons,
+    // but here we test a state that is already behind for everyone.
+    // Note: the state fixture here (stateAt-style minimal object) has no flags,
+    // so estimateSnowSafeDay returns the baseline 185; pressure is 'behind'.
     const fam = behind({ party: [{ dead: false, kind: 'adult', health: 95 }, { dead: false, kind: 'child', health: 95 }] });
-    expect(suppressCamp(fam, 'balanced', 'hunt', { foodOnHand: 100 })).toBe(false);
-    expect(allowsSabbathRest(fam, 'balanced')).toBe(true);
+    // tooFragileToPush is now false (child no longer auto-exempts) → suppressCamp
+    // returns true for a discretionary hunt above the starvation floor.
+    expect(suppressCamp(fam, 'balanced', 'hunt', { foodOnHand: 100 })).toBe(true);
+    // allowsSabbathRest: balanced is non-sacred; pressure is 'behind' → false.
+    expect(allowsSabbathRest(fam, 'balanced')).toBe(false);
   });
 });
