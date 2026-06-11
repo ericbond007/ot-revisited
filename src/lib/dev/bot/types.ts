@@ -36,6 +36,17 @@ export interface BotRunOpts {
   startDate?: { year: number; month: number; day: number };
   /** Hard ceiling on days simulated — guards infinite-loop bugs. */
   maxDays?: number;
+  /** Telemetry-only hook called at the end of every runner loop iteration.
+   *  `before` is the state at the top of the iteration (pre-action) so
+   *  probes can classify WHY a rest/findWater fired without the recovery
+   *  the action itself applied; `after` is the post-action state. Never
+   *  affects runner behavior — diagnostic harnesses only. */
+  onIterationEnd?: (
+    before: GameState,
+    after: GameState,
+    actionType: keyof BotRunReport['actionDays'],
+    dayDelta: number
+  ) => void;
 }
 
 export interface BotRunReport {

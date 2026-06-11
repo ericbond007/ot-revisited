@@ -801,6 +801,9 @@ export function runBot(opts: BotRunOpts): BotRunReport {
   while (!state.completed && dayCount < maxDays) {
     dayCount += 1;
     const dayBefore = state.day;
+    // Telemetry-only reference for the onIterationEnd hook — state is
+    // immutably updated, so holding the pre-action object is free.
+    const stateBefore = state;
     const supplyBefore = {
       food: totalFoodLb(state.inventory),
       gunpowder: state.inventory.gunpowder ?? 0,
@@ -1034,6 +1037,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
       recordDeaths(state, stats);
       prevLowHealthIds = recordHealthDrama(state, prevLowHealthIds, stats);
       prevLiveOxen = recordOxDeaths(state, prevLiveOxen, stats);
+      opts.onIterationEnd?.(stateBefore, state, actionType, state.day - dayBefore);
       trace(actionType);
 
       if (firedEventToday) {
