@@ -794,6 +794,9 @@ export const cautiousPersona: Persona = {
     // rest stays unconditional.
     if (isSunday(state.date)) return allowsSabbathRest(state, this.id);
     if (crisisRestNeeded(state, 30) || oxenWornOut(state)) return true;
+    // #1304 SO-tuning — preemptive team rest at the soft limit (see the
+    // balanced shouldRest note; same rest-early-rest-short rationale).
+    if (oxenTired(state)) return true;
     return state.morale < 15 && !suppressCamp(state, this.id, 'pan');
   },
   shouldHunt(state) {
@@ -1015,6 +1018,14 @@ export const balancedPersona: Persona = {
     // Crisis rest — always allowed (critical override).
     const hpFloor = hasLiveDoctor(state) ? 15 : 25;
     if (crisisRestNeeded(state, hpFloor) || oxenWornOut(state)) return true;
+    // #1304 SO-tuning — preemptive team recovery one rung before
+    // worn-out, mirroring pace_pusher's #963a pattern. Rest-early-rest-
+    // short beats run-to-the-wall: the 60-wall wagon travels at ~47 avg
+    // fatigue (fitness ~0.75) and pays multi-day recoveries; resting at
+    // the soft limit keeps the team's duty cycle high. Stock-first
+    // husbandry was universal emigrant practice (Marcy 1859), not a
+    // push-persona specialty.
+    if (oxenTired(state)) return true;
     // Voluntary morale rest — discretionary; suppressed when behind.
     if (state.morale < 10 && !suppressCamp(state, this.id, 'pan')) return true;
     return false;
