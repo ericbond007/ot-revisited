@@ -172,6 +172,29 @@ export function companyRestDecision(state: GameState): CompanyRestDecision {
     return { mode: 'crisis_layby', reason: `crisis: min HP ${Math.round(agg.minPartyHP)}` };
   }
 
+  // #1304 review — corpse-in-motion sweep: wagons whose every alive member is
+  // at or below EFFECTIVE_DEAD_HP are excluded from trainAggregate (viable-wagon
+  // rule), so they never trigger a crisis. Sweep for them here, outside the
+  // crisis branch, and drop them immediately — no death-watch day (there is
+  // nobody to watch; abandonment of the hopeless is documented: Martha Read
+  // 1852 noted week-long convalescences where passing trains did not stop).
+  const corpseIds = train.companions
+    .filter((w) => {
+      const alive = w.party.filter((m) => !m.dead);
+      // Wagon with no alive members, or all alive at/below EFFECTIVE_DEAD_HP.
+      if (alive.length === 0) return true;
+      return alive.every((m) => m.health <= EFFECTIVE_DEAD_HP);
+    })
+    .map((w) => w.id);
+
+  if (corpseIds.length > 0) {
+    return {
+      mode: 'travel',
+      reason: 'a hopeless wagon is left behind',
+      dropWagonIds: corpseIds
+    };
+  }
+
   const params = DOCTRINE_PARAMS[train.doctrine];
 
   // #1304-T4 — Season term: compute schedule pressure from the captain's

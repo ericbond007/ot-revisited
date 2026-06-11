@@ -16,10 +16,11 @@
 // is known, using sub-rng `winter:${seed}:${day}` so it never disturbs the
 // main daily RNG stream.
 //
-// NPC parity: companyMode/advanceTrain already yields traveled=false when the
-// player can't move; NPCs share the player's location (TrainEnv) so a closed
-// pass holds the whole train. NPC wagons that reach deep-winter closure roll
-// snowed_in via checkNpcSnowedIn (called from advanceTrain).
+// NPC parity: the closure is train-wide. When the player's pass is closed,
+// companyMode gates traveled=false; advanceTrain passes 0 miles to every
+// NPC wagon. Solo NPC bot runs tick through the same tickDayPausable path,
+// so they hit the same checkClosure → snowed_in check as the player.
+// No separate per-NPC closure roll is needed or performed.
 
 import type { GameState } from '../types';
 import { makeRng } from '../rng';
@@ -133,8 +134,10 @@ export const STORM_FLOOR_START_DOY = 274; // Oct 1
 export const STORM_FLOOR_RATE_PER_DAY = 0.06;
 
 /** Maximum floor value (caps at Nov 30 / Dec 1 deep-winter threshold).
- *  Beyond this, the daily Markov weight is fully overridden — every storm
- *  day risks closure. */
+ *  The floor is added on top of the base Markov snow weight via Math.max
+ *  (see weather.ts) — an additive minimum, not a full override. Deep-winter
+ *  snow probability is still probabilistic; it is just anchored to a high
+ *  baseline. */
 export const STORM_FLOOR_MAX = 4.0;
 
 // ── Closure constants ──────────────────────────────────────────────────────
@@ -262,36 +265,3 @@ export function isPassClosed(state: GameState): boolean {
   return closedUntil !== undefined && closedUntil >= state.day;
 }
 
-// ── NPC parity ─────────────────────────────────────────────────────────────
-// The player's closure is train-wide: in-train wagons share the player's
-// location (TrainEnv.location from wagon-synth). When the player can't move
-// (companyMode gates traveled=false), advanceTrain already passes traveled=false,
-// so NPC wagons travel 0 miles — the closure hold is automatic.
-//
-// Solo NPC bots: they tick via tickDayPausable (same path as the player),
-// so they pass through the same closure + snowed_in check below.
-//
-// NPC snowed_in: advanceTrain calls checkNpcSnowedIn for each in-zone
-// companion wagon on deep-winter closure days.
-
-/** Check whether an NPC companion wagon in a winter zone should receive the
- *  snowed_in outcome. Called from advanceTrain when the player's pass just
- *  closed in deep winter (isDeepWinter flag passed from checkClosure). The
- *  companion must currently be in a winter zone (share the same location as
- *  the player when in-train). */
-export function checkNpcSnowedIn(
-  milesTraveled: number,
-  day: number,
-  date: { month: number; day: number },
-  seed: string,
-  shift: number
-): boolean {
-  const zone = winterZoneAt(milesTraveled);
-  if (!zone) return false;
-  const currentDoy = dayOfYear(date.month, date.day);
-  const deepDoy = CLOSURE_DEEP_WINTER_DOY + shift;
-  if (currentDoy < deepDoy) return false;
-  // Same closure roll, but keyed on NPC wagon seed so each rolls independently.
-  const rng = makeRng(`winter:${seed}:${day}`);
-  return rng.chance(CLOSURE_PROB_DEEP);
-}

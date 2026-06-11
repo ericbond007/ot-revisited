@@ -8,7 +8,7 @@ import { recoverOxenFatigue, recoverOxenHealth, snowCoverGrazingMult } from './s
 import { pushMoraleHistory } from './systems/morale';
 import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
-import { advanceTrain, applyNpcPostRestock } from './systems/wagon-train';
+import { advanceTrain, applyNpcPostRestock, leaveTrain } from './systems/wagon-train';
 import { companyRestDecision, dissentTrigger, resolveCompanyDissent } from './systems/company-rest';
 import type { DissentChoice } from './systems/company-rest';
 import { maybeElectCaptain, forceElection } from './systems/wagon-train-elections';
@@ -275,26 +275,50 @@ export function tickDayPausable(state: GameState): PausableTickResult {
         wagonTrain: { ...s.wagonTrain, companions: remaining },
         eventLog: [...s.eventLog, ...dropEntries]
       };
+
+      // #1304 review Finding 4 — if every companion just dropped, dissolve
+      // the train entirely. The player continues alone; train-level perks
+      // (TRAIN_MORALE_PER_DAY, night-risk halving, pace cap) must not persist
+      // with an empty companions list.
+      if (s.wagonTrain && s.wagonTrain.companions.length === 0) {
+        s = leaveTrain(s);
+        // leaveTrain appends its own "Split off…" log; append the dissolve note.
+        s = {
+          ...s,
+          eventLog: [
+            ...s.eventLog,
+            {
+              day: s.day,
+              text: `The last wagons have fallen behind — the company is no more. The family travels alone.`
+            }
+          ]
+        };
+        // wagonTrain is now null; the block-stamp below would read s.wagonTrain
+        // which is null — skip it by jumping past the if(s.wagonTrain) guard.
+        // restDecision block ends here; nothing more to stamp.
+      }
     }
 
-    // Re-read wagonTrain after the possible drop mutation above;
-    // the outer `if (s.wagonTrain)` guard ensures it was non-null at
-    // entry but TypeScript loses that after the spread-reassignment.
-    const train = s.wagonTrain!;
-    const block = train.companyDecisionBlock;
-    const isNewBlock = !block || block.mode !== restDecision.mode;
-    s = {
-      ...s,
-      wagonTrain: {
-        ...train,
-        companyDecisionBlock: isNewBlock
-          ? { mode: restDecision.mode, blockStartDay: s.day }
-          : block
-      },
-      eventLog: isNewBlock
-        ? [...s.eventLog, { day: s.day, text: `The company ${restDecision.mode === 'travel' ? 'breaks camp' : 'lays by'} — ${restDecision.reason}.` }]
-        : s.eventLog
-    };
+    // Re-read wagonTrain after the possible drop/dissolve mutation above.
+    // If dissolve fired (all companions dropped), wagonTrain is now null —
+    // skip the block-stamp entirely; there is no captain to update.
+    if (s.wagonTrain) {
+      const train = s.wagonTrain;
+      const block = train.companyDecisionBlock;
+      const isNewBlock = !block || block.mode !== restDecision.mode;
+      s = {
+        ...s,
+        wagonTrain: {
+          ...train,
+          companyDecisionBlock: isNewBlock
+            ? { mode: restDecision.mode, blockStartDay: s.day }
+            : block
+        },
+        eventLog: isNewBlock
+          ? [...s.eventLog, { day: s.day, text: `The company ${restDecision.mode === 'travel' ? 'breaks camp' : 'lays by'} — ${restDecision.reason}.` }]
+          : s.eventLog
+      };
+    }
   }
 
   // #1046 B — dissent. On a forced lay-by the player hasn't answered

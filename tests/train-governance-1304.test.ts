@@ -394,6 +394,100 @@ describe('#1304 T2 — milesPerDay: behind-pressure train at fast pace yields mo
   });
 });
 
+// ── §10a — Finding 2: corpse-in-motion wagons drop without crisis firing ──────
+
+describe('Finding 2 — corpse-in-motion sweep', () => {
+  /** Wagon whose sole alive member is at 2 HP (≤ EFFECTIVE_DEAD_HP = 3). */
+  function withCorpseWagon(id = 'corpse-w'): GameState {
+    const base = withTrain({ playerHP: 80, companions: [{ hp: 2, id }] });
+    // No crisis block — simulates a healthy train where the ONLY sick wagon is
+    // corpse-in-motion (excluded from trainAggregate by viable-wagon rule).
+    return { ...base, wagonTrain: { ...base.wagonTrain!, companyDecisionBlock: undefined } };
+  }
+
+  it('corpse-in-motion wagon → travel + dropWagonIds without crisis_layby', () => {
+    const d = companyRestDecision(withCorpseWagon('corpse-w'));
+    expect(d.mode).toBe('travel');
+    expect(d.dropWagonIds).toBeDefined();
+    expect(d.dropWagonIds).toContain('corpse-w');
+  });
+
+  it('healthy companion in same train is NOT in dropWagonIds', () => {
+    const base = withTrain({
+      playerHP: 80,
+      companions: [
+        { hp: 2, id: 'corpse-w' },
+        { hp: 80, id: 'healthy-w' }
+      ]
+    });
+    const d = companyRestDecision(base);
+    expect(d.mode).toBe('travel');
+    expect(d.dropWagonIds).toContain('corpse-w');
+    expect(d.dropWagonIds).not.toContain('healthy-w');
+  });
+
+  it('regression: healthy-only train does NOT fire the sweep', () => {
+    const s = withTrain({ playerHP: 80, companions: [{ hp: 80 }] });
+    const d = companyRestDecision(s);
+    // Healthy train should produce travel with no dropWagonIds.
+    expect(!d.dropWagonIds || d.dropWagonIds.length === 0).toBe(true);
+  });
+});
+
+// ── §10b — Finding 4: last companion drop dissolves the train ─────────────────
+
+describe('Finding 4 — dissolve train when last companion drops', () => {
+  /** Build a state where the sole companion has been in crisis for 1 day
+   *  and is corpse-in-motion (all alive ≤ 3 HP) so the next tick will
+   *  drop it via the corpse sweep or the crisis hold path. We force the
+   *  crisis path: companion at 10 HP (crisis-qualifies), crisis block held. */
+  function withLastCompanionInCrisis(): GameState {
+    const base = withTrain({ playerHP: 80, companions: [{ hp: 10, id: 'last-w' }] });
+    return {
+      ...base,
+      day: 11,
+      date: { year: 1849, month: 6, day: 29 },
+      wagonTrain: {
+        ...base.wagonTrain!,
+        companions: base.wagonTrain!.companions, // just the one
+        companyDecisionBlock: { mode: 'crisis_layby' as const, blockStartDay: 10 }
+      }
+    };
+  }
+
+  it('after dropping the last companion, wagonTrain becomes null', () => {
+    const s = withLastCompanionInCrisis();
+    const { state } = tickDayPausable(s);
+    expect(state.wagonTrain).toBeNull();
+  });
+
+  it('the dissolve log line is present in eventLog', () => {
+    const s = withLastCompanionInCrisis();
+    const { state } = tickDayPausable(s);
+    const dissolveLog = state.eventLog.find((e) =>
+      e.text.toLowerCase().includes('last wagon') ||
+      e.text.toLowerCase().includes('company is no more') ||
+      e.text.toLowerCase().includes('travels alone')
+    );
+    expect(dissolveLog).toBeDefined();
+  });
+
+  it('the drop log comes before the dissolve log in eventLog order', () => {
+    const s = withLastCompanionInCrisis();
+    const { state } = tickDayPausable(s);
+    const dropIdx = state.eventLog.findIndex((e) =>
+      e.text.toLowerCase().includes('drops behind')
+    );
+    const dissolveIdx = state.eventLog.findIndex((e) =>
+      e.text.toLowerCase().includes('last wagon') ||
+      e.text.toLowerCase().includes('company is no more') ||
+      e.text.toLowerCase().includes('travels alone')
+    );
+    expect(dropIdx).toBeGreaterThanOrEqual(0);
+    expect(dissolveIdx).toBeGreaterThan(dropIdx);
+  });
+});
+
 // ── §10 — Lift log fires once, re-arms after pressure returns to ok ──────────
 
 describe('#1304 T2 — lift log: captain orders longer marches', () => {
