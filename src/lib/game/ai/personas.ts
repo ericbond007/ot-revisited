@@ -32,7 +32,7 @@ import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
 import { faithfulBundle } from './bundle';
-import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor } from './foresight';
+import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor, mountainMilesInNextGap } from './foresight';
 import { warmthFor } from '../systems/warmth';
 import { waterConsumedToday } from '../systems/consumption';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
@@ -57,6 +57,37 @@ import { effectiveRiverDepth } from '../systems/river-season';
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
  *  to convert "days of food needed" into a pound threshold. */
 const RAW_BASKET_LB_PER_DAY = 1.5;
+
+/** #1388 T2 — Mountain miles threshold that triggers escalation of ox
+ *  health floors and repair triggers. At ≥ 40 mountain miles ahead in
+ *  the next gap, treat the gap as the next-larger tier on the existing
+ *  150/200-mi ladder. Mountain miles wear stock and wagons
+ *  disproportionately — Marcy 1859 stock-first; the Blues/Cascades
+ *  are where worn outfits died. */
+const MOUNTAIN_GAP_ESCALATION_MI = 40;
+
+/** #1388 T2 — Day-of-year threshold for late-season repair escalation.
+ *  After DOY 244 (~Sep 1), the repair trigger escalates one tier
+ *  regardless of terrain. A breakdown in October is a winter-wall
+ *  death sentence — late-season repairs are load-bearing. Period:
+ *  the winter wall design doc (docs/superpowers/specs) documents
+ *  the calendar cliff at which a stranded wagon cannot complete the
+ *  journey before snow seals the passes. */
+const LATE_SEASON_REPAIR_DOY = 244;
+
+/** #1388 T2 — Dead-ox count threshold for the panic-buy bump in
+ *  pickOxSwapCount. A stampede-halved team would panic-buy at the
+ *  next post — ≥ 2 dead oxen adds +1 to the base want. */
+const DEAD_OX_PANIC_THRESHOLD = 2;
+
+/** Day-of-year (1 = Jan 1, 244 = Sep 1 in non-leap years). Used by
+ *  the late-season repair escalation gate (LATE_SEASON_REPAIR_DOY).
+ *  Month lengths per the non-leap calendar are accurate for trail
+ *  years 1840-1860 (none hit a 400-year boundary). */
+const MONTH_DAYS_CUM = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+function dateToDoy(date: GameState['date']): number {
+  return MONTH_DAYS_CUM[date.month - 1] + date.day;
+}
 
 /** #934 + #963 — Project the persona's expected days for food
  *  planning. Uses `effectiveGapMiles` so late-trail decisions see
@@ -143,12 +174,20 @@ function gapAwareFoodTrigger(
  *  + desert. The original `nextSupplyDistance ≥ 150` already
  *  triggered at Hall, but the same threshold also fires at every
  *  intermediate post — using effective gap raises the bar
- *  proportionally for the genuinely long remaining runs. */
+ *  proportionally for the genuinely long remaining runs.
+ *
+ *  #1388 T2 — Mountain escalation: when ≥ MOUNTAIN_GAP_ESCALATION_MI
+ *  mountain miles lie ahead in the next gap, escalate to the next-
+ *  larger tier even if the plain gap-miles threshold isn't met.
+ *  Mountain miles wear stock disproportionately (Marcy 1859:
+ *  stock-first; the Blues/Cascades are where worn outfits died). */
 function gapAwareOxHealthFloor(
   state: GameState,
   base: { healthFloor: number; bigGapMiles: number; bigGapHealthBoost: number }
 ): number {
-  return effectiveGapMiles(state) >= base.bigGapMiles
+  const escalate = effectiveGapMiles(state) >= base.bigGapMiles
+    || mountainMilesInNextGap(state) >= MOUNTAIN_GAP_ESCALATION_MI;
+  return escalate
     ? base.healthFloor + base.bigGapHealthBoost
     : base.healthFloor;
 }
@@ -160,12 +199,26 @@ function gapAwareOxHealthFloor(
  *  100-condition); only the trigger condition shifts.
  *  Period: emigrants who knew they were heading into Sublette Cutoff
  *  or the Blue Mountains topped off the wagon at the last smithy
- *  regardless of whether anything was visibly failing. */
+ *  regardless of whether anything was visibly failing.
+ *
+ *  #1388 T2 — Mountain escalation: ≥ MOUNTAIN_GAP_ESCALATION_MI
+ *  mountain miles in the next gap escalates one tier regardless of
+ *  plain gap length — mountain terrain tears wagons faster than flat
+ *  desert (Marcy 1859: stock-first; the Blues/Cascades are where worn
+ *  outfits died).
+ *
+ *  #1388 T2 — Late-season escalation: after DOY ≥ LATE_SEASON_REPAIR_DOY
+ *  (~Sep 1) the trigger rises one tier regardless of terrain. A
+ *  breakdown in October is a winter-wall death sentence; late-season
+ *  repairs are load-bearing. See the winter wall design doc. */
 function gapAwareRepairTrigger(
   state: GameState,
   base: { conditionTrigger: number; bigGapMiles: number; bigGapConditionBoost: number }
 ): number {
-  return nextSupplyDistance(state) >= base.bigGapMiles
+  const escalate = nextSupplyDistance(state) >= base.bigGapMiles
+    || mountainMilesInNextGap(state) >= MOUNTAIN_GAP_ESCALATION_MI
+    || dateToDoy(state.date) >= LATE_SEASON_REPAIR_DOY;
+  return escalate
     ? base.conditionTrigger + base.bigGapConditionBoost
     : base.conditionTrigger;
 }
@@ -450,7 +503,15 @@ function anyOxStrained(state: GameState): boolean {
  *  optimal*: cautious/generous +1 (slight above-optimal buffer),
  *  balanced 0 (exactly optimal), aggressive −1 (lean but viable).
  *  Clamped at minTeam so a wagon never targets below the can't-move
- *  floor. */
+ *  floor.
+ *
+ *  #1388 T2 — Dead-ox bump: if ≥ DEAD_OX_PANIC_THRESHOLD oxen are
+ *  dead (health 0), add 1 to the base want. A stampede-halved team
+ *  panic-bought at the next post — the survivor's instinct is to
+ *  top up the team beyond the worn-threshold calculation. The +1 is
+ *  applied after the base want is computed (so it fires even when
+ *  !tooThin && !tooWorn) and is clamped by the cash/affordability
+ *  ladder downstream in the runner (not here). */
 function pickOxSwapCountFor(
   state: GameState,
   freshBuffer: number,
@@ -465,10 +526,14 @@ function pickOxSwapCountFor(
   // Two trigger conditions: thin team OR worn-down team.
   const tooThin = aliveCount < target;
   const tooWorn = avgHealth < healthFloor;
-  if (!tooThin && !tooWorn) return 0;
+  // #1388 T2 — dead-ox panic bump: ≥ 2 dead oxen → want +1.
+  const deadCount = state.oxen.filter((o) => o.health <= 0).length;
+  const panicBump = deadCount >= DEAD_OX_PANIC_THRESHOLD ? 1 : 0;
+  if (!tooThin && !tooWorn && panicBump === 0) return 0;
   // Thin: top up to target. Worn: swap 2 to refresh the average.
   const need = Math.max(0, target - aliveCount);
-  return tooThin ? Math.max(1, need) : 2;
+  const baseWant = (tooThin || tooWorn) ? (tooThin ? Math.max(1, need) : 2) : 0;
+  return baseWant + panicBump;
 }
 
 // --- #303c slice B default helpers ---

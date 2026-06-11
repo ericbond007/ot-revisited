@@ -1,16 +1,22 @@
-// #1388 T1 — Tests for seasonal river depth helper, ford() risk
-// sensitivity, and persona pickFordMethod season-awareness.
+// #1388 T1/T2 — Tests for seasonal river depth helper, ford() risk
+// sensitivity, persona pickFordMethod season-awareness, mountain-gap
+// foresight, ox-health + repair trigger escalation, and dead-ox bump.
 //
-// TDD: these tests were written before the implementation was in place.
+// TDD: T2 tests were written before the implementation was in place.
 // They describe the intended behavior; the impl must make them pass.
 
 import { describe, it, expect } from 'vitest';
 import { effectiveRiverDepth } from '../src/lib/game/systems/river-season';
 import { ford, type RiverState } from '../src/lib/game/actions/ford';
-import { cautiousPersona, balancedPersona, aggressivePersona } from '../src/lib/game/ai/personas';
+import { cautiousPersona, balancedPersona, aggressivePersona, hoarderPersona, chaosPersona } from '../src/lib/game/ai/personas';
+import { mountainMilesInNextGap } from '../src/lib/game/ai/foresight';
 import { createInitialState } from '../src/lib/game/engine';
+import type { Rng } from '../src/lib/game/rng';
 import type { GameState, GameDate, Weather } from '../src/lib/game/types';
 import type { Landmark } from '../src/lib/game/content/landmarks';
+
+/** Stub Rng for persona tests that need the 3rd arg but don't use rng logic. */
+const RNG_STUB: Rng = { chance: () => false, int: () => 0 } as unknown as Rng;
 
 // ---------------------------------------------------------------------------
 // Helper fixtures
@@ -392,5 +398,338 @@ describe('#1388 T1 — signal-honesty: helper is the same path for engine and pe
     const ratio = mayDepth / augDepth;
     // 1.4 / 0.75 = 1.8667
     expect(ratio).toBeCloseTo(1.4 / 0.75, 4);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 7 — #1388 T2: mountainMilesInNextGap helper
+// ---------------------------------------------------------------------------
+//
+// Cumulative mile anchors (from landmarks.ts):
+//   ft_boise = 1570 (trading_post / supply stop)
+//   farewell_bend = 1610 (prairie, 40 mi)
+//   burnt_river_canyon = 1635 (mountains, 25 mi)
+//   flagstaff_hill = 1650 (mountains, 15 mi)
+//   blue_mountains = 1720 (mountains, 70 mi)
+//   grande_ronde = 1745 (forest, 25 mi)
+//   whitman_mission = 1830 (trading_post / supply stop)
+//
+// Mountain miles between ft_boise and whitman_mission:
+//   25 (burnt_river_canyon) + 15 (flagstaff_hill) + 70 (blue_mountains) = 110 mi
+//
+// Fort Kearny = 319 (trading_post / supply stop)
+// Next supply: robidoux_post = 518 — all prairie terrain; mountain miles = 0.
+
+/** Build a minimal state fixture at a given milesTraveled.
+ *  Two adults required by createInitialState. */
+function stateAtMile(miles: number, month = 7): GameState {
+  const s = createInitialState({
+    seed: 'mountain-gap-test',
+    leader: { name: 'Ezra', profession: 'farmer' },
+    companions: [{ name: 'Mary', profession: 'doctor', sex: 'female' as const }],
+    startDate: { year: 1848, month, day: 1 }
+  });
+  return {
+    ...s,
+    location: { ...s.location, milesTraveled: miles }
+  };
+}
+
+describe('#1388 T2 — mountainMilesInNextGap helper', () => {
+  it('returns > 0 approaching the Blues from just past Fort Boise (~mile 1572)', () => {
+    // Just past ft_boise (supply stop at 1570). The next supply stop is
+    // whitman_mission at 1830. Between them: 25+15+70 = 110 mountain miles.
+    const state = stateAtMile(1572);
+    const mi = mountainMilesInNextGap(state);
+    expect(mi).toBeGreaterThan(0);
+    expect(mi).toBe(110);
+  });
+
+  it('returns 0 in the North Platte corridor (past Windlass Hill, no more mountain legs before next supply)', () => {
+    // Windlass Hill (mountains, 92 mi) is at cumulative mile 411.
+    // Past it at mile 412, the next supply is robidoux_post at 518.
+    // Remaining landmarks to that supply: ash_hollow(prairie), rachel_pattison(prairie),
+    // north_platte_1(river), courthouse_rock(prairie), chimney_rock(prairie),
+    // scotts_bluff(prairie), robidoux_post — no mountain legs → 0 mountain miles.
+    const state = stateAtMile(412);
+    const mi = mountainMilesInNextGap(state);
+    expect(mi).toBe(0);
+  });
+
+  it('returns 0 past the last supply stop (trail end area)', () => {
+    // Past oregon_city (mile 2170) — no next supply stop, should return 0.
+    const state = stateAtMile(2175);
+    const mi = mountainMilesInNextGap(state);
+    expect(mi).toBe(0);
+  });
+
+  it('counts only mountain legs up to the next supply stop (not beyond)', () => {
+    // At mile 1572 (past ft_boise), next supply is whitman_mission at 1830.
+    // Mountain legs in that gap: burnt_river_canyon(25) + flagstaff_hill(15)
+    // + blue_mountains(70) = 110. grande_ronde is forest (not counted).
+    const state = stateAtMile(1572);
+    expect(mountainMilesInNextGap(state)).toBe(110);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 8 — #1388 T2: ox-health floor escalation (mountain vs prairie)
+// ---------------------------------------------------------------------------
+//
+// Fixture: a post with ox_swap service. The cautious persona uses
+// bigGapMiles=150, bigGapHealthBoost=15 (floor 70 → 85 at big gap).
+// At Fort Boise (mile 1570+), mountainMilesInNextGap returns 110 ≥ 40
+// (MOUNTAIN_GAP_ESCALATION_MI), so even on a short effective gap the
+// floor escalates.
+//
+// Regression pin: at Fort Kearny (mile 319), mountain miles = 0 and
+// effective gap is ~199 mi — below cautious's 150-mi big-gap threshold
+// only if effective gap (which may exceed nextSupply) is considered.
+// We test that prairie mid-summer floor is the BASE (70 for cautious)
+// whenever mountain miles are 0 and gap is sub-threshold.
+
+/** Trading post landmark fixture with ox_swap. */
+const OX_SWAP_POST: Landmark = {
+  id: 'test_ox_swap',
+  name: 'Test Post',
+  milesFromPrevious: 10,
+  terrain: 'prairie',
+  kind: 'trading_post',
+  services: ['ox_swap', 'blacksmith'],
+  stock: []
+};
+
+/** Build a state with a fresh ox team (no dead, healthy) at given mile. */
+function freshTeamState(miles: number, month = 7): GameState {
+  const s = stateAtMile(miles, month);
+  return {
+    ...s,
+    oxen: [
+      { id: 'ox-0', health: 80, fatigue: 10, shod: true },
+      { id: 'ox-1', health: 80, fatigue: 10, shod: true },
+      { id: 'ox-2', health: 80, fatigue: 10, shod: true },
+      { id: 'ox-3', health: 80, fatigue: 10, shod: true }
+    ]
+  };
+}
+
+describe('#1388 T2 — ox-health floor escalates entering mountains (cautious)', () => {
+  it('cautious wants to swap a 80-health team before Fort Boise→Blues (mountain escalation)', () => {
+    // At mile 1572, mountain miles = 110 ≥ 40 → escalate.
+    // Cautious healthFloor=70, bigGapHealthBoost=15 → escalated floor = 85.
+    // Team avg health = 80 < 85 → should trigger swap.
+    const state = freshTeamState(1572);
+    const count = cautiousPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
+    expect(count).toBeGreaterThan(0);
+  });
+
+  it('cautious does NOT want to swap an 80-health 5-ox team on the Platte (prairie, short gap)', () => {
+    // At mile 412 (past Windlass Hill, next supply = robidoux_post at 518, gap ≈ 106 mi).
+    // Mountain miles in that gap = 0. Effective gap < 150 mi → base floor 70.
+    // 5 alive oxen at health 80: aliveCount=5 ≥ target(optimalTeam+1=5) → not tooThin.
+    // Avg health 80 ≥ floor 70 → not tooWorn. No panic bump (0 dead). → no swap.
+    // This is the regression pin: prairie mid-summer behavior unchanged.
+    const state: GameState = {
+      ...freshTeamState(412),
+      oxen: [
+        { id: 'ox-0', health: 80, fatigue: 10, shod: true },
+        { id: 'ox-1', health: 80, fatigue: 10, shod: true },
+        { id: 'ox-2', health: 80, fatigue: 10, shod: true },
+        { id: 'ox-3', health: 80, fatigue: 10, shod: true },
+        { id: 'ox-4', health: 80, fatigue: 10, shod: true }
+      ]
+    };
+    const count = cautiousPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
+    expect(count).toBe(0);
+  });
+
+  it('balanced wants to swap a 72-health team before the Blues (mountain escalation)', () => {
+    // Balanced healthFloor=55, bigGapHealthBoost=20 → escalated floor = 75.
+    // Team health 72 < 75 → triggers swap.
+    const state: GameState = {
+      ...freshTeamState(1572),
+      oxen: [
+        { id: 'ox-0', health: 72, fatigue: 10, shod: true },
+        { id: 'ox-1', health: 72, fatigue: 10, shod: true },
+        { id: 'ox-2', health: 72, fatigue: 10, shod: true },
+        { id: 'ox-3', health: 72, fatigue: 10, shod: true }
+      ]
+    };
+    const count = balancedPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
+    expect(count).toBeGreaterThan(0);
+  });
+
+  it('balanced does NOT want to swap a 72-health team on the Platte at same gap length (prairie)', () => {
+    // Balanced's big-gap threshold is 150 mi. Fort Kearny (mile 319) to
+    // robidoux_post (518) is ~199 mi, which exceeds 150 mi — so balanced
+    // DOES escalate at Fort Kearny based on gap miles alone. Let's use
+    // a mid-trail position where the gap is clearly < 150 mi (say mile 500,
+    // next supply is Fort Laramie at 650, gap = 150 mi — exactly on the edge).
+    // Use mile 530 instead (next supply = Fort Laramie at 650, gap = 120 mi).
+    const state: GameState = {
+      ...freshTeamState(530),  // Gap to Fort Laramie ≈ 120 mi < 150
+      oxen: [
+        { id: 'ox-0', health: 72, fatigue: 10, shod: true },
+        { id: 'ox-1', health: 72, fatigue: 10, shod: true },
+        { id: 'ox-2', health: 72, fatigue: 10, shod: true },
+        { id: 'ox-3', health: 72, fatigue: 10, shod: true }
+      ]
+    };
+    // Mountain miles on this gap = 0; effective gap ≈ 120 < 150 → base floor 55.
+    // Team health 72 > 55 → no swap.
+    const count = balancedPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
+    expect(count).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 9 — #1388 T2: repair trigger escalation (mountain + late season)
+// ---------------------------------------------------------------------------
+//
+// Cautious: conditionTrigger=75, bigGapMiles=150, bigGapConditionBoost=10.
+// Escalated trigger = 85. We test:
+//   (a) Mountain case: at mile 1572, mountain miles = 110 ≥ 40 → trigger 85.
+//       A wagon at condition 80 (<85) should trigger repair.
+//   (b) Late-season (DOY ≥ 244 = Sep 1): same wagon on Aug 31 vs Sep 1.
+//   (c) Regression pin: prairie mid-summer wagon at 80 condition → no repair.
+
+describe('#1388 T2 — repair trigger escalates for mountains and late season', () => {
+  it('cautious repairs a wagon at condition 80 before the Blues (mountain escalation)', () => {
+    // At mile 1572, mountain miles=110 ≥ 40 → escalated trigger = 85.
+    // Wagon condition 80 < 85 → repair fires.
+    const state: GameState = {
+      ...freshTeamState(1572, 7),
+      cash: 100,
+      wagon: { ...freshTeamState(1572, 7).wagon, condition: 80 }
+    };
+    const budget = cautiousPersona.pickRepairBudget(state, OX_SWAP_POST);
+    expect(budget).toBeGreaterThan(0);
+  });
+
+  it('cautious does NOT repair a wagon at 80 condition on the Platte in summer (prairie, sub-gap)', () => {
+    // At mile 530 (gap to Laramie ~120 mi < 150), mountain miles=0, DOY=July.
+    // Base trigger = 75. Wagon at 80 ≥ 75 → no repair.
+    const state: GameState = {
+      ...freshTeamState(530, 7),  // July, prairie, short gap
+      cash: 100,
+      wagon: { ...freshTeamState(530, 7).wagon, condition: 80 }
+    };
+    const budget = cautiousPersona.pickRepairBudget(state, OX_SWAP_POST);
+    expect(budget).toBe(0);
+  });
+
+  it('cautious repairs a wagon at 80 condition after Sep 1 (late-season escalation)', () => {
+    // DOY Sep 1 = 244 ≥ LATE_SEASON_REPAIR_DOY → escalated trigger = 85.
+    // Wagon 80 < 85 → repair fires.
+    const state: GameState = {
+      ...stateAtMile(400, 9),  // Sep 1 context
+      date: { year: 1848, month: 9, day: 1 },  // DOY 244 exactly
+      cash: 100,
+      wagon: { ...stateAtMile(400, 9).wagon, condition: 80 }
+    };
+    const budget = cautiousPersona.pickRepairBudget(state, OX_SWAP_POST);
+    expect(budget).toBeGreaterThan(0);
+  });
+
+  it('cautious does NOT get late-season escalation on Aug 31 (DOY 243 < 244)', () => {
+    // Aug 31 = DOY 243 < 244 → not late season.
+    // At mile 530, gap < 150, mountain miles = 0 → base trigger 75.
+    // Wagon 80 ≥ 75 → no repair.
+    const state: GameState = {
+      ...stateAtMile(530, 8),
+      date: { year: 1848, month: 8, day: 31 },  // DOY 243 — just before threshold
+      cash: 100,
+      wagon: { ...stateAtMile(530, 8).wagon, condition: 80 }
+    };
+    const budget = cautiousPersona.pickRepairBudget(state, OX_SWAP_POST);
+    expect(budget).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 10 — #1388 T2: dead-ox bump in pickOxSwapCount
+// ---------------------------------------------------------------------------
+//
+// When ≥ 2 oxen are dead (health=0), the persona wants +1 ox above the
+// base calculation. When only 1 is dead, no bump.
+// Tested at a short-gap prairie position so the gap-miles escalation
+// doesn't confound the dead-ox signal.
+
+describe('#1388 T2 — dead-ox panic bump (+1 want when ≥ 2 dead)', () => {
+  /** State with N dead oxen and M alive, full health. */
+  function stateWithDeadOxen(deadCount: number, aliveCount: number): GameState {
+    const s = freshTeamState(530, 7); // short gap, prairie, no mountain escalation
+    const oxen = [
+      ...Array.from({ length: deadCount }, (_, i) => ({
+        id: `ox-dead-${i}`, health: 0, fatigue: 0, shod: true as const
+      })),
+      ...Array.from({ length: aliveCount }, (_, i) => ({
+        id: `ox-alive-${i}`, health: 90, fatigue: 5, shod: true as const
+      }))
+    ];
+    return { ...s, oxen };
+  }
+
+  it('cautious wants +1 ox when 2 are dead (panic bump fires)', () => {
+    // 2 dead + 4 alive (full health 90). Without panic bump:
+    //   target = max(minTeam, optimalTeam+1) = max(1, 5) = 5.
+    //   aliveCount=4 < 5 → tooThin → need=1.
+    //   So base want = 1, bump +1 → total = 2.
+    // Actually: with 4 alive and target 5, base=1. With panic, 2.
+    // This test verifies the bump adds 1 on top of the base tooThin want.
+    const state = stateWithDeadOxen(2, 4);
+    const countWithDead = cautiousPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
+    // Compare against 1 dead (no bump).
+    const stateOneDead = stateWithDeadOxen(1, 4);
+    const countOneDead = cautiousPersona.pickOxSwapCount(stateOneDead, OX_SWAP_POST, RNG_STUB);
+    // With 2 dead: wants more than with 1 dead (bump +1).
+    expect(countWithDead).toBe(countOneDead + 1);
+  });
+
+  it('balanced wants +1 ox when 2 are dead vs 1 dead (panic bump fires at threshold)', () => {
+    // Same logic for balanced — verifies the bump is persona-agnostic
+    // (it lives in pickOxSwapCountFor, not per-persona).
+    const twoDeadState = stateWithDeadOxen(2, 4);
+    const oneDeadState = stateWithDeadOxen(1, 4);
+    const twoDead = balancedPersona.pickOxSwapCount(twoDeadState, OX_SWAP_POST, RNG_STUB);
+    const oneDead = balancedPersona.pickOxSwapCount(oneDeadState, OX_SWAP_POST, RNG_STUB);
+    expect(twoDead).toBe(oneDead + 1);
+  });
+
+  it('bump does NOT fire with only 1 dead ox (threshold is 2)', () => {
+    // 1 dead + 4 alive. Base want is already tooThin-triggered (4 < target).
+    // No panic bump (1 < DEAD_OX_PANIC_THRESHOLD=2).
+    const oneDeadState = stateWithDeadOxen(1, 4);
+    const zeroDead = stateWithDeadOxen(0, 4);
+    const cntOne = cautiousPersona.pickOxSwapCount(oneDeadState, OX_SWAP_POST, RNG_STUB);
+    const cntZero = cautiousPersona.pickOxSwapCount(zeroDead, OX_SWAP_POST, RNG_STUB);
+    // No bump difference between 0 and 1 dead (both at 4 alive, same base).
+    expect(cntOne).toBe(cntZero);
+  });
+
+  it('bump fires even when team is otherwise healthy and not thin (2 dead, 5 alive)', () => {
+    // 2 dead + 5 alive (optimal team size for schooner). Without panic:
+    //   target (cautious) = max(1, 4+1)=5. aliveCount=5 ≥ 5 → not tooThin.
+    //   avg health=90 ≥ healthFloor(70) → not tooWorn.
+    //   → base want = 0.
+    // With panic bump → want = 1.
+    const state = stateWithDeadOxen(2, 5);
+    const count = cautiousPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
+    expect(count).toBe(1);
+  });
+
+  it('hoarder never swaps (panic bump should not override the deliberate never-swap)', () => {
+    // hoarder.pickOxSwapCount always returns 0 — it does NOT call pickOxSwapCountFor.
+    // The panic bump lives in pickOxSwapCountFor; hoarder bypasses it entirely.
+    const state = stateWithDeadOxen(2, 4);
+    expect(hoarderPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB)).toBe(0);
+  });
+
+  it('chaos pickOxSwapCount is unaffected by dead-ox count (rng-only)', () => {
+    // chaos.pickOxSwapCount uses rng.int(0, 3) and doesn't call pickOxSwapCountFor.
+    // It should remain rng-driven and not grow with dead-ox count.
+    const rng = { chance: () => false, int: () => 1 } as unknown as Parameters<typeof chaosPersona.pickOxSwapCount>[2];
+    const state = stateWithDeadOxen(2, 4);
+    expect(chaosPersona.pickOxSwapCount(state, OX_SWAP_POST, rng)).toBe(1); // rng.int always 1
   });
 });

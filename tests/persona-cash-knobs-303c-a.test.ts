@@ -125,16 +125,22 @@ describe('#303c — Persona.pickRepairBudget', () => {
 
   // #935 / #1040 — at Fort Kearny (mi 319) the leg to Robidoux is the
   // historically-correct 199 mi. 199 ≥ 150 so cautious/balanced
-  // gap-boost still fires (cond 80/70 → repair). Aggressive's gap
-  // threshold is 200 mi; 199 < 200 so it does NOT boost — aggressive
-  // only repairs when genuinely failing (<40).
+  // gap-boost still fires (cond 80/70 → repair).
   //
   // #1163 — overrides year to 1850. The file-level default year 1858
   // has Robidoux gated out (abandonedAfterYear: 1852), so foresight
-  // returns the 331-mi gap to Laramie instead of 199 to Robidoux,
-  // which trips aggressive's bigGapMiles=200 boost and breaks the
-  // "aggressive does not" assertion. 1850 has Robidoux still open.
-  it('#935 — at Fort Kearny (mi 319), cautious/balanced gap-boost repair; aggressive does not', () => {
+  // returns the 331-mi gap to Laramie instead of 199 to Robidoux.
+  // 1850 has Robidoux still open.
+  //
+  // #1388-T2 rebaseline — The original assertion "aggressive does not
+  // repair at cond 50" modeled flat-earth gap-only logic (199 < 200 mi
+  // threshold). After the mountain-escalation fix, aggressive now sees
+  // Windlass Hill (terrain: mountains, 92 mi) inside this gap — 92 ≥ 40
+  // MOUNTAIN_GAP_ESCALATION_MI → escalate to bigGap tier → cond 50 <
+  // escalated trigger (40+bigGapConditionBoost) → repair fires. This is
+  // the intended behavior: bots aware of the rocky Ash Hollow descent
+  // should tighten repair margins before it.
+  it('#935 — at Fort Kearny (mi 319), cautious/balanced/aggressive all gap-boost repair (mountain escalation)', () => {
     const baseAt1850 = (cond: number) => game({
       date: { year: 1850, month: 6, day: 15 },
       location: { ...game().location, milesTraveled: 319 },
@@ -142,9 +148,10 @@ describe('#303c — Persona.pickRepairBudget', () => {
     });
     expect(cautiousPersona.pickRepairBudget(baseAt1850(80), kearny)).toBeGreaterThan(0);
     expect(balancedPersona.pickRepairBudget(baseAt1850(70), kearny)).toBeGreaterThan(0);
-    // 199 < aggressive bigGapMiles 200 → no boost; cond 50 ≥ base 40 → skip.
-    expect(aggressivePersona.pickRepairBudget(baseAt1850(50), kearny)).toBe(0);
-    // But a genuinely failing wagon still triggers aggressive's base.
+    // #1388-T2: Windlass Hill (92 mountain miles in gap) escalates aggressive.
+    // cond 50 < escalated trigger → repair fires even for aggressive.
+    expect(aggressivePersona.pickRepairBudget(baseAt1850(50), kearny)).toBeGreaterThan(0);
+    // A genuinely failing wagon still triggers aggressive's base.
     expect(aggressivePersona.pickRepairBudget(baseAt1850(35), kearny)).toBeGreaterThan(0);
   });
 
