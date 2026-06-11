@@ -307,7 +307,16 @@ export function tickOxen(state: GameState, _rng: Rng): GameState {
     return { ...animal, fatigue, health };
   });
 
-  let nextState: GameState = { ...s, oxen };
+  // #1388 — Stamp _lastOxDeathDay when an ox that was alive before this
+  // tick is newly dead after it. Compared against s.oxen (pre-tick) so
+  // long-dead animals (health already 0) don't re-trigger the flag on
+  // subsequent ticks. Only oxen (not mules) count as "the team" for the
+  // panic-bump gate — strays + events use the same flag key.
+  const prevAliveIds = new Set(s.oxen.filter((o) => o.health > 0 && o.kind !== 'mule').map((o) => o.id));
+  const newlyDeadThisTick = oxen.some((o) => o.kind !== 'mule' && o.health === 0 && prevAliveIds.has(o.id));
+  let nextState: GameState = newlyDeadThisTick
+    ? { ...s, oxen, flags: { ...s.flags, _lastOxDeathDay: state.day } }
+    : { ...s, oxen };
 
   if (muleUnfed > 0 && liveMules.length > 0) {
     nextState = {

@@ -9,6 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { effectiveRiverDepth } from '../src/lib/game/systems/river-season';
 import { ford, type RiverState } from '../src/lib/game/actions/ford';
+import { tickOxen } from '../src/lib/game/systems/oxen';
 import {
   cautiousPersona, balancedPersona, aggressivePersona,
   hoarderPersona, chaosPersona,
@@ -653,17 +654,28 @@ describe('#1388 T2 — repair trigger escalates for mountains and late season', 
 });
 
 // ---------------------------------------------------------------------------
-// Section 10 — #1388 T2: dead-ox bump in pickOxSwapCount
+// Section 10 — #1388 T2: dead-ox bump in pickOxSwapCount (recency-gated)
 // ---------------------------------------------------------------------------
 //
-// When ≥ 2 oxen are dead (health=0), the persona wants +1 ox above the
-// base calculation. When only 1 is dead, no bump.
-// Tested at a short-gap prairie position so the gap-miles escalation
-// doesn't confound the dead-ox signal.
+// The panic bump fires when ≥ 2 oxen are dead AND the most recent death was
+// within RECENT_OX_DEATH_WINDOW_DAYS (30) days. Without recency, the bump
+// would latch permanently after 2 lifetime deaths (dead oxen are never removed
+// from state.oxen) and over-buy at every later post even on a fully refreshed
+// team. This is the latch case the MED review flagged.
+//
+// Tested at a short-gap prairie position so gap-miles escalation doesn't
+// confound the dead-ox signal. The _lastOxDeathDay flag is set explicitly on
+// fixture states; the engine-stamp test verifies tickOxen writes it in prod.
 
-describe('#1388 T2 — dead-ox panic bump (+1 want when ≥ 2 dead)', () => {
-  /** State with N dead oxen and M alive, full health. */
-  function stateWithDeadOxen(deadCount: number, aliveCount: number): GameState {
+describe('#1388 T2 — dead-ox panic bump (+1 want when ≥ 2 dead, recency-gated)', () => {
+  /** State with N dead oxen and M alive, full health.
+   *  Pass lastDeathDay (relative to state.day) to set the recency flag.
+   *  Omit to leave the flag absent (tests the no-flag fallback path). */
+  function stateWithDeadOxen(
+    deadCount: number,
+    aliveCount: number,
+    lastDeathDayOffset?: number  // days ago the last ox died (e.g. 5 = 5 days ago)
+  ): GameState {
     const s = freshTeamState(530, 7); // short gap, prairie, no mountain escalation
     const oxen = [
       ...Array.from({ length: deadCount }, (_, i) => ({
@@ -673,70 +685,101 @@ describe('#1388 T2 — dead-ox panic bump (+1 want when ≥ 2 dead)', () => {
         id: `ox-alive-${i}`, health: 90, fatigue: 5, shod: true as const
       }))
     ];
-    return { ...s, oxen };
+    const flags = lastDeathDayOffset !== undefined
+      ? { ...s.flags, _lastOxDeathDay: s.day - lastDeathDayOffset }
+      : s.flags;
+    return { ...s, oxen, flags };
   }
 
-  it('cautious wants +1 ox when 2 are dead (panic bump fires)', () => {
-    // 2 dead + 4 alive (full health 90). Without panic bump:
-    //   target = max(minTeam, optimalTeam+1) = max(1, 5) = 5.
-    //   aliveCount=4 < 5 → tooThin → need=1.
-    //   So base want = 1, bump +1 → total = 2.
-    // Actually: with 4 alive and target 5, base=1. With panic, 2.
-    // This test verifies the bump adds 1 on top of the base tooThin want.
-    const state = stateWithDeadOxen(2, 4);
+  it('cautious wants +1 ox when 2 are dead and death was recent (5 days ago)', () => {
+    // 2 dead + 4 alive, _lastOxDeathDay = day-5 (within 30-day window).
+    // Without panic bump: aliveCount=4 < target=5 → tooThin → base=1.
+    // With panic bump: total = 2. Compared to 1 dead (same recency) → +1.
+    const state = stateWithDeadOxen(2, 4, 5);
     const countWithDead = cautiousPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
-    // Compare against 1 dead (no bump).
-    const stateOneDead = stateWithDeadOxen(1, 4);
+    const stateOneDead = stateWithDeadOxen(1, 4, 5);
     const countOneDead = cautiousPersona.pickOxSwapCount(stateOneDead, OX_SWAP_POST, RNG_STUB);
-    // With 2 dead: wants more than with 1 dead (bump +1).
     expect(countWithDead).toBe(countOneDead + 1);
   });
 
-  it('balanced wants +1 ox when 2 are dead vs 1 dead (panic bump fires at threshold)', () => {
-    // Same logic for balanced — verifies the bump is persona-agnostic
-    // (it lives in pickOxSwapCountFor, not per-persona).
-    const twoDeadState = stateWithDeadOxen(2, 4);
-    const oneDeadState = stateWithDeadOxen(1, 4);
+  it('bump does NOT fire when 2 are dead but death was stale (60 days ago — the latch case)', () => {
+    // This is the bug the MED review flagged: after 2 lifetime deaths the bump
+    // would latch forever without the recency gate.
+    // 2 dead + 5 alive, _lastOxDeathDay = day-60 (outside the 30-day window).
+    // Team is not thin (aliveCount=5 ≥ target=5) and not worn (health=90).
+    // The recency gate must block the bump. Expected: 0.
+    const state = stateWithDeadOxen(2, 5, 60);
+    const count = cautiousPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
+    expect(count).toBe(0);
+  });
+
+  it('balanced wants +1 ox when 2 are dead vs 1 dead (recent death — bump is persona-agnostic)', () => {
+    // Same recency logic in pickOxSwapCountFor — not per-persona.
+    const twoDeadState = stateWithDeadOxen(2, 4, 5);
+    const oneDeadState = stateWithDeadOxen(1, 4, 5);
     const twoDead = balancedPersona.pickOxSwapCount(twoDeadState, OX_SWAP_POST, RNG_STUB);
     const oneDead = balancedPersona.pickOxSwapCount(oneDeadState, OX_SWAP_POST, RNG_STUB);
     expect(twoDead).toBe(oneDead + 1);
   });
 
-  it('bump does NOT fire with only 1 dead ox (threshold is 2)', () => {
-    // 1 dead + 4 alive. Base want is already tooThin-triggered (4 < target).
-    // No panic bump (1 < DEAD_OX_PANIC_THRESHOLD=2).
-    const oneDeadState = stateWithDeadOxen(1, 4);
-    const zeroDead = stateWithDeadOxen(0, 4);
+  it('bump does NOT fire with only 1 dead ox regardless of recency (threshold is 2)', () => {
+    // 1 dead + 4 alive with recent death flag. No panic bump (1 < threshold=2).
+    const oneDeadState = stateWithDeadOxen(1, 4, 5);
+    const zeroDead = stateWithDeadOxen(0, 4, 5);
     const cntOne = cautiousPersona.pickOxSwapCount(oneDeadState, OX_SWAP_POST, RNG_STUB);
     const cntZero = cautiousPersona.pickOxSwapCount(zeroDead, OX_SWAP_POST, RNG_STUB);
-    // No bump difference between 0 and 1 dead (both at 4 alive, same base).
     expect(cntOne).toBe(cntZero);
   });
 
-  it('bump fires even when team is otherwise healthy and not thin (2 dead, 5 alive)', () => {
-    // 2 dead + 5 alive (optimal team size for schooner). Without panic:
-    //   target (cautious) = max(1, 4+1)=5. aliveCount=5 ≥ 5 → not tooThin.
-    //   avg health=90 ≥ healthFloor(70) → not tooWorn.
-    //   → base want = 0.
-    // With panic bump → want = 1.
-    const state = stateWithDeadOxen(2, 5);
+  it('bump fires even when team is not thin, given recent death (2 dead, 5 alive, 5 days ago)', () => {
+    // 2 dead + 5 alive (optimal team, not thin), but death was recent (day-5).
+    // Without panic: aliveCount=5 ≥ target=5 → not tooThin. health=90 ≥ floor=70 → not tooWorn.
+    // → base want = 0. With recent-death panic bump → want = 1.
+    const state = stateWithDeadOxen(2, 5, 5);
     const count = cautiousPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB);
     expect(count).toBe(1);
   });
 
-  it('hoarder never swaps (panic bump should not override the deliberate never-swap)', () => {
+  it('hoarder never swaps (panic bump does not override the deliberate never-swap)', () => {
     // hoarder.pickOxSwapCount always returns 0 — it does NOT call pickOxSwapCountFor.
-    // The panic bump lives in pickOxSwapCountFor; hoarder bypasses it entirely.
-    const state = stateWithDeadOxen(2, 4);
+    const state = stateWithDeadOxen(2, 4, 5);
     expect(hoarderPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB)).toBe(0);
   });
 
   it('chaos pickOxSwapCount is unaffected by dead-ox count (rng-only)', () => {
     // chaos.pickOxSwapCount uses rng.int(0, 3) and doesn't call pickOxSwapCountFor.
-    // It should remain rng-driven and not grow with dead-ox count.
     const rng = { chance: () => false, int: () => 1 } as unknown as Parameters<typeof chaosPersona.pickOxSwapCount>[2];
-    const state = stateWithDeadOxen(2, 4);
+    const state = stateWithDeadOxen(2, 4, 5);
     expect(chaosPersona.pickOxSwapCount(state, OX_SWAP_POST, rng)).toBe(1); // rng.int always 1
+  });
+
+  it('engine (tickOxen) stamps _lastOxDeathDay when an ox dies of overwork this tick', () => {
+    // Build a state where one ox is just about to die from overwork:
+    // fatigue ≥ HIGH_FATIGUE_THRESHOLD (80) + the one extra point of pace drain
+    // on a grueling pace will push fatigue past the threshold, triggering
+    // OVERWORK_HEALTH_DRAIN (2) which drains an ox from health=2 to 0.
+    // Grueling pace adds 9 fatigue/day. An ox at fatigue=80 ticks to 89 → drain fires.
+    const rng = { chance: () => false, int: () => 0 } as unknown as Rng;
+    const s = freshTeamState(530, 7);
+    const dyingState: GameState = {
+      ...s,
+      pace: 'grueling',
+      day: 50,
+      oxen: [
+        // This ox will hit fatigue ≥ 80 next tick (fatigue=72 + 9 = 81) and health=2 → 0.
+        { id: 'ox-dying', health: 2, fatigue: 72, shod: true },
+        { id: 'ox-ok-0',  health: 90, fatigue: 5, shod: true },
+        { id: 'ox-ok-1',  health: 90, fatigue: 5, shod: true },
+        { id: 'ox-ok-2',  health: 90, fatigue: 5, shod: true }
+      ],
+      flags: { ...s.flags }
+    };
+    const after = tickOxen(dyingState, rng);
+    // The dying ox should now have health=0.
+    const deadOx = after.oxen.find((o) => o.id === 'ox-dying');
+    expect(deadOx?.health).toBe(0);
+    // The flag must be stamped with the current day (50).
+    expect(after.flags._lastOxDeathDay).toBe(50);
   });
 });
 

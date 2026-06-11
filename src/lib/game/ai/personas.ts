@@ -79,11 +79,20 @@ const LATE_SEASON_REPAIR_DOY = 244;
  *  pickOxSwapCount. A stampede-halved team would panic-buy at the
  *  next post — ≥ 2 dead oxen adds +1 to the base want. */
 const DEAD_OX_PANIC_THRESHOLD = 2;
+/** #1388 MED fix — the panic bump is a RECENT-death response, not a
+ *  lifetime-dead-ox latch. Dead oxen are never removed from state.oxen so
+ *  a naive "count health<=0" would fire at every later post forever. We
+ *  gate on _lastOxDeathDay: if the most recent ox death was within this
+ *  window the buyer is still spooked; beyond it the panic has worn off.
+ *  30 days ≈ one-to-two post gaps, long enough to cover the next visit. */
+const RECENT_OX_DEATH_WINDOW_DAYS = 30;
 
 /** Day-of-year (1 = Jan 1, 244 = Sep 1 in non-leap years). Used by
  *  the late-season repair escalation gate (LATE_SEASON_REPAIR_DOY).
- *  Month lengths per the non-leap calendar are accurate for trail
- *  years 1840-1860 (none hit a 400-year boundary). */
+ *  Leap-year note: 1848/1852/1856 are leap years and this table uses the
+ *  non-leap lengths, producing a one-day drift after Feb 28 in those years.
+ *  The drift is immaterial to the DOY≥244 gate (Sep 1 vs Sep 2 boundary
+ *  has no gameplay effect) and simplifies the constant. */
 const MONTH_DAYS_CUM = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
 function dateToDoy(date: GameState['date']): number {
   return MONTH_DAYS_CUM[date.month - 1] + date.day;
@@ -526,9 +535,28 @@ function pickOxSwapCountFor(
   // Two trigger conditions: thin team OR worn-down team.
   const tooThin = aliveCount < target;
   const tooWorn = avgHealth < healthFloor;
-  // #1388 T2 — dead-ox panic bump: ≥ 2 dead oxen → want +1.
+  // #1388 T2 / MED fix — dead-ox panic bump: ≥ 2 dead oxen AND a recent
+  // death (within RECENT_OX_DEATH_WINDOW_DAYS) → want +1.
+  // Dead oxen are never removed from state.oxen; without the recency gate
+  // the bump would latch permanently after 2 lifetime deaths and over-buy
+  // at every later post even on a fully refreshed team. The flag
+  // _lastOxDeathDay is stamped by tickOxen (and event kill sites) whenever
+  // a previously-alive ox newly reaches health=0.
+  // When the flag is absent but deadCount≥threshold (legacy save or NPC
+  // wagon whose flag path isn't wired) we conservatively fire the bump only
+  // if aliveCount is also below optimalTeam — i.e. the team is visibly thin,
+  // so an upgrade is warranted regardless of recency context.
   const deadCount = state.oxen.filter((o) => o.health <= 0).length;
-  const panicBump = deadCount >= DEAD_OX_PANIC_THRESHOLD ? 1 : 0;
+  // Guard against faux/shim states (e.g. NPC post-restock path in wagon-train.ts)
+  // that cast a partial object to GameState and omit flags. Optional-chain is safe
+  // because the flag's absence triggers the no-flag fallback below.
+  const lastDeathDay = typeof state.flags?._lastOxDeathDay === 'number'
+    ? (state.flags._lastOxDeathDay as number)
+    : undefined;
+  const recentDeath = lastDeathDay !== undefined
+    ? state.day - lastDeathDay <= RECENT_OX_DEATH_WINDOW_DAYS
+    : deadCount >= DEAD_OX_PANIC_THRESHOLD && aliveCount < (wagon.optimalTeam + freshBuffer);
+  const panicBump = deadCount >= DEAD_OX_PANIC_THRESHOLD && recentDeath ? 1 : 0;
   if (!tooThin && !tooWorn && panicBump === 0) return 0;
   // Thin: top up to target. Worn: swap 2 to refresh the average.
   const need = Math.max(0, target - aliveCount);
