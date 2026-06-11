@@ -6,7 +6,10 @@ import { PERSONAS } from '../src/lib/game/ai';
 describe('#275 bot — end-to-end run', () => {
   it('balanced persona drives a run to a terminal outcome (no infinite loop)', () => {
     const report = runBot({ seed: 'bot-balanced-1', persona: 'balanced' });
-    expect(['arrived', 'wiped', 'in-progress', 'stranded']).toContain(report.outcome);
+    // #1304 T1 re-baseline: snowed_in added as a valid terminal outcome.
+    // The 1-day crisis hold now lets the train travel faster; this seed
+    // reaches mountain territory in autumn and can end snowed_in.
+    expect(['arrived', 'wiped', 'in-progress', 'stranded', 'snowed_in']).toContain(report.outcome);
     expect(report.daysElapsed).toBeGreaterThan(0);
     expect(report.daysElapsed).toBeLessThanOrEqual(365);
     expect(report.errors).toEqual([]);

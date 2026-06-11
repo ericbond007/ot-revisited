@@ -107,12 +107,15 @@ const CRISIS_MIN_HP = 20;
  *  company in a permanent crisis. Starting value; slice-5 sweep-tuned. */
 const EFFECTIVE_DEAD_HP = 3;
 
-/** #1046 §13 (cap) — a crisis_layby block held this long without
- *  clearing means an unrecoverable wagon; the company stops waiting and
- *  travels (it dies en route and reaps). Defense-in-depth behind B.
- *  Legitimate crises self-resolve in days. Starting value; slice-5
- *  sweep-tuned. */
-const CRISIS_MAX_DAYS = 12;
+/** #1304 T1 — the company stands a one-day death-watch/burial halt
+ *  (Bishop 1849 near Torrington WY: company stopped, he died at 1 p.m.,
+ *  military funeral the same day; Stout 1853: one short day for Mr.
+ *  Houlett). Extended convalescence is the sick family's own affair —
+ *  they drop behind and the train rolls on (Martha Read 1852: one week
+ *  roadside, passing trains did not join). Replaces the ahistorical
+ *  12-day cap that was serially re-stamped, costing ~47 days/run.
+ *  See docs/superpowers/specs/2026-06-11-train-governance-research.md. */
+const CRISIS_HOLD_DAYS = 1;
 
 /** Hysteresis: once a maintenance lay-by is called it holds until
  *  avg ox-fatigue drops a margin below the trigger (and HP recovers a
@@ -133,13 +136,33 @@ export function companyRestDecision(state: GameState): CompanyRestDecision {
     const block = train.companyDecisionBlock;
     const crisisHeld =
       block?.mode === 'crisis_layby' ? state.day - block.blockStartDay : 0;
-    if (crisisHeld >= CRISIS_MAX_DAYS) {
-      // #1046 §13 cap — held in crisis ≥CRISIS_MAX_DAYS without
-      // clearing ⇒ an unrecoverable wagon. Stop waiting and TRAVEL
-      // (decisively — not maintenance, or the company never moves);
-      // the failing wagon dies en route and reaps. Defense-in-depth
-      // behind B's viable-wagon aggregate.
-      return { mode: 'travel', reason: `crisis cap (${crisisHeld}d) — company breaks camp` };
+
+    if (crisisHeld >= CRISIS_HOLD_DAYS) {
+      // #1304 T1 — one-day death-watch is over; the train breaks camp.
+      // Identify NPC companion wagons still in crisis (min alive-member HP
+      // < CRISIS_MIN_HP, or no alive members). These wagons drop behind to
+      // nurse their own — period reality: week-long convalescence was
+      // family-scale (Martha Read 1852; Bruff's company never sent relief).
+      // Dead members are excluded — only alive HP counts for the drop test.
+      const dropWagonIds = train.companions
+        .filter((w) => {
+          const alive = w.party.filter((m) => !m.dead);
+          if (alive.length === 0) return true; // no survivors — not viable
+          return alive.some((m) => m.health < CRISIS_MIN_HP);
+        })
+        .map((w) => w.id);
+
+      if (dropWagonIds.length > 0) {
+        return {
+          mode: 'travel',
+          reason: 'sick wagons drop behind to nurse their own',
+          dropWagonIds
+        };
+      }
+      // Player-party-only crisis: the company will not wait (Bruff's
+      // company never sent the promised relief). The player's own
+      // persona rest logic handles their family lay-by.
+      return { mode: 'travel', reason: 'crisis hold complete — company breaks camp' };
     }
     return { mode: 'crisis_layby', reason: `crisis: min HP ${Math.round(agg.minPartyHP)}` };
   }

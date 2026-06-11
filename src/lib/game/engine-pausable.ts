@@ -253,12 +253,40 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   // Persist the updated decision block for tomorrow's hysteresis + slice-B
   // dissent. No train → nothing to persist; solo behaviour unchanged.
   if (s.wagonTrain && restDecision) {
-    const block = s.wagonTrain.companyDecisionBlock;
+    // #1304 T1 — before stamping the block, drop any sick companion wagons
+    // that the decision has flagged. These wagons nurse their own and the
+    // company rolls on; each earns a period-voiced log line. Done first so
+    // the day proceeds as a genuine travel day with the slimmed roster.
+    if (restDecision.dropWagonIds && restDecision.dropWagonIds.length > 0) {
+      const dropSet = new Set(restDecision.dropWagonIds);
+      const toLog: string[] = [];
+      const remaining = s.wagonTrain.companions.filter((w) => {
+        if (dropSet.has(w.id)) {
+          // Capitalize the wagon name for period-voiced log sentence.
+          const displayName = w.name.charAt(0).toUpperCase() + w.name.slice(1);
+          toLog.push(`${displayName} drops behind to nurse their sick. The company rolls on.`);
+          return false;
+        }
+        return true;
+      });
+      const dropEntries = toLog.map((text) => ({ day: s.day, text }));
+      s = {
+        ...s,
+        wagonTrain: { ...s.wagonTrain, companions: remaining },
+        eventLog: [...s.eventLog, ...dropEntries]
+      };
+    }
+
+    // Re-read wagonTrain after the possible drop mutation above;
+    // the outer `if (s.wagonTrain)` guard ensures it was non-null at
+    // entry but TypeScript loses that after the spread-reassignment.
+    const train = s.wagonTrain!;
+    const block = train.companyDecisionBlock;
     const isNewBlock = !block || block.mode !== restDecision.mode;
     s = {
       ...s,
       wagonTrain: {
-        ...s.wagonTrain,
+        ...train,
         companyDecisionBlock: isNewBlock
           ? { mode: restDecision.mode, blockStartDay: s.day }
           : block

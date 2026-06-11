@@ -60,8 +60,16 @@ describe('#1046 §13 B — trainAggregate excludes effectively-dead wagons', () 
   });
 });
 
-describe('#1046 §13 cap — CRISIS_MAX_DAYS forces travel', () => {
-  it('a crisis block held >= CRISIS_MAX_DAYS is forced to travel', () => {
+// #1304 T1 re-baseline: CRISIS_MAX_DAYS=12 replaced with CRISIS_HOLD_DAYS=1.
+// The 1-day death-watch/burial halt (Bishop 1849, Stout 1853) is the
+// historically-grounded cap. Serial 12-day re-stamps were costing ~47 lost
+// days/run and are ahistorical. See docs/superpowers/specs/2026-06-11-train-
+// governance-research.md for primary-source citations.
+describe('#1046 §13 cap → #1304 T1 CRISIS_HOLD_DAYS=1 forces travel after 1 day', () => {
+  it('a crisis block held >= 1 day is forced to travel (sick wagons drop behind)', () => {
+    // held = day 30 - blockStartDay 10 = 20 ≥ 1 → travel.
+    // Baseline changed from 12 to 1; reason is now "sick wagons drop behind"
+    // or "crisis hold complete" depending on whether NPC companions are in crisis.
     const s = withTrain(2, [{ hp: 1 }]);
     const held = {
       ...s, day: 30,
@@ -69,13 +77,16 @@ describe('#1046 §13 cap — CRISIS_MAX_DAYS forces travel', () => {
     };
     const d = companyRestDecision(held);
     expect(d.mode).toBe('travel');
-    expect(d.reason).toMatch(/crisis cap/i);
+    // Reason is now the period-voiced "drop behind" variant (not "crisis cap").
+    expect(d.reason).toMatch(/sick wagons drop behind|crisis hold complete/i);
   });
-  it('a fresh/short crisis still lays by (cap not yet reached)', () => {
+
+  it('a fresh crisis (held = 0, block just stamped this day) still lays by', () => {
+    // held = day 12 - blockStartDay 12 = 0 < 1 → crisis_layby (first day of hold).
     const s = withTrain(2, [{ hp: 1 }]);
     const fresh = {
       ...s, day: 12,
-      wagonTrain: { ...s.wagonTrain!, companyDecisionBlock: { mode: 'crisis_layby' as const, blockStartDay: 10 } }
+      wagonTrain: { ...s.wagonTrain!, companyDecisionBlock: { mode: 'crisis_layby' as const, blockStartDay: 12 } }
     };
     expect(companyRestDecision(fresh).mode).toBe('crisis_layby');
   });

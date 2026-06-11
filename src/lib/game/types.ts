@@ -262,6 +262,11 @@ export interface CompanyRestDecision {
   mode: CompanyRestMode;
   /** Short human-readable why, for logs/UI/tests. */
   reason: string;
+  /** #1304 T1 — when mode is 'travel' after the 1-day crisis hold, the
+   *  companion wagon ids whose sick member(s) forced the crisis and are
+   *  now dropping behind to nurse their own. Absent when there are no NPC
+   *  wagons in crisis (player-party-only crisis, or healthy train). */
+  dropWagonIds?: string[];
 }
 
 // #176 — Wagon-train state. Generated at join time, persists until the
