@@ -21,7 +21,7 @@ export type Weather =
   | 'fog'        // -15% travel, easy to wander
   | 'frost';     // morning chill, small morale hit
 export type Terrain = 'prairie' | 'forest' | 'desert' | 'mountains' | 'river';
-export type Outcome = 'in-progress' | 'arrived' | 'wiped' | 'stranded';
+export type Outcome = 'in-progress' | 'arrived' | 'wiped' | 'stranded' | 'snowed_in';
 
 export type ProfessionId =
   | 'banker'

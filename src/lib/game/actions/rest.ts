@@ -1,7 +1,7 @@
 import type { GameState } from '../types';
 import { makeRng } from '../rng';
 import { hasLiveFarmer, hasLiveTeamster, hasLivePreacher, hasLiveBlacksmith } from '../professions/predicates';
-import { TEAMSTER_RECOVERY_MULT, consumeOxenFeed } from '../systems/oxen';
+import { TEAMSTER_RECOVERY_MULT, consumeOxenFeed, restGrazingQuality } from '../systems/oxen';
 import { upgradeState } from '../upgrade';
 import { tickWeather } from '../systems/weather';
 import { advanceTrain } from '../systems/wagon-train';
@@ -131,10 +131,13 @@ export function rest(state: GameState, days: number, opts: RestOptions = {}): Ga
     s = runSteps(MORNING_STEPS, s, rng, ctx);
 
     // Resting consumes grain on poor-grazing terrain too — oxen
-    // standing in camp still need calories. Recovery scales with the
-    // resulting effective grazing (well-fed team rests off ~30 fatigue;
-    // unfed team on poor grass barely heals).
-    const restFeed = consumeOxenFeed(s);
+    // standing in camp still need calories.  Recovery uses terrain-only
+    // grazing (restGrazingQuality), not the full seasonal-decline value:
+    // cured autumn grass is genuinely restorative on a deliberate lay-by
+    // (Marcy 1859, lines 2583–2587 — "will fatten upon it even in
+    // mid-winter").  The seasonal decline stays on travel days (corridor
+    // depletion + snow-cover on the move), not on a chosen rest day.
+    const restFeed = consumeOxenFeed(s, restGrazingQuality(s));
     s = restFeed.state;
     // #317b — blacksmith ox-shoeing recovery bonus. Period reality:
     // shod oxen recovered noticeably faster from a hard day's pull.

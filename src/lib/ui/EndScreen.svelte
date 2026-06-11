@@ -24,7 +24,69 @@
   );
 </script>
 
-{#if state.outcome === 'wiped'}
+{#if state.outcome === 'snowed_in'}
+  <!-- #1304 — Snowed in. The company was trapped in a mountain pass by a
+       deep-winter storm — a Donner-adjacent end. Reuses the tombstone framing
+       (somber; not 'wiped' in the disease sense). Period copy: food runs out
+       and spring finds them. -->
+  <div class="panel tombstone-wrap">
+    <div class="hero">
+      <div class="big-stone" aria-hidden="true">{ICON.end_screen.tombstone}</div>
+      <h2 class="head">The pass closed behind them.</h2>
+      <p class="epitaph">
+        Snowbound in the mountains — day {state.day} of {state.date.year}.
+        {leaderName}'s company made {Math.round(state.location.milesTraveled)} miles.
+      </p>
+    </div>
+
+    <div class="stats">
+      <span class="stat"><strong>{state.day}</strong> days</span>
+      <span class="stat"><strong>{Math.round(state.location.milesTraveled)}</strong> mi</span>
+      {#if lastLandmark}
+        <span class="stat">last seen at <strong>{lastLandmark}</strong></span>
+      {/if}
+      <span class="stat">score <strong>{result.total.toLocaleString()}</strong></span>
+    </div>
+
+    <div class="snowed-in-epilogue">
+      <p>
+        They made camp at the edge of the pass as the sky went white. The storm
+        did not break. The flour gave out in the second week; the salt pork a few
+        days after. When spring thawed the road, travelers found the wagons still
+        there, the canvas weighted with snow, the ox-chain frozen to the earth.
+      </p>
+      <p>
+        The company is remembered not for how far they came — 2,000 miles of
+        hard country — but for the twenty miles they could not finish.
+      </p>
+    </div>
+
+    <div class="graves">
+      {#each dead as m}
+        <div class="grave">
+          <div class="grave-stone">{ICON.end_screen.tombstone}</div>
+          <div class="grave-text">
+            <div class="grave-name">{m.name}{m.isLeader ? ' (leader)' : ''}</div>
+            <div class="grave-role">{m.profession ?? m.kind}</div>
+            <div class="grave-cause">d. day {m.deathDay} · {m.deathCause}</div>
+          </div>
+        </div>
+      {/each}
+    </div>
+
+    {#if cliffInscription}
+      <div class="cliff-inscription">
+        <div class="cliff-head">CHISELED INTO REGISTER CLIFF</div>
+        <div class="cliff-body">{cliffInscription}</div>
+      </div>
+    {/if}
+
+    <div class="cta-row">
+      <a href="/new" class="cta primary">{ICON.journey_menu.new} New Journey</a>
+      <a href="/" class="cta">{ICON.journey_menu.home} Home</a>
+    </div>
+  </div>
+{:else if state.outcome === 'wiped'}
   <!-- Game over. Big tombstone hero; each fallen member gets their own
        epitaph card. Map + event log remain visible above so the player
        can see where and when it all ended. -->
@@ -226,6 +288,25 @@
   .cta.primary:hover {
     background: var(--of-rust);
     color: var(--of-paper-soft);
+  }
+
+  /* Snowed-in epilogue prose (#1304) --- */
+  .snowed-in-epilogue {
+    margin: 1em 0 0.6em;
+    padding: 0.9em 1.1em;
+    background: rgba(20, 20, 20, 0.06);
+    border-left: 3px solid var(--of-ink-soft);
+  }
+  .snowed-in-epilogue p {
+    margin: 0 0 0.65em;
+    font-family: 'IM Fell English', 'Special Elite', Georgia, serif;
+    font-size: 1.0em;
+    line-height: 1.55;
+    color: var(--of-ink);
+    font-style: italic;
+  }
+  .snowed-in-epilogue p:last-child {
+    margin-bottom: 0;
   }
 
   /* Tombstone / wiped --- */

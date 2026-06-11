@@ -36,18 +36,47 @@ describe('grazingQuality', () => {
     expect(grazingQuality(s)).toBeCloseTo(0.2);
   });
 
-  it('dormant season halves quality across the board', () => {
-    const winterPrairie = newGame({
+  // #1304 T6c re-baseline — the calendar-decline model (T2) is replaced by
+  // weather-driven snow cover.  grazingQuality is now terrain × snowCoverGrazingMult
+  // (weather).  The calendar date has NO effect.
+  //
+  // Clear day → full terrain quality regardless of month:
+  //   - prairie clear (any month): 1.0 × 1.0 = 1.0
+  //   - mountains clear (any month): 0.4 × 1.0 = 0.4
+  //
+  // Snow day → cover penalty:
+  //   - prairie snow: 1.0 × 0.25 = 0.25
+  //   - mountains snow: 0.4 × 0.25 = 0.10
+  it('clear winter day has FULL terrain quality — no calendar penalty (T6c)', () => {
+    // Marcy 2583–2587: intermountain grass cures on stem; calendar does not kill it.
+    const clearWinterPrairie = newGame({
       date: { year: 1848, month: 1, day: 15 },
+      weather: 'clear' as const,
       location: { ...newGame().location, terrain: 'prairie' }
     });
-    expect(grazingQuality(winterPrairie)).toBeCloseTo(0.5);
+    expect(grazingQuality(clearWinterPrairie)).toBeCloseTo(1.0);
 
-    const winterMountains = newGame({
+    const clearMountains = newGame({
       date: { year: 1848, month: 12, day: 1 },
+      weather: 'clear' as const,
       location: { ...newGame().location, terrain: 'mountains' }
     });
-    expect(grazingQuality(winterMountains)).toBeCloseTo(0.2);
+    expect(grazingQuality(clearMountains)).toBeCloseTo(0.4);
+  });
+
+  it('snow day is severely reduced — cover blocks pawing access (T6c)', () => {
+    // Marcy 2578: >2 ft snow blocks pawing. SNOW_COVER_GRAZING = 0.25.
+    const snowPrairie = newGame({
+      weather: 'snow' as const,
+      location: { ...newGame().location, terrain: 'prairie' }
+    });
+    expect(grazingQuality(snowPrairie)).toBeCloseTo(0.25);
+
+    const snowMountains = newGame({
+      weather: 'snow' as const,
+      location: { ...newGame().location, terrain: 'mountains' }
+    });
+    expect(grazingQuality(snowMountains)).toBeCloseTo(0.1);
   });
 });
 

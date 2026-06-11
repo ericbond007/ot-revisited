@@ -94,15 +94,17 @@ describe('#139 daily milk yield — grazing & weather', () => {
     expect(dailyMilkYield(hot)).toBeLessThan(dailyMilkYield(lush));
   });
 
-  it('desert grazing dries the cow', () => {
-    // Desert grazing is ~0.3 × no dormant penalty in summer = 0.3 → still some milk.
-    // Mountains grazing is ~0.5; dormant winter halves to 0.25 → below threshold.
-    const winterMtn: GameState = withCow({
+  it('mountain snow dries the cow (T6c: cover blocks access)', () => {
+    // #1304 T6c re-baseline: calendar no longer lowers grazing.
+    // Mountains terrain = 0.4; snow cover mult = 0.25 → combined 0.10.
+    // DRY_GRAZING_THRESHOLD = 0.25, so 0.10 < threshold → cow goes dry.
+    // Marcy 2578: >2 ft snow blocks pawing access completely in deep passes.
+    const snowyMtn: GameState = withCow({
       ...newGame(),
       location: { ...newGame().location, terrain: 'mountains' },
-      date: { year: 1849, month: 1, day: 15 } // dormant
+      weather: 'snow' as const
     });
-    expect(dailyMilkYield(winterMtn)).toBe(0);
+    expect(dailyMilkYield(snowyMtn)).toBe(0);
   });
 });
 

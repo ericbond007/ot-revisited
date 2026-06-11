@@ -11,6 +11,34 @@ export function dayOfWeek(date: GameDate): number {
   return new Date(date.year, date.month - 1, date.day).getDay();
 }
 
+/**
+ * Advance a calendar date by `n` days, correctly rolling over
+ * month and year boundaries (leap-year aware). Returns a new
+ * GameDate; `from` is not mutated. Used by the projected-arrival
+ * chip (#1304-T5) to convert a journey-day count back to a
+ * calendar date.
+ */
+export function addDaysToDate(from: GameDate, n: number): GameDate {
+  const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let { year, month, day } = from;
+  let remaining = Math.round(n); // journey days are integers
+  while (remaining > 0) {
+    const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    const cap = month === 2 && leap ? 29 : DAYS_IN_MONTH[month - 1];
+    const daysLeftInMonth = cap - day;
+    if (remaining <= daysLeftInMonth) {
+      day += remaining;
+      remaining = 0;
+    } else {
+      remaining -= daysLeftInMonth + 1; // +1 to step to the 1st of next month
+      day = 1;
+      month += 1;
+      if (month > 12) { month = 1; year += 1; }
+    }
+  }
+  return { year, month, day };
+}
+
 export function isSunday(date: GameDate): boolean {
   return dayOfWeek(date) === 0;
 }

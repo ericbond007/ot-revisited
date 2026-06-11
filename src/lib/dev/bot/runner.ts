@@ -57,6 +57,7 @@ import {
 } from '../../game/ai';
 import { computeFunScore } from './scoring';
 import type { BotRunOpts, BotRunReport } from './types';
+import { winterZoneAt, isPassClosed } from '../../game/systems/winter';
 
 // Real emigrant journeys ran 4–6 months (120–180 days). 220 = ~7
 // months, a period-realistic ceiling — anything beyond is diagnostic-
@@ -102,6 +103,8 @@ interface RunningStats {
    *  previousLandmarkId at the START of the iteration ('start' before the
    *  first landmark). */
   legStats: BotRunReport['legStats'];
+  /** #1304 — winter-zone telemetry accumulator (mirrors BotRunReport.winter). */
+  winter: BotRunReport['winter'];
 }
 
 function newStats(): RunningStats {
@@ -116,7 +119,8 @@ function newStats(): RunningStats {
     errors: [],
     actionDays: { travel: 0, rest: 0, findWater: 0, hunt: 0, ford: 0, tradingPost: 0, eventChoice: 0, other: 0 },
     supplies: { foodConsumedLb: 0, foodAcquiredLb: 0, gunpowderUsedLb: 0, leadBallsUsed: 0, cashSpent: 0, cashEarned: 0 },
-    legStats: {}
+    legStats: {},
+    winter: { zoneDays: 0, zoneStormDays: 0, closureCount: 0, closureDays: 0, zoneRestDays: 0, snowedInZone: null, snowedInDay: null }
   };
 }
 
@@ -806,6 +810,11 @@ export function runBot(opts: BotRunOpts): BotRunReport {
     const legBefore = state.location.previousLandmarkId ?? 'start';
     const milesBefore = state.location.milesTraveled;
     const deadBefore = state.party.filter((m) => m.dead).length;
+    // #1304 — snapshot winter context BEFORE the action so attribution is
+    // based on where we STARTED the iteration (same pattern as legBefore /
+    // supplyBefore above).
+    const winterZoneBefore = winterZoneAt(state.location.milesTraveled);
+    const passClosedBefore = isPassClosed(state);
     let actionType: keyof RunningStats['actionDays'] = 'other';
     try {
       let firedEventToday = false;
@@ -992,6 +1001,36 @@ export function runBot(opts: BotRunOpts): BotRunReport {
         }
         b.deaths += state.party.filter((m) => m.dead).length - deadBefore;
       }
+      {
+        // #1304 — winter-zone telemetry. All attribution uses the
+        // BEFORE snapshot so multi-day rests land in the zone where
+        // they started. Delta is state.day - dayBefore (same as above).
+        const winterDelta = state.day - dayBefore;
+        if (winterZoneBefore !== null && winterDelta > 0) {
+          stats.winter.zoneDays += winterDelta;
+          if (state.weather === 'snow' || state.weather === 'storm') {
+            stats.winter.zoneStormDays += winterDelta;
+          }
+          // Closure days: every iterated day where pass was closed at
+          // the START of the iteration.
+          if (passClosedBefore) {
+            stats.winter.closureDays += winterDelta;
+          }
+          // New closure transition: was open before, is closed after.
+          if (!passClosedBefore && isPassClosed(state)) {
+            stats.winter.closureCount += 1;
+          }
+          // Zone rest days: rest-type actions while in zone.
+          if ((actionType === 'rest' || actionType === 'findWater') && winterDelta > 0) {
+            stats.winter.zoneRestDays += winterDelta;
+          }
+        }
+        // snowed_in terminal: record zone + day (only once, first time).
+        if (state.completed && state.outcome === 'snowed_in' && stats.winter.snowedInZone === null) {
+          stats.winter.snowedInZone = winterZoneAt(state.location.milesTraveled) ?? winterZoneBefore ?? 'cascades';
+          stats.winter.snowedInDay = state.day;
+        }
+      }
       recordDeaths(state, stats);
       prevLowHealthIds = recordHealthDrama(state, prevLowHealthIds, stats);
       prevLiveOxen = recordOxDeaths(state, prevLiveOxen, stats);
@@ -1059,6 +1098,7 @@ export function runBot(opts: BotRunOpts): BotRunReport {
     actionDays: stats.actionDays,
     supplies: stats.supplies,
     legStats: stats.legStats,
+    winter: stats.winter,
     finalState: state
   };
 }

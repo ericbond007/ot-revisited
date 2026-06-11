@@ -3,7 +3,8 @@ import { makeRng } from './rng';
 import type { Rng } from './rng';
 import { upgradeState } from './upgrade';
 import { tickWeather } from './systems/weather';
-import { recoverOxenFatigue, recoverOxenHealth } from './systems/oxen';
+import { checkClosure, isPassClosed, winterZoneAt } from './systems/winter';
+import { recoverOxenFatigue, recoverOxenHealth, snowCoverGrazingMult } from './systems/oxen';
 import { pushMoraleHistory } from './systems/morale';
 import { applyTravel, milesToLandmark } from './systems/travel';
 import { rollEvent, resolveEvent } from './systems/events';
@@ -136,6 +137,43 @@ export function tickDayPausable(state: GameState): PausableTickResult {
 
   let s = tickWeather(normalized, rng);
 
+  // #1304 — closure check. After weather is known, if the party is in a
+  // winter zone and today is a snowstorm past CLOSURE_START_DOY, roll to see
+  // if the pass closes. Uses sub-rng `winter:${seed}:${day}` — does NOT
+  // disturb the main daily rng. If snowed_in triggers, the tick returns early
+  // (completed game, no further systems run). Log line for closure + snowed_in.
+  if (!s.completed && winterZoneAt(s.location.milesTraveled)) {
+    const closureResult = checkClosure(s);
+    if (closureResult.closureTriggered) {
+      const closedUntil = closureResult.state.flags._passClosedUntil as number;
+      const duration = closedUntil - s.day;
+      if (closureResult.snowedIn) {
+        s = {
+          ...closureResult.state,
+          eventLog: [
+            ...closureResult.state.eventLog,
+            {
+              day: s.day,
+              text: `The pass is closed by a deep winter storm. The company is trapped.`
+            }
+          ]
+        };
+        return { state: s };
+      } else {
+        s = {
+          ...closureResult.state,
+          eventLog: [
+            ...closureResult.state.eventLog,
+            {
+              day: s.day,
+              text: `The pass is snowed in — the way is impassable for ${duration} day${duration === 1 ? '' : 's'}.`
+            }
+          ]
+        };
+      }
+    }
+  }
+
   // #285 phase 2 — crisis-triggered re-election. Consumed at the top of
   // the next tick after the trigger was set (currently the only
   // trigger is refusing a starvation share; see npc-crisis-events).
@@ -190,9 +228,14 @@ export function tickDayPausable(state: GameState): PausableTickResult {
     s = runSteps(TRAVEL_OX_WAGON_STEPS, s, rng, ctx);
   } else {
     // Lay-by: the team rests rather than pulls — no fatigue, no wagon
-    // wear. Mirror the NPC rest-day recovery (terrain-aware fatigue +
-    // passive HP at low fatigue).
-    const recovery = s.location.terrain === 'desert' || s.location.terrain === 'mountains' ? 5 : 15;
+    // wear.  Uses terrain × snow-cover recovery (same as rest.ts + NPC path
+    // post-T6b/T6c): no calendar/seasonal term, but snow cover applies
+    // because a trapped team in a snowed pass starves (Marcy cured-grass
+    // principle + 2578–2581 pawing-through snow).
+    const coverMult = snowCoverGrazingMult(s.weather ?? 'clear');
+    const recovery = Math.round(
+      (s.location.terrain === 'desert' || s.location.terrain === 'mountains' ? 5 : 15) * coverMult
+    );
     s = { ...s, oxen: recoverOxenHealth(recoverOxenFatigue(s.oxen, recovery)) };
   }
   s = runSteps(POST_BRANCH_STEPS, s, rng, ctx);

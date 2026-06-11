@@ -120,6 +120,29 @@ export interface BotRunReport {
     kegSamples: number;
     deaths: number;
   }>;
+  /** #1304 — winter-zone telemetry. All fields are exact sums/counts over
+   *  the run; delta attribution follows the legBefore/supplyBefore pattern. */
+  winter: {
+    /** Calendar days spent while winterZoneAt(position) !== null. */
+    zoneDays: number;
+    /** Delta-weighted days inside a winter zone where weather was snow or
+     *  storm (each day's iteration delta added when the zone check fires).
+     *  Measures how much snowstorm exposure accumulated in-zone. */
+    zoneStormDays: number;
+    /** Count of distinct transitions INTO a pass-closed state (each new
+     *  closure that starts on a given iteration increments once). */
+    closureCount: number;
+    /** Calendar days elapsed while isPassClosed() was true AND the party
+     *  was in a winter zone. */
+    closureDays: number;
+    /** Days where the bot chose rest while in a winter zone (any rest
+     *  action — persona-triggered, not closure-forced). */
+    zoneRestDays: number;
+    /** Which zone triggered the snowed_in terminal outcome, or null. */
+    snowedInZone: 'blues' | 'cascades' | null;
+    /** Game day (state.day) on which snowed_in was set, or null. */
+    snowedInDay: number | null;
+  };
   /** Full end-of-run state — drives location/death/inventory detail in
    *  stats harnesses without widening this report for every field. */
   finalState: GameState;

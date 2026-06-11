@@ -32,7 +32,8 @@
   import StatPicker from '$lib/ui/StatPicker.svelte';
   import StatIcon from '$lib/ui/stat-icons/StatIcon.svelte';
   import JourneyMenu from '$lib/ui/JourneyMenu.svelte';
-import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
+  import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
+  import ProjectedArrivalChip from '$lib/ui/ProjectedArrivalChip.svelte';
   import { ICON, icon } from '$lib/data/icon-dictionary';
   import { weatherInfo } from '$lib/data/weather-info';
   import { getLandmark, LANDMARKS } from '$lib/game/content/landmarks';
@@ -210,6 +211,8 @@ import FeedbackModal from '$lib/ui/FeedbackModal.svelte';
         <span class="stat-label">WEATHER</span>
         <span>{todayWeather.label}</span>
       </span>
+      <!-- #1304-T5 projected-arrival chip — hidden in early game -->
+      <ProjectedArrivalChip state={gs} />
       <StatPicker
         kind="pace"
         label="PACE"

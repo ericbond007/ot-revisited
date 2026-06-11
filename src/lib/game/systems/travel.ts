@@ -1,6 +1,7 @@
 import type { GameState, Pace, Terrain } from '../types';
 import type { Rng } from '../rng';
 import { oxenSpeedFactorFor } from './oxen';
+import { isPassClosed } from './winter';
 import { LANDMARKS, getLandmark, nextLandmarkAfter } from '../content/landmarks';
 import { getWagon } from '../content/wagons';
 import { loadSpeedMult } from './load';
@@ -163,6 +164,24 @@ function isBypassed(state: GameState, landmarkId: string): boolean {
 
 export function applyTravel(state: GameState, rng: Rng): GameState {
   if (state.completed) return state;
+
+  // #1304 — pass closed. The wagon camps in place; no miles advance.
+  // Resources continue to drain through the normal daily systems above
+  // (consumption, oxen, etc.) — the party burns supplies waiting for the
+  // pass to clear. The closure window is tracked in `_passClosedUntil`.
+  if (isPassClosed(state)) {
+    const closedUntil = state.flags._passClosedUntil as number;
+    return {
+      ...state,
+      eventLog: [
+        ...state.eventLog,
+        {
+          day: state.day,
+          text: `The pass is closed — camped in place. Clears in ${closedUntil - state.day} day${closedUntil - state.day === 1 ? '' : 's'}.`
+        }
+      ]
+    };
+  }
 
   // If we were parked at a landmark from a previous day, "depart" before moving.
   let startState = state;

@@ -26,7 +26,8 @@ describe('#1266 — daily-steps spine order is locked', () => {
     expect(TRAVEL_OX_WAGON_STEPS.map((s) => s.id)).toEqual(['tickOxen', 'applyOxHydration', 'tickWagon']);
   });
   it('POST_BRANCH_STEPS exact order', () => {
-    expect(POST_BRANCH_STEPS.map((s) => s.id)).toEqual(['adjustMorale', 'applyNpcMoraleBaseline', 'applyHolidays']);
+    // #1304-T3: checkSnowNews appended (sub-rng, scope='all' — no rng-stream disturbance).
+    expect(POST_BRANCH_STEPS.map((s) => s.id)).toEqual(['adjustMorale', 'applyNpcMoraleBaseline', 'applyHolidays', 'checkSnowNews']);
   });
   it('PRE_TRAVEL_STEPS exact order', () => {
     expect(PRE_TRAVEL_STEPS.map((s) => s.id)).toEqual(['applyDailyRecovery', 'applyTrainShare', 'applySabbathTravelDebit']);

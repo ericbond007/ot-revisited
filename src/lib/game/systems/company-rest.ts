@@ -12,6 +12,7 @@ import type { PersonaId } from '../ai/types';
 import type { Rng } from '../rng';
 import { isSunday } from '../utils/calendar';
 import { leaveTrain } from './wagon-train';
+import { schedulePressure, doctrineFor } from '../ai/schedule';
 
 /** Captain persona → chartered doctrine. aggressive-family pushes
  *  (hard_driver); the devotion/caution personas keep the Sabbath
@@ -145,34 +146,79 @@ export function companyRestDecision(state: GameState): CompanyRestDecision {
 
   const params = DOCTRINE_PARAMS[train.doctrine];
 
+  // #1304-T4 — Season term: compute schedule pressure from the captain's
+  // perspective. The captain is represented by `train.doctrine` but the
+  // persona target/estimate needs a GameState reference. We derive pressure
+  // using the captain's persona doctrine (if known) or fall back to
+  // 'prudent' (balanced doctrine). This is the same estimator the player
+  // UI chip and per-wagon pace logic uses — shared brain.
+  //
+  // Identify the captain's persona from the doctrine. We don't store
+  // captain personaId directly — map from doctrine as a proxy:
+  //   hard_driver → aggressive (target 175) or pace_pusher (165); use
+  //     the doctrine-keyed personaId that best represents it.
+  //   devout → faithful / sunday_rester (target 195)
+  //   prudent → balanced (target 185) as the middle ground
+  //
+  // This is a first approximation. When a train stores captainPersonaId
+  // in a future slice, read it directly. For now the mapping is:
+  //   hard_driver → pace_pusher (tighter target, more conservative estimate)
+  //   devout      → faithful
+  //   prudent     → balanced
+  const DOCTRINE_PERSONA: Record<CaptainDoctrine, PersonaId> = {
+    hard_driver: 'pace_pusher',
+    devout:      'faithful',
+    prudent:     'balanced'
+  };
+  const captainPersona = DOCTRINE_PERSONA[train.doctrine];
+  const captainDoctrine = doctrineFor(captainPersona);
+  const pressure = schedulePressure(state, captainDoctrine.targetArrivalDay);
+
   // 2. Sabbath — devout doctrine on the Sabbath day.
+  //
+  // #1304-T4 season term: suppress Sabbath lay-bys when behind+ unless
+  // doctrine is devout AND pressure is merely 'behind' (not critical).
+  // devout + critical → push (the pass > the Sabbath, period reality).
+  // dissent system surfaces the drama: devout members still dissent.
   if (params.sabbath && isSunday(state.date)) {
-    return { mode: 'sabbath_layby', reason: 'Sabbath observance' };
+    // Devout + ok/behind → keep the Sabbath as before.
+    // Devout + critical → do NOT call a Sabbath lay-by (push).
+    if (pressure !== 'critical') {
+      return { mode: 'sabbath_layby', reason: 'Sabbath observance' };
+    }
+    // Fall through to travel — devout captain breaks Sabbath when critical.
+    // (No early return; travel will be returned at the end.)
   }
 
   // 3. Maintenance — condition-driven, with hysteresis. If we're
   //    already mid maintenance/crisis block, hold until the company
   //    clears the trigger by a margin (no 1-day-thrash). Otherwise,
   //    fire when the doctrine's threshold is first crossed.
-  const inLaybyBlock =
-    train.companyDecisionBlock?.mode === 'maintenance_layby' ||
-    train.companyDecisionBlock?.mode === 'crisis_layby';
+  //
+  // #1304-T4 season term: under behind+ pressure, defer maintenance
+  // lay-bys unless the crisis floor fires (which is handled above).
+  // The company pushes through maintainable wear when the clock is ticking.
+  if (pressure === 'ok') {
+    const inLaybyBlock =
+      train.companyDecisionBlock?.mode === 'maintenance_layby' ||
+      train.companyDecisionBlock?.mode === 'crisis_layby';
 
-  const oxTrigger = inLaybyBlock
-    ? params.maintOxFatigue - HYSTERESIS_OXFAT
-    : params.maintOxFatigue;
-  const hpTrigger = inLaybyBlock
-    ? params.maintMinHP - HYSTERESIS_HP
-    : params.maintMinHP;
+    const oxTrigger = inLaybyBlock
+      ? params.maintOxFatigue - HYSTERESIS_OXFAT
+      : params.maintOxFatigue;
+    const hpTrigger = inLaybyBlock
+      ? params.maintMinHP - HYSTERESIS_HP
+      : params.maintMinHP;
 
-  if (agg.avgOxFatigue > oxTrigger || agg.minPartyHP < hpTrigger) {
-    const why = agg.avgOxFatigue > oxTrigger
-      ? `maintenance: avg ox-fatigue ${Math.round(agg.avgOxFatigue)}`
-      : `maintenance: min HP ${Math.round(agg.minPartyHP)}`;
-    return { mode: 'maintenance_layby', reason: why };
+    if (agg.avgOxFatigue > oxTrigger || agg.minPartyHP < hpTrigger) {
+      const why = agg.avgOxFatigue > oxTrigger
+        ? `maintenance: avg ox-fatigue ${Math.round(agg.avgOxFatigue)}`
+        : `maintenance: min HP ${Math.round(agg.minPartyHP)}`;
+      return { mode: 'maintenance_layby', reason: why };
+    }
   }
 
-  return { mode: 'travel', reason: 'no rest trigger' };
+  return { mode: 'travel', reason: pressure !== 'ok' ? `season pressure: ${pressure}` : 'no rest trigger' };
 }
 
 // ── #1046 B: Dissent trigger + resolution ────────────────────────────────────

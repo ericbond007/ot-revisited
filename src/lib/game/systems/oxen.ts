@@ -1,8 +1,9 @@
-import type { GameState, Ox, Pace, Terrain } from '../types';
+import type { GameState, Ox, Pace, Terrain, Weather } from '../types';
 import type { Rng } from '../rng';
 import { hasLiveTeamster } from '../professions/predicates';
 import { loadFatigueMult } from './load';
 import { getWagon } from '../content/wagons';
+import { dayOfYear } from './winter';
 
 const FATIGUE_PER_DAY_BY_PACE: Record<Pace, number> = {
   slow: 2,
@@ -33,7 +34,7 @@ const MULE_UNFED_FATIGUE_MULT = 2.0;
 // after fall frost, grass was sparse or dormant and the oxen
 // thinned. Emigrants who didn't carry supplemental feed (corn, hay,
 // the same `grain` mules eat) watched their teams weaken. We model
-// this with a per-terrain × per-season quality 0..1, an optional
+// this with a per-terrain × per-weather-cover quality 0..1, an optional
 // per-ox feed offset, and combined fatigue + recovery effects.
 
 const TERRAIN_GRAZING: Record<Terrain, number> = {
@@ -44,9 +45,100 @@ const TERRAIN_GRAZING: Record<Terrain, number> = {
   desert: 0.2
 };
 
-// Months 11-3 (Nov-Mar) — dormant/frozen grass on most of the trail.
-// Halves grazing quality across the board.
-const DORMANT_SEASON_MULT = 0.5;
+// #1304 T6c — Snow-cover grazing model replaces the calendar decline.
+//
+// Research basis: Marcy (1859) *Prairie Traveler*:
+//   — lines 2578–2581: "Where the snow was not more than two feet deep,
+//     the animals soon learned to paw it away and get at the grass…
+//     they do much better than one would suppose."
+//   — lines 2583–2587: "In Utah and New Mexico… the grass gradually
+//     dries and cures like hay, so that animals eat it freely, and will
+//     fatten upon it even in mid-winter."
+//   — lines 473–479: cattle fail because earlier trains graze the corridor
+//     out, and in specific barren stretches — NOT because the calendar turned.
+//
+// Implication: stock paw through ≤2 ft snow and eat. The access constraint
+// is snow COVER, not the calendar. Deep snow or a storm (stock won't graze in
+// a blow) blocks feed. A frost morning is a light penalty only.
+// The calendar-decline curve (T2) inverted period reality for the cured
+// intermountain ranges; the eastern-prairie rain-washed decline IS real but
+// emigrants cleared that country by July — YAGNI for this game.
+
+/** Snow cover cuts grazing to 25 % — stock struggle to paw through heavy cover.
+ *  Marcy 2578: "more than two feet deep" is the failure case. */
+export const SNOW_COVER_GRAZING = 0.25;
+
+/** Frost morning is a light penalty — stock graze but reluctantly.
+ *  The cured grass is there; cold slows access slightly. */
+export const FROST_GRAZING = 0.85;
+
+/** Storm cuts grazing to 60 % — stock refuse to range in a blow.
+ *  This is what killed trapped teams: no storm = they'd have survived.
+ *  Marcy (by implication of the pawing-through passage): the constraint
+ *  is behavioral aversion to moving in wind/snow, not cover depth per se. */
+export const STORM_GRAZING = 0.6;
+
+/** Weather-driven snow-cover grazing multiplier.
+ *
+ *  snow  → SNOW_COVER_GRAZING (0.25) — stock paw through but cover blocks most access
+ *  storm → STORM_GRAZING (0.6)       — stock won't range in a blow
+ *  frost → FROST_GRAZING (0.85)      — chill slows grazing, grass still accessible
+ *  else  → 1.0 (clear/overcast/rain/heat/fog — no snow-cover constraint)
+ *
+ *  Does NOT take a GameState — just the Weather value — so it can be called
+ *  from both player and NPC paths (TrainEnv carries weather) without synthesizing
+ *  a full state. */
+export function snowCoverGrazingMult(weather: Weather): number {
+  if (weather === 'snow')  return SNOW_COVER_GRAZING;
+  if (weather === 'storm') return STORM_GRAZING;
+  if (weather === 'frost') return FROST_GRAZING;
+  return 1.0;
+}
+
+// #1304 T2 — Seasonal grazing constants (DEPRECATED by T6c).
+//
+// These constants and the seasonalGrazingMult() function are kept ONLY
+// because the T2 test suite imports them by name (see tests/winter-wall-1304.test.ts
+// §T2 and tests/grazing.test.ts). They are no longer used by any engine path.
+//
+// The calendar-decline model they represent was historically incorrect for the
+// cured intermountain grasses the trail crossed: grass *cures on the stem* and
+// holds feed value through winter (Marcy 1859, lines 2583–2587). The access
+// constraint is snow COVER, not the calendar — stock paw through ≤2 ft snow
+// (Marcy 2578–2581). The eastern-prairie rain-washed decline (Marcy 467–468)
+// is real but emigrants cleared that country by July (YAGNI).
+//
+// Use snowCoverGrazingMult() instead.
+
+/** @deprecated Use snowCoverGrazingMult() — calendar decline is replaced by T6c. */
+export const GRAZING_DECLINE_START_DOY = dayOfYear(9, 1);  // 244
+
+/** @deprecated Use snowCoverGrazingMult() — calendar decline is replaced by T6c. */
+export const GRAZING_DECLINE_END_DOY = dayOfYear(11, 1);   // 305
+
+/** @deprecated Use snowCoverGrazingMult() — calendar decline is replaced by T6c. */
+export const GRAZING_WINTER_FLOOR = 0.4;
+
+/** Seasonal grazing multiplier — DEPRECATED by T6c.
+ *
+ *  @deprecated The calendar-decline curve inverted period reality for the
+ *  cured intermountain ranges. Use snowCoverGrazingMult(weather) instead.
+ *  Kept only for backward-compatibility with T2 tests that import it by name.
+ *
+ *  Original shape: full (1.0) through August; linear decline Sep 1 → Nov 1 to
+ *  GRAZING_WINTER_FLOOR (0.4); flat floor from Nov 1 onward. */
+export function seasonalGrazingMult(doy: number): number {
+  // Jan 1 – Mar 31 (DOY 1–90): post-decline winter floor
+  if (doy <= 90) return GRAZING_WINTER_FLOOR;
+  // Apr 1 – Aug 31 (DOY 91–243): full grass
+  if (doy < GRAZING_DECLINE_START_DOY) return 1.0;
+  // Nov 1 onward (DOY >= 305): flat floor
+  if (doy >= GRAZING_DECLINE_END_DOY)  return GRAZING_WINTER_FLOOR;
+  // Sep 1 – Oct 31: linear decline
+  const span = GRAZING_DECLINE_END_DOY - GRAZING_DECLINE_START_DOY;
+  const t = (doy - GRAZING_DECLINE_START_DOY) / span;
+  return 1.0 - t * (1.0 - GRAZING_WINTER_FLOOR);
+}
 
 // Threshold below which oxen will draw grain to supplement. At/above,
 // grass is enough on its own. 0.6 ≈ "decent prairie/forest".
@@ -61,12 +153,41 @@ export const GRAIN_LB_PER_OX = 1;
 // who carry grain neutralize the penalty entirely.
 const GRAZING_FATIGUE_PENALTY = 0.4;
 
-/** Pure grass-quality 0..1 — no side effects, no feed math. */
+/** Pure grass-quality 0..1 — no side effects, no feed math.
+ *
+ *  = TERRAIN_GRAZING[terrain] × snowCoverGrazingMult(weather)
+ *
+ *  #1304 T6c: the calendar-decline term (seasonalGrazingMult) is REMOVED.
+ *  The intermountain grasses cure on the stem and hold feed value through
+ *  winter (Marcy 1859, lines 2583–2587). The access constraint is snow COVER,
+ *  not the calendar — stock paw through ≤2 ft snow and eat. A storm is the
+ *  other hard block: stock won't range in a blow (Marcy 2578–2581).
+ *
+ *  The weather is read from state.weather (today's weather in GameState),
+ *  so both player (tickOxen) and NPC (synthesizeWagonState builds weather
+ *  from TrainEnv) paths see the same cover effect automatically. */
 export function grazingQuality(state: GameState): number {
   const base = TERRAIN_GRAZING[state.location.terrain];
-  const m = state.date.month;
-  const dormant = m >= 11 || m <= 3;
-  return dormant ? base * DORMANT_SEASON_MULT : base;
+  return base * snowCoverGrazingMult(state.weather ?? 'clear');
+}
+
+/** Grazing quality for a deliberate rest day — terrain × snow cover (no calendar term).
+ *
+ *  #1304 T6b / T6c — Marcy (1859, lines 2583–2587): the intermountain grasses
+ *  cure on the stem into standing hay that "will fatten [animals] even in
+ *  mid-winter."  A chosen lay-by on uneaten cured autumn range is genuinely
+ *  restorative regardless of calendar.
+ *
+ *  #1304 T6c: rest days under snow ALSO suffer cover — a team trapped in a
+ *  snowed pass starves because the cured grass is buried, not because it died
+ *  on the calendar. Marcy (2578–2581): "more than two feet deep" blocks pawing
+ *  access.  So rest-day recovery uses terrain × snowCoverGrazingMult(weather),
+ *  NOT pure terrain-only.  The T6b calendar-exemption still stands: the
+ *  difference between grazingQuality() and restGrazingQuality() is now ONLY
+ *  that the calendar/seasonal term (T2, now deprecated) is absent here.
+ *  Snow cover applies to everyone, always. */
+export function restGrazingQuality(state: GameState): number {
+  return TERRAIN_GRAZING[state.location.terrain] * snowCoverGrazingMult(state.weather ?? 'clear');
 }
 
 /** Apply ox grain feeding for one day. Returns the updated state, the
@@ -78,13 +199,20 @@ export function grazingQuality(state: GameState): number {
  *  When grass is good (>= threshold), no feed is consumed and the
  *  effective grazing is the raw quality. When grass is poor, oxen
  *  draw 1 lb each from the grain pool; whoever doesn't get fed
- *  contributes their raw (poor) quality to the team average. */
-export function consumeOxenFeed(state: GameState): {
+ *  contributes their raw (poor) quality to the team average.
+ *
+ *  The optional `rawGrazing` parameter lets callers supply a pre-computed
+ *  grazing value (e.g. restGrazingQuality on rest days) instead of the
+ *  default grazingQuality. */
+export function consumeOxenFeed(
+  state: GameState,
+  rawGrazing?: number
+): {
   state: GameState;
   fedOxen: number;
   effectiveGrazing: number;
 } {
-  const grazing = grazingQuality(state);
+  const grazing = rawGrazing ?? grazingQuality(state);
   const liveOxen = state.oxen.filter((a) => a.health > 0 && a.kind !== 'mule');
   if (liveOxen.length === 0 || grazing >= OXEN_FEED_THRESHOLD) {
     return { state, fedOxen: 0, effectiveGrazing: grazing };

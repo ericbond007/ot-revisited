@@ -1,9 +1,11 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
+import { makeRng } from '../rng';
 import { LANDMARKS, type Landmark } from '../content/landmarks';
 import { TRIBES, attitudeLevel } from '../content/tribes';
 import { eligibleHeadlines, type NewsHeadline, type HeadlineEffect } from '../content/news-headlines';
 import { getTribeAttitude } from './tribe-relations';
+import { dayOfYear, severityShift, WINTER_SEVERITY_SHIFT_DAYS } from './winter';
 
 // Trail gossip — actionable hints the player picks up from encounters,
 // trading posts, and landmark arrivals. News surfaces in the event log
@@ -138,6 +140,156 @@ function pickUpcomingLandmark(state: GameState, rng: Rng): Landmark | null {
   }
   if (ahead.length === 0) return null;
   return ahead[rng.int(0, ahead.length - 1)];
+}
+
+// ── Seasonal snow-news schedule (#1304-T3) ─────────────────────────────────
+//
+// A hidden-severity-keyed schedule: the first mountain-snow news item becomes
+// eligible from base DOY + severityShift(state) + per-seed jitter ≤ JITTER_MAX.
+// Three escalating tiers of copy surface as the calendar advances past
+// the eligible DOY.  The hidden severity NEVER appears in any news string or
+// flag — only the observed timing (early vs late arrival of dustings) leaks it.
+//
+// checkSnowNews(state) is called from the daily-steps spine (POST_BRANCH_STEPS)
+// for BOTH player and bot runs. It fires at most once per game-day
+// (_snowNewsLastDay guard) and records _firstSnowNewsDay on first surface.
+//
+// Fort gossip: getFortSnowGossip(state, postName) returns tier copy for
+// ft_hall / ft_boise / whitman_mission when visited in-season — the period
+// anchor is Captain Richard Grant at Fort Hall warning emigrants about winter
+// (emigrant diaries 1845–1851 consistently record his counsel). Called from
+// +page.server.ts alongside generatePostGossip so player gets the warning
+// on arrival; bots rely on the daily-tick path.
+//
+// Tier-3 anchor is the existing copy in generatePostGossip roll===2:
+//   "Heavy snow is in the high passes — wagons are turning back."
+
+/** Base day-of-year for the first eligible snow-news item at 'normal' severity
+ *  (Oct 5 = DOY 278). Shift by severityShift(state) for early/late years. */
+export const SNOW_NEWS_BASE_DOY = 278; // Oct 5
+
+/** Per-seed deterministic jitter added on top of the shifted base.
+ *  Bounded [0, SNOW_NEWS_JITTER_MAX] so no run fires earlier than the
+ *  shifted base. Sub-rng `snownews:${seed}` keeps it off the main stream. */
+export const SNOW_NEWS_JITTER_MAX = 5;
+
+/** Days past eligible DOY when each tier activates:
+ *  tier 1: offset 0  — "first dustings on the peaks"
+ *  tier 2: offset 14 — "snow lying early in the high country"
+ *  tier 3: offset 28 — "Heavy snow … wagons are turning back" (anchor copy) */
+export const SNOW_NEWS_TIER_OFFSETS: readonly [number, number, number] = [0, 14, 28];
+
+/** The three tier copies, ordered by tier (index 0 = tier 1, index 2 = tier 3).
+ *  Period voice: terse, dread-building, no comfort.  No severity words. */
+const SNOW_NEWS_TIER_TEXT: readonly string[] = [
+  // Tier 1 — first dustings.  Period diaries: "white caps on the Blues this morning."
+  'Snow dusting the peaks to the west this morning. The mountains look close.',
+  // Tier 2 — snow lying.  Period diaries: "snow lying deep in the passes" (Applegate 1843).
+  'Snow lying deep in the high passes. Companies ahead are traveling hard.',
+  // Tier 3 — anchor copy from generatePostGossip roll===2, winter months.
+  'Heavy snow is in the high passes — wagons are turning back.'
+];
+
+/** Compute the first-eligible DOY for snow news for this run.
+ *  Deterministic per seed via sub-rng `snownews:${seed}`.
+ *  Result = base + severityShift + jitter ∈ [0, SNOW_NEWS_JITTER_MAX]. */
+export function snowNewsEligibleDOY(state: GameState): number {
+  const jitterRng = makeRng(`snownews:${state.seed}`);
+  const jitter = jitterRng.int(0, SNOW_NEWS_JITTER_MAX);
+  return SNOW_NEWS_BASE_DOY + severityShift(state) + jitter;
+}
+
+/** Current tier: 0 (pre-season), 1, 2, or 3.
+ *  Based solely on how many days past the eligible DOY we currently are. */
+export function snowNewsTier(state: GameState): 0 | 1 | 2 | 3 {
+  const currentDOY = dayOfYear(state.date.month, state.date.day);
+  const eligible = snowNewsEligibleDOY(state);
+  if (currentDOY < eligible) return 0;
+  const daysIn = currentDOY - eligible;
+  if (daysIn < SNOW_NEWS_TIER_OFFSETS[1]) return 1;
+  if (daysIn < SNOW_NEWS_TIER_OFFSETS[2]) return 2;
+  return 3;
+}
+
+/** Check and potentially surface a scheduled snow-news item.
+ *  Called from the daily-steps spine for BOTH player and bot runs.
+ *
+ *  Guards:
+ *  - Pre-season (tier === 0): no-op.
+ *  - _snowNewsLastDay === state.day: already fired today, skip.
+ *
+ *  On fire:
+ *  - Calls addNews with tier copy and sets _snowNewsLastDay.
+ *  - If _firstSnowNewsDay is unset, stamps it now (once only).
+ *
+ *  The _firstSnowNewsDay flag is the T4 estimator's input.  It is set here
+ *  (tick-loop path) so BOTH player and bot runs stamp it on the same code
+ *  path.  A bot that never visits a trading post during the season still
+ *  hears this news through the daily tick — signal-honest because it fires
+ *  on every day the wagon is on the trail. */
+export function checkSnowNews(state: GameState): GameState {
+  const tier = snowNewsTier(state);
+  if (tier === 0) return state; // pre-season
+  if (state.completed) return state; // game over
+
+  // Daily de-dup: don't fire more than once per game-day.
+  const lastDay = state.flags._snowNewsLastDay as number | undefined;
+  if (lastDay === state.day) return state;
+
+  const tierText = SNOW_NEWS_TIER_TEXT[tier - 1];
+  const source = 'eastbound emigrants';
+
+  let next = addNews(state, {
+    text: tierText,
+    source,
+    topic: 'weather',
+    day: state.day
+  });
+
+  // Stamp _snowNewsLastDay so this day doesn't fire again on resume.
+  next = { ...next, flags: { ...next.flags, _snowNewsLastDay: next.day } };
+
+  // _firstSnowNewsDay: set exactly once.
+  if (next.flags._firstSnowNewsDay === undefined) {
+    next = { ...next, flags: { ...next.flags, _firstSnowNewsDay: next.day } };
+  }
+
+  return next;
+}
+
+/** Return in-season tier gossip for the three forts before the mountain gates:
+ *  Fort Hall, Fort Boise, Whitman Mission.  Period anchor: Captain Richard
+ *  Grant's warnings at Fort Hall were recorded in multiple 1845–1851 diaries.
+ *
+ *  Returns null before the season (tier === 0) or for any other post.
+ *  Never encodes the hidden severity. */
+export function getFortSnowGossip(state: GameState, postName: string): NewsItem | null {
+  const lowerPost = postName.toLowerCase();
+  const isFortPost =
+    lowerPost.includes('hall') ||
+    lowerPost.includes('boise') ||
+    lowerPost.includes('whitman') ||
+    lowerPost.includes('mission');
+  if (!isFortPost) return null;
+
+  const tier = snowNewsTier(state);
+  if (tier === 0) return null;
+
+  const tierText = SNOW_NEWS_TIER_TEXT[tier - 1];
+  // Period-authentic sources by fort.
+  const source =
+    lowerPost.includes('hall')
+      ? 'Captain Grant, Fort Hall' // Richard Grant, HBC factor, frequently warned emigrants
+      : lowerPost.includes('boise')
+        ? 'Fort Boise factor'
+        : 'Marcus Whitman';         // Whitman Mission — Whitman himself warned later emigrants
+
+  return {
+    text: tierText,
+    source,
+    topic: 'weather',
+    day: state.day
+  };
 }
 
 /** Pool of California-bound chatter that surfaces post-1849 (#180).

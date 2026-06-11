@@ -436,6 +436,79 @@ export const SCENARIOS: Scenario[] = [
       };
       return rest(s, 3, { campActions: ['pass_whiskey', 'dig_well', 'sing_along'] });
     }
+  },
+
+  // #1304-T5 — Scenarios for the projected-arrival chip visual check.
+  // Each produces a different arrivalBand state by placing the party at
+  // a specific mile/day combination so projectedArrivalDay() returns the
+  // desired projected journey-day.
+  {
+    id: 'chip_ok',
+    label: '#1304 chip: ok state',
+    description: 'Mid-trail at fast pace — projected arrival well before snow-safe estimate (ok band).',
+    build: () => {
+      // Fast party: day=80, miles=1400 → projected = 80*(2195/1400) ≈ 125 (ok: 125 ≤ 185)
+      const base = baseState('chip-ok');
+      return {
+        ...base,
+        day: 80,
+        date: { year: 1848, month: 7, day: 3 },  // ~day 80 from Apr 15
+        location: {
+          ...base.location,
+          milesTraveled: 1400,
+          previousLandmarkId: 'ft_hall',
+          nextLandmarkId: 'salmon_falls',
+          terrain: 'prairie' as const,
+          atLandmarkId: null
+        }
+      };
+    }
+  },
+  {
+    id: 'chip_behind',
+    label: '#1304 chip: behind state',
+    description: 'Slow party — projected arrival 5 days past snow-safe estimate (behind band).',
+    build: () => {
+      // Slow: day=130, miles=1400 → projected = 130*(2195/1400) ≈ 203
+      // snowSafe = 185 (no signals); behind bound = 185+15=200; 203 > 200 → critical
+      // Use day=120, miles=1400 → projected = 120*(2195/1400) ≈ 188 → behind (185 < 188 ≤ 200)
+      const base = baseState('chip-behind');
+      return {
+        ...base,
+        day: 120,
+        date: { year: 1848, month: 8, day: 12 }, // ~day 120 from Apr 15
+        location: {
+          ...base.location,
+          milesTraveled: 1400,
+          previousLandmarkId: 'ft_hall',
+          nextLandmarkId: 'salmon_falls',
+          terrain: 'prairie' as const,
+          atLandmarkId: null
+        }
+      };
+    }
+  },
+  {
+    id: 'chip_critical',
+    label: '#1304 chip: critical state',
+    description: 'Very slow party — projected arrival 20+ days past snow-safe estimate (critical band).',
+    build: () => {
+      // Very slow: day=145, miles=1400 → projected = 145*(2195/1400) ≈ 227 → critical (>200)
+      const base = baseState('chip-critical');
+      return {
+        ...base,
+        day: 145,
+        date: { year: 1848, month: 9, day: 7 }, // ~day 145 from Apr 15
+        location: {
+          ...base.location,
+          milesTraveled: 1400,
+          previousLandmarkId: 'ft_hall',
+          nextLandmarkId: 'salmon_falls',
+          terrain: 'prairie' as const,
+          atLandmarkId: null
+        }
+      };
+    }
   }
 ];
 

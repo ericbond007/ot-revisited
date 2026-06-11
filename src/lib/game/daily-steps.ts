@@ -31,6 +31,7 @@ import { applyTrainShare } from './systems/train-share';
 import { applyHolidays } from './systems/holidays';
 import { applyNpcMoraleBaseline } from './systems/npc-morale';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
+import { checkSnowNews } from './systems/news';
 
 /** Per-day context a step may need beyond (state, rng). */
 export interface TickCtx {
@@ -94,6 +95,11 @@ export const POST_BRANCH_STEPS: readonly TickStep[] = [
   { id: 'adjustMorale',   scope: 'playerOnly', run: (s, rng) => adjustMorale(s, rng) }, // NPCs run applyNpcMoraleBaseline instead; stacking both double-counts the daily morale nudge
   { id: 'applyNpcMoraleBaseline', scope: 'npcOnly', run: (s, _rng, ctx) => (ctx.traveled ? applyNpcMoraleBaseline(s) : s) }, // gate mirrors npc-engine.ts step 1h: runs travel-days only
   { id: 'applyHolidays',  run: (s) => applyHolidays(s) },
+  // #1304-T3 — Seasonal snow-news schedule.  Uses sub-rng `snownews:${seed}`
+  // so it never disturbs the main daily RNG stream.  scope='all' so both
+  // player AND bot runs receive the signal on the same tick path — the
+  // identical code path is what makes the estimator signal-honest (T4).
+  { id: 'checkSnowNews',  run: (s) => checkSnowNews(s) },
 ];
 
 export const PRE_TRAVEL_STEPS: readonly TickStep[] = [

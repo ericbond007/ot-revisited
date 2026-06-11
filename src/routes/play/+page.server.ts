@@ -10,7 +10,7 @@ import { EVENTS } from '$lib/game/content/events';
 import { LANDMARK_ARRIVAL_EVENTS } from '$lib/game/content/landmark-arrival-events';
 import { applyWhoreTradingPostEarnings } from '$lib/game/professions/bonuses';
 import { restockPostIfDue, recordPostPurchases } from '$lib/game/systems/post-stock';
-import { addNews, generatePostGossip, generateNewspaper, applyNewspaper } from '$lib/game/systems/news';
+import { addNews, generatePostGossip, generateNewspaper, applyNewspaper, getFortSnowGossip } from '$lib/game/systems/news';
 import { maybeDeliverLetter } from '$lib/game/systems/letters';
 import { repairWagon, stayAtInn, gamble, visitBrothel, hireGuide, forgeOxShoes, useBathHouse } from '$lib/game/systems/town-services';
 import { joinTrain, leaveTrain } from '$lib/game/systems/wagon-train';
@@ -107,6 +107,18 @@ async function runTravelLoop(
         if (newsRng.chance(0.6)) {
           const item = generatePostGossip(state, newsRng, here.name);
           if (item) state = addNews(state, item);
+        }
+        // #1304-T3 — Fort gossip (Hall / Boise / Whitman Mission): in-season
+        // snow warnings from the fort factor / mission staff.  Only fires at
+        // the three pre-mountain forts; null at all other posts.  Stamps
+        // _firstSnowNewsDay if this is the first snow-news the player has heard
+        // (parallel to checkSnowNews on the daily tick path).
+        const fortSnowItem = getFortSnowGossip(state, here.name);
+        if (fortSnowItem) {
+          state = addNews(state, fortSnowItem);
+          if (state.flags._firstSnowNewsDay === undefined) {
+            state = { ...state, flags: { ...state.flags, _firstSnowNewsDay: state.day } };
+          }
         }
         // Letter from home — rare delivery on first arrival at a post
         // with mail service. No-op on repeat visits.
