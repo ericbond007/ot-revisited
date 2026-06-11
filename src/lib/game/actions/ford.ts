@@ -12,6 +12,11 @@ import { rollFordLoss } from '../systems/item-loss';
 import { exposureMult } from '../systems/warmth';
 import { adjustTribeAttitude, getTribeAttitude } from '../systems/tribe-relations';
 import { hasLiveLawyer } from '../professions/predicates';
+// #1388 T1 — seasonal depth helper. The ford-risk curve is unchanged;
+// we just swap in the seasonally-adjusted depth so May snowmelt and
+// August trickle produce different danger scores from the same static
+// landmark. Agents read the same helper → signal-honest.
+import { effectiveRiverDepth } from '../systems/river-season';
 
 /** #317c — lawyer's fee discount on ferries / tolls. The lawyer
  *  argues the receipt down (or just looks like he could litigate
@@ -267,7 +272,12 @@ export function ford(state: GameState, opts: FordOptions): GameState {
 
     case 'ford': {
       const rng = makeRng(`${s.seed}:action:ford:${s.day}:ford`);
-      const danger = (opts.river.depthFt / 2) * (opts.river.currentMph / 2);
+      // #1388 T1 — use seasonal effective depth so the same 3-ft landmark
+      // reads as 4.2 ft in May (snowmelt peak) vs 2.25 ft in August
+      // (late-summer trickle). The danger formula below is unchanged —
+      // only its depth input is now season-honest.
+      const effDepth = effectiveRiverDepth(opts.river, s.date, s.weather);
+      const danger = (effDepth / 2) * (opts.river.currentMph / 2);
 
       if (rng.chance(Math.min(0.7, danger / 10))) {
         const dmg = Math.round(rng.int(5, 20) * danger);

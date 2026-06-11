@@ -48,6 +48,10 @@ import {
   doctrineFor
 } from './schedule';
 import { oxHydration, HYDRATION_AMBER } from '../systems/ox-hydration';
+// #1388 T1 — seasonal river depth helper. Personas and the ford engine
+// share one helper so the agent's crossing-method decision and the
+// engine's damage roll read the same effective water level.
+import { effectiveRiverDepth } from '../systems/river-season';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
@@ -811,13 +815,56 @@ export const cautiousPersona: Persona = {
     return canHunt(state) && foodOnHand(state) < threshold;
   },
   pickFordMethod(state, here) {
-    // Cautious prefers safety: native_ferry > ferry > caulk > ford.
+    // #1388 T1 — Seasonal-depth-aware crossing choice. Period:
+    // Tabitha Brown's party (June 1846) paid the ferry at every
+    // high-water crossing rather than risk wetting the supplies.
+    // The cautious persona's ORDER is unchanged (native_ferry >
+    // ferry > caulk > ford) — what changes is the GATE: when the
+    // effective depth is shallow (August trickle ≤ 2.5 ft), even
+    // cautious fords to save the ferry fee, because the diaries
+    // agree the risk is negligible. When it is deep (June snowmelt
+    // ≥ 4 ft), cautious prefers the ferry even if cash is thin and
+    // will caulk as the last-resort before a naked ford.
+    //
+    // Low min party HP (< 40) biases one rung safer: a weakened
+    // party absorbs cold-water chill worse (Sager 1844: sick
+    // members drowned at the Snake where healthy ones walked out).
+    const effDepth = effectiveRiverDepth(
+      { depthFt: here.river?.depthFt ?? 3 },
+      state.date,
+      state.weather
+    );
+    const minHp = minPartyHealth(state);
+    const hpPenalized = minHp < 40; // bias one rung safer when party is hurt
+
+    // Shallow gate: safe enough to ford regardless of cost.
+    // Cautious fords when effective depth ≤ 2.5 ft AND party is healthy.
+    const shallowSafe = effDepth <= 2.5 && !hpPenalized;
+    // Deep gate: prefer ferry/native_ferry; caulk only when cash can't cover ferry.
+    const deepDanger = effDepth >= 4.0 || hpPenalized;
+
     const nf = here.river?.nativeFerry;
+    const ferryPrice = here.river?.ferryPrice ?? 5;
+
+    if (shallowSafe) {
+      // Shallow + healthy: ford is safe; skip the fee.
+      // Still take native_ferry if available (it costs goods, not cash).
+      if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
+        return 'native_ferry';
+      }
+      return 'ford';
+    }
+
+    // Normal or deep conditions: safety-first ordering.
     if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
       return 'native_ferry';
     }
-    if (state.cash >= (here.river?.ferryPrice ?? 5)) return 'ferry';
-    return 'caulk';
+    if (state.cash >= ferryPrice) return 'ferry';
+    if (deepDanger) {
+      // Deep + no ferry option: caulk before a naked ford.
+      return 'caulk';
+    }
+    return 'caulk'; // cautious never plain-fords a non-shallow river
   },
   shouldTradeAtPost(state, here) {
     if (state.cash < 10) return false;
@@ -1048,10 +1095,48 @@ export const balancedPersona: Persona = {
     return canHunt(state) && foodOnHand(state) < threshold;
   },
   pickFordMethod(state, here) {
-    // Balanced ferries when cash is comfortable, fords otherwise.
+    // #1388 T1 — Balanced reads effective depth + party HP to decide
+    // between ford and ferry. Original flavor preserved: balanced
+    // fords comfortable water and ferries when cash is ample. The
+    // new layer adds: shallow (≤ 2.5 ft) → always ford; deep
+    // (≥ 4 ft) → prefer ferry, caulk when cash is short; low min
+    // HP biases one rung safer.
+    //
+    // Period: Helen Carpenter (1857) paid the ferry at the Green
+    // River (June, high water) but forded the Big Blue (August,
+    // knee-deep) without hesitation — the sensible emigrant read
+    // the water, not just the price.
+    const effDepth = effectiveRiverDepth(
+      { depthFt: here.river?.depthFt ?? 3 },
+      state.date,
+      state.weather
+    );
+    const minHp = minPartyHealth(state);
+    const hpPenalized = minHp < 40;
+
     const ferryPrice = here.river?.ferryPrice ?? 5;
-    if (state.cash >= ferryPrice * 3) return 'ferry';
     const nf = here.river?.nativeFerry;
+
+    // Shallow gate: ford is safe, skip the fee.
+    if (effDepth <= 2.5 && !hpPenalized) {
+      if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
+        return 'native_ferry';
+      }
+      return 'ford';
+    }
+
+    // Deep or HP-penalized: prefer ferry when cash is ample.
+    const deepDanger = effDepth >= 4.0 || hpPenalized;
+    if (deepDanger) {
+      if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
+        return 'native_ferry';
+      }
+      if (state.cash >= ferryPrice) return 'ferry';
+      return 'caulk'; // cash can't cover ferry; caulk before naked ford
+    }
+
+    // Moderate depth: original balanced logic (ferry when cash comfortable).
+    if (state.cash >= ferryPrice * 3) return 'ferry';
     if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
       return 'native_ferry';
     }
@@ -1284,8 +1369,38 @@ export const aggressivePersona: Persona = {
     // otherwise. Time-on-the-trail is the priority.
     return canHunt(state) && foodOnHand(state) < 25;
   },
-  pickFordMethod() {
-    return 'ford';
+  pickFordMethod(state, here) {
+    // #1388 T1 — Aggressive still fords by default (cheapest, fastest),
+    // but concedes to reality on truly dangerous crossings. Period:
+    // even Reed (1846) paid ferries at the highest-water Green River
+    // and Platte — "ford" was the personality, not a death wish.
+    //
+    // Deep gate (≥ 4 ft effective): prefer ferry/native_ferry; caulk
+    // when cash can't cover the ferry — a washed wagon costs more days
+    // than the ferry fee. Low min HP (< 40) biases one rung safer.
+    // Everything else: ford (aggressive's default identity preserved).
+    const effDepth = effectiveRiverDepth(
+      { depthFt: here.river?.depthFt ?? 3 },
+      state.date,
+      state.weather
+    );
+    const minHp = minPartyHealth(state);
+    const hpPenalized = minHp < 40;
+    const deepDanger = effDepth >= 4.0 || hpPenalized;
+
+    if (!deepDanger) {
+      // Shallow or moderate: ford (aggressive default).
+      return 'ford';
+    }
+
+    // Deep or HP-penalized: prefer ferry; caulk when cash can't cover it.
+    const nf = here.river?.nativeFerry;
+    const ferryPrice = here.river?.ferryPrice ?? 5;
+    if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
+      return 'native_ferry';
+    }
+    if (state.cash >= ferryPrice) return 'ferry';
+    return 'caulk'; // cash can't cover ferry → caulk before naked deep ford
   },
   shouldTradeAtPost(state, here) {
     // #916 — recalibrated. Period reality: Bidwell 1841 / Reed 1846
