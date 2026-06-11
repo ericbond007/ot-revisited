@@ -20,7 +20,7 @@ export const CANNIBAL_FRESHNESS_DAYS = 5;
 const FOOD_ITEMS = [
   'flour', 'bacon', 'beans', 'hardtack', 'jerky', 'pemmican', 'salt_pork',
   'game_meat', 'berries', 'egg', 'milk', 'dried_fruit', 'cheese', 'butter',
-  'cornmeal'
+  'cornmeal', 'dried_salmon'
 ] as const;
 
 /** True iff the party has any food item with quantity > 0. The gate

@@ -7,6 +7,7 @@ import { washAll } from '../systems/cleanliness';
 import { deathMoralePenalty } from '../professions/bonuses';
 import { tribesAtMile, getTribe } from '../content/tribes';
 import { getTribeAttitude, adjustTribeAttitude } from '../systems/tribe-relations';
+import { getWagon } from '../content/wagons';
 // #939j — shared cannibal math (applyCannibalize + the food/fresh-corpse
 // predicates) lives in systems/cannibal.ts. Camp actions use it for the
 // reinstated cannibalism_corpse path; cannibalism_straws kept structurally
@@ -73,7 +74,8 @@ export type CampActionId =
   | 'raid_natives'
   | 'take_from_train'
   | 'set_traps'
-  | 'teach_kids';
+  | 'teach_kids'
+  | 'slaughter_ox';
 
 function logLine(s: GameState, text: string): GameState {
   return { ...s, eventLog: [...s.eventLog, { day: s.day, text }] };
@@ -1120,6 +1122,81 @@ function bumpGuilt(state: GameState, weight: number): GameState {
   };
 }
 
+// #1284 T4 — Ox slaughter camp action.
+// Period anchor: every emigrant guide treated cattle-as-larder as an
+// accepted fallback when provisions ran short. Butchering an ox was
+// a morning's work (approx. 4 hours) for experienced frontiersmen —
+// no specialized tools required beyond what every wagon carried.
+// The freshness clock is the same spoil window as hunting game (3 days)
+// to incentivize curing via the cure_meat action. Yoke-minimum guard
+// (#107): slaughtering below the wagon's pull requirement strands
+// the party, so it's hard-blocked.
+//
+// Yield: ~325 lb game_meat (period dressed weight of a 900–1,000 lb
+// working ox in trail condition; Ingalls 1852 diary, McCall 1849
+// diary both record 250–350 lb dressed). Sets the standard
+// _gameMeatSpoilDay = day + 3 clock.
+
+/** Returns the live oxen sorted weakest-first: lowest health, then
+ *  highest fatigue as tie-breaker. Used by slaughter_ox. */
+function liveOxenWeakestFirst(s: GameState) {
+  return s.oxen.slice().sort((a, b) => {
+    if (a.health !== b.health) return a.health - b.health; // lower health first
+    return b.fatigue - a.fatigue; // higher fatigue first (more worn-out)
+  });
+}
+
+/** True iff the player can slaughter at least one ox without dropping
+ *  below the wagon's yoke minimum. Exported so engine-pausable can
+ *  reuse without importing the action. */
+export function canSlaughterOx(s: GameState): boolean {
+  const wagonModel = getWagon(s.wagon.model);
+  const liveCount = s.oxen.length; // Ox array only contains live oxen
+  return liveCount > wagonModel.minTeam;
+}
+
+const slaughterOx: CampAction = {
+  id: 'slaughter_ox',
+  label: 'Slaughter an ox',
+  sub: '4 hr · kills weakest ox · +325 lb fresh meat (3-day clock)',
+  icon: '🥩',
+  hourCost: 4,
+  // Never hidden — it's a legitimate provisioning choice, not a
+  // desperation-only secret like cannibalism. Players should always
+  // be able to see and plan around it.
+  availability: (s) => {
+    if (s.oxen.length === 0) {
+      return { available: false, reason: 'No oxen in the team' };
+    }
+    if (!canSlaughterOx(s)) {
+      const wagonModel = getWagon(s.wagon.model);
+      return {
+        available: false,
+        reason: `Need at least ${wagonModel.minTeam + 1} oxen — ${wagonModel.minTeam} required to pull the wagon`
+      };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    // Defensive — availability should prevent reaching here without a spare
+    if (!canSlaughterOx(s)) return s;
+    // Pick the weakest ox: lowest health, tie-break on highest fatigue
+    const sorted = liveOxenWeakestFirst(s);
+    const victim = sorted[0];
+    // Remove from team
+    const oxen = s.oxen.filter((o) => o.id !== victim.id);
+    const inventory: Record<string, number> = {
+      ...s.inventory,
+      game_meat: (s.inventory.game_meat ?? 0) + 325
+    };
+    const flags = { ...s.flags, _gameMeatSpoilDay: s.day + 3 };
+    return logLine(
+      { ...s, oxen, inventory, flags },
+      `Slaughtered ${victim.id}. Dressed out ~325 lb of beef. Eat it fresh or cure it within 3 days.`
+    );
+  }
+};
+
 // #939j — cannibalism_corpse REINSTATED (reversing the #205 removal).
 // Player-initiated path: when there's a fresh corpse AND no food, the
 // player can take the body from the camp grid without waiting for the
@@ -1591,6 +1668,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   raidNatives,
   // #314 Theft from the company — hidden until you're in a train
   takeFromTrain,
+  // Ox slaughter — visible always, blocks at yoke minimum (#1284 T4)
+  slaughterOx,
   // Desperation — hidden until starvation
   cannibalism_corpse,
   cannibalism_straws
@@ -1623,6 +1702,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   pan_for_gold: panForGold,
   raid_natives: raidNatives,
   take_from_train: takeFromTrain,
+  slaughter_ox: slaughterOx,
   cannibalism_corpse,
   cannibalism_straws
 };

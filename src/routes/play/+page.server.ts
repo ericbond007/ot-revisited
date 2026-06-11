@@ -182,6 +182,14 @@ export const actions: Actions = {
     delete (flags as Record<string, unknown>)._travelRemaining;
     delete (flags as Record<string, unknown>)._pendingTravelSummary;
     delete (flags as Record<string, unknown>)._pendingTravelSummaryDay;
+    // #1284 — salmon-band encounter context flags. Cleaned up here as the
+    // primary path (player resolves via modal). The apply() functions also
+    // delete these as a belt-and-suspenders guard for the bot path which
+    // routes through applyPendingChoice rather than this server action.
+    delete (flags as Record<string, unknown>)._salmonBandOffer;
+    delete (flags as Record<string, unknown>)._salmonBandTribeId;
+    delete (flags as Record<string, unknown>)._salmonBandGoodsPrice;
+    delete (flags as Record<string, unknown>)._salmonBandCashPrice;
 
     // Append the travel summary AFTER the event's own log entries so the order
     // reads: [event resolution lines] → "Traveled N days (M mi) before being stopped."

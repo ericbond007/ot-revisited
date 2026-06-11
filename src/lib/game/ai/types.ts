@@ -192,6 +192,12 @@ export interface Persona {
    *  B surfaces this for #287; NPC tick wiring lands with #287
    *  named profiles. */
   shouldCannibalize(state: GameState): boolean;
+  /** #1284 T4 — true when the persona would slaughter a spare ox to
+   *  build meat reserves before starvation. Default threshold ~5 days
+   *  of consumption with a spare ox above the wagon yoke minimum.
+   *  Cautious triggers earlier (~7 days); aggressive/pace_pusher hold
+   *  longer (~3 days, prioritizing team strength and pace). */
+  shouldSlaughterOx(state: GameState): boolean;
   /** When an NPC #280c event grows choices (today they're all
    *  choice-less mechanical mutations), this picks one. Returns null
    *  to take the default. Surface-only today; consumer lands when

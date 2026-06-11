@@ -74,7 +74,8 @@ describe('tickNpcWagon — per-wagon attrition', () => {
 
   it('starves the party when food runs out', () => {
     const train = freshTrain();
-    let wagon: NpcWagonState = { ...train.companions[0], inventory: {} };
+    // Pin to yoke minimum so #1284 maybeSlaughterOx doesn't prevent starvation
+    let wagon: NpcWagonState = { ...train.companions[0], inventory: {}, oxen: train.companions[0].oxen.slice(0, 2) };
     const startHp = wagon.party[0].health;
     for (let i = 0; i < 5; i++) {
       wagon = tickNpcWagon(
@@ -303,14 +304,15 @@ describe('#280c — NPC events bubble to player eventLog', () => {
     let s = joinTrain(game(), makeRng('j-pool')).state;
     // Target wagon has 1 lb; all others have 250 lb flour and high
     // morale → they should pool enough to skip the player ask.
+    // Pin all companions to yoke minimum so #1284 maybeSlaughterOx doesn't intercept.
     s = {
       ...s,
       wagonTrain: {
         ...s.wagonTrain!,
         companions: s.wagonTrain!.companions.map((c, i) =>
           i === 0
-            ? { ...c, inventory: { flour: 1 } as Record<string, number> }
-            : { ...c, inventory: { flour: 250, bacon: 50 } as Record<string, number>, morale: 80 }
+            ? { ...c, oxen: c.oxen.slice(0, 2), inventory: { flour: 1 } as Record<string, number> }
+            : { ...c, oxen: c.oxen.slice(0, 2), inventory: { flour: 250, bacon: 50 } as Record<string, number>, morale: 80 }
         )
       }
     };
@@ -335,8 +337,9 @@ describe('#280c — NPC events bubble to player eventLog', () => {
         ...s.wagonTrain!,
         // Target empty + other wagons empty so contributions don't
         // silently resolve before the player ask.
+        // Pin to yoke minimum so #1284 maybeSlaughterOx doesn't intercept.
         companions: s.wagonTrain!.companions.map((c, i) =>
-          i === 0 ? { ...c, inventory: { flour: 1 } } : { ...c, inventory: {} as Record<string, number> }
+          i === 0 ? { ...c, oxen: c.oxen.slice(0, 2), inventory: { flour: 1 } } : { ...c, oxen: c.oxen.slice(0, 2), inventory: {} as Record<string, number> }
         )
       }
     };
@@ -360,8 +363,9 @@ describe('#280c — NPC events bubble to player eventLog', () => {
       morale: 80,
       wagonTrain: {
         ...s.wagonTrain!,
+        // Pin to yoke minimum so #1284 maybeSlaughterOx doesn't intercept.
         companions: s.wagonTrain!.companions.map((c, i) =>
-          i === 0 ? { ...c, inventory: { flour: 1 }, morale: 70 } : { ...c, inventory: {} as Record<string, number> }
+          i === 0 ? { ...c, oxen: c.oxen.slice(0, 2), inventory: { flour: 1 }, morale: 70 } : { ...c, oxen: c.oxen.slice(0, 2), inventory: {} as Record<string, number> }
         )
       }
     };

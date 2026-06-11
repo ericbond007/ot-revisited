@@ -48,6 +48,8 @@ describe('#907 — persona.shouldCannibalize gates maybeCannibalize', () => {
     const starving: NpcWagonState = {
       ...w,
       personaId: 'cautious',
+      // Pin to yoke minimum so #1284 maybeSlaughterOx doesn't fire first
+      oxen: w.oxen.slice(0, 2),
       inventory: emptyFood(w.inventory),
       party: w.party.map((m) =>
         m.id === corpseId
@@ -68,6 +70,8 @@ describe('#907 — persona.shouldCannibalize gates maybeCannibalize', () => {
     const starving: NpcWagonState = {
       ...w,
       personaId: 'faithful',
+      // Pin to yoke minimum so #1284 maybeSlaughterOx doesn't fire first
+      oxen: w.oxen.slice(0, 2),
       inventory: emptyFood(w.inventory),
       party: w.party.map((m) =>
         m.id === corpseId
@@ -88,6 +92,8 @@ describe('#907 — persona.shouldCannibalize gates maybeCannibalize', () => {
     const starving: NpcWagonState = {
       ...w,
       personaId: undefined,
+      // Pin to yoke minimum so #1284 maybeSlaughterOx doesn't fire first
+      oxen: w.oxen.slice(0, 2),
       inventory: emptyFood(w.inventory),
       party: w.party.map((m) =>
         m.id === corpseId

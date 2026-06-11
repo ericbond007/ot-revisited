@@ -58,12 +58,13 @@ function crisisState(): GameState {
     flags: { ...withTrain.flags, _lastEventDay: withTrain.day },
     wagonTrain: {
       ...withTrain.wagonTrain!,
+      // Pin to yoke minimum so #1284 maybeSlaughterOx doesn't intercept the starvation signal.
       companions: withTrain.wagonTrain!.companions.map((c, i) =>
         i === 0
           // companion[0]: 1 lb flour — will be consumed this tick → food = 0
-          ? { ...c, inventory: { flour: 1 } as Record<string, number> }
+          ? { ...c, oxen: c.oxen.slice(0, 2), inventory: { flour: 1 } as Record<string, number> }
           // all others: empty — can't silently solve the crisis
-          : { ...c, inventory: {} as Record<string, number> }
+          : { ...c, oxen: c.oxen.slice(0, 2), inventory: {} as Record<string, number> }
       )
     }
   };

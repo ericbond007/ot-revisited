@@ -51,23 +51,34 @@ describe('#1163 — nextSupplyDistance filters by abandonedAfterYear', () => {
   it('after fort_hall in 1857 (Boise gated >1855, Hall gated >1856) — skips both', () => {
     // Just past fort_hall (mile 1290). Year 1857.
     // Boise abandonedAfterYear: 1855 → skip. Walla Walla also after-1855
-    // gate. Whitman Mission abandonedAfterYear: 1847. So next supply
-    // should be The Dalles (~1950) or beyond.
+    // gate. Whitman Mission abandonedAfterYear: 1847.
+    //
+    // #1284 re-baseline: salmon_falls is now kind:'trading_post' (native
+    // fishery post, no year-gate), so it is the next supply stop after
+    // ft_hall at 89 mi — NOT The Dalles. The original test expected
+    // the_dalles because salmon_falls was kind:'landmark' and invisible
+    // to nextSupplyDistance. Now salmon_falls correctly appears first.
     const s = positionPast('ft_hall', 1857);
     const dist = nextSupplyDistance(s);
     const distTo = (id: string) => cumMilesAt(id) - s.location.milesTraveled;
-    // Should NOT be the gap to Boise (~280 mi)
+    // Should NOT be the gap to Boise (~280 mi) — still correct; Boise is gated
     expect(dist).not.toBeCloseTo(distTo('ft_boise'), 0);
-    // Should be at-or-past The Dalles (the next non-abandoned supply post)
-    expect(dist).toBeGreaterThanOrEqual(distTo('the_dalles'));
+    // Should be the gap to salmon_falls (89 mi post-#1284)
+    expect(dist).toBeCloseTo(distTo('salmon_falls'), 0);
   });
 
-  it('after fort_hall in 1850 (everything open) — returns Boise gap (regression)', () => {
-    // Year 1850: ft_boise NOT abandoned (gate is 1855+); should plan for it.
+  it('after fort_hall in 1850 (everything open) — returns salmon_falls gap (#1284 re-baseline)', () => {
+    // Year 1850: ft_boise NOT abandoned (gate is 1855+).
+    //
+    // #1284 re-baseline: salmon_falls is now kind:'trading_post' (native
+    // fishery post at mile 1380, 89 mi past ft_hall). Previously this test
+    // expected ft_boise (279 mi) because salmon_falls was kind:'landmark'
+    // and invisible to nextSupplyDistance. Salmon_falls is now correctly
+    // the nearest supply stop on this leg.
     const s = positionPast('ft_hall', 1850);
     const dist = nextSupplyDistance(s);
-    const distToBoise = cumMilesAt('ft_boise') - s.location.milesTraveled;
-    expect(dist).toBeCloseTo(distToBoise, 0);
+    const distToSalmonFalls = cumMilesAt('salmon_falls') - s.location.milesTraveled;
+    expect(dist).toBeCloseTo(distToSalmonFalls, 0);
   });
 });
 

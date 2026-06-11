@@ -17,6 +17,12 @@ export const PRICES: Record<string, PriceEntry> = {
   salt_pork:   { buy: 0.45, sell: 0.22 },
   hardtack:    { buy: 0.15, sell: 0.08 },
   dried_fruit: { buy: 0.60, sell: 0.35 },
+  // Dried salmon — bacon-tier (0.40/lb). Period: Frizzell 1852 traded one
+  // Barlow pocket knife (worth ~$0.40 at Independence) for 8 lb of fish —
+  // that's effectively $0.05/lb barter, but cash-poor bands charged closer
+  // to 0.35–0.50 when cash was available. Set at bacon buy to keep the
+  // parity intuitive; sell side slightly lower (posts have limited demand).
+  dried_salmon: { buy: 0.40, sell: 0.18 },
   pemmican:    { buy: 0.80, sell: 0.45 },
   // Jerky is premium shelf-stable meat — priced between bacon and pemmican.
   jerky:       { buy: 0.65, sell: 0.40 },

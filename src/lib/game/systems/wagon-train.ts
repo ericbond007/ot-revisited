@@ -121,7 +121,7 @@ const FOOD_KEYS_FOR_STARVATION = [
   'game_meat', 'berries', 'egg', 'milk',
   'jerky', 'pemmican', 'salt_pork', 'bacon',
   'flour', 'cornmeal', 'beans', 'hardtack',
-  'dried_fruit', 'cheese', 'butter'
+  'dried_fruit', 'cheese', 'butter', 'dried_salmon'
 ];
 
 function totalFood(inv: Record<string, number>): number {

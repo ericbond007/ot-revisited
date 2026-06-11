@@ -41,6 +41,7 @@ import type {
 import { getPersona } from '../ai/personas';
 import { bundleCampActions } from '../ai/bundle';
 import { CAMP_ACTIONS_BY_ID } from '../actions/camp-actions';
+import { getWagon } from '../content/wagons';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
 import { rollStrayMorning } from './strays';
 import { recoverOxenFatigue, recoverOxenHealth } from './oxen';
@@ -175,6 +176,51 @@ const NPC_FIRE_CHANCE = 0.06;
 // `tickNpcWagon`). Engine version pulls deathCause from worst
 // condition, hits child-death morale, and sets the outcome='wiped'
 // flag — which is why the local `updateOutcome` parallel could go too.
+
+// #1284 T4 — NPC auto-slaughter. Before cannibalizing a corpse, an NPC
+// wagon at food=0 will slaughter its weakest spare ox if above the yoke
+// minimum. Historical precedent: every emigrant guide treated the team
+// as a rolling larder of last resort; NPC families should not eat their
+// dead while healthy oxen stand in harness.
+//
+// Gate: food=0, live oxen count > wagon minTeam, persona.shouldSlaughterOx.
+// Effect: remove weakest ox, add 325 lb game_meat, set spoil clock (day+3).
+// No rng consumed — slaughter is deterministic given food=0 + spare ox.
+function maybeSlaughterOx(
+  wagon: NpcWagonState,
+  ctx: NpcTickContext
+): { wagon: NpcWagonState; playerLog?: string } {
+  const env = trainEnv(ctx);
+  const synth = synthesizeWagonState(wagon, env);
+  if (hasFoodOnHand(synth)) return { wagon };
+  if (synth.oxen.length === 0) return { wagon };
+  const wagonModel = getWagon(synth.wagon.model);
+  if (synth.oxen.length <= wagonModel.minTeam) return { wagon }; // at yoke minimum
+  // Persona gate — pace_pusher / aggressive hold oxen longer, cautious slaughters earlier
+  const persona = getPersona(wagon.personaId ?? 'balanced');
+  if (!persona.shouldSlaughterOx(synth)) return { wagon };
+  // Kill weakest ox (lowest health, tie-break highest fatigue)
+  const sorted = synth.oxen.slice().sort((a, b) => {
+    if (a.health !== b.health) return a.health - b.health;
+    return b.fatigue - a.fatigue;
+  });
+  const victim = sorted[0];
+  const oxen = synth.oxen.filter((o) => o.id !== victim.id);
+  const inventory: Record<string, number> = {
+    ...synth.inventory,
+    game_meat: (synth.inventory.game_meat ?? 0) + 325
+  };
+  const flags = { ...synth.flags, _gameMeatSpoilDay: synth.day + 3 };
+  const ticked = {
+    ...synth, oxen, inventory, flags,
+    eventLog: [...synth.eventLog, { day: synth.day, text: `Slaughtered ${victim.id}. Dressed out ~325 lb of beef.` }]
+  };
+  const next = projectWagonDeltas(ticked, wagon);
+  return {
+    wagon: next,
+    playerLog: `The ${wagon.name} family slaughtered ${victim.id} for provisions. (${wagon.name})`
+  };
+}
 
 // #288 — NPC auto-cannibalism. Period reality: Donner Party survivors
 // did this without consultation when food=0 and a fresh body was
@@ -490,8 +536,16 @@ export function tickNpcWagon(
     }
   }
 
-  // 7. NPC auto-cannibalism (#288). When food=0 AND there's a fresh
+  // 7a. #1284 T4 — NPC auto-slaughter. Fires BEFORE cannibalize: oxen
+  // are a more dignified larder than corpses and should go first when
+  // a spare exists above the yoke minimum.
+  const slaughterResult = maybeSlaughterOx(next, ctx);
+  next = slaughterResult.wagon;
+  if (slaughterResult.playerLog) playerLogs.push(slaughterResult.playerLog);
+
+  // 7b. NPC auto-cannibalism (#288). When food=0 AND there's a fresh
   // adult corpse, the survivors take the body. Donner Party precedent.
+  // Now only fires when slaughter wasn't available/triggered.
   const cannibalResult = maybeCannibalize(next, ctx, rng);
   next = cannibalResult.wagon;
   if (cannibalResult.playerLog) playerLogs.push(cannibalResult.playerLog);

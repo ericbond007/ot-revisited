@@ -12,13 +12,14 @@ import { getLandmark } from '../content/landmarks';
 // Coffee / tea / sugar are treats, not main calories — excluded.
 type NutritionGroup = 'starch' | 'meat' | 'fresh';
 
-const NUTRITION_GROUP: Record<string, NutritionGroup> = {
+export const NUTRITION_GROUP: Record<string, NutritionGroup> = {
   flour:       'starch',
   hardtack:    'starch',
   beans:       'starch',
   bacon:       'meat',
   jerky:       'meat',
   pemmican:    'meat',
+  dried_salmon: 'meat',
   game_meat:   'meat',
   berries:     'fresh',
   egg:         'fresh',

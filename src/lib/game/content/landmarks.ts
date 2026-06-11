@@ -630,11 +630,10 @@ export const LANDMARKS: readonly Landmark[] = [
   // (#1281 — splits the massacre_rocks→salmon_falls leg (was 45 mi):
   // rock_creek_snake takes 22 mi, salmon_falls reduced to 23 mi.)
   { id: 'rock_creek_snake',    name: 'Rock Creek',          milesFromPrevious: 22,  terrain: 'desert',    kind: 'landmark', waterSource: true },
-  // #251 — Salmon Falls (mile ~1380 → ~1389 post-#1281, ID). Shoshone fishery on the
-  // upper Snake — bands speared and dried thousands of salmon every
-  // summer. Period emigrants traded knives, beads, and tobacco for
-  // fresh fish. The salmon-trade encounter (#239) already covers the
-  // gameplay; this entry is the geographic anchor.
+  // #251 — Salmon Falls (mile ~1380 → ~1389 post-#1281, ID). Bannock-Shoshone
+  // fishery on the upper Snake — bands speared and dried thousands of salmon
+  // every summer on drying racks above the falls. Period emigrants traded
+  // knives, beads, and tobacco for dried fish.
   // #963 audit fix: terrain was 'river' but kind is 'landmark' (scenic
   // Snake-River waterfall, not a ford). 'river' terrain has milesPerDay
   // multiplier 0 — fine for kind:'river' fords where the bot uses ford()
@@ -649,7 +648,28 @@ export const LANDMARKS: readonly Landmark[] = [
   // 11 family-wagon dehydration wipes died on this 110-mi leg with no
   // water access). The descent to the falls is the historical relief.
   // (#1281 — mFP reduced from 45 to 23; rock_creek_snake absorbs 22 mi.)
-  { id: 'salmon_falls',        name: 'Salmon Falls',        milesFromPrevious: 23, terrain: 'desert',    kind: 'landmark', waterSource: true },
+  // #1284 — converts from scenic landmark to native trading post. Bannock-
+  // Shoshone bands sold dried salmon to emigrants here every summer season.
+  // postKind:'native' wires the attitude-gate (hostile Bannock → camp empty).
+  // waterSource retained — the Snake River is still right here.
+  { id: 'salmon_falls', name: 'Salmon Falls', milesFromPrevious: 23, terrain: 'desert',
+    kind: 'trading_post', waterSource: true,
+    postKind: 'native',
+    tribeId: 'bannock',
+    stockScale: 1.4,
+    // Generous dried_salmon scale — the fishery produces it in abundance.
+    // Other trade goods reflect what emigrant diaries show: tobacco and
+    // beads for fish, knives and mirrors for larger purchases.
+    barterPreferred: ['tobacco', 'beads', 'pocket_knife', 'mirror', 'vermilion', 'calico'],
+    blurb: "Bannock-Shoshone fish camp at the Snake River falls. Drying racks stretch the length of the bank, heavy with split salmon. Nesmith 1843: 'coming daily to sell dried salmon.' Frizzell 1852 traded a Barlow knife for eight pounds.",
+    stock: [
+      'dried_salmon',
+      // Period trade goods emigrants could buy here: moccasins from tanning
+      // scraps; buffalo robes in summer were lighter stock than the Laramie
+      // plains, but available. Pemmican (rendered fat + dried meat) in small
+      // quantities. Tobacco the bands sought, sold as a courtesy.
+      'moccasins', 'pemmican', 'buffalo_robe',
+    ] },
   { id: 'snake_three_island',  name: 'Three Island Crossing', milesFromPrevious: 30, terrain: 'river',   kind: 'river',
     river: {
       depthFt: 5.0, currentMph: 3, ferryPrice: 6,
@@ -769,7 +789,11 @@ export const LANDMARKS: readonly Landmark[] = [
       // a barrel for tea ceremonies and traded modest amounts to
       // emigrants. Dried fruit kept here uniquely (orchard farm-produced
       // — the one place past Independence to find it per Carpenter 1857).
+      // dried_salmon added #1284: Cayuse and Nez Perce bands regularly
+      // traded dried Columbia salmon at Waiilatpu; Whitman's letters note
+      // the mission bought and resold surplus fish to arriving emigrants.
       'flour', 'beans', 'bacon', 'sugar', 'dried_fruit', 'salt', 'saleratus', 'lard',
+      'dried_salmon',
       'milk_cow', 'butter', 'cheese',
       // Light medical — Marcus had a kit, not a pharmacy.
       'bandages', 'quinine', 'laudanum',
@@ -837,7 +861,10 @@ export const LANDMARKS: readonly Landmark[] = [
     innNightlyRate: 2,
     blurb: "A river-port town at the head of the Columbia gorge. End-of-trail chaos: everything you forgot, plus comforts for the final stretch — fiddles, Bibles, good boots. Prices are ruinous.",
     stock: [
-      'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'sugar', 'coffee', 'tea',
+      // dried_salmon added #1284: Columbia River ports traded dried salmon
+      // extensively; Chinook bands at The Dalles ran the largest fish market
+      // on the plateau (Fremont 1843 estimate: millions of lbs/year).
+      'flour', 'beans', 'bacon', 'hardtack', 'jerky', 'dried_fruit', 'dried_salmon', 'sugar', 'coffee', 'tea',
       'gunpowder', 'lead_pig', 'lead_balls', 'percussion_caps', 'bullet_mold', 'bandages', 'quinine', 'laudanum', 'calomel', 'patent_medicine',
       'epsom_salts', 'camphor', 'paregoric', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket', 'tent',

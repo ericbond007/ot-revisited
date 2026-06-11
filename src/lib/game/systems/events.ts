@@ -75,6 +75,18 @@ export function rollEvent(state: GameState, rng: Rng, opts: RollOptions = {}): G
 export function resolveEvent(state: GameState, event: GameEvent, choiceId: string, rng: Rng): GameState {
   const choice = event.choices.find((c) => c.id === choiceId);
   if (!choice) throw new Error(`resolveEvent: unknown choice "${choiceId}" for event "${event.id}"`);
+
+  // Guard: if the choice has an `enabled` predicate and it evaluates false
+  // for the current state, this is an illegal submission (crafted POST or
+  // a state that changed between modal render and submission). No-op the
+  // choice and return state unchanged rather than applying an effect that
+  // could produce negative cash, duplicate grants, etc. The bot path also
+  // routes through here via applyPendingChoice, so bots are protected too.
+  if (choice.enabled && !choice.enabled(state)) {
+    console.warn(`resolveEvent: choice "${choiceId}" on event "${event.id}" is disabled for current state — no-op`);
+    return state;
+  }
+
   const applied = choice.apply(state, rng);
   // Audited choices (silentLog) write their own outcome line in apply().
   // Unaudited choices keep getting the auto-appended "Title: label." entry
