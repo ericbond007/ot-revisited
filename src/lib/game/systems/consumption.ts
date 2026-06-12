@@ -5,7 +5,7 @@ import { hasLiveFarmer, hasLiveDoctor } from '../professions/predicates';
 import { weatherWaterMult } from './weather';
 import { waterborneDiseaseModifier } from './water-purity';
 import { dayTempF } from './temperature';
-import { getLandmark } from '../content/landmarks';
+import { getLandmark, LANDMARKS } from '../content/landmarks';
 
 // Food → nutrition group mapping for the varied-diet bonus (#110).
 // Drawing from ≥2 of these groups in one day = +1 morale that day.
@@ -293,6 +293,107 @@ export const DIRTY_WATER_DISEASE_CHANCE_DOCTOR = 0.0125;
  *  chance, coffee/tea modifier, and doctor gate are unchanged.
  *  Dave 2026-06-11; amends design-doc §3. */
 export const CHILD_DIRTY_WATER_RISK_MULT = 1.5;
+
+/** #1389 — Asiatic cholera clustered on the Platte flood plain, 1849–1853
+ *  (Altonen, PSU 2000). The river water itself was the vector; emigrants
+ *  could not distinguish it from safe water. "Rarely mentioned in diaries
+ *  once they passed Fort Laramie." This constant gates the corridor spatially.
+ *  Derived at module load from LANDMARKS (same source as runningMilesTo in
+ *  travel.ts, but imported directly to avoid the travel→consumption circular
+ *  init error that fires when consumption.ts executes at module scope before
+ *  travel.ts's own LANDMARKS binding is resolved). */
+function _runningMilesTo(id: string): number {
+  let sum = 0;
+  for (const l of LANDMARKS) {
+    sum += l.milesFromPrevious;
+    if (l.id === id) return sum;
+  }
+  return sum;
+}
+export const CHOLERA_CORRIDOR_END_MI: number = _runningMilesTo('ft_laramie');
+
+/** #1389 — peak corridor years (Asiatic cholera on the Platte). Outside
+ *  these years the ambient channel is silent; arrival events still fire
+ *  but don't bite (historical: near-zero incidence 1845 / 1856–57). */
+export const CHOLERA_CORRIDOR_YEARS: readonly number[] = [1849, 1850, 1851, 1852, 1853];
+
+/** #1389 — ambient daily chance per party member inside the corridor.
+ *  Calibration: corridor ≈ 600 mi ≈ 45 travel days for a 6-soul party
+ *  = 270 member-days; at 0.005 that's ~1.35 expected onsets/party-transit,
+ *  landing in the 15–25% attack-rate band (Unruh / Mattes / Bashore).
+ *  Tune by year-sweep to land corridor-year deaths/party at 0.21–0.36. */
+export const CORRIDOR_AMBIENT_CHOLERA_CHANCE = 0.005;
+export const CORRIDOR_AMBIENT_CHOLERA_CHANCE_DOCTOR = 0.0025;
+
+/** Roll ambient Asiatic cholera for each party member in the Platte corridor.
+ *  Runs only in CHOLERA_CORRIDOR_YEARS AND before Fort Laramie.
+ *  Inflicts cholera only (this channel is specifically Asiatic cholera; the
+ *  dirty-keg channel keeps its cholera/dysentery pick).
+ *  Coordination: runs AFTER applyDirtyWaterRisk on the spine; if that step
+ *  already inflicted a waterborne condition today (daysSinceOnset === 0), this
+ *  step skips — at most ONE waterborne infection per day across both channels.
+ *  We detect "dirty channel already bit today" by scanning for any cholera or
+ *  dysentery condition with daysSinceOnset === 0 (onset = today). This avoids
+ *  shared mutable state and remains correct regardless of spine reordering. */
+export function applyCholeraCorridorRisk(
+  state: GameState,
+  rng: { chance: (p: number) => boolean }
+): GameState {
+  // Gate 1: corridor years only (Asiatic cholera largely absent outside them).
+  if (!CHOLERA_CORRIDOR_YEARS.includes(state.date.year)) return state;
+  // Gate 2: before Fort Laramie — "rarely mentioned past Laramie" (Altonen).
+  if (state.location.milesTraveled >= CHOLERA_CORRIDOR_END_MI) return state;
+
+  // At-most-one-per-day coordination: if the dirty-water channel already
+  // inflicted any cholera or dysentery today (daysSinceOnset === 0), skip.
+  // This is the cleanest mechanism — no extra flag, no return-value contract,
+  // just a scan of onset state that survives any future reordering.
+  const dirtyAlreadyBit = state.party.some((m) =>
+    !m.dead &&
+    m.conditions.some(
+      (c) => (c.id === 'cholera' || c.id === 'dysentery') && c.daysSinceOnset === 0
+    )
+  );
+  if (dirtyAlreadyBit) return state;
+
+  const baseChance = hasLiveDoctor(state)
+    ? CORRIDOR_AMBIENT_CHOLERA_CHANCE_DOCTOR
+    : CORRIDOR_AMBIENT_CHOLERA_CHANCE;
+
+  // Coffee/tea accidental-boil protection — they don't know why it works,
+  // just that the brew tastes better and they get sick less. LOAD-BEARING.
+  const purityMod = waterborneDiseaseModifier(state);
+  const adultChance = baseChance * purityMod;
+  // #1259 §1b — children roll at 1.5× (same multiplier, same reason).
+  const childChance = adultChance * CHILD_DIRTY_WATER_RISK_MULT;
+
+  // Adults first, then children — stream-stability pattern from #1259 §1b.
+  // At most one infection returned per call.
+  const candidates = [
+    ...state.party.filter((m) => !m.dead && m.kind === 'adult'),
+    ...state.party.filter((m) => !m.dead && m.kind === 'child')
+  ];
+  for (const member of candidates) {
+    const rollChance = member.kind === 'child' ? childChance : adultChance;
+    if (rng.chance(rollChance)) {
+      // Skip if already carrying cholera (can't double-infect).
+      if (member.conditions.some((c) => c.id === 'cholera')) continue;
+      return {
+        ...state,
+        party: state.party.map((m) =>
+          m.id === member.id
+            ? { ...m, conditions: [...m.conditions, { id: 'cholera', daysSinceOnset: 0 }] }
+            : m
+        ),
+        eventLog: [
+          ...state.eventLog,
+          { day: state.day, text: `${member.name} took sick with cholera — the river water.` }
+        ]
+      };
+    }
+  }
+  return state;
+}
 
 /** Roll waterborne illness for each party member drinking dirty water today.
  *  Children roll at chance × CHILD_DIRTY_WATER_RISK_MULT (#1259 §1b).
