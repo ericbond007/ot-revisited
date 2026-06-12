@@ -124,6 +124,44 @@ export function gapAwareWaterBagTarget(state: GameState): number {
   return effectiveGapMiles(state) >= 200 ? 4 : 2;
 }
 
+/** #1388 T2 — Mountain miles the party will cross before the next
+ *  supply stop. Scans CUM_MILES from the wagon's current position to
+ *  the next trading_post / end landmark (same "next supply" definition
+ *  as nextSupplyDistance), summing the milesFromPrevious of every leg
+ *  whose terrain is 'mountains'.
+ *
+ *  Returns 0 when the next gap is all flat terrain (Platte corridor)
+ *  or when the wagon is past the last supply stop. A value ≥ 40
+ *  signals a meaningful mountain leg ahead — the Blues/Cascades are
+ *  where worn outfits died (Marcy 1859: stock first; the Blue
+ *  Mountains in particular demanded a fresh team and tight wagon).
+ *
+ *  Extension of the existing CUM_MILES scan pattern — no new
+ *  landmark-walking logic; we reuse the same pre-computed array and
+ *  the same isSupplyStop gate used by nextSupplyDistance/
+ *  effectiveGapMiles. */
+export function mountainMilesInNextGap(state: GameState): number {
+  const here = state.location.milesTraveled;
+  const year = state.date.year;
+  let mountainMiles = 0;
+  let foundNextSupply = false;
+  for (const entry of CUM_MILES) {
+    if (entry.cum <= here) continue; // behind us
+    // Accumulate mountain miles on this leg before deciding if we've
+    // hit the next supply stop.
+    if (entry.landmark.terrain === 'mountains') {
+      mountainMiles += entry.landmark.milesFromPrevious;
+    }
+    // If this landmark IS a supply stop (and not abandoned), it marks
+    // the end of the current gap — stop scanning.
+    if (isSupplyStop(entry.kind) && !isLandmarkAbandoned(entry.landmark, year)) {
+      foundNextSupply = true;
+      break;
+    }
+  }
+  return foundNextSupply ? mountainMiles : 0;
+}
+
 /** #1026 — Persona water-trigger threshold scaled for terrain. In
  *  well-watered country (river / forest / prairie / mountains) the
  *  persona's normal ratio fires — passive ambient refill keeps the

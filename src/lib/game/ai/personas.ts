@@ -32,7 +32,7 @@ import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
 import { faithfulBundle } from './bundle';
-import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor } from './foresight';
+import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor, mountainMilesInNextGap } from './foresight';
 import { warmthFor } from '../systems/warmth';
 import { waterConsumedToday } from '../systems/consumption';
 import { quoteBarter, BARTER_RATE_FLOOR } from '../systems/barter';
@@ -48,11 +48,55 @@ import {
   doctrineFor
 } from './schedule';
 import { oxHydration, HYDRATION_AMBER } from '../systems/ox-hydration';
+// #1388 T1 — seasonal river depth helper. Personas and the ford engine
+// share one helper so the agent's crossing-method decision and the
+// engine's damage roll read the same effective water level.
+import { effectiveRiverDepth } from '../systems/river-season';
 
 /** Period basket consumption: flour 1.0 + bacon 0.3 + beans 0.15 +
  *  minor staples ≈ 1.5 lb/eater/day. Used by gap-aware food helpers
  *  to convert "days of food needed" into a pound threshold. */
 const RAW_BASKET_LB_PER_DAY = 1.5;
+
+/** #1388 T2 — Mountain miles threshold that triggers escalation of ox
+ *  health floors and repair triggers. At ≥ 40 mountain miles ahead in
+ *  the next gap, treat the gap as the next-larger tier on the existing
+ *  150/200-mi ladder. Mountain miles wear stock and wagons
+ *  disproportionately — Marcy 1859 stock-first; the Blues/Cascades
+ *  are where worn outfits died. */
+const MOUNTAIN_GAP_ESCALATION_MI = 40;
+
+/** #1388 T2 — Day-of-year threshold for late-season repair escalation.
+ *  After DOY 244 (~Sep 1), the repair trigger escalates one tier
+ *  regardless of terrain. A breakdown in October is a winter-wall
+ *  death sentence — late-season repairs are load-bearing. Period:
+ *  the winter wall design doc (docs/superpowers/specs) documents
+ *  the calendar cliff at which a stranded wagon cannot complete the
+ *  journey before snow seals the passes. */
+const LATE_SEASON_REPAIR_DOY = 244;
+
+/** #1388 T2 — Dead-ox count threshold for the panic-buy bump in
+ *  pickOxSwapCount. A stampede-halved team would panic-buy at the
+ *  next post — ≥ 2 dead oxen adds +1 to the base want. */
+const DEAD_OX_PANIC_THRESHOLD = 2;
+/** #1388 MED fix — the panic bump is a RECENT-death response, not a
+ *  lifetime-dead-ox latch. Dead oxen are never removed from state.oxen so
+ *  a naive "count health<=0" would fire at every later post forever. We
+ *  gate on _lastOxDeathDay: if the most recent ox death was within this
+ *  window the buyer is still spooked; beyond it the panic has worn off.
+ *  30 days ≈ one-to-two post gaps, long enough to cover the next visit. */
+const RECENT_OX_DEATH_WINDOW_DAYS = 30;
+
+/** Day-of-year (1 = Jan 1, 244 = Sep 1 in non-leap years). Used by
+ *  the late-season repair escalation gate (LATE_SEASON_REPAIR_DOY).
+ *  Leap-year note: 1848/1852/1856 are leap years and this table uses the
+ *  non-leap lengths, producing a one-day drift after Feb 28 in those years.
+ *  The drift is immaterial to the DOY≥244 gate (Sep 1 vs Sep 2 boundary
+ *  has no gameplay effect) and simplifies the constant. */
+const MONTH_DAYS_CUM = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+function dateToDoy(date: GameState['date']): number {
+  return MONTH_DAYS_CUM[date.month - 1] + date.day;
+}
 
 /** #934 + #963 — Project the persona's expected days for food
  *  planning. Uses `effectiveGapMiles` so late-trail decisions see
@@ -139,12 +183,20 @@ function gapAwareFoodTrigger(
  *  + desert. The original `nextSupplyDistance ≥ 150` already
  *  triggered at Hall, but the same threshold also fires at every
  *  intermediate post — using effective gap raises the bar
- *  proportionally for the genuinely long remaining runs. */
+ *  proportionally for the genuinely long remaining runs.
+ *
+ *  #1388 T2 — Mountain escalation: when ≥ MOUNTAIN_GAP_ESCALATION_MI
+ *  mountain miles lie ahead in the next gap, escalate to the next-
+ *  larger tier even if the plain gap-miles threshold isn't met.
+ *  Mountain miles wear stock disproportionately (Marcy 1859:
+ *  stock-first; the Blues/Cascades are where worn outfits died). */
 function gapAwareOxHealthFloor(
   state: GameState,
   base: { healthFloor: number; bigGapMiles: number; bigGapHealthBoost: number }
 ): number {
-  return effectiveGapMiles(state) >= base.bigGapMiles
+  const escalate = effectiveGapMiles(state) >= base.bigGapMiles
+    || mountainMilesInNextGap(state) >= MOUNTAIN_GAP_ESCALATION_MI;
+  return escalate
     ? base.healthFloor + base.bigGapHealthBoost
     : base.healthFloor;
 }
@@ -156,12 +208,26 @@ function gapAwareOxHealthFloor(
  *  100-condition); only the trigger condition shifts.
  *  Period: emigrants who knew they were heading into Sublette Cutoff
  *  or the Blue Mountains topped off the wagon at the last smithy
- *  regardless of whether anything was visibly failing. */
+ *  regardless of whether anything was visibly failing.
+ *
+ *  #1388 T2 — Mountain escalation: ≥ MOUNTAIN_GAP_ESCALATION_MI
+ *  mountain miles in the next gap escalates one tier regardless of
+ *  plain gap length — mountain terrain tears wagons faster than flat
+ *  desert (Marcy 1859: stock-first; the Blues/Cascades are where worn
+ *  outfits died).
+ *
+ *  #1388 T2 — Late-season escalation: after DOY ≥ LATE_SEASON_REPAIR_DOY
+ *  (~Sep 1) the trigger rises one tier regardless of terrain. A
+ *  breakdown in October is a winter-wall death sentence; late-season
+ *  repairs are load-bearing. See the winter wall design doc. */
 function gapAwareRepairTrigger(
   state: GameState,
   base: { conditionTrigger: number; bigGapMiles: number; bigGapConditionBoost: number }
 ): number {
-  return nextSupplyDistance(state) >= base.bigGapMiles
+  const escalate = nextSupplyDistance(state) >= base.bigGapMiles
+    || mountainMilesInNextGap(state) >= MOUNTAIN_GAP_ESCALATION_MI
+    || dateToDoy(state.date) >= LATE_SEASON_REPAIR_DOY;
+  return escalate
     ? base.conditionTrigger + base.bigGapConditionBoost
     : base.conditionTrigger;
 }
@@ -446,7 +512,15 @@ function anyOxStrained(state: GameState): boolean {
  *  optimal*: cautious/generous +1 (slight above-optimal buffer),
  *  balanced 0 (exactly optimal), aggressive −1 (lean but viable).
  *  Clamped at minTeam so a wagon never targets below the can't-move
- *  floor. */
+ *  floor.
+ *
+ *  #1388 T2 — Dead-ox bump: if ≥ DEAD_OX_PANIC_THRESHOLD oxen are
+ *  dead (health 0), add 1 to the base want. A stampede-halved team
+ *  panic-bought at the next post — the survivor's instinct is to
+ *  top up the team beyond the worn-threshold calculation. The +1 is
+ *  applied after the base want is computed (so it fires even when
+ *  !tooThin && !tooWorn) and is clamped by the cash/affordability
+ *  ladder downstream in the runner (not here). */
 function pickOxSwapCountFor(
   state: GameState,
   freshBuffer: number,
@@ -461,10 +535,33 @@ function pickOxSwapCountFor(
   // Two trigger conditions: thin team OR worn-down team.
   const tooThin = aliveCount < target;
   const tooWorn = avgHealth < healthFloor;
-  if (!tooThin && !tooWorn) return 0;
+  // #1388 T2 / MED fix — dead-ox panic bump: ≥ 2 dead oxen AND a recent
+  // death (within RECENT_OX_DEATH_WINDOW_DAYS) → want +1.
+  // Dead oxen are never removed from state.oxen; without the recency gate
+  // the bump would latch permanently after 2 lifetime deaths and over-buy
+  // at every later post even on a fully refreshed team. The flag
+  // _lastOxDeathDay is stamped by tickOxen (and event kill sites) whenever
+  // a previously-alive ox newly reaches health=0.
+  // When the flag is absent but deadCount≥threshold (legacy save or NPC
+  // wagon whose flag path isn't wired) we conservatively fire the bump only
+  // if aliveCount is also below optimalTeam — i.e. the team is visibly thin,
+  // so an upgrade is warranted regardless of recency context.
+  const deadCount = state.oxen.filter((o) => o.health <= 0).length;
+  // Guard against faux/shim states (e.g. NPC post-restock path in wagon-train.ts)
+  // that cast a partial object to GameState and omit flags. Optional-chain is safe
+  // because the flag's absence triggers the no-flag fallback below.
+  const lastDeathDay = typeof state.flags?._lastOxDeathDay === 'number'
+    ? (state.flags._lastOxDeathDay as number)
+    : undefined;
+  const recentDeath = lastDeathDay !== undefined
+    ? state.day - lastDeathDay <= RECENT_OX_DEATH_WINDOW_DAYS
+    : deadCount >= DEAD_OX_PANIC_THRESHOLD && aliveCount < (wagon.optimalTeam + freshBuffer);
+  const panicBump = deadCount >= DEAD_OX_PANIC_THRESHOLD && recentDeath ? 1 : 0;
+  if (!tooThin && !tooWorn && panicBump === 0) return 0;
   // Thin: top up to target. Worn: swap 2 to refresh the average.
   const need = Math.max(0, target - aliveCount);
-  return tooThin ? Math.max(1, need) : 2;
+  const baseWant = (tooThin || tooWorn) ? (tooThin ? Math.max(1, need) : 2) : 0;
+  return baseWant + panicBump;
 }
 
 // --- #303c slice B default helpers ---
@@ -704,6 +801,25 @@ function saferHealthChoice(state: GameState, event: GameEvent): string | null {
   );
 }
 
+/** Returns 'high' when at least one alive child is aboard, 'normal' otherwise.
+ *
+ *  Period anchor: children in the wagon was the single biggest documented
+ *  risk-aversion driver (Faragher 1979 / Unruh 1979 family-size analysis;
+ *  Sager family, 1844 — six children under 14 drove every decision). The
+ *  #1235 winter-wall family margin is inverted precisely because families
+ *  with children push HARDER to avoid being caught in October — the risk
+ *  asymmetry runs both ways. Here it applies to health events where the
+ *  immediate hazard (cholera, foul water) falls hardest on children.
+ *
+ *  Doctor nuance: a live Doctor reduces but does not eliminate disease risk
+ *  (30% relief per engine #154). The function does not consult the Doctor
+ *  flag; callers that want the "Doctor grants confidence" logic check it
+ *  separately (see aggressive.pickEventChoice). */
+export function partyRiskAversion(state: GameState): 'high' | 'normal' {
+  const hasLiveChild = state.party.some((m) => !m.dead && m.kind === 'child');
+  return hasLiveChild ? 'high' : 'normal';
+}
+
 export const cautiousPersona: Persona = {
   id: 'cautious',
   // #1028 — paceMiPerDay 8 → 10 (matches balanced). Slow trigger
@@ -811,13 +927,56 @@ export const cautiousPersona: Persona = {
     return canHunt(state) && foodOnHand(state) < threshold;
   },
   pickFordMethod(state, here) {
-    // Cautious prefers safety: native_ferry > ferry > caulk > ford.
+    // #1388 T1 — Seasonal-depth-aware crossing choice. Period:
+    // Tabitha Brown's party (June 1846) paid the ferry at every
+    // high-water crossing rather than risk wetting the supplies.
+    // The cautious persona's ORDER is unchanged (native_ferry >
+    // ferry > caulk > ford) — what changes is the GATE: when the
+    // effective depth is shallow (August trickle ≤ 2.5 ft), even
+    // cautious fords to save the ferry fee, because the diaries
+    // agree the risk is negligible. When it is deep (June snowmelt
+    // ≥ 4 ft), cautious prefers the ferry even if cash is thin and
+    // will caulk as the last-resort before a naked ford.
+    //
+    // Low min party HP (< 40) biases one rung safer: a weakened
+    // party absorbs cold-water chill worse (Sager 1844: sick
+    // members drowned at the Snake where healthy ones walked out).
+    const effDepth = effectiveRiverDepth(
+      { depthFt: here.river?.depthFt ?? 3 },
+      state.date,
+      state.weather
+    );
+    const minHp = minPartyHealth(state);
+    const hpPenalized = minHp < 40; // bias one rung safer when party is hurt
+
+    // Shallow gate: safe enough to ford regardless of cost.
+    // Cautious fords when effective depth ≤ 2.5 ft AND party is healthy.
+    const shallowSafe = effDepth <= 2.5 && !hpPenalized;
+    // Deep gate: prefer ferry/native_ferry; caulk only when cash can't cover ferry.
+    const deepDanger = effDepth >= 4.0 || hpPenalized;
+
     const nf = here.river?.nativeFerry;
+    const ferryPrice = here.river?.ferryPrice ?? 5;
+
+    if (shallowSafe) {
+      // Shallow + healthy: ford is safe; skip the fee.
+      // Still take native_ferry if available (it costs goods, not cash).
+      if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
+        return 'native_ferry';
+      }
+      return 'ford';
+    }
+
+    // Normal or deep conditions: safety-first ordering.
     if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
       return 'native_ferry';
     }
-    if (state.cash >= (here.river?.ferryPrice ?? 5)) return 'ferry';
-    return 'caulk';
+    if (state.cash >= ferryPrice) return 'ferry';
+    if (deepDanger) {
+      // Deep + no ferry option: caulk before a naked ford.
+      return 'caulk';
+    }
+    return 'caulk'; // cautious never plain-fords a non-shallow river
   },
   shouldTradeAtPost(state, here) {
     if (state.cash < 10) return false;
@@ -1048,10 +1207,48 @@ export const balancedPersona: Persona = {
     return canHunt(state) && foodOnHand(state) < threshold;
   },
   pickFordMethod(state, here) {
-    // Balanced ferries when cash is comfortable, fords otherwise.
+    // #1388 T1 — Balanced reads effective depth + party HP to decide
+    // between ford and ferry. Original flavor preserved: balanced
+    // fords comfortable water and ferries when cash is ample. The
+    // new layer adds: shallow (≤ 2.5 ft) → always ford; deep
+    // (≥ 4 ft) → prefer ferry, caulk when cash is short; low min
+    // HP biases one rung safer.
+    //
+    // Period: Helen Carpenter (1857) paid the ferry at the Green
+    // River (June, high water) but forded the Big Blue (August,
+    // knee-deep) without hesitation — the sensible emigrant read
+    // the water, not just the price.
+    const effDepth = effectiveRiverDepth(
+      { depthFt: here.river?.depthFt ?? 3 },
+      state.date,
+      state.weather
+    );
+    const minHp = minPartyHealth(state);
+    const hpPenalized = minHp < 40;
+
     const ferryPrice = here.river?.ferryPrice ?? 5;
-    if (state.cash >= ferryPrice * 3) return 'ferry';
     const nf = here.river?.nativeFerry;
+
+    // Shallow gate: ford is safe, skip the fee.
+    if (effDepth <= 2.5 && !hpPenalized) {
+      if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
+        return 'native_ferry';
+      }
+      return 'ford';
+    }
+
+    // Deep or HP-penalized: prefer ferry when cash is ample.
+    const deepDanger = effDepth >= 4.0 || hpPenalized;
+    if (deepDanger) {
+      if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
+        return 'native_ferry';
+      }
+      if (state.cash >= ferryPrice) return 'ferry';
+      return 'caulk'; // cash can't cover ferry; caulk before naked ford
+    }
+
+    // Moderate depth: original balanced logic (ferry when cash comfortable).
+    if (state.cash >= ferryPrice * 3) return 'ferry';
     if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
       return 'native_ferry';
     }
@@ -1185,6 +1382,20 @@ export const aggressivePersona: Persona = {
     if (event.id === 'encounter_salmon_band') {
       return pickSalmonBandChoice(state, event);
     }
+    // #1388 T3 — children aboard raise risk aversion on health events.
+    // Period reality: children were the dominant risk-aversion driver
+    // (Faragher 1979 family-size analysis; see partyRiskAversion doc comment).
+    // When partyRiskAversion is 'high' AND a live Doctor is NOT aboard,
+    // route through saferHealthChoice before the aggressive default so the
+    // captain avoids the cholera roll rather than gambling with the kids.
+    // Doctor nuance: with a Doctor present and NO children, skip the gate —
+    // the Doctor can treat what goes wrong (no extra timidity vs today).
+    // When partyRiskAversion is 'normal' (no children), behavior is
+    // byte-identical to the pre-#1388 code path.
+    if (partyRiskAversion(state) === 'high' && !hasLiveDoctor(state)) {
+      const safe = saferHealthChoice(state, event);
+      if (safe !== null) return safe;
+    }
     // Aggressive refuses tolls, pushes through, hoards.
     return choiceMatching(state, event, /refuse/i, /push/i, /pass/i, /ignore/i, /wave/i)
       ?? defaultChoice(state, event);
@@ -1284,8 +1495,38 @@ export const aggressivePersona: Persona = {
     // otherwise. Time-on-the-trail is the priority.
     return canHunt(state) && foodOnHand(state) < 25;
   },
-  pickFordMethod() {
-    return 'ford';
+  pickFordMethod(state, here) {
+    // #1388 T1 — Aggressive still fords by default (cheapest, fastest),
+    // but concedes to reality on truly dangerous crossings. Period:
+    // even Reed (1846) paid ferries at the highest-water Green River
+    // and Platte — "ford" was the personality, not a death wish.
+    //
+    // Deep gate (≥ 4 ft effective): prefer ferry/native_ferry; caulk
+    // when cash can't cover the ferry — a washed wagon costs more days
+    // than the ferry fee. Low min HP (< 40) biases one rung safer.
+    // Everything else: ford (aggressive's default identity preserved).
+    const effDepth = effectiveRiverDepth(
+      { depthFt: here.river?.depthFt ?? 3 },
+      state.date,
+      state.weather
+    );
+    const minHp = minPartyHealth(state);
+    const hpPenalized = minHp < 40;
+    const deepDanger = effDepth >= 4.0 || hpPenalized;
+
+    if (!deepDanger) {
+      // Shallow or moderate: ford (aggressive default).
+      return 'ford';
+    }
+
+    // Deep or HP-penalized: prefer ferry; caulk when cash can't cover it.
+    const nf = here.river?.nativeFerry;
+    const ferryPrice = here.river?.ferryPrice ?? 5;
+    if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
+      return 'native_ferry';
+    }
+    if (state.cash >= ferryPrice) return 'ferry';
+    return 'caulk'; // cash can't cover ferry → caulk before naked deep ford
   },
   shouldTradeAtPost(state, here) {
     // #916 — recalibrated. Period reality: Bidwell 1841 / Reed 1846

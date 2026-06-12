@@ -15,10 +15,15 @@ below was spot-verified against master.
    A cautious wagon pays $10 ferry over an August trickle; an aggressive
    one fords a June flood. Period reality: crossing choice was THE
    judgment call of the trail.
-2. **pickWaterRation ignores active party dehydration** — projects dry
-   days ahead and reads keg totals, but never consults whether a member
-   already carries the dehydration condition. A dehydrated party on a
-   full keg before a dry stretch doesn't escalate rationing.
+2. ~~**pickWaterRation ignores active party dehydration**~~ — **ERRATA
+   (applied 2026-06-11, #1388 T1): FALSE POSITIVE. Withdrawn.** There
+   is no member-level dehydration _condition_ in the game model.
+   Dehydration is the party-level `_dehydrationDays` dry-day counter
+   in `systems/dehydration.ts`, which only ticks when _total water_ is
+   0. When water is 0, rationing is moot (there is nothing to ration).
+   The audit incorrectly assumed a per-member "dehydrated" condition
+   existed that pickWaterRation should consult; it does not. No fix
+   needed.
 3. **pickOxSwapCount is terrain/grade-blind** — gap-aware (150/200 mi
    thresholds) but flat-earth: entering the Blues or Cascades with a
    3-ox worn team triggers nothing the prairie wouldn't. Also ignores
