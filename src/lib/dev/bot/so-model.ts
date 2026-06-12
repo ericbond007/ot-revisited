@@ -6,11 +6,16 @@
 // Extend by APPENDING to SO_MODEL; do not reorder existing entries (sweep
 // result tables are keyed by array index for comparison across runs).
 //
-// Tier arrival targets (design spec from §5 of the research doc):
-//   easy     → 85–90%
-//   moderate → 60–75%
-//   hard     → 40–55%
-//   brutal   → 25–40%
+// Tier arrival targets — #1384 re-calibration (2026-06-12): tiers are
+// ARRIVAL rollup labels set by composition math on the honest engine
+// (post-#1304/#1388/#1259/#1389); per-archetype targetArrival brackets
+// the measured honest baseline with tuning headroom. The second axis,
+// targetDeaths (deaths/run), carries the EXPERIENCE difficulty — a
+// strong outfit that arrives while burying crew reads hard there.
+//   easy     → ~85–98% arrival
+//   moderate → ~55–85%
+//   hard     → ~50–72%
+//   brutal   → ~25–40% (Unprepared '49er KNOWN-LOW pending #1385)
 //
 // NOTE — companion sex limitation: the runner assigns companion sexes
 // alternating (m/f/m/f…). The Whore Train's all-female stock is therefore
@@ -56,6 +61,13 @@ export interface SoArchetype {
    * Matches the tier ladder from the research doc §5.
    */
   targetArrival: [number, number];
+  /**
+   * #1384 — second axis: expected DEATHS PER RUN band [min, max].
+   * A composition can be easy to land (high arrival) and still a hard
+   * experience (buries crew en route) — the Whore Train problem.
+   * Optional during calibration; the gate evaluates it when present.
+   */
+  targetDeaths?: [number, number];
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +97,8 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 0,
     persona: 'pace_pusher',
     anchor: "All-male gold-rush mess — Marcy's 50–70-man company in miniature",
-    targetArrival: [0.85, 0.90],
+    targetArrival: [0.88, 0.97],
+    targetDeaths: [0.2, 0.6],
   },
   {
     // #2 — The Traditional Family
@@ -100,7 +113,9 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 4,
     persona: 'balanced',
     anchor: 'Modal 1850s Oregon family wagon — 2 adults + 4 children',
-    targetArrival: [0.60, 0.75],
+    // #1384 — death band high: children carry the era-true mortality (#1259).
+    targetArrival: [0.60, 0.78],
+    targetDeaths: [0.8, 1.5],
   },
   {
     // #3 — The Widow's Wagon
@@ -110,13 +125,17 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     // persona: cautious — a widow with children can't afford recklessness.
     id: 'widow_wagon',
     name: "The Widow's Wagon",
-    tier: 'hard',
+    tier: 'moderate',
     leaderProfession: 'teacher',
     companionProfessions: ['farmer'],
     childCount: 3,
     persona: 'cautious',
     anchor: 'Tabitha Brown 1846 / Elizabeth Dixon Smith Geer — widow-led family',
-    targetArrival: [0.40, 0.55],
+    // #1384 re-tier hard -> moderate: composition math (2 adults + 3 kids,
+    // cautious) measured 63-75% across honest-engine gates — family-shaped,
+    // not hard. The hard label was social narrative.
+    targetArrival: [0.55, 0.72],
+    targetDeaths: [0.8, 1.5],
   },
   {
     // #4 — The Whore Train
@@ -128,13 +147,17 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     // spending; Dumont was known for hospitality and generosity.
     id: 'whore_train',
     name: 'The Whore Train',
-    tier: 'hard',
+    tier: 'easy',
     leaderProfession: 'teamster',
     companionProfessions: ['whore', 'whore', 'whore', 'whore', 'whore'],
     childCount: 0,
     persona: 'generous',
     anchor: 'Eleanor Dumont "Madame Mustache" overland 1854 — madam moving stock to the camps',
-    targetArrival: [0.40, 0.55],
+    // #1384 re-tier hard -> easy ARRIVAL: 6 adults behind a teamster lead is
+    // materially a strong outfit (93-95% across honest-engine gates). The
+    // 'hard' EXPERIENCE lives in the death band — it arrives, burying crew.
+    targetArrival: [0.85, 0.95],
+    targetDeaths: [0.6, 1.1],
   },
   {
     // #5 — The Preacher's Flock
@@ -148,7 +171,8 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 2,
     persona: 'faithful',
     anchor: 'Methodist mission party — Jason Lee 1834; Whitman 1836',
-    targetArrival: [0.60, 0.75],
+    targetArrival: [0.60, 0.78],
+    targetDeaths: [0.3, 0.8],
   },
   {
     // #6 — The Doctor's Ambulance
@@ -162,7 +186,8 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 0,
     persona: 'balanced',
     anchor: 'Marcus Whitman / generous-doctor archetype — best disease survivability',
-    targetArrival: [0.85, 0.90],
+    targetArrival: [0.88, 0.97],
+    targetDeaths: [0.0, 0.4],
   },
   {
     // #7 — The Freight Crew
@@ -176,7 +201,8 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 0,
     persona: 'pace_pusher',
     anchor: 'Commercial freight outfit hauling to the camps (Conestoga-class)',
-    targetArrival: [0.85, 0.90],
+    targetArrival: [0.88, 0.98],
+    targetDeaths: [0.1, 0.5],
   },
   {
     // #8 — The Honeymoon Pair
@@ -191,7 +217,9 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 0,
     persona: 'balanced',
     anchor: 'Ezra & Eliza Meeker 1852 — newlyweds on the Oregon Trail',
-    targetArrival: [0.60, 0.75],
+    // #1384 — tiny party: a single death is near-wipe, so the band is tight.
+    targetArrival: [0.60, 0.78],
+    targetDeaths: [0.0, 0.35],
   },
   {
     // #9 — The Extended Clan
@@ -200,13 +228,16 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     // Tamzene Donner distributed food to others when her own stores ran low.
     id: 'extended_clan',
     name: 'The Extended Clan',
-    tier: 'hard',
+    tier: 'easy',
     leaderProfession: 'farmer',
     companionProfessions: ['farmer', 'doctor', 'teamster'],
     childCount: 4,
     persona: 'hoarder',
     anchor: 'Donner brothers / Sager clan — big extended-family train',
-    targetArrival: [0.40, 0.55],
+    // #1384 re-tier hard -> easy: 4 adults + teamster measured 89-96% across
+    // honest-engine gates. Big labor pool beats big mouth count.
+    targetArrival: [0.85, 0.97],
+    targetDeaths: [0.4, 1.0],
   },
   {
     // #10 — The Mountain Man
@@ -217,7 +248,7 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     // kept moving after the beaver-trade collapse, never waited for rescue.
     id: 'mountain_man',
     name: 'The Mountain Man',
-    tier: 'brutal',
+    tier: 'hard',
     leaderProfession: 'hunter',
     // TODO(#1165): revert to [] (true solo) once engine supports partySize 1.
     // Minimal companion added only to satisfy the ≥2 adults gate.
@@ -225,7 +256,10 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 0,
     persona: 'aggressive',
     anchor: 'Joe Meek 1840 / Joel Palmer 1845 — experienced solo mountain man',
-    targetArrival: [0.25, 0.40],
+    // #1384 re-tier brutal -> hard UNTIL #1165 lands true solo (the forced
+    // scout companion makes this a competent 2-man outfit, 61-74% measured).
+    targetArrival: [0.50, 0.70],
+    targetDeaths: [0.1, 0.5],
   },
   {
     // #11 — The Rich Speculator
@@ -240,7 +274,10 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 1,
     persona: 'drinker',
     anchor: 'James Reed 1846 — wealthy speculator, "Pioneer Palace Car," litigious',
-    targetArrival: [0.60, 0.75],
+    // #1384 — band widened up: cash papers over the missing survival stack
+    // (77-86% measured); the deaths band carries the soft-outfit cost.
+    targetArrival: [0.68, 0.85],
+    targetDeaths: [0.5, 1.0],
   },
   {
     // #12 — The Unprepared '49er
@@ -255,7 +292,11 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 0,
     persona: 'chaos',
     anchor: 'Greenhorn gold-rush opportunist — no survival stack, cash but no skill',
+    // #1384 — KNOWN-LOW (0% measured): the chaos persona self-destructs
+    // before composition matters. Band intentionally kept as the TARGET;
+    // #1385 owns the persona fix that should land it here.
     targetArrival: [0.25, 0.40],
+    targetDeaths: [0.6, 1.2],
   },
   {
     // #13 — The Trader's Outfit
@@ -269,7 +310,8 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 0,
     persona: 'generous',
     anchor: 'Trade-post / Indian-trade outfit; barter economy play',
-    targetArrival: [0.60, 0.75],
+    targetArrival: [0.60, 0.78],
+    targetDeaths: [0.4, 0.9],
   },
   {
     // #14 — The Schoolmarm's Wagon
@@ -284,6 +326,10 @@ export const SO_MODEL: ReadonlyArray<SoArchetype> = [
     childCount: 3,
     persona: 'cautious',
     anchor: 'Tabitha Brown / John Bidwell (schoolteacher-turned-emigrant) — kid-morale build',
-    targetArrival: [0.40, 0.55],
+    // #1384 — the deadliest wagon on the honest engine (1.56-1.73 deaths/run:
+    // 3 kids + thin adults). Arrival band eased to match composition math;
+    // the death band IS its hardness.
+    targetArrival: [0.55, 0.72],
+    targetDeaths: [1.2, 2.0],
   },
 ];
