@@ -22,15 +22,29 @@ import type { GameState } from '../types';
 //   dry-day 4: morale −20, health −30
 //   dry-day 5: morale −25, health −40   (almost guaranteed kill)
 //
-// Children: identical morale hit, health hit scaled 0.7× (smaller bodies
-// dehydrate faster but also get water priority during consumption so the
-// net effect is close to adult).
+// Children: identical morale hit, health hit scaled 1.3× (CHILD_DEHYDRATION_MULT).
+// #1259 §1b (Dave 2026-06-11): the original 0.7× ("children get water priority
+// during consumption") has been flipped. The research core claim — small bodies
+// lose fluid volume fastest, failing in hours-to-days (Bashore/BYU 2014;
+// cholera-era accounts) — applies most literally here: once truly dry (no water
+// at all), the physics dominate. The 1.3× figure is moderated vs the raw
+// 1.5–1.75 disease-band because children still consume less water via
+// CHILD_WATER_MULT = 0.5, so true no-water exposure is lower than adult —
+// but the per-unit damage is higher.
 //
 // Terrain: desert = 1.5×, mountains = 1.0×, prairie = 1.0×, forest = 0.85×.
 // River terrain is transient (crossing a ford) and doesn't modify.
 
 const HEALTH_PER_DRY_DAY = [0, 0, 10, 20, 30, 40] as const;
 const MORALE_PER_DRY_DAY = [0, 10, 10, 15, 20, 25] as const;
+
+/** #1259 §1b — child dehydration health-damage multiplier.
+ *  Dave 2026-06-11: flipped from 0.7× to 1.3×. Small bodies lose fluid
+ *  volume fastest once truly dry (Bashore/BYU 2014). Moderated from the
+ *  raw 1.5–1.75 disease-band because CHILD_WATER_MULT = 0.5 already
+ *  reduces children's total exposure vs adults. Morale deltas unchanged.
+ *  Amends design-doc §3 "deliberately unchanged" list. */
+export const CHILD_DEHYDRATION_MULT = 1.3;
 
 const TERRAIN_MULT: Record<string, number> = {
   desert: 1.5,
@@ -81,9 +95,11 @@ export function applyDehydration(state: GameState): GameState {
 
   const party = state.party.map((m) => {
     if (m.dead) return m;
-    // Children take a slightly softer hit — adults surrender water to
-    // them first in consumption, so direct health damage scales down.
-    const mult = m.kind === 'child' ? 0.7 : 1.0;
+    // #1259 §1b — children take a harder hit once truly dry. Small bodies
+    // lose fluid volume fastest (Bashore/BYU 2014). CHILD_DEHYDRATION_MULT
+    // is 1.3× (not the raw 1.5–1.75 because CHILD_WATER_MULT = 0.5 already
+    // reduces their exposure). Dave 2026-06-11, amends design-doc §3.
+    const mult = m.kind === 'child' ? CHILD_DEHYDRATION_MULT : 1.0;
     const loss = Math.round(hpLoss * mult);
     return { ...m, health: Math.max(0, m.health - loss) };
   });

@@ -33,8 +33,12 @@ const DOCTOR_RELIEF_MULT = 0.7;
 // so player, bot, and NPC wagons inherit it identically.
 
 /** Multiplier on daily condition damage for a child afflicted with a
- *  dehydrating disease. Upper-center of the 1.3–1.8× research band
- *  (ages 1–9 vs prime adults; Bashore/Tolley, BYU Studies 53:4 2014). */
+ *  dehydrating disease (ages 1–9 vs prime adults; Bashore/Tolley, BYU
+ *  Studies 53:4 2014). Gate note: 1.75 and 2.0 produced identical sweep
+ *  results — the lever saturates (the afflicted child already dies; more
+ *  damage only moves the death a day earlier), and post-#1281 disease
+ *  incidence is low, so this channel is honest but thin. 1.75 (research
+ *  band center) kept. */
 export const CHILD_DEHYDRATING_DISEASE_MULT = 1.75;
 
 /** Condition ids whose daily damage is amplified by

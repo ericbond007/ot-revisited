@@ -77,10 +77,20 @@ describe('every event choice produces an outcome log entry', () => {
             _salmonBandCashPrice: 5.2
           }
         };
+        // child_wagon_fall requires a live child in the party.
+        const childWagonFallState = {
+          ...baseState(),
+          party: [
+            ...baseState().party,
+            { id: 'c1', name: 'Lucy', profession: undefined, sex: 'female' as const, kind: 'child' as const, isLeader: false, age: 7, health: 100, conditions: [], dead: false }
+          ]
+        };
         const state = event.id === 'personal_burial'
           ? { ...baseState(), flags: { _burialPending: true } }
           : event.id === 'encounter_salmon_band'
           ? salmonBandState
+          : event.id === 'child_wagon_fall'
+          ? childWagonFallState
           : baseState();
         const before = state.eventLog.length;
         const after = resolveEvent(state, event, choice.id, makeRng(`audit:${event.id}:${choice.id}`));

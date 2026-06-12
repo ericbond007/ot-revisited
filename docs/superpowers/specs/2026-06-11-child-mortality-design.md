@@ -51,12 +51,33 @@ accident-event catalog pattern (content/events.ts) for weights/category/
 deathCause plumbing; deathCause 'wagon_accident' (or the existing
 nearest cause id — reuse before inventing).
 
+## 1b. Two additional levers (Dave 2026-06-11, amends §3)
+
+These amend the original "deliberately unchanged" list below.
+
+**Dehydration counter — CHILD_DEHYDRATION_MULT = 1.3×** (`systems/dehydration.ts`).
+The 0.7× child scaling listed in §3 has been flipped. Once truly out of water,
+small bodies lose fluid volume fastest (Bashore/BYU 2014; cholera-era accounts).
+The 1.3× figure is moderated from the raw 1.5–1.75 disease band because
+CHILD_WATER_MULT = 0.5 already reduces children's consumption vs adults —
+but the per-unit damage is higher. Morale deltas unchanged.
+
+**Dirty-water incidence — CHILD_DIRTY_WATER_RISK_MULT = 1.5×** (`systems/consumption.ts`).
+The original `applyDirtyWaterRisk` rolled adults only. Children now also roll,
+with `adultChance × 1.5`. "The children sickened first" — small bodies + less
+discrimination about water sources. The coffee/tea `waterborneDiseaseModifier`
+and doctor gate remain unchanged; only the per-child roll chance is scaled.
+Adults' chance is unaffected. Raises the historical child-killer channel's
+incidence, complementing the §1 `CHILD_DEHYDRATING_DISEASE_MULT` damage
+amplifier. NPC parity: `applyDirtyWaterRisk` runs via `daily-steps.ts` with
+no `playerOnly` scope restriction — both player and NPC wagons inherit it.
+
 ## 3. Deliberately unchanged (document, don't touch)
 
 - Ford child-loss 0.7x protection — drowning was adult-male-skewed.
 - Starvation / cold exposure — Donner says adults (esp. men) die first.
-- Dehydration-counter 0.7x child scaling — children got water priority
-  during consumption; already modeled.
+- ~~Dehydration-counter 0.7x child scaling~~ — amended by §1b above
+  (Dave 2026-06-11). The 0.7× figure has been replaced with 1.3×.
 - No infant band — the game has no infants; if trail pregnancy ever
   lands (#1259 research §5), infants are a 4–6x category of their own.
 
