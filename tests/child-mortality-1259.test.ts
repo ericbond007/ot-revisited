@@ -25,6 +25,7 @@ import {
   applyDirtyWaterRisk,
   CHILD_DIRTY_WATER_RISK_MULT
 } from '../src/lib/game/systems/consumption';
+import { reapDead } from '../src/lib/game/systems/death';
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -354,14 +355,16 @@ describe('#1259 §2 — child_wagon_fall: victim is always a child', () => {
     for (let i = 0; i < 50; i++) {
       const rng = makeRng(`cwf-victim-${i}`);
       const after = resolveEvent(s, ev, choiceId, rng);
-      // Find the member that changed (either dead or has broken_leg).
+      // Fix (review MED): the kill branch now sets health: 0 + deathCause
+      // instead of dead: true — reapDead (POST_EVENT_TAIL) stamps dead same
+      // tick. Detect kill by health===0 OR broken_leg condition added.
       const changed = after.party.find((m, idx) => {
         const before = s.party[idx];
-        const nowDead = !before.dead && m.dead;
+        const nowKilled = !before.dead && m.health === 0 && m.deathCause === 'Wagon Accident';
         const gotCondition =
           m.conditions.some((c) => c.id === 'broken_leg') &&
           !before.conditions.some((c) => c.id === 'broken_leg');
-        return nowDead || gotCondition;
+        return nowKilled || gotCondition;
       });
       expect(changed).toBeDefined();
       expect(changed!.kind).toBe('child');
@@ -374,6 +377,9 @@ describe('#1259 §2 — child_wagon_fall: 40/60 outcome split (deterministic per
   // Use loose tolerance: within ±15pp of the target (exact is non-deterministic
   // across RNG changes; we want structural coverage, not exact statistics).
   it('kill outcome fires ~40% of the time over 200 seeds', () => {
+    // Fix (review MED): kill branch now sets health: 0 + deathCause instead of
+    // dead: true. reapDead (POST_EVENT_TAIL_STEPS) stamps dead: true same tick,
+    // but resolveEvent alone won't show dead. Detect kill by health===0 here.
     const ev = EVENTS.find((e) => e.id === 'child_wagon_fall')!;
     const s = gameWithChild();
     const choiceId = ev.choices[0].id;
@@ -385,7 +391,7 @@ describe('#1259 §2 — child_wagon_fall: 40/60 outcome split (deterministic per
       const rng = makeRng(`cwf-split-${i}`);
       const after = resolveEvent(s, ev, choiceId, rng);
       const child = after.party.find((m) => m.kind === 'child')!;
-      if (child.dead) {
+      if (child.health === 0 && child.deathCause === 'Wagon Accident') {
         kills++;
       } else if (child.conditions.some((c) => c.id === 'broken_leg')) {
         injuries++;
@@ -403,7 +409,8 @@ describe('#1259 §2 — child_wagon_fall: 40/60 outcome split (deterministic per
 
   // Spot-check two specific seeds for determinism.
   it('seed cwf-kill-seed kills the child (kill branch)', () => {
-    // Find a seed that deterministically kills.
+    // Fix (review MED): kill branch sets health: 0 + deathCause; dead: true
+    // is stamped by reapDead in POST_EVENT_TAIL_STEPS (same tick, not here).
     const ev = EVENTS.find((e) => e.id === 'child_wagon_fall')!;
     const s = gameWithChild();
     const choiceId = ev.choices[0].id;
@@ -414,7 +421,7 @@ describe('#1259 §2 — child_wagon_fall: 40/60 outcome split (deterministic per
       const rng = makeRng(seed);
       const after = resolveEvent(s, ev, choiceId, rng);
       const child = after.party.find((m) => m.kind === 'child')!;
-      if (child.dead) {
+      if (child.health === 0 && child.deathCause === 'Wagon Accident') {
         foundKillSeed = seed;
         break;
       }
@@ -425,7 +432,9 @@ describe('#1259 §2 — child_wagon_fall: 40/60 outcome split (deterministic per
     const rng2 = makeRng(foundKillSeed!);
     const after2 = resolveEvent(s, ev, choiceId, rng2);
     const child2 = after2.party.find((m) => m.kind === 'child')!;
-    expect(child2.dead).toBe(true);
+    // health: 0 and deathCause pre-attributed (reapDead stamps dead in tail).
+    expect(child2.health).toBe(0);
+    expect(child2.deathCause).toBe('Wagon Accident');
   });
 
   it('seed cwf-injury-seed gives the child broken_leg (injury branch)', () => {
@@ -456,25 +465,81 @@ describe('#1259 §2 — child_wagon_fall: 40/60 outcome split (deterministic per
 });
 
 describe('#1259 §2 — child_wagon_fall: death sets correct deathCause', () => {
-  it('killed child has deathCause = "Wagon Accident"', () => {
+  it('killed child has deathCause = "Wagon Accident" (pre-attributed at health: 0, before reapDead)', () => {
+    // Fix (review MED): event sets health: 0 + deathCause pre-attributed; the
+    // reaper stamps dead: true in POST_EVENT_TAIL_STEPS. Search by health===0.
     const ev = EVENTS.find((e) => e.id === 'child_wagon_fall')!;
     const s = gameWithChild();
     const choiceId = ev.choices[0].id;
 
-    // Find a seed that kills.
+    // Find a seed that kills (health: 0 after resolve).
     let killedState: GameState | null = null;
     for (let i = 0; i < 200; i++) {
       const rng = makeRng(`cwf-split-${i}`);
       const after = resolveEvent(s, ev, choiceId, rng);
       const child = after.party.find((m) => m.kind === 'child')!;
-      if (child.dead) {
+      if (child.health === 0 && child.deathCause === 'Wagon Accident') {
         killedState = after;
         break;
       }
     }
     expect(killedState).not.toBeNull();
-    const deadChild = killedState!.party.find((m) => m.kind === 'child')!;
+    const zeroHPChild = killedState!.party.find((m) => m.kind === 'child')!;
+    expect(zeroHPChild.deathCause).toBe('Wagon Accident');
+    // dead: false here — reapDead hasn't run yet (POST_EVENT_TAIL_STEPS)
+    expect(zeroHPChild.dead).toBe(false);
+  });
+});
+
+describe('#1259 §2 — child_wagon_fall + reapDead integration: full pipeline', () => {
+  // Verifies the review fix (MED): event kill → reapDead (same tick) stamps
+  // dead: true with deathCause 'Wagon Accident', sets _burialPending, and
+  // applies the −8 child-death morale hit.
+  //
+  // reapDead is POST_EVENT_TAIL_STEPS[2] in daily-steps.ts; applyPendingChoice
+  // calls runSteps(POST_EVENT_TAIL_STEPS, ...) immediately after resolveEvent
+  // completes — so the reap fires same-day (no +1 delay).
+  it('after resolveEvent + reapDead: child is dead, deathCause Wagon Accident, _burialPending set, morale −8', () => {
+    const ev = EVENTS.find((e) => e.id === 'child_wagon_fall')!;
+    const s = gameWithChild();
+    const choiceId = ev.choices[0].id;
+
+    // Find a seed that fires the kill branch (health: 0 after resolve).
+    let afterEvent: GameState | null = null;
+    let killSeed = '';
+    for (let i = 0; i < 200; i++) {
+      const seed = `cwf-integration-${i}`;
+      const rng = makeRng(seed);
+      const after = resolveEvent(s, ev, choiceId, rng);
+      const child = after.party.find((m) => m.kind === 'child')!;
+      if (child.health === 0 && child.deathCause === 'Wagon Accident') {
+        afterEvent = after;
+        killSeed = seed;
+        break;
+      }
+    }
+    expect(afterEvent).not.toBeNull();
+
+    // Simulate the POST_EVENT_TAIL reapDead step.
+    const rngReap = makeRng(killSeed);
+    const afterReap = reapDead(afterEvent!, rngReap);
+
+    const deadChild = afterReap.party.find((m) => m.kind === 'child')!;
+
+    // dead: true stamped by reaper.
+    expect(deadChild.dead).toBe(true);
+
+    // deathCause preserved (pre-attributed, not overwritten by fallback logic).
     expect(deadChild.deathCause).toBe('Wagon Accident');
+
+    // deathDay stamped by reaper (same day as event).
+    expect(deadChild.deathDay).toBe(s.day);
+
+    // _burialPending set (not all-dead — one adult still alive).
+    expect(afterReap.flags._burialPending).toBe(true);
+
+    // Morale: −8 child hit applied by reaper (NOT the old −10 from the event).
+    expect(afterReap.morale).toBe(Math.max(0, afterEvent!.morale - 8));
   });
 });
 

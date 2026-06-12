@@ -929,15 +929,19 @@ const child_wagon_fall: GameEvent = {
         const killed = rng.chance(CHILD_WAGON_FALL_KILL_CHANCE);
 
         if (killed) {
-          // Death — "fell from the wagon tongue; both wheels passed over him"
+          // Death — pre-attribute the cause and zero health; the reaper
+          // (reapDead in POST_EVENT_TAIL_STEPS, same tick) stamps dead: true,
+          // deathDay, _burialPending, and the −8 child-death morale hit.
+          // Do NOT set dead: true or deathDay here, and do NOT apply a morale
+          // penalty — the reaper owns burial, morale (−8), and the death log.
           const party = s.party.map((m) =>
             m.id === victim.id
-              ? { ...m, dead: true, deathCause: 'Wagon Accident', deathDay: s.day, health: 0 }
+              ? { ...m, health: 0, deathCause: 'Wagon Accident' }
               : m
           );
           return logLine(
-            { ...s, party, morale: Math.max(0, s.morale - 10) },
-            `${victim.name} fell from the wagon tongue. Both wheels passed over the child. ${victim.name} is gone. Morale −10.`
+            { ...s, party },
+            `${victim.name} fell from the wagon tongue. Both wheels passed over the child.`
           );
         } else {
           // Injury — "survived with a crushed leg"

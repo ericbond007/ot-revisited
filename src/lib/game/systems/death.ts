@@ -27,8 +27,15 @@ export function reapDead(state: GameState, _rng: Rng): GameState {
     if (m.health > 0) return m;
     anyChange = true;
     const fromCondition = causeFromConditions(m.conditions);
-    // Cause priority: condition (cholera, dysentery, etc.) > dehydration > exposure default.
-    const cause = fromCondition
+    // Cause priority:
+    //   1. Pre-attributed cause — events that kill through a specific mechanism
+    //      (e.g. child_wagon_fall) pre-set deathCause on the member and drop
+    //      health to 0; the reaper owns the death itself (burial, morale, log).
+    //   2. Active condition (cholera, dysentery, etc.).
+    //   3. Dehydration (dry-streak active, no condition).
+    //   4. Exposure (default fallback).
+    const cause = m.deathCause
+      ?? fromCondition
       ?? (dryStreakActive ? 'Dehydration' : 'Exposure');
     return {
       ...m,
