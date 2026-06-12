@@ -873,7 +873,98 @@ const personal_prayer: GameEvent = {
   ]
 };
 
-EVENTS.push(cholera_scare, snakebite, berry_patch, abandoned_cache, fresh_spring, emigrant_party, abandoned_wagon, lost_child, personal_quarrel, personal_prayer);
+// #1259 §2 — child_wagon_fall
+//
+// Period anchors:
+// - Joel Hembree, age 6, July 1843: fell from the wagon tongue; the wheel
+//   ran over him. Oldest identified marked grave on the trail (Newby's diary).
+// - Catherine Sager, 1844: survived the same fall with a crushed leg.
+// The death copy echoes Hembree; the injury copy echoes Sager. Neither is
+// named in-game — the events are composites. Weight = 1 (rare: "the most
+// memorable child death, deliberately not the most common").
+//
+// NPC wagons: NPC_ELIGIBLE_EVENTS is filtered by NPC_ALLOWED_CATEGORIES
+// (which includes 'health') and npcSkip. This event has npcSkip: true because
+// synthesizeWagonState does NOT guarantee children in the synth party — the
+// wagon-synth bridge focuses on resources/oxen/wagon state, not full party
+// composition. The disease lever (§1 multiplier) already reaches NPCs through
+// the shared condition-tick; this accident event stays player/bot-facing only.
+//
+// Bot handling: single isDefault acknowledge choice → defaultChoice picks it
+// automatically; no persona crash possible. partyRiskAversion does NOT apply
+// (no risky/safe split — the accident has already happened).
+export const CHILD_WAGON_FALL_KILL_CHANCE = 0.4;
+export const CHILD_WAGON_FALL_BROKEN_LEG_CHANCE = 0.6;
+
+const child_wagon_fall: GameEvent = {
+  id: 'child_wagon_fall',
+  category: 'health',
+  title: 'A child falls from the wagon',
+  body: 'There is a cry and a sickening sound beneath the wheels. No warning, no way to stop in time.',
+  // Gate-tuned 1 -> 0.15: at weight 1 this event supplied 38-57% of all
+  // deaths in the 2,500-run sweep — the research says wagon run-overs
+  // were a FEW PERCENT of child deaths (the most memorable, not the
+  // most common). Most pool events don't kill; this one kills 40% of
+  // fires, so its fire rate must sit far below pool baseline.
+  weight: 0.15,
+  // Only fires when a live child is aboard. The engine's !arrivedAtLandmark
+  // guard in engine-pausable.ts prevents this from firing at a landmark;
+  // the gate itself only checks for child presence.
+  gate: (s) => s.party.some((m) => m.kind === 'child' && !m.dead),
+  // npcSkip: synth bridge doesn't carry full party composition with children.
+  npcSkip: true,
+  choices: [
+    {
+      id: 'acknowledge',
+      label: 'There was nothing to be done',
+      isDefault: true,
+      silentLog: true,
+      apply: (s, rng) => {
+        // Pick a random live child as the victim.
+        const liveChildren = s.party.filter((m) => m.kind === 'child' && !m.dead);
+        if (liveChildren.length === 0) return s; // gate should prevent this
+        const victim = liveChildren[rng.int(0, liveChildren.length - 1)];
+
+        // Outcome roll: ~40% killed instantly (Hembree/Collins), ~60% broken_leg (Sager).
+        const killed = rng.chance(CHILD_WAGON_FALL_KILL_CHANCE);
+
+        if (killed) {
+          // Death — pre-attribute the cause and zero health; the reaper
+          // (reapDead in POST_EVENT_TAIL_STEPS, same tick) stamps dead: true,
+          // deathDay, _burialPending, and the −8 child-death morale hit.
+          // Do NOT set dead: true or deathDay here, and do NOT apply a morale
+          // penalty — the reaper owns burial, morale (−8), and the death log.
+          const party = s.party.map((m) =>
+            m.id === victim.id
+              ? { ...m, health: 0, deathCause: 'Wagon Accident' }
+              : m
+          );
+          return logLine(
+            { ...s, party },
+            `${victim.name} fell from the wagon tongue. Both wheels passed over the child.`
+          );
+        } else {
+          // Injury — "survived with a crushed leg"
+          const party = s.party.map((m) =>
+            m.id === victim.id
+              ? {
+                  ...m,
+                  health: Math.max(1, m.health - 20),
+                  conditions: [...m.conditions, { id: 'broken_leg' as const, daysSinceOnset: 0 }]
+                }
+              : m
+          );
+          return logLine(
+            { ...s, party, morale: Math.max(0, s.morale - 5) },
+            `${victim.name} fell from the moving wagon and was crushed under the wheel. The leg is broken badly. Morale −5.`
+          );
+        }
+      }
+    }
+  ]
+};
+
+EVENTS.push(cholera_scare, snakebite, child_wagon_fall, berry_patch, abandoned_cache, fresh_spring, emigrant_party, abandoned_wagon, lost_child, personal_quarrel, personal_prayer);
 
 // --- Historical year/month-gated events ---
 const donner_rumor: GameEvent = {

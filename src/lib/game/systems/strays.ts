@@ -75,10 +75,12 @@ export function rollStrayMorning(state: GameState, rng: Rng): StrayRollResult {
     const oxen = state.oxen.map((o) =>
       o.id === target.id ? { ...o, health: 0 } : o
     );
+    // #1388 follow-through — event-path ox deaths feed the panic-buy
+    // recency window like tick deaths.
     return {
       milesMult: 0.7,
       logLine: 'An ox wandered off in the night and could not be found. Hours lost searching, then the team pressed on a head short.',
-      state: { ...state, oxen }
+      state: { ...state, oxen, flags: { ...state.flags, _lastOxDeathDay: state.day } }
     };
   }
 

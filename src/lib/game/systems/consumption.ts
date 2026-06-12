@@ -285,7 +285,18 @@ export function applyDailyConsumption(state: GameState): GameState {
 export const DIRTY_WATER_DISEASE_CHANCE = 0.025;
 export const DIRTY_WATER_DISEASE_CHANCE_DOCTOR = 0.0125;
 
-/** Roll waterborne illness for each adult drinking dirty water today.
+/** #1259 §1b — child dirty-water incidence multiplier.
+ *  "The children sickened first" — small bodies + less discrimination
+ *  about water sources. Raises the historical child-killer channel's
+ *  incidence, complementing the §1 CHILD_DEHYDRATING_DISEASE_MULT
+ *  damage amplifier. Applied only to the per-child roll chance; adult
+ *  chance, coffee/tea modifier, and doctor gate are unchanged.
+ *  Dave 2026-06-11; amends design-doc §3. */
+export const CHILD_DIRTY_WATER_RISK_MULT = 1.5;
+
+/** Roll waterborne illness for each party member drinking dirty water today.
+ *  Children roll at chance × CHILD_DIRTY_WATER_RISK_MULT (#1259 §1b).
+ *  Adults roll at the base chance (unchanged).
  *  At most one new infection per day to avoid wipe-out spirals. */
 export function applyDirtyWaterRisk(state: GameState, rng: { chance: (p: number) => boolean; pick: <T>(a: readonly T[]) => T }): GameState {
   const dirtyDrawn = (state.flags._lastDirtyWaterDrawn as number | undefined) ?? 0;
@@ -301,23 +312,34 @@ export function applyDirtyWaterRisk(state: GameState, rng: { chance: (p: number)
   // Boiling water for coffee/tea cuts the disease odds — they don't
   // know why it works, just that the brew tastes better and they
   // get sick less. modifier is 1.0 when no coffee/tea.
-  const chance = baseChance * dirtyFraction * waterborneDiseaseModifier(state);
-  const adults = state.party.filter((m) => !m.dead && m.kind === 'adult');
-  for (const adult of adults) {
-    if (rng.chance(chance)) {
+  const purityMod = waterborneDiseaseModifier(state);
+  const adultChance = baseChance * dirtyFraction * purityMod;
+  // #1259 §1b — children roll at 1.5× the adult chance. The coffee/tea
+  // modifier and doctor gate still apply; only the WHO is biased.
+  const childChance = adultChance * CHILD_DIRTY_WATER_RISK_MULT;
+
+  // Roll adults first (keeps original RNG stream for adult-only parties),
+  // then children. At most one infection returned per call.
+  const candidates = [
+    ...state.party.filter((m) => !m.dead && m.kind === 'adult'),
+    ...state.party.filter((m) => !m.dead && m.kind === 'child')
+  ];
+  for (const member of candidates) {
+    const rollChance = member.kind === 'child' ? childChance : adultChance;
+    if (rng.chance(rollChance)) {
       const disease = rng.pick(['cholera', 'dysentery'] as const);
       // Skip if they already have this condition.
-      if (adult.conditions.some((c) => c.id === disease)) continue;
+      if (member.conditions.some((c) => c.id === disease)) continue;
       return {
         ...state,
         party: state.party.map((m) =>
-          m.id === adult.id
+          m.id === member.id
             ? { ...m, conditions: [...m.conditions, { id: disease, daysSinceOnset: 0 }] }
             : m
         ),
         eventLog: [
           ...state.eventLog,
-          { day: state.day, text: `${adult.name} fell ill from drinking unboiled water — ${disease}.` }
+          { day: state.day, text: `${member.name} fell ill from drinking unboiled water — ${disease}.` }
         ]
       };
     }
