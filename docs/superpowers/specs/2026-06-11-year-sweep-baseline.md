@@ -34,3 +34,25 @@
 | 1858 | 54 (90%) | 0 | 0 | 6 | 0.00 (0+0) | — | 179 | 0.68 | — |
 
 Elapsed: 92.4s
+
+## Addendum (2026-06-12): the anomaly cells are variance, not mechanism
+
+The flagged cautious-1846 (and balanced-1855) spikes do NOT replicate
+across seed families (three families, 60 runs each: 1846 = 0.62/0.40/
+0.75 deaths/run, 1855 = 0.20/0.30/0.62 — the "1846 signature" Gate of
+Death cluster appears in 1855-third at 13 deaths). Two structural
+reasons the year-sweep over-reads cell differences:
+
+1. **Deaths arrive as whole-party wipes** on the Snake desert stretch
+   (Gate of Death / Three Island / Salmon Falls — multiples of ~6 in
+   every death-leg table), so 60-run cells swing ±0.2–0.3 deaths/run
+   on 2-vs-7 wipe luck. Compare WIPE counts, or use ≥150 runs/cell,
+   before reading a year effect.
+2. **Same seed strings are NOT paired across years**: year-gated
+   branches (donner_rumor ≥1847, canBoilWater ≥1854, the cholera
+   corridor 1849–53) consume different rng draws, reshuffling every
+   downstream roll. Cross-year cells are independent samples.
+
+The Snake stretch being cautious's graveyard in ALL years is the known
+dry-stretch design (#1264 corridor), not a bug. Entering state at the
+leg is year-identical (median day 107, keg 28, ~$190 across years).
