@@ -786,7 +786,7 @@ const stitchMoccasins: CampAction = {
 // buckskin will be found in constant requisition."
 // 2h, sewing_kit required (durable — not consumed). Available when
 // clothingCondition < 85. Restores garments +18 (cap 100).
-const MEND_CLOTHES_RESTORE = 18;
+export const MEND_CLOTHES_RESTORE = 18;
 const MEND_CLOTHES_THRESHOLD = 85;
 
 const mendClothes: CampAction = {

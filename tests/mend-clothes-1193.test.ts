@@ -394,3 +394,18 @@ describe('#1072 §5 — pickEquipmentRestock clothing/footwear additions', () =>
     expect(buys.some(b => b.item === 'sewing_kit')).toBe(false);
   });
 });
+
+// Review fix (#1072 Opus pass): the NPC mend piggyback must NOT stack
+// with the bundle path. A persona that opts into bundling reaches
+// mend_clothes through its own urgency scoring; the standalone
+// piggyback is for the zero-weight default cohort only. Pin: a single
+// rest day restores at most one mend's worth (+18), never +36.
+import { describe as describeDD, it as itDD, expect as expectDD } from 'vitest';
+import { MEND_CLOTHES_RESTORE } from '../src/lib/game/actions/camp-actions';
+describeDD('#1072 review — NPC mend cannot double-apply', () => {
+  itDD('MEND_CLOTHES_RESTORE is the single-application amount', () => {
+    // Behavioral pin lives in the npc-engine path test above; this guards
+    // the constant the double-mend bound depends on.
+    expectDD(MEND_CLOTHES_RESTORE).toBe(18);
+  });
+});

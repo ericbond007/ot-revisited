@@ -36,7 +36,7 @@ import type { TickCtx } from '../daily-steps';
  *  mi total abrasion budget. Rot: 0.15×150 = 22.5. Combined loss ~97 points
  *  → ends near 3 raw; terrain mix lifts the effective loss to ~75, landing
  *  near 25. Terrain multiplier below explains the mix.) */
-export const GARMENT_WEAR_PER_MILE = 0.022;
+export const GARMENT_WEAR_PER_MILE = 0.017; // gate-tuned 0.022 -> 0.017 (probe: garments hit 0 by d150; target ~25 unmended)
 
 /** Per-mile footwear abrasion. Boots wear ~2× faster than garments
  *  (McMartin thesis; Longmire arriving one-booted; Ward "shoes ruined").
@@ -63,7 +63,7 @@ export const TERRAIN_WEAR_MULT: Record<Terrain, number> = {
 // ---------------------------------------------------------------------------
 
 /** Dust embedding, mildew, camp-chore wear. Applies every day incl. rest. */
-export const GARMENT_ROT_PER_DAY = 0.15;
+export const GARMENT_ROT_PER_DAY = 0.10; // gate-tuned 0.15 -> 0.10
 export const FOOTWEAR_ROT_PER_DAY = 0.10;
 
 // ---------------------------------------------------------------------------
@@ -72,11 +72,11 @@ export const FOOTWEAR_ROT_PER_DAY = 0.10;
 
 /** Ford-crossing moisture spike — everyone waded or got soaked caulking.
  *  Flag: state.flags._fordedToday (set by actions/ford.ts, cleared here). */
-export const MOISTURE_FORD_GARMENT  = 3.0;
+export const MOISTURE_FORD_GARMENT  = 2.0; // gate-tuned 3 -> 2
 export const MOISTURE_FORD_FOOTWEAR = 1.5;
 
 /** Storm — lightning + hail + driving rain soaks everything. */
-export const MOISTURE_STORM_GARMENT  = 2.0;
+export const MOISTURE_STORM_GARMENT  = 1.5; // gate-tuned 2 -> 1.5
 export const MOISTURE_STORM_FOOTWEAR = 1.0;
 
 /** Rain — wet-weather travel; lighter soak than a storm. */
@@ -86,7 +86,7 @@ export const MOISTURE_RAIN_FOOTWEAR = 0.5;
 /** While-damp daily garment wear penalty (rot from mold).
  *  Continues until a clear-weather day clears the _clothingDampSinceDay flag.
  *  A later task will wire wash_clothes clearing. */
-export const MOISTURE_DAMP_DAILY_GARMENT = 0.5;
+export const MOISTURE_DAMP_DAILY_GARMENT = 0.4; // gate-tuned 0.5 -> 0.4
 
 // ---------------------------------------------------------------------------
 // Constants — cold minor secondary
