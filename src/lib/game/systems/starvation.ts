@@ -9,11 +9,22 @@ import type { GameState, Condition } from '../types';
 //
 // Damage curve (per adult):
 //   hungry-day 1: morale −5,  health  0
-//   hungry-day 2: morale −8,  health −5
-//   hungry-day 3: morale −10, health −12
-//   hungry-day 4: morale −15, health −20
-//   hungry-day 5: morale −20, health −30
-//   hungry-day 6+: morale −25, health −40 (almost guaranteed kill)
+//   hungry-day 2: morale −8,  health −3
+//   hungry-day 3: morale −10, health −6
+//   hungry-day 4: morale −15, health −10
+//   hungry-day 5: morale −20, health −14
+//   hungry-day 6+: morale −25, health −16
+//
+// #1389 re-tune — the old deep end (−40/day, 6-day kill) was calibrated
+// against the lay-by resurrection quirk (+8/day lifting 0-HP members off
+// the floor before the reaper looked). With that quirk closed, the old
+// curve turned every stalled run into a mass grave (year-sweep: 1843
+// deaths 0.02 -> 1.07/run). This curve costs a 5-day gap ~33 HP — about
+// what the old curve netted AFTER the bounce — while prolonged famine
+// now genuinely kills (~10-12 days from full health, no resurrection).
+// Period: the body survives weeks of famine with water; trail starvation
+// was a long decline, not a 6-day cliff ("slightly slower than
+// dehydration" understated it).
 //
 // Children take a slightly softer health hit (0.8×) since adults give
 // up share to them — but morale is the same for everyone.
@@ -23,7 +34,7 @@ import type { GameState, Condition } from '../types';
 // picks "Starvation" as the deathCause). Members lose the condition
 // the day after the party eats normally again.
 
-const HEALTH_PER_HUNGRY_DAY = [0, 0, 5, 12, 20, 30, 40] as const;
+const HEALTH_PER_HUNGRY_DAY = [0, 0, 3, 6, 10, 14, 16] as const;
 const MORALE_PER_HUNGRY_DAY = [0, 5, 8, 10, 15, 20, 25] as const;
 
 function healthHit(days: number): number {

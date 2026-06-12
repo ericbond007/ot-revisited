@@ -57,6 +57,15 @@ export type ConditionId =
 export interface Condition {
   id: ConditionId;
   daysSinceOnset: number;
+  /** #1389 — the malignant cholera course; serialized plain JSON, absent = mild.
+   *  Set at infliction on corridor-strain cholera only (Asiatic/Platte —
+   *  both the ambient corridor channel and the dirty-keg channel when
+   *  inCholeraCorridor holds). Effects in progressConditions: 5x damage
+   *  (ACUTE_CHOLERA_DAMAGE_MULT), no treatment dampening or cure roll
+   *  while daysSinceOnset < ACUTE_WINDOW_DAYS (4, gate-tuned); downgrades
+   *  to mild behavior after — the period course was death or
+   *  turn-the-corner within days. */
+  acute?: boolean;
 }
 
 export type Sex = 'male' | 'female';

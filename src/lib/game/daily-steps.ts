@@ -8,7 +8,7 @@
 // test. Do not reorder without a determinism re-baseline.
 import type { CompanyRestMode, GameState } from './types';
 import type { Rng } from './rng';
-import { applyAmbientWaterRefill, applyDailyConsumption, applyDirtyWaterRisk } from './systems/consumption';
+import { applyAmbientWaterRefill, applyDailyConsumption, applyDirtyWaterRisk, applyCholeraCorridorRisk } from './systems/consumption';
 import { applyPastryQuality } from './systems/pastry';
 import { rollDailyTheft } from './systems/item-loss';
 import { applyStarvation } from './systems/starvation';
@@ -82,8 +82,13 @@ export const MORNING_STEPS: readonly TickStep[] = [
   { id: 'applyHotDrinks',       run: (s) => applyHotDrinks(s) },
   { id: 'applyPastryQuality',   run: (s, rng) => applyPastryQuality(s, rng).state },
   { id: 'rollDailyTheft',       run: (s, rng) => rollDailyTheft(s, rng).state },
-  { id: 'applyDirtyWaterRisk',  run: (s, rng) => applyDirtyWaterRisk(s, rng) },
-  { id: 'applyStarvation',      run: (s) => applyStarvation(s) },
+  { id: 'applyDirtyWaterRisk',         run: (s, rng) => applyDirtyWaterRisk(s, rng) },
+  // #1389 — ambient Platte corridor cholera, 1849–1853, before Fort Laramie.
+  // Unscoped (NPC parity — sibling applyDirtyWaterRisk is also unscoped).
+  // Runs AFTER dirty-water risk so the at-most-one-per-day gate works
+  // correctly: if dirty already bit today, corridor skips.
+  { id: 'applyCholeraCorridorRisk',    run: (s, rng) => applyCholeraCorridorRisk(s, rng) },
+  { id: 'applyStarvation',             run: (s) => applyStarvation(s) },
 ];
 
 export const TRAVEL_OX_WAGON_STEPS: readonly TickStep[] = [

@@ -19,7 +19,11 @@ describe('#1266 — daily-steps spine order is locked', () => {
       'applySpoilage', 'applyHeatSpoilage', 'decayCleanliness', 'applyDirtyMorale',
       'applyFilthDiseaseRisk', 'applyAmbientWaterRefill', 'applyDailyConsumption',
       'applyWaterRationStrain', 'applyDietVariety', 'applyHotDrinks',
-      'applyPastryQuality', 'rollDailyTheft', 'applyDirtyWaterRisk', 'applyStarvation'
+      'applyPastryQuality', 'rollDailyTheft', 'applyDirtyWaterRisk',
+      // #1389 — ambient Platte corridor cholera, 1849–1853, before Fort Laramie.
+      // Unscoped (NPC parity). After dirty-water so at-most-one gate works.
+      'applyCholeraCorridorRisk',
+      'applyStarvation'
     ]);
   });
   it('TRAVEL_OX_WAGON_STEPS exact order', () => {

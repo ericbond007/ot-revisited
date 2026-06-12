@@ -14,13 +14,18 @@ function game(over: Partial<GameState> = {}): GameState {
 
 describe('#1266 stage1a — morale sparkline updates on the live path', () => {
   it('moraleHistory grows across tickDayPausable days', () => {
+    // #1389 re-baseline: the corridor step (applyCholeraCorridorRisk) consumes
+    // RNG for each party member in the 1849 Platte corridor, which can shift
+    // a subsequent event roll to fire on tick 1. Allow pendingEvents — they
+    // are valid pause points and do NOT prevent moraleHistory from growing.
+    // We run up to 8 ticks to find at least 1 completed day.
     let s = game();
     let completed = 0;
-    for (let d = 0; d < 3; d++) {
+    for (let d = 0; d < 8; d++) {
       const r = tickDayPausable(s);
       s = r.state;
-      if (r.pendingEvent) break;       // stop counting at the first pause
-      completed++;
+      if (!r.pendingEvent) completed++;
+      if (completed >= 1) break; // got what we need
     }
     expect(completed).toBeGreaterThan(0);
     expect(Array.isArray(s.moraleHistory)).toBe(true);
