@@ -535,13 +535,19 @@ export function tickNpcWagon(
   }
 
   // POST_EVENT_TAIL_STEPS segment — attemptFire (playerOnly, filtered) +
-  // applyDehydration + reapDead. Dehydration now runs BEFORE reap
-  // (player tail order — adopted reorder).
+  // applyDehydration + reapDead + applyClothingWear.
+  // Dehydration now runs BEFORE reap (player tail order — adopted reorder).
   // #1266 stage2 — this segment replaces the standalone reap block 6,
   // dehydration block 6b. attemptFire is playerOnly and safely filtered.
+  // #1072 — applyClothingWear (scope='all') reads ctx.milesTraveledToday
+  // for the abrasion component; map from NpcTickContext.traveledMiles.
   {
     const synth = synthesizeWagonState(next, env);
-    const ticked = runSteps(POST_EVENT_TAIL_STEPS, synth, rng, { traveled, driver: 'npc' });
+    const ticked = runSteps(POST_EVENT_TAIL_STEPS, synth, rng, {
+      traveled,
+      driver: 'npc',
+      milesTraveledToday: ctx.traveledMiles ?? 0
+    });
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);

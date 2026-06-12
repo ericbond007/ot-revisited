@@ -12,6 +12,7 @@ import { rollStrayMorning } from './strays';
 import { hasLiveScout, hasLiveLawyer } from '../professions/predicates';
 import { weatherTravelMult } from './weather';
 import { hydrationPaceMult } from './ox-hydration';
+import { getFootwearCondition, FOOTWEAR_SLOW_THRESHOLD, FOOTWEAR_SLOW_MULT, FOOTWEAR_HALT_THRESHOLD, FOOTWEAR_HALT_MULT } from './clothing-wear';
 
 // Base mileage per pace, before terrain / oxen / weather modifiers.
 // Calibrated against the #119 audit: with these values + the (c) terrain
@@ -133,7 +134,17 @@ export function milesPerDay(state: GameState): number {
   const impairmentMult = state.wagon.impairment?.paceMult ?? 1;
   const hydrationMult = hydrationPaceMult(aliveTeam);
 
-  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult * cowMult * impairmentMult * hydrationMult);
+  // #1072 — footwear condition pace penalty.
+  //   ≤25: ×0.95 (blisters from worn soles slow the driver)
+  //   ≤10: ×0.90 (rag-wrapped feet can barely keep pace)
+  // MILD per Dave 2026-06-12; revisit-after-SO note in clothing-wear.ts constants.
+  const footwear = getFootwearCondition(state);
+  const footwearMult =
+    footwear <= FOOTWEAR_HALT_THRESHOLD ? FOOTWEAR_HALT_MULT :
+    footwear <= FOOTWEAR_SLOW_THRESHOLD ? FOOTWEAR_SLOW_MULT :
+    1.0;
+
+  return Math.round(base * terrain * oxen * wagon.baseSpeedMult * teamSpeedMult * load * guideMult * scoutMult * weatherMult * cowMult * impairmentMult * hydrationMult * footwearMult);
 }
 
 // Landmark kinds that halt travel when reached so the player can make a choice.

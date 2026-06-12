@@ -33,6 +33,7 @@ import { applyNpcMoraleBaseline } from './systems/npc-morale';
 import { decayCleanliness, applyDirtyMorale, applyFilthDiseaseRisk } from './systems/cleanliness';
 import { checkSnowNews } from './systems/news';
 import { checkTrainPaceLift } from './systems/company-rest';
+import { applyClothingWear } from './systems/clothing-wear';
 
 /** Per-day context a step may need beyond (state, rng). */
 export interface TickCtx {
@@ -45,6 +46,12 @@ export interface TickCtx {
    *  When driver==='npc' && companyRestMode==='crisis_layby', recovery is
    *  suppressed to prevent undead-crisis lock. */
   companyRestMode?: CompanyRestMode;
+  /** #1072 — miles actually traveled today (0 on rest days). Passed by
+   *  both the player engine (computed from the milesTraveled delta after
+   *  applyTravel) and the NPC engine (from NpcTickContext.traveledMiles).
+   *  Read by applyClothingWear to scale the abrasion component. Absent
+   *  defaults to 0 — rest days skip abrasion entirely. */
+  milesTraveledToday?: number;
 }
 
 export interface TickStep {
@@ -131,4 +138,9 @@ export const POST_EVENT_TAIL_STEPS: readonly TickStep[] = [
   { id: 'attemptFire',    scope: 'playerOnly', run: (s, rng) => attemptFire(s, rng) }, // NPC synth stubs firewood to 0 — the cold-camp branch would exposure-drain NPCs nightly; excluded until NPCs carry firewood
   { id: 'applyDehydration', run: (s) => applyDehydration(s) },
   { id: 'reapDead',       run: (s, rng) => reapDead(s, rng) },
+  // #1072 — clothing wear. Runs AFTER reapDead so the HP nick reads
+  // only alive members. scope='all' for NPC parity (#298). Reads
+  // ctx.milesTraveledToday (passed by both player and NPC engines
+  // from the miles-delta seam after applyTravel).
+  { id: 'applyClothingWear', run: (s, _rng, ctx) => applyClothingWear(s, ctx) },
 ];

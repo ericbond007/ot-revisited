@@ -182,6 +182,15 @@ export interface Resources {
   // nightly fire (5 lb/night). Gathered passively on travel days and
   // actively via the Gather Firewood camp action.
   firewood?: number;
+  // #1072 — Clothing condition tracks, 0–100. Both default 100 on new
+  // games (createInitialState) and are read with `?? 100` at call sites
+  // so old saves get the safe starting value without migration.
+  // clothingCondition: garments pool (coats, trousers, dresses,
+  //   blanket-wraps — every piece a family member wears).
+  // footwearCondition: boot + moccasin pool (the faster-wearing track;
+  //   boots wear ~2× per mile vs garments per McMartin thesis).
+  clothingCondition?: number;
+  footwearCondition?: number;
 }
 
 export type ItemId = string; // item catalog IDs — catalog ships in Plan 3
@@ -421,6 +430,15 @@ export interface NpcWagonState extends WagonStateLike {
    *  site (continuations that drop the event don't mark, so it re-fires next
    *  tick); cleared whenever the wagon has food again. */
   crisisAskedDay?: number;
+  /** #1072 — NPC garments condition 0-100. Mirrors
+   *  `resources.clothingCondition` on the player's GameState. Round-trips
+   *  through the synth bridge via `resources`. Optional — pre-#1072 saves
+   *  default to 100 (`?? 100`) at all read sites. */
+  clothingCondition?: number;
+  /** #1072 — NPC footwear condition 0-100. Mirrors
+   *  `resources.footwearCondition` on the player's GameState. Same
+   *  round-trip as clothingCondition. Optional — defaults to 100. */
+  footwearCondition?: number;
 }
 
 export type GameStateFlag =

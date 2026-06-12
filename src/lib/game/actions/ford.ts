@@ -249,6 +249,8 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       // Lighter chill than a full ford — water spills over the bow.
       const caulkRng = makeRng(`${s.seed}:action:ford:${s.day}:caulk-chill`);
       s = applyFordChill(s, 3, caulkRng, events);
+      // #1072 — caulk still soaks gear; apply moisture spike via the flag.
+      s = { ...s, flags: { ...s.flags, _fordedToday: true } };
       s = clearAtLandmark(s);
       crossed = true;
       break;
@@ -355,6 +357,11 @@ export function ford(state: GameState, opts: FordOptions): GameState {
       // a summer prairie ford does no health damage at all.
       const chillBase = Math.round(6 + Math.min(6, danger));
       s = applyFordChill(s, chillBase, rng, events);
+      // #1072 — mark for the clothing-wear engine (applyClothingWear reads
+      // this flag and applies the ford moisture spike +3g/+1.5f on the next
+      // tick, then clears the flag). Set BEFORE passiveDay so the next
+      // daily tick that fires through the engine spine sees it.
+      s = { ...s, flags: { ...s.flags, _fordedToday: true } };
       s = clearAtLandmark(passiveDay(s, 'ford'));
       crossed = true;
       break;
