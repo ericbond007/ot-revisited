@@ -64,11 +64,12 @@ const FLAG_STARVATION_DAYS = '_starvationDays';
  *  when a new daily system introduces a multi-day flag; same-tick flags
  *  (consumed within one synth) do NOT belong here. */
 export const NPC_PERSISTENT_FLAG_KEYS = [
-  '_hotDrinkClock',    // diet.ts — accumulating oz toward the next lb of coffee/tea
-  '_july4Year',        // holidays.ts — last year the July 4 bump fired
-  '_christmasYear',    // holidays.ts — last year the Christmas bump fired
-  '_cannibalismCount', // cannibal.ts / camp-actions.ts — running tally
-  '_lastOxDeathDay'    // oxen.ts — day the most recent ox newly reached health=0; gating the #1388 panic-bump recency check
+  '_hotDrinkClock',      // diet.ts — accumulating oz toward the next lb of coffee/tea
+  '_july4Year',          // holidays.ts — last year the July 4 bump fired
+  '_christmasYear',      // holidays.ts — last year the Christmas bump fired
+  '_cannibalismCount',   // cannibal.ts / camp-actions.ts — running tally
+  '_lastOxDeathDay',     // oxen.ts — day the most recent ox newly reached health=0; gating the #1388 panic-bump recency check
+  '_mourningUntilDay'    // #1403 death.ts — day the mourning window ends; NPC wagons mourn too
 ] as const;
 
 /** Build the engine-shaped `flags` blob for an NPC wagon: pack the

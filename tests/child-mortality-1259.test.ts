@@ -494,12 +494,16 @@ describe('#1259 §2 — child_wagon_fall: death sets correct deathCause', () => 
 describe('#1259 §2 — child_wagon_fall + reapDead integration: full pipeline', () => {
   // Verifies the review fix (MED): event kill → reapDead (same tick) stamps
   // dead: true with deathCause 'Wagon Accident', sets _burialPending, and
-  // applies the −8 child-death morale hit.
+  // applies the child-death morale hit.
+  //
+  // #1403 re-baseline: child hit raised from −8 to CHILD_DEATH_MORALE (−16)
+  // + mourning cap (70). Test updated to assert the new values (morale = min
+  // of cap, max(0, prior - 16)).
   //
   // reapDead is POST_EVENT_TAIL_STEPS[2] in daily-steps.ts; applyPendingChoice
   // calls runSteps(POST_EVENT_TAIL_STEPS, ...) immediately after resolveEvent
   // completes — so the reap fires same-day (no +1 delay).
-  it('after resolveEvent + reapDead: child is dead, deathCause Wagon Accident, _burialPending set, morale −8', () => {
+  it('after resolveEvent + reapDead: child is dead, deathCause Wagon Accident, _burialPending set, morale hit (#1403)', () => {
     const ev = EVENTS.find((e) => e.id === 'child_wagon_fall')!;
     const s = gameWithChild();
     const choiceId = ev.choices[0].id;
@@ -538,8 +542,10 @@ describe('#1259 §2 — child_wagon_fall + reapDead integration: full pipeline',
     // _burialPending set (not all-dead — one adult still alive).
     expect(afterReap.flags._burialPending).toBe(true);
 
-    // Morale: −8 child hit applied by reaper (NOT the old −10 from the event).
-    expect(afterReap.morale).toBe(Math.max(0, afterEvent!.morale - 8));
+    // Morale: #1403 re-baseline — child hit is −16, then capped at MOURNING_MORALE_CAP (70).
+    // (was: Math.max(0, prior - 8) before #1403)
+    const expectedMorale = Math.min(70, Math.max(0, afterEvent!.morale - 16));
+    expect(afterReap.morale).toBe(expectedMorale);
   });
 });
 

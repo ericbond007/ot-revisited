@@ -15,7 +15,7 @@ import { applyStarvation } from './systems/starvation';
 import { progressConditions } from './systems/conditions';
 import { tickOxen } from './systems/oxen';
 import { tickWagon } from './systems/wagon';
-import { adjustMorale } from './systems/morale';
+import { adjustMorale, applyMourningCap } from './systems/morale';
 import { applySabbathTravelDebit } from './systems/sabbath-travel';
 import { attemptFire } from './systems/fire';
 import { reapDead } from './systems/death';
@@ -113,6 +113,10 @@ export const POST_BRANCH_STEPS: readonly TickStep[] = [
   // not persist flags across ticks (projectWagonDeltas doesn't sync flags),
   // so running it on NPC synths would silently no-op every tick anyway.
   { id: 'checkTrainPaceLift', scope: 'playerOnly' as const, run: (s) => checkTrainPaceLift(s) },
+  // #1403 — mourning-window cap. Runs LAST in POST_BRANCH_STEPS so all
+  // morale-affecting steps (adjustMorale, applyHolidays, applyNpcMoraleBaseline)
+  // have settled before the cap is applied. scope='all' — NPC parity.
+  { id: 'applyMourningCap', run: (s) => applyMourningCap(s) },
 ];
 
 export const PRE_TRAVEL_STEPS: readonly TickStep[] = [

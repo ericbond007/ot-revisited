@@ -6,6 +6,12 @@ import { hasLiveWhore, hasLiveTeacher } from '../professions/predicates';
 // Whore keeps morale from cratering — +15% floor while she's alive in the party.
 export const WHORE_MORALE_FLOOR = 15;
 
+/** #1403 — morale ceiling during a mourning window (see death.ts MOURNING_DAYS).
+ *  Calibrated at 70 so the cap lands between "okay" and "recovering":
+ *  healingMultiplier(70) = 1.10 (still healing well), not punishing, just
+ *  not the flat-happy 100 the rich recovery economy was producing. */
+export const MOURNING_MORALE_CAP = 70;
+
 export function moraleFloorFor(state: GameState): number {
   return hasLiveWhore(state) ? WHORE_MORALE_FLOOR : 0;
 }
@@ -66,6 +72,20 @@ export function adjustMorale(state: GameState, _rng: Rng): GameState {
   const floor = moraleFloorFor(state);
   const morale = Math.max(floor, Math.min(100, state.morale + delta));
   return { ...state, morale };
+}
+
+/** #1403 — mourning-window cap. While `state.day < state.flags._mourningUntilDay`,
+ *  clamp morale to MOURNING_MORALE_CAP (70). Gains BELOW the cap still apply —
+ *  recovery is bounded, not suppressed. That's what prevents the one-way
+ *  ratchet (#918): after the 14-day window the rich daily recovery does its
+ *  full work again.
+ *
+ *  Call LATE in POST_BRANCH_STEPS, after all morale-affecting steps have run. */
+export function applyMourningCap(state: GameState): GameState {
+  const until = state.flags._mourningUntilDay;
+  if (typeof until !== 'number') return state;
+  if (state.day >= (until as number)) return state;
+  return { ...state, morale: Math.min(state.morale, MOURNING_MORALE_CAP) };
 }
 
 /** Roll the 7-day morale-history buffer forward. Call at end-of-tick after
