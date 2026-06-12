@@ -13,10 +13,11 @@ const DOCTOR_RELIEF_MULT = 0.7;
 
 /** #1389 — acute-cholera damage multiplier. The malignant (Asiatic) form
  *  kills through catastrophic fluid loss — "healthy in the morning, dead
- *  by nightfall." 3× the base dailyHealthDelta (-21/day for cholera) for
- *  the first 48 hours (daysSinceOnset < 2). After day 2 the case either
- *  killed or turned the corner; the engine models this by downgrading to
- *  mild behavior (the acute flag is still present but no longer active).
+ *  by nightfall." 5x the base dailyHealthDelta (-35/day for cholera;
+ *  gate-tuned from 3x — see the note below) while daysSinceOnset <
+ *  ACUTE_WINDOW_DAYS (4). After the window the case either killed or
+ *  turned the corner; the engine models this by downgrading to mild
+ *  behavior (the acute flag is still present but no longer active).
  *
  *  Math sanity (comment per spec #1389):
  *    Adult, doctor aboard:  -21 × 0.7 (DOCTOR_RELIEF_MULT) = -14.7/day
@@ -170,14 +171,16 @@ export function progressConditions(state: GameState, rng: Rng): GameState {
           : 1.0;
 
       // #1389 — acute (malignant) cholera branch.
-      // Applies only while daysSinceOnset < ACUTE_WINDOW_DAYS (the acute window decides
-      // it; period course: death or turn-the-corner within ~2 days).
-      // After day 2 the acute flag is still present but the effects below
-      // do NOT fire — the case uses the normal treatment/resolve path.
+      // Applies only while daysSinceOnset < ACUTE_WINDOW_DAYS (4, gate-
+      // tuned; the window decides it — period course: death or turn-the-
+      // corner within days). After the window the acute flag is still
+      // present but the effects below do NOT fire — the case uses the
+      // normal treatment/resolve path.
       // Doctor relief still applies (care mattered at the margin even when
       // medicine didn't — Altonen PSU 2000).
       if (c.acute && c.daysSinceOnset < ACUTE_WINDOW_DAYS) {
-        // 3× the base delta (cholera: -7 → -21/day); childAmp stacks.
+        // ACUTE_CHOLERA_DAMAGE_MULT (5x) the base delta (cholera: -7 ->
+        // -35/day); childAmp stacks.
         // Treatment dampening (TREATMENT_DAMAGE_MULT) and cure rolls are
         // skipped — the malignant course overwhelms calomel and calomel's
         // purging response ("the treatment was indistinguishable from the
@@ -185,7 +188,7 @@ export function progressConditions(state: GameState, rng: Rng): GameState {
         // Consumes a treatment item without effect so supply still drains.
         if (treatment) {
           inventory[treatment] = (inventory[treatment] ?? 0) - 1;
-          // no cure roll — acute course ignores treatment for days 0-1
+          // no cure roll — acute course ignores treatment inside the window
         }
         healthDelta += meta.dailyHealthDelta * ACUTE_CHOLERA_DAMAGE_MULT * reliefMult * childAmp;
       } else if (treatment) {

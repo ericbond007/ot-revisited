@@ -58,11 +58,13 @@ export interface Condition {
   id: ConditionId;
   daysSinceOnset: number;
   /** #1389 — the malignant cholera course; serialized plain JSON, absent = mild.
-   *  Set at infliction by applyCholeraCorridorRisk on the corridor strain only
-   *  (Asiatic/Platte cholera). Effects in progressConditions: 3× damage, no
-   *  treatment dampening or cure roll for the first 48 h (daysSinceOnset < 2);
-   *  downgrades to mild behavior after day 2 — the period course was death or
-   *  turn-the-corner within ~2 days. */
+   *  Set at infliction on corridor-strain cholera only (Asiatic/Platte —
+   *  both the ambient corridor channel and the dirty-keg channel when
+   *  inCholeraCorridor holds). Effects in progressConditions: 5x damage
+   *  (ACUTE_CHOLERA_DAMAGE_MULT), no treatment dampening or cure roll
+   *  while daysSinceOnset < ACUTE_WINDOW_DAYS (4, gate-tuned); downgrades
+   *  to mild behavior after — the period course was death or
+   *  turn-the-corner within days. */
   acute?: boolean;
 }
 

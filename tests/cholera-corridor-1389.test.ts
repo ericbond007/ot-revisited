@@ -11,7 +11,7 @@
  *     applyDirtyWaterRisk in MORNING_STEPS.
  *  7. Acute-case model (#1389 bimodal extension):
  *     - acute roll at corridor infliction (~30% per seed, deterministic)
- *     - acute instance takes 3× damage and ignores treatment for days 0-1
+ *     - acute instance takes 5x damage (gate-tuned) and ignores treatment for days 0-1
  *     - downgrades at daysSinceOnset >= 2 (treatment works again)
  *     - childAmp stacks with acute multiplier
  *     - serialization round-trip preserves acute flag
@@ -667,7 +667,7 @@ describe('#1389 acute-case — ACUTE_CHOLERA_CHANCE constant and infliction', ()
 });
 
 // ---------------------------------------------------------------------------
-// 8. Acute progression: 3× damage, no treatment dampening / cure for days 0-1
+// 8. Acute progression: 5x damage (gate-tuned), no treatment dampening / cure for days 0-1
 // ---------------------------------------------------------------------------
 describe('#1389 acute-case — progressConditions damage during acute phase (days 0-1)', () => {
   it('acute cholera day 0 applies 5× base damage (-35; gate-tuned, see ACUTE_CHOLERA_DAMAGE_MULT) without treatment', () => {
@@ -720,7 +720,7 @@ describe('#1389 acute-case — progressConditions damage during acute phase (day
 // ---------------------------------------------------------------------------
 describe('#1389 acute-case — downgrade at daysSinceOnset >= 2', () => {
   it('acute cholera day 2: STILL acute (gate-tuned window -> 4, ACUTE_WINDOW_DAYS)', () => {
-    // Re-baselined for ACUTE_WINDOW_DAYS = 3: at the 48h window the doctored
+    // Re-baselined for ACUTE_WINDOW_DAYS = 3: at the ACUTE_WINDOW_DAYS window the doctored
     // care stack survived every acute case from full HP (probe: zero direct
     // deaths); day 2 now stays on the acute path. -7 x 3 = -21 -> 58 - 21 = 37.
     const member = makeMember({ id: 'a', health: 58 });
