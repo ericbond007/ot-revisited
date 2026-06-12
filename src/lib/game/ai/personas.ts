@@ -1112,7 +1112,18 @@ export const cautiousPersona: Persona = {
       'cornmeal', 'wheel', 'axle', 'tongue', 'canvas'
     ];
   },
-  shouldDissent() { return 'abide'; },
+  shouldDissent(state, decision) {
+    // #1386 — even the cautious split when the clock turned CRITICAL:
+    // children in the snow was the nightmare that outranked the safety
+    // of company (the same inversion the winter wall's family margin
+    // encodes). Discretionary lay-bys only; the crisis death-watch is
+    // never abandoned.
+    if (decision.mode === 'sabbath_layby' || decision.mode === 'maintenance_layby') {
+      const pressure = schedulePressure(state, doctrineFor(this.id).targetArrivalDay);
+      if (pressure === 'critical') return 'press_on';
+    }
+    return 'abide';
+  },
   shouldShareWithTrain() { return null; },
   pickWheelBreakResponse(state) {
     // Cautious never pushes on a broken wheel — burns days to rebuild
@@ -1350,8 +1361,17 @@ export const balancedPersona: Persona = {
   },
   pickNpcEventChoice: () => null,
   pickBarterDispositions: defaultPickBarterDispositions,
-  shouldDissent() {
-    // Trust the chartered company; never break off over a rest call.
+  shouldDissent(state, decision) {
+    // #1386 — the period split. Companies fractured constantly and pace
+    // disagreement was the best-documented cause (Unruh; Russell quit his
+    // own train 1846; 1852 Cascades press-ahead factions). Balanced trusts
+    // the chartered company until the snow-safe clock says CRITICAL — then
+    // a discretionary lay-by (Sabbath/maintenance, never the crisis
+    // death-watch) is the moment the family goes on without them.
+    if (decision.mode === 'sabbath_layby' || decision.mode === 'maintenance_layby') {
+      const pressure = schedulePressure(state, doctrineFor(this.id).targetArrivalDay);
+      if (pressure === 'critical') return 'press_on';
+    }
     return 'abide';
   },
   shouldShareWithTrain() {
@@ -1848,6 +1868,20 @@ export const chaosPersona: Persona = {
 export const sundayResterPersona: Persona = {
   ...balancedPersona,
   id: 'sunday_rester',
+  shouldDissent(state, decision) {
+    // #1386 — the Sabbath is SACRED even at critical pressure: these
+    // personas never split the company over a Sunday lay-by (their own
+    // rest logic breaks Sabbath at critical, but abandoning the company
+    // over its observance is a different sin entirely). A maintenance
+    // lay-by at critical pressure, though, is mere prudence — and the
+    // snow is not prudent; they press on like everyone else.
+    if (decision.mode === 'sabbath_layby') return 'abide';
+    if (decision.mode === 'maintenance_layby') {
+      const pressure = schedulePressure(state, doctrineFor(this.id).targetArrivalDay);
+      if (pressure === 'critical') return 'press_on';
+    }
+    return 'abide';
+  },
   bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
@@ -2101,6 +2135,20 @@ const SHARE_CHANCE = 0.6;
 export const faithfulPersona: Persona = {
   ...balancedPersona,
   id: 'faithful',
+  shouldDissent(state, decision) {
+    // #1386 — the Sabbath is SACRED even at critical pressure: these
+    // personas never split the company over a Sunday lay-by (their own
+    // rest logic breaks Sabbath at critical, but abandoning the company
+    // over its observance is a different sin entirely). A maintenance
+    // lay-by at critical pressure, though, is mere prudence — and the
+    // snow is not prudent; they press on like everyone else.
+    if (decision.mode === 'sabbath_layby') return 'abide';
+    if (decision.mode === 'maintenance_layby') {
+      const pressure = schedulePressure(state, doctrineFor(this.id).targetArrivalDay);
+      if (pressure === 'critical') return 'press_on';
+    }
+    return 'abide';
+  },
   pickEventChoice(state, event, rng) {
     // Prefer scripture / prayer / preacher choices when offered.
     const devout = choiceMatching(
