@@ -1,5 +1,6 @@
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
+import type { ConditionId } from '../types';
 import { getCondition } from '../content/conditions';
 import { hasLiveDoctor } from '../professions/predicates';
 import { careLevel } from './care';
@@ -9,6 +10,42 @@ import { careLevel } from './care';
 // gentler beating from disease and injury. Applied to the daily
 // health delta only; morale delta still hits in full.
 const DOCTOR_RELIEF_MULT = 0.7;
+
+// #1259 §1 — Age-banded disease lethality (Bashore/BYU 2014 J-curve).
+//
+// Children aged 1–9 died from dehydrating disease at ~1.6–2× the rate
+// of prime adults. The mechanism is physiological: small bodies have a
+// higher surface-area-to-volume ratio and dehydrate in hours-to-days
+// rather than days-to-weeks. Cholera and dysentery (the primary killers)
+// operated through fluid loss, so body mass was the decisive variable.
+//
+// Typhoid and measles are explicitly NOT in this set — the Bashore data
+// shows them epidemic but NOT child-lethality-skewed. Measles was roughly
+// flat across age cohorts on the Mormon Trail; typhoid skewed adult-male.
+//
+// The applyDirtyWaterRisk channel (consumption.ts) inflicts either
+// 'cholera' or 'dysentery' — both are in this set, so the channel is
+// fully covered by the multiplier.
+//
+// NPC parity: NPC wagons tick conditions through the shared
+// progressConditions function via wagon-synth.ts (synthesizeWagonState +
+// tickNpcWagon). This multiplier lives at the single shared damage site,
+// so player, bot, and NPC wagons inherit it identically.
+
+/** Multiplier on daily condition damage for a child afflicted with a
+ *  dehydrating disease. Upper-center of the 1.3–1.8× research band
+ *  (ages 1–9 vs prime adults; Bashore/Tolley, BYU Studies 53:4 2014). */
+export const CHILD_DEHYDRATING_DISEASE_MULT = 1.75;
+
+/** Condition ids whose daily damage is amplified by
+ *  CHILD_DEHYDRATING_DISEASE_MULT when the afflicted member is a child.
+ *  Cholera and dysentery are the primary dehydrating killers; the
+ *  dirty-water channel (applyDirtyWaterRisk) can only inflict these two,
+ *  so the set fully covers that exposure path. */
+export const DEHYDRATING_CONDITIONS: ReadonlySet<ConditionId> = new Set<ConditionId>([
+  'cholera',
+  'dysentery'
+]);
 
 // Treatment-item dampening + cure chance. Period-faithful: emigrants
 // dosed with quinine, calomel, laudanum, dovers powder; outcomes were
@@ -78,12 +115,24 @@ export function progressConditions(state: GameState, rng: Rng): GameState {
       const treatment = (meta.treatmentItems ?? []).find(
         (id) => (inventory[id] ?? 0) > 0
       );
+      // #1259 §1 — Dehydrating-disease amplifier for children.
+      // Small bodies lose fluid volume faster; cholera/dysentery killed
+      // ages 1–9 at ~1.6–2× the prime-adult rate (Bashore/BYU 2014).
+      // Applies at this shared damage site → player, bot, and NPC wagons
+      // inherit identically (NPC parity by construction; see npc-engine.ts
+      // §939d note: conditions flow through progressConditions via
+      // wagon-synth.ts synthesizeWagonState).
+      const childAmp =
+        m.kind === 'child' && DEHYDRATING_CONDITIONS.has(c.id)
+          ? CHILD_DEHYDRATING_DISEASE_MULT
+          : 1.0;
+
       if (treatment) {
         inventory[treatment] = (inventory[treatment] ?? 0) - 1;
         if (rng.chance(TREATMENT_CURE_CHANCE)) {
           continue;
         }
-        healthDelta += meta.dailyHealthDelta * reliefMult * TREATMENT_DAMAGE_MULT;
+        healthDelta += meta.dailyHealthDelta * reliefMult * TREATMENT_DAMAGE_MULT * childAmp;
       } else {
         // #1046 D — care-gated natural-course resolve. Checked on the
         // INCOMING daysSinceOnset, after the item paths so medicine
@@ -101,7 +150,7 @@ export function progressConditions(state: GameState, rng: Rng): GameState {
         if (resolveP > 0 && rng.chance(resolveP)) {
           continue; // ran its course; no damage, condition dropped
         }
-        healthDelta += meta.dailyHealthDelta * reliefMult;
+        healthDelta += meta.dailyHealthDelta * reliefMult * childAmp;
       }
       if (meta.dailyMoraleDelta) moraleDelta += meta.dailyMoraleDelta;
       nextConditions.push({ ...c, daysSinceOnset: c.daysSinceOnset + 1 });

@@ -1160,7 +1160,10 @@ const raid_revenge: GameEvent = {
           ...s,
           oxen,
           wagon,
-          morale: Math.max(0, s.morale - 5)
+          morale: Math.max(0, s.morale - 5),
+          // #1388 follow-through — event-path ox deaths feed the panic-buy
+          // recency window like tick deaths.
+          flags: killOx ? { ...s.flags, _lastOxDeathDay: s.day } : s.flags
         };
         next = clearRaidFlags(next);
         const flavor = killOx
