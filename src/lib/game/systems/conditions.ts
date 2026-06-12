@@ -11,6 +11,44 @@ import { careLevel } from './care';
 // health delta only; morale delta still hits in full.
 const DOCTOR_RELIEF_MULT = 0.7;
 
+/** #1389 — acute-cholera damage multiplier. The malignant (Asiatic) form
+ *  kills through catastrophic fluid loss — "healthy in the morning, dead
+ *  by nightfall." 3× the base dailyHealthDelta (-21/day for cholera) for
+ *  the first 48 hours (daysSinceOnset < 2). After day 2 the case either
+ *  killed or turned the corner; the engine models this by downgrading to
+ *  mild behavior (the acute flag is still present but no longer active).
+ *
+ *  Math sanity (comment per spec #1389):
+ *    Adult, doctor aboard:  -21 × 0.7 (DOCTOR_RELIEF_MULT) = -14.7/day
+ *      × 2 days = ~-29 HP total before downgrade — a survivor IF healthy
+ *      at onset, scarred but alive.
+ *    Child (childAmp 1.75):  -21 × 1.75 × 0.7 = -25.7/day doctored
+ *      — a child starting at 100 HP hits ~49 after 2 days: alive but
+ *      marginal. A child at 60 HP or below is likely fatal.
+ *    Undoctored adult: -21/day × 2 = -42 HP — adults starting below 60
+ *      HP are coin-flips; adults at 100 HP survive with ~16 HP buffer.
+ *  Bimodality is the point: ~30% of corridor cases are coin-flips weighted
+ *  by HP at onset, age, and doctor presence. */
+// Gate-tuned 3 -> 5: at 3x the convalescent care stack + full-HP early-trail
+// parties survived every acute case (two probes, zero direct deaths). At 5x
+// (-35/day raw): an undoctored adult dies inside the window; a doctored adult
+// at full HP barely survives (-24.5/day x 3 = -74); a child (1.75x amp)
+// rarely does. Period: the violent case killed healthy adults in 24 hours —
+// fluid loss is absolute, not proportional to reserve.
+export const ACUTE_CHOLERA_DAMAGE_MULT = 5;
+
+/** #1389 gate-tuned 2 -> 3: at a 48h window the doctored care stack
+ *  survives every acute case from full HP (probe: 21/30 runs with
+ *  onsets, zero direct deaths). At 72h: a doctored adult loses ~44 HP
+ *  (a survivable horror), an undoctored adult ~63 (dies with any prior
+ *  wear), a doctored child ~77 (usually fatal — small bodies fail in
+ *  hours-to-days). The bimodal coin-flip the period record describes.
+ *  Gate-tuned 3 -> 4 with the 5x mult: traced child acute cases rode the
+ *  3-day window to exactly ~8 HP and recovered (rest-day healing offsets
+ *  one day's drain); the 4th day is what the period record calls the
+ *  death — or the turn — of the violent case. */
+export const ACUTE_WINDOW_DAYS = 4;
+
 // #1259 §1 — Age-banded disease lethality (Bashore/BYU 2014 J-curve).
 //
 // Children aged 1–9 died from dehydrating disease at ~1.6–2× the rate
@@ -131,7 +169,26 @@ export function progressConditions(state: GameState, rng: Rng): GameState {
           ? CHILD_DEHYDRATING_DISEASE_MULT
           : 1.0;
 
-      if (treatment) {
+      // #1389 — acute (malignant) cholera branch.
+      // Applies only while daysSinceOnset < ACUTE_WINDOW_DAYS (the acute window decides
+      // it; period course: death or turn-the-corner within ~2 days).
+      // After day 2 the acute flag is still present but the effects below
+      // do NOT fire — the case uses the normal treatment/resolve path.
+      // Doctor relief still applies (care mattered at the margin even when
+      // medicine didn't — Altonen PSU 2000).
+      if (c.acute && c.daysSinceOnset < ACUTE_WINDOW_DAYS) {
+        // 3× the base delta (cholera: -7 → -21/day); childAmp stacks.
+        // Treatment dampening (TREATMENT_DAMAGE_MULT) and cure rolls are
+        // skipped — the malignant course overwhelms calomel and calomel's
+        // purging response ("the treatment was indistinguishable from the
+        // disease in effect" — Billington 1842 immigrant physician journal).
+        // Consumes a treatment item without effect so supply still drains.
+        if (treatment) {
+          inventory[treatment] = (inventory[treatment] ?? 0) - 1;
+          // no cure roll — acute course ignores treatment for days 0-1
+        }
+        healthDelta += meta.dailyHealthDelta * ACUTE_CHOLERA_DAMAGE_MULT * reliefMult * childAmp;
+      } else if (treatment) {
         inventory[treatment] = (inventory[treatment] ?? 0) - 1;
         if (rng.chance(TREATMENT_CURE_CHANCE)) {
           continue;

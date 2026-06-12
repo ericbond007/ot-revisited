@@ -325,6 +325,15 @@ export const CHOLERA_CORRIDOR_YEARS: readonly number[] = [1849, 1850, 1851, 1852
 export const CORRIDOR_AMBIENT_CHOLERA_CHANCE = 0.005;
 export const CORRIDOR_AMBIENT_CHOLERA_CHANCE_DOCTOR = 0.0025;
 
+/** #1389 — probability that a corridor infection is the acute (malignant) form.
+ *  Period case-fatality even with treatment was 20–60% for Asiatic cholera
+ *  (Altonen PSU 2000; Unruh 1979 trail mortality tables); the corridor strain
+ *  on the Platte was the virulent one. The dirty-keg channel keeps inflicting
+ *  MILD cholera/dysentery — the corridor strain is the killer. 0.3 ≈ the
+ *  lower bound of the historical CFR range; net mortality integrates across
+ *  HP at onset, age, and doctor presence (see progressConditions math note). */
+export const ACUTE_CHOLERA_CHANCE = 0.3;
+
 /** Roll ambient Asiatic cholera for each party member in the Platte corridor.
  *  Runs only in CHOLERA_CORRIDOR_YEARS AND before Fort Laramie.
  *  Inflicts cholera only (this channel is specifically Asiatic cholera; the
@@ -335,14 +344,21 @@ export const CORRIDOR_AMBIENT_CHOLERA_CHANCE_DOCTOR = 0.0025;
  *  We detect "dirty channel already bit today" by scanning for any cholera or
  *  dysentery condition with daysSinceOnset === 0 (onset = today). This avoids
  *  shared mutable state and remains correct regardless of spine reordering. */
+/** True when the party stands in the Asiatic-cholera corridor: a
+ *  corridor year (1849–1853) AND east of Fort Laramie (Altonen: cholera
+ *  "rarely mentioned past Laramie"). The STRAIN is geographic — corridor
+ *  cholera carries the acute-case risk no matter which water channel
+ *  delivered it (the keg is full of Platte water here too). */
+export function inCholeraCorridor(state: GameState): boolean {
+  return CHOLERA_CORRIDOR_YEARS.includes(state.date.year)
+    && state.location.milesTraveled < CHOLERA_CORRIDOR_END_MI;
+}
+
 export function applyCholeraCorridorRisk(
   state: GameState,
   rng: { chance: (p: number) => boolean }
 ): GameState {
-  // Gate 1: corridor years only (Asiatic cholera largely absent outside them).
-  if (!CHOLERA_CORRIDOR_YEARS.includes(state.date.year)) return state;
-  // Gate 2: before Fort Laramie — "rarely mentioned past Laramie" (Altonen).
-  if (state.location.milesTraveled >= CHOLERA_CORRIDOR_END_MI) return state;
+  if (!inCholeraCorridor(state)) return state;
 
   // At-most-one-per-day coordination: if the dirty-water channel already
   // inflicted any cholera or dysentery today (daysSinceOnset === 0), skip.
@@ -378,11 +394,22 @@ export function applyCholeraCorridorRisk(
     if (rng.chance(rollChance)) {
       // Skip if already carrying cholera (can't double-infect).
       if (member.conditions.some((c) => c.id === 'cholera')) continue;
+      // #1389 — roll the acute (malignant) form. The corridor strain on
+      // the Platte was Asiatic cholera; ACUTE_CHOLERA_CHANCE = 0.3 ≈ the
+      // lower bound of the period 20–60% CFR. The dirty-keg channel never
+      // rolls acute — only the corridor strain is the killer.
+      const acute = rng.chance(ACUTE_CHOLERA_CHANCE);
       return {
         ...state,
         party: state.party.map((m) =>
           m.id === member.id
-            ? { ...m, conditions: [...m.conditions, { id: 'cholera', daysSinceOnset: 0 }] }
+            ? {
+                ...m,
+                conditions: [
+                  ...m.conditions,
+                  { id: 'cholera', daysSinceOnset: 0, ...(acute ? { acute: true } : {}) }
+                ]
+              }
             : m
         ),
         eventLog: [
@@ -431,11 +458,18 @@ export function applyDirtyWaterRisk(state: GameState, rng: { chance: (p: number)
       const disease = rng.pick(['cholera', 'dysentery'] as const);
       // Skip if they already have this condition.
       if (member.conditions.some((c) => c.id === disease)) continue;
+      // #1389 — the acute (malignant) roll belongs to the REGION, not the
+      // channel: in corridor years the keg holds Platte water, so keg-borne
+      // cholera carries the same Asiatic-strain acute risk as the ambient
+      // corridor channel. Dysentery and out-of-corridor cholera stay mild.
+      const acute = disease === 'cholera'
+        && inCholeraCorridor(state)
+        && rng.chance(ACUTE_CHOLERA_CHANCE);
       return {
         ...state,
         party: state.party.map((m) =>
           m.id === member.id
-            ? { ...m, conditions: [...m.conditions, { id: disease, daysSinceOnset: 0 }] }
+            ? { ...m, conditions: [...m.conditions, acute ? { id: disease, daysSinceOnset: 0, acute: true } : { id: disease, daysSinceOnset: 0 }] }
             : m
         ),
         eventLog: [
