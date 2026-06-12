@@ -58,6 +58,9 @@ function travelDayRecovery(state: GameState): GameState {
   let any = false;
   const party = state.party.map((m) => {
     if (m.dead || m.health >= 100) return m;
+    // #1389 — see layByRecovery: zero-HP members are the reaper's, not the
+    // healer's. Symmetric guard for the in-motion convalesce path.
+    if (m.health <= 0) return m;
     if (m.conditions.length === 0) {
       any = true;
       return { ...m, health: Math.min(100, m.health + freeGain) };
@@ -75,6 +78,12 @@ function layByRecovery(state: GameState): GameState {
   let any = false;
   const party = state.party.map((m) => {
     if (m.dead || m.health >= 100) return m;
+    // #1389 — you cannot convalesce a corpse. A member floored to 0 by the
+    // morning condition tick stays at 0 for the end-of-day reaper; pre-fix,
+    // the lay-by heal lifted them off zero before reapDead looked, making
+    // death by disease on a rest day impossible (the '#1046 §13 lay-by-
+    // healed undead' quirk, now closed at the root). 1-HP members still heal.
+    if (m.health <= 0) return m;
     any = true;
     return { ...m, health: Math.min(100, m.health + gain) };
   });
