@@ -360,7 +360,9 @@ function buildBotShoppingList(state: GameState, here: Landmark, persona: Persona
   // attribution shows the same dehydration pattern.
   const equipmentOpts = {
     ...persona.pickEquipmentRestockOpts(state),
-    waterBagTarget: gapAwareWaterBagTarget(state)
+    waterBagTarget: gapAwareWaterBagTarget(state),
+    // #1072 — thread footwear condition so the equipment slice can restock boots/moccasins.
+    footwearCondition: state.resources.footwearCondition ?? 100
   };
   const list = composeShoppingList(
     { wagon: state, stock },

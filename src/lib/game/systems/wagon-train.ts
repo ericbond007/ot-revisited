@@ -815,9 +815,11 @@ export function applyNpcPostRestock(state: GameState): GameState {
     // composeShoppingList uses.
     const equipFauxState = { day: state.day, date: state.date, location: state.location } as unknown as GameState;
     const equipOpts = persona.pickEquipmentRestockOpts(equipFauxState);
+    // #1072 — pass footwearCondition so the equipment slice can restock boots/moccasins.
+    const equipOptsWithFootwear = { ...equipOpts, footwearCondition: next.footwearCondition ?? 100 };
     const nonFoodBuys: BuyOrder[] = [
       ...pickWarmthRestock({ wagon: next, stock }),
-      ...pickEquipmentRestock({ wagon: next, stock }, equipOpts),
+      ...pickEquipmentRestock({ wagon: next, stock }, equipOptsWithFootwear),
       ...pickHunterRestock({ wagon: next, stock }),
       ...pickRepairRestock({ wagon: next, stock }),
       ...pickMedicineRestock({ wagon: next, stock })

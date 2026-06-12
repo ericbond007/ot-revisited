@@ -100,6 +100,10 @@ export const BASE_KIT: StarterKit = {
     bandages:    8,
     shovel:      1,
     cookware:    1,
+    // #1072 / #1193 — sewing kit. Marcy 1859 "The Prairie Traveler" §"Housewife":
+    // awl + thread + needles + beeswax + buttons. Prescribed for every outfit.
+    // Durable — unlocks the mend_clothes camp action.
+    sewing_kit:      1,
     // #888c — period outfitter package. Marcy 1859 lists these as the
     // floor for any wagon leaving Independence. Pre-#888c making them
     // outfitter-only purchases was a game-mechanic artifact, not period.

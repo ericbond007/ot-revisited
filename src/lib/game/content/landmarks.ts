@@ -397,7 +397,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'epsom_salts', 'camphor', 'paregoric', 'hartshorn', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'spare_plank', 'tar_bucket', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins',
-      'shovel', 'salt', 'saleratus', 'soap', 'lard', 'rope', 'cookware', 'compass', 'water_bag', 'chicken', 'milk_cow', 'cheese_press', 'butter_crock', 'grain',
+      'shovel', 'salt', 'saleratus', 'soap', 'sewing_kit', 'lard', 'rope', 'cookware', 'compass', 'water_bag', 'chicken', 'milk_cow', 'cheese_press', 'butter_crock', 'grain',
       'tobacco', 'whiskey', 'bible',
       'anvil', 'china_tea_set', 'feather_mattress', 'grandfather_clock',
       'moccasins', 'buffalo_robe', 'beads',
@@ -588,7 +588,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'epsom_salts', 'camphor', 'paregoric',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'ox_shoes', 'yoke', 'ox_bow', 'picket_pins', 'grain', 'milk_cow', 'cheese_press', 'butter_crock',
-      'soap', 'tobacco', 'whiskey', 'harmonica',
+      'soap', 'sewing_kit', 'tobacco', 'whiskey', 'harmonica',
       // #1021 — water_bag (rubber bag, 1849+). Period: Carpenter 1857
       // "two rubber bags at Hall, four dollars apiece." THE post for
       // the Snake desert push.
@@ -869,7 +869,7 @@ export const LANDMARKS: readonly Landmark[] = [
       'epsom_salts', 'camphor', 'paregoric', 'dovers_powder', 'castor_oil',
       'coat', 'boots', 'blanket', 'tent',
       'wheel', 'axle', 'tongue', 'canvas', 'yoke', 'ox_bow', 'picket_pins',
-      'cookware', 'rope', 'salt', 'soap', 'milk_cow', 'cheese_press', 'butter_crock',
+      'cookware', 'rope', 'salt', 'soap', 'sewing_kit', 'milk_cow', 'cheese_press', 'butter_crock',
       'tobacco', 'whiskey', 'bible', 'harmonica', 'fiddle'
     ] },
   // Barlow Road junction — the toll road south around Mt. Hood, the

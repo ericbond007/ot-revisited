@@ -114,6 +114,10 @@ export const PRICES: Record<string, PriceEntry> = {
   shovel:       { buy: 2.50,  sell: 1.20 },
   salt:         { buy: 1.50,  sell: 0.60 },
   saleratus:    { buy: 0.20,  sell: 0.08 },
+  // #1072 — sewing kit. Marcy 1859 needles + thread + awl; period outfitter
+  // price ~$1.50–2.50 for a complete housewife kit. Durable — not consumed.
+  sewing_kit:   { buy: 2.00,  sell: 0.80 },
+
   // #269 Lye soap. Per Marcy 1859 — "soap, 5¢ a bar" wholesale; emigrant
   // outfitters charged 8-10× markup at Independence and more on the trail.
   soap:         { buy: 0.50,  sell: 0.20 },

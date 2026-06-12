@@ -11,6 +11,7 @@ import {
 import { postRemainingQty, recordPostPurchases } from './post-stock';
 import { getWagon } from '../content/wagons';
 import { computeWaterCap } from './water-cap';
+import { getClothingCondition, getFootwearCondition } from './clothing-wear';
 
 export interface TradeBasket {
   mode: 'cash' | 'barter';
@@ -132,7 +133,35 @@ export function settleTrade(state: GameState, basket: TradeBasket): SettleResult
   for (const [id, qty] of giveE) inventory[id] = (inventory[id] ?? 0) - qty;
   for (const [id, qty] of getE) inventory[id] = (inventory[id] ?? 0) + qty;
 
+  // #1072 — clothing condition bump for purchased items.
+  // Buying new garments / footwear restores the relevant condition track:
+  //   clothing category (coat, blanket, tent) → +6 garments per item
+  //   boots (footwear, clothing category) → +25 footwear per item
+  //   moccasins (footwear, native_trade category) → +15 footwear per item
+  // Caps at 100. Applies only to bought items (basket.get).
+  let garmentBump = 0;
+  let footwearBump = 0;
+  for (const [id, qty] of getE) {
+    if (id === 'boots') {
+      footwearBump += 25 * qty;
+    } else if (id === 'moccasins') {
+      footwearBump += 15 * qty;
+    } else {
+      const cat = ITEMS[id]?.category;
+      if (cat === 'clothing') {
+        garmentBump += 6 * qty;
+      }
+    }
+  }
+
   const newWaterCap = computeWaterCap(state.wagon.model, inventory);
+
+  const newClothingCondition = garmentBump > 0
+    ? Math.min(100, getClothingCondition(state) + garmentBump)
+    : (state.resources.clothingCondition ?? 100);
+  const newFootwearCondition = footwearBump > 0
+    ? Math.min(100, getFootwearCondition(state) + footwearBump)
+    : (state.resources.footwearCondition ?? 100);
 
   let next: GameState = {
     ...state,
@@ -141,7 +170,9 @@ export function settleTrade(state: GameState, basket: TradeBasket): SettleResult
     resources: {
       ...state.resources,
       waterCap: newWaterCap,
-      water: Math.min(state.resources.water, newWaterCap)
+      water: Math.min(state.resources.water, newWaterCap),
+      clothingCondition: newClothingCondition,
+      footwearCondition: newFootwearCondition
     }
   };
   const purchaseMap: Record<string, number> = {};

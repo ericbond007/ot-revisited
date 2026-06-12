@@ -21,6 +21,9 @@
 import type { WagonStateLike } from '../types';
 import { hasLive } from '../professions/predicates';
 
+// #1072 — thresholds for footwear restock and sewing_kit acquisition.
+const FOOTWEAR_RESTOCK_THRESHOLD = 40;
+
 export interface BuyOrder {
   item: string;
   qty: number;
@@ -74,6 +77,10 @@ export interface EquipmentRestockOpts {
    *  "every keg, every gourd, every bottle"). Player-bot threads
    *  `gapAwareWaterBagTarget(state)`; NPCs default to 2. */
   waterBagTarget?: number;
+  /** #1072 — footwear condition for the wagon. When below
+   *  FOOTWEAR_RESTOCK_THRESHOLD (40), the slice adds boots or moccasins
+   *  to the buy list. Defaults to 100 (no restock needed) when absent. */
+  footwearCondition?: number;
 }
 
 /** One-time utility kit: shovel, cookware, water_bag, rope. Gear the
@@ -99,6 +106,24 @@ export function pickEquipmentRestock(
     if (need > 0) buys.push({ item: 'water_bag', qty: need });
   }
   if (stock.has('rope') && (inv.rope ?? 0) < 1) buys.push({ item: 'rope', qty: 1 });
+
+  // #1072 — footwear restock when condition is low.
+  // Boots first; moccasins as fallback if boots unavailable at this post.
+  // Both are gated on footwearCondition < FOOTWEAR_RESTOCK_THRESHOLD.
+  const fwCond = opts.footwearCondition ?? 100;
+  if (fwCond < FOOTWEAR_RESTOCK_THRESHOLD) {
+    if (stock.has('boots')) {
+      buys.push({ item: 'boots', qty: 1 });
+    } else if (stock.has('moccasins')) {
+      buys.push({ item: 'moccasins', qty: 1 });
+    }
+  }
+
+  // #1072 — sewing_kit wishlist: buy 1 if none in inventory.
+  if (stock.has('sewing_kit') && (inv.sewing_kit ?? 0) < 1) {
+    buys.push({ item: 'sewing_kit', qty: 1 });
+  }
+
   return buys;
 }
 
