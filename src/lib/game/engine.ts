@@ -126,9 +126,11 @@ export function createInitialState(opts: NewGameOptions): GameState {
     // wagon or water_bag count changes.
     // Firewood starts stocked (~4 nights' worth) so the first week of
     // travel isn't a cold-camp cascade.
+    // #1072 — clothing tracks start at 100. Old saves get 100 via
+    // `?? 100` at read sites (no migration per the standing rule).
     resources: (() => {
       const cap = computeWaterCap(wagonModelId, kit.inventory);
-      return { water: cap, waterCap: cap, firewood: 20 };
+      return { water: cap, waterCap: cap, firewood: 20, clothingCondition: 100, footwearCondition: 100 };
     })(),
     morale: 70,
     pace: 'moderate',

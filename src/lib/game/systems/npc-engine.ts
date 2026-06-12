@@ -40,6 +40,7 @@ import type {
 } from '../types';
 import { getPersona } from '../ai/personas';
 import { bundleCampActions } from '../ai/bundle';
+import { clothingMendWanted } from '../ai/rest';
 import { CAMP_ACTIONS_BY_ID } from '../actions/camp-actions';
 import { getWagon } from '../content/wagons';
 import { synthesizeWagonState, projectWagonDeltas, type TrainEnv } from './wagon-synth';
@@ -379,9 +380,27 @@ export function tickNpcWagon(
   // Sub-seed: day + wagon name + persona is sufficient to stay
   // deterministic without polluting the main stream.
   if (!traveled) {
+    // #927 opt-in gate — aligned with the runner's (review fix: the NPC
+    // gate omitted the custom-bundle clause, so faithful's faithfulBundle
+    // never fired for NPC wagons).
     const w = persona.bundleWeights;
-    const optsIn = w.survival > 0 || w.food > 0 || w.maintenance > 0
+    const optsIn = !!persona.bundleCampActions
+      || w.survival > 0 || w.food > 0 || w.maintenance > 0
       || w.hygiene > 0 || w.morale > 0;
+    // #1072/#1193 — mend piggyback parity with the player-bot driver:
+    // default personas carry zero weights, so without this NPC wagons
+    // never mend and their warmth silently degrades. Runs ONLY for
+    // non-bundling personas — bundlers reach mend_clothes through their
+    // own urgency scoring (review fix: both paths firing would double-
+    // mend +36/rest-day the moment any persona gains a weight).
+    if (!optsIn && clothingMendWanted(synthesizeWagonState(next, env))) {
+      const mendRng = makeRng(`mend:${env.day}:${next.name}`);
+      const synthM = synthesizeWagonState(next, env);
+      const mend = CAMP_ACTIONS_BY_ID['mend_clothes'];
+      if (mend.availability(synthM).available) {
+        next = projectWagonDeltas(mend.apply(synthM, mendRng), next);
+      }
+    }
     if (optsIn) {
       const bundleRng = makeRng(`bundle:${env.day}:${next.name}:${persona.id}`);
       const synth = synthesizeWagonState(next, env);
@@ -535,13 +554,19 @@ export function tickNpcWagon(
   }
 
   // POST_EVENT_TAIL_STEPS segment — attemptFire (playerOnly, filtered) +
-  // applyDehydration + reapDead. Dehydration now runs BEFORE reap
-  // (player tail order — adopted reorder).
+  // applyDehydration + reapDead + applyClothingWear.
+  // Dehydration now runs BEFORE reap (player tail order — adopted reorder).
   // #1266 stage2 — this segment replaces the standalone reap block 6,
   // dehydration block 6b. attemptFire is playerOnly and safely filtered.
+  // #1072 — applyClothingWear (scope='all') reads ctx.milesTraveledToday
+  // for the abrasion component; map from NpcTickContext.traveledMiles.
   {
     const synth = synthesizeWagonState(next, env);
-    const ticked = runSteps(POST_EVENT_TAIL_STEPS, synth, rng, { traveled, driver: 'npc' });
+    const ticked = runSteps(POST_EVENT_TAIL_STEPS, synth, rng, {
+      traveled,
+      driver: 'npc',
+      milesTraveledToday: ctx.traveledMiles ?? 0
+    });
     next = projectWagonDeltas(ticked, next);
     for (const entry of ticked.eventLog) {
       playerLogs.push(`${entry.text} (${next.name})`);

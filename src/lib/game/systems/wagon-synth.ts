@@ -188,7 +188,12 @@ export function synthesizeWagonState(wagon: NpcWagonState, env: TrainEnv): GameS
       water: wagon.water,
       waterCap: wagon.waterCap,
       dirtyWater: wagon.dirtyWater,
-      firewood: 0
+      firewood: 0,
+      // #1072 — carry clothing tracks into the synth so applyClothingWear
+      // (scope='all') sees and updates them. Defaults to 100 for pre-#1072
+      // NPC wagons (no migration per the standing rule).
+      clothingCondition: wagon.clothingCondition ?? 100,
+      footwearCondition: wagon.footwearCondition ?? 100
     },
     morale: wagon.morale,
     moraleHistory: undefined,
@@ -239,6 +244,12 @@ export function projectWagonDeltas(
     water: ticked.resources.water,
     waterCap: ticked.resources.waterCap,
     dirtyWater: ticked.resources.dirtyWater ?? 0,
+    // #1072 — project clothing tracks back from the ticked synth state.
+    // The engine wrote them into resources.clothingCondition / footwearCondition;
+    // restore to the typed NPC fields. Fall back to original (first-tick) if
+    // somehow absent (should not happen after #1072 ships).
+    clothingCondition: ticked.resources.clothingCondition ?? original.clothingCondition ?? 100,
+    footwearCondition: ticked.resources.footwearCondition ?? original.footwearCondition ?? 100,
     eventLog: [...original.eventLog, ...ticked.eventLog],
     outcome: ticked.outcome,
     spoilDays: fromFlags.spoilDays,

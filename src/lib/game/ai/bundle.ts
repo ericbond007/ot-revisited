@@ -20,6 +20,7 @@ import { CAMP_ACTIONS_BY_ID, hourCostFor } from '../actions/camp-actions';
 import { pickHuntTarget } from './hunt';
 import { isSunday } from '../utils/calendar';
 import { canBoilWater } from '../systems/water-purity';
+import { getClothingCondition } from '../systems/clothing-wear';
 
 /** Mirror of rest.ts's TIME_BUDGET_HOURS. Single source of truth lives
  *  here so callers don't bypass the cap. */
@@ -38,14 +39,14 @@ export type BundleableActionId =
   | 'find_water' | 'boil_water' | 'gather_firewood' | 'dig_well'             // survival
   | 'fish' | 'set_traps' | 'cure_meat' | 'press_cheese' | 'big_meal'          // food (hunt is separate via RestBundle.hunt)
   | 'patch_wagon' | 'replace_canvas' | 'replace_planks' | 'stitch_moccasins'
-    | 'cast_balls' | 'service_train'                                          // maintenance
+    | 'mend_clothes' | 'cast_balls' | 'service_train'                        // maintenance
   | 'wash_clothes' | 'make_soap'                                              // hygiene
   | 'sing_along' | 'read_bible' | 'pass_whiskey' | 'teach_kids';              // morale
 
 export const BUNDLEABLE_ACTIONS: readonly BundleableActionId[] = [
   'find_water', 'boil_water', 'gather_firewood', 'dig_well',
   'fish', 'set_traps', 'cure_meat', 'press_cheese', 'big_meal',
-  'patch_wagon', 'replace_canvas', 'replace_planks', 'stitch_moccasins', 'cast_balls', 'service_train',
+  'patch_wagon', 'replace_canvas', 'replace_planks', 'stitch_moccasins', 'mend_clothes', 'cast_balls', 'service_train',
   'wash_clothes', 'make_soap',
   'sing_along', 'read_bible', 'pass_whiskey', 'teach_kids',
 ];
@@ -72,7 +73,7 @@ export const CATEGORY_OF: Record<BundleableActionId, keyof BundleWeights> = {
   press_cheese: 'food', big_meal: 'food',
   patch_wagon: 'maintenance', replace_canvas: 'maintenance',
   replace_planks: 'maintenance', stitch_moccasins: 'maintenance',
-  cast_balls: 'maintenance', service_train: 'maintenance',
+  mend_clothes: 'maintenance', cast_balls: 'maintenance', service_train: 'maintenance',
   wash_clothes: 'hygiene', make_soap: 'hygiene',
   sing_along: 'morale', read_bible: 'morale',
   pass_whiskey: 'morale', teach_kids: 'morale',
@@ -169,7 +170,18 @@ export function urgency(state: GameState, id: BundleableActionId): number {
     case 'replace_planks':
       return state.wagon.condition < 50 ? 10 : 0;
     case 'stitch_moccasins':
-      return (state.inventory.hide ?? 0) > 0 ? 6 : 3;
+      return (state.inventory.raw_hide ?? 0) > 0 ? 6 : 0;
+    case 'mend_clothes': {
+      // #1072 — urgency rises as garments degrade below 50.
+      // Shape mirrors patch_wagon: high urgency at critical, moderate
+      // in the warning band. Only fires when sewing_kit is present
+      // (the action's own availability() gates on that, but urgency=0
+      // here also prevents the action from polluting the score table).
+      const hasSewingKit = (state.inventory.sewing_kit ?? 0) > 0;
+      if (!hasSewingKit) return 0;
+      const c = getClothingCondition(state);
+      return c < 25 ? 10 : c < 50 ? 7 : c < 85 ? 4 : 0;
+    }
     case 'cast_balls': {
       const balls = state.inventory.lead_balls ?? 0;
       const hasMats = (state.inventory.lead ?? 0) > 0

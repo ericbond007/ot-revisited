@@ -176,6 +176,13 @@ export const ITEMS: Record<string, ItemMeta> = {
   fishing_rod:  { id: 'fishing_rod',  name: 'Fishing rod',  category: 'tool', weightLbPerUnit: 2,   description: 'Folding pole + line. Faster than a hand-line, better yield. Heavier but worth carrying past Fort Hall.' },
   fishing_net:  { id: 'fishing_net',  name: 'Fishing net',  category: 'tool', weightLbPerUnit: 8,   description: 'Seine net for group fishing. Heavy but the highest-yield gear at major rivers.' },
 
+  // #1072 / #1193 — sewing kit. Durable (not consumed by mend_clothes).
+  // Period anchor: Marcy 1859 *The Prairie Traveler* §"Housewife" — "Thread,
+  // needles, beeswax for the thread, buttons, and an awl should be carried,
+  // as the awl and buckskin will be found in constant requisition."
+  // Packed in a small buckskin bag; weighs next to nothing.
+  sewing_kit: { id: 'sewing_kit', name: 'Sewing kit', category: 'tool', weightLbPerUnit: 1, description: 'Thread, needles, beeswax, buttons, and an awl in a buckskin bag. "The awl and buckskin will be found in constant requisition." — Marcy, 1859' },
+
   coat: { id: 'coat', name: 'Coat', category: 'clothing', weightLbPerUnit: 4, description: 'Warmth +25 per person (one per body). Cuts ford-chill damage and cold-camp health loss.' },
   boots: { id: 'boots', name: 'Boots', category: 'clothing', weightLbPerUnit: 3, description: 'Warmth +15 per person. Helps most when wading into cold rivers.' },
   blanket: { id: 'blanket', name: 'Blanket', category: 'clothing', weightLbPerUnit: 5, description: 'Warmth +25 per person. Night chill mitigation when the fire goes out.' },

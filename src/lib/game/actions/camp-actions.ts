@@ -17,6 +17,8 @@ import {
   findFreshUnconsumedCorpse,
   hasFoodOnHand
 } from '../systems/cannibal';
+// #1072 / #1193 — clothing condition helpers.
+import { getClothingCondition, getFootwearCondition } from '../systems/clothing-wear';
 
 // Camp actions are one-shot activities the party can do during a rest
 // day (applied on day 1 of the rest, same as shovel actions). Each has
@@ -60,6 +62,7 @@ export type CampActionId =
   | 'replace_canvas'
   | 'replace_planks'
   | 'stitch_moccasins'
+  | 'mend_clothes'
   | 'find_water'
   | 'boil_water'
   | 'dig_well'
@@ -745,10 +748,12 @@ const replacePlanks: CampAction = {
 
 const STITCH_HIDE_COST = 1;
 
+const STITCH_FOOTWEAR_RESTORE = 10;
+
 const stitchMoccasins: CampAction = {
   id: 'stitch_moccasins',
   label: 'Stitch moccasins from rawhide',
-  sub: `${STITCH_HIDE_COST} raw hide · 2 hr · +1 moccasins`,
+  sub: `${STITCH_HIDE_COST} raw hide · 2 hr · +1 moccasins · footwear +${STITCH_FOOTWEAR_RESTORE}`,
   icon: '🥿',
   hourCost: 2,
   availability: (s) =>
@@ -762,9 +767,48 @@ const stitchMoccasins: CampAction = {
       raw_hide: (s.inventory.raw_hide ?? 0) - STITCH_HIDE_COST,
       moccasins: (s.inventory.moccasins ?? 0) + 1
     };
+    // #1072 — also restores footwear condition +10 (new soles for worn shoes).
+    const newFootwear = Math.min(100, getFootwearCondition(s) + STITCH_FOOTWEAR_RESTORE);
     return logLine(
-      { ...s, inventory },
-      'Stitched moccasins from a rawhide.'
+      {
+        ...s,
+        inventory,
+        resources: { ...s.resources, footwearCondition: newFootwear }
+      },
+      `Stitched moccasins from a rawhide. Footwear +${STITCH_FOOTWEAR_RESTORE}.`
+    );
+  }
+};
+
+// #1072 / #1193 — mend_clothes camp action.
+// Period anchor: Knight 1853 "done some washing and sewing" (Sabbath rest).
+// Marcy 1859 prescribes the sewing kit for exactly this use: "The awl and
+// buckskin will be found in constant requisition."
+// 2h, sewing_kit required (durable — not consumed). Available when
+// clothingCondition < 85. Restores garments +18 (cap 100).
+export const MEND_CLOTHES_RESTORE = 18;
+const MEND_CLOTHES_THRESHOLD = 85;
+
+const mendClothes: CampAction = {
+  id: 'mend_clothes',
+  label: 'Mend clothes',
+  sub: `Sewing kit · 2 hr · garments +${MEND_CLOTHES_RESTORE} (available below ${MEND_CLOTHES_THRESHOLD}%)`,
+  icon: '🧵',
+  hourCost: 2,
+  availability: (s) => {
+    if ((s.inventory.sewing_kit ?? 0) < 1) {
+      return { available: false, reason: 'Need a sewing kit' };
+    }
+    if (getClothingCondition(s) >= MEND_CLOTHES_THRESHOLD) {
+      return { available: false, reason: 'Clothes are in good shape (below 85% to mend)' };
+    }
+    return { available: true };
+  },
+  apply: (s) => {
+    const newGarments = Math.min(100, getClothingCondition(s) + MEND_CLOTHES_RESTORE);
+    return logLine(
+      { ...s, resources: { ...s.resources, clothingCondition: newGarments } },
+      'An afternoon of mending — needles and patches against the trail\'s wear.'
     );
   }
 };
@@ -944,8 +988,12 @@ const washClothes: CampAction = {
     const flavor = hasSoap
       ? `Boiled water, lathered the lye soap, beat the clothes on the rocks, and bathed in the river. Cleanliness +${boost}, one bar of soap used. Morale +2.`
       : `Boiled water, beat the clothes on the rocks, and bathed in the river. Cleanliness +${boost}. Morale +2.`;
+    // #1072 — wash clears the _clothingDampSinceDay flag (dried in the sun
+    // after a thorough wash; no more mold risk from the previous soak).
+    const flags = { ...next.flags };
+    delete (flags as Record<string, unknown>)['_clothingDampSinceDay'];
     return logLine(
-      { ...next, inventory, morale: Math.min(100, next.morale + 2) },
+      { ...next, inventory, flags, morale: Math.min(100, next.morale + 2) },
       flavor
     );
   }
@@ -1652,6 +1700,8 @@ export const CAMP_ACTIONS: readonly CampAction[] = [
   replaceCanvas,
   replacePlanks,
   stitchMoccasins,
+  // #1072 / #1193 — clothing mend (sewing kit)
+  mendClothes,
   // Practical
   gatherFirewood,
   washClothes,
@@ -1691,6 +1741,7 @@ export const CAMP_ACTIONS_BY_ID: Record<CampActionId, CampAction> = {
   replace_canvas: replaceCanvas,
   replace_planks: replacePlanks,
   stitch_moccasins: stitchMoccasins,
+  mend_clothes: mendClothes,
   gather_firewood: gatherFirewood,
   wash_clothes: washClothes,
   press_cheese: pressCheese,

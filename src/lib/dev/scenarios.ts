@@ -438,6 +438,29 @@ export const SCENARIOS: Scenario[] = [
     }
   },
 
+  // #1072-§6 — Scenario for clothing condition chip visual check.
+  // clothingCondition=45 (amber band), footwearCondition=20 (red band).
+  {
+    id: 'worn_clothing',
+    label: 'Worn clothing (amber/red chips)',
+    description: 'Fort Kearny with clothing 45% (amber) and footwear 20% (red) — exercises the condition chips in the inventory group header.',
+    build: () => {
+      let s = atLandmark(baseState('worn-clothing'), 'ft_kearny');
+      // Give the party a sewing_kit and basic clothing items so the
+      // Clothing group appears + mend_clothes is available at camp.
+      s = setInventory(s, { sewing_kit: 1, coat: 2, boots: 2, blanket: 2 });
+      s = {
+        ...s,
+        resources: {
+          ...s.resources,
+          clothingCondition: 45,
+          footwearCondition: 20
+        }
+      };
+      return s;
+    }
+  },
+
   // #1304-T5 — Scenarios for the projected-arrival chip visual check.
   // Each produces a different arrivalBand state by placing the party at
   // a specific mile/day combination so projectedArrivalDay() returns the

@@ -341,6 +341,12 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   }
   const milesTraveledToday = s.location.milesTraveled - milesBeforeTravel;
 
+  // #1072 — update ctx with today's miles delta so POST_EVENT_TAIL_STEPS
+  // (specifically applyClothingWear) can scale abrasion correctly.
+  // ctx is const above but reassigned here because milesTraveledToday
+  // is only known after applyTravel runs.
+  const ctxWithMiles: typeof ctx = { ...ctx, milesTraveledToday };
+
   const arrivedAtLandmark = s.location.atLandmarkId !== null && s.location.atLandmarkId !== undefined;
 
   // #285 — Wagon-train captain elections. Fires when the player
@@ -477,7 +483,7 @@ export function tickDayPausable(state: GameState): PausableTickResult {
   }
 
   // No event — continue.
-  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, ctx);
+  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, ctxWithMiles);
 
   // #280b/#288 — advance NPC wagons one day alongside the player.
   // traveled = whether the company actually moved today (#1046 C2).
@@ -580,14 +586,18 @@ export function applyCompanyDissent(
   // (self-gates to lay-by blocks), and the Sabbath debit — previously skipped
   // here, so an override on a Sabbath lay-by dodged the morale cost.
   s = runSteps(PRE_TRAVEL_STEPS, s, rng, { traveled: travels, driver: 'player' });
+  let dissentMiles = 0;
   if (travels) {
     // #1266 stage1b — an override-to-travel day charges the same wear as any
     // travel day: ox fatigue + hydration + wagon wear. The morning's lay-by
     // recovery stays — the team rested while the company argued, then pushed on.
     s = runSteps(TRAVEL_OX_WAGON_STEPS, s, rng, { traveled: true, driver: 'player' });
+    const milesBefore = s.location.milesTraveled;
     s = applyTravel(s, rng);
+    dissentMiles = s.location.milesTraveled - milesBefore;
   }
-  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: travels, driver: 'player' });
+  // #1072 — pass miles delta so clothing abrasion is accurate on dissent-travel days.
+  s = runSteps(POST_EVENT_TAIL_STEPS, s, rng, { traveled: travels, driver: 'player', milesTraveledToday: dissentMiles });
   // #1279 — applyCompanyDissent drops any pendingEvent from advanceTrain
   // (no crisis modal on dissent days). The unmarked crisisAskedDay means
   // the level-trigger re-fires next tick — the player will see it then.

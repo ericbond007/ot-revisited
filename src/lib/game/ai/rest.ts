@@ -10,7 +10,7 @@
 import type { GameState } from '../types';
 import { canBoilWater } from '../systems/water-purity';
 
-export type CampActionId = 'find_water' | 'boil_water' | 'gather_firewood' | 'dig_well';
+export type CampActionId = 'find_water' | 'boil_water' | 'gather_firewood' | 'dig_well' | 'mend_clothes';
 
 /** Decide which camp-action chains to try on a rest day that also
  *  needs to refill the keg, ordered by preference. The caller tries
@@ -39,4 +39,16 @@ export function pickRestCampChain(state: GameState): readonly (readonly CampActi
   }
   tryCamps.push(['find_water']);
   return tryCamps;
+}
+
+/** #1072/#1193 — mend piggyback for rest days. The #927 bundle system is
+ *  opt-in (default personas carry zero weights), so without this the
+ *  default cohort never mends and garments hit 0 by the Blues (probe).
+ *  Mirrors the runner's morale piggyback shape: append mend_clothes when
+ *  the kit is owned, garments are meaningfully worn, and the action isn't
+ *  already in the chain. Callers enforce the hour budget. Shared by the
+ *  player-bot driver and the NPC rest path (parity). */
+export function clothingMendWanted(state: GameState): boolean {
+  return (state.inventory.sewing_kit ?? 0) > 0
+    && (state.resources.clothingCondition ?? 100) < 60;
 }

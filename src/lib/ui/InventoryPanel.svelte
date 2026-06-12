@@ -4,6 +4,7 @@
   import { foodConsumedToday } from '$lib/game/systems/consumption';
   import { warmthFor } from '$lib/game/systems/warmth';
   import { canBoilWater } from '$lib/game/systems/water-purity';
+  import { getClothingCondition, getFootwearCondition } from '$lib/game/systems/clothing-wear';
   import { ICON, icon } from '$lib/data/icon-dictionary';
   import StatIcon from './stat-icons/StatIcon.svelte';
   let { state, onopen }: { state: GameState; onopen?: () => void } = $props();
@@ -123,6 +124,18 @@
     waterPct >= 10 ? 'var(--of-status-mid)' : 'var(--of-status-bad)'
   );
 
+  // Clothing condition chips (§6.1). Amber <50, red <25, default otherwise.
+  const clothingCond = $derived(Math.round(getClothingCondition(state)));
+  const footwearCond = $derived(Math.round(getFootwearCondition(state)));
+  const clothingChipColor = $derived(
+    clothingCond < 25 ? 'var(--of-status-bad)' :
+    clothingCond < 50 ? 'var(--of-status-warn)' : 'var(--of-ink-soft)'
+  );
+  const footwearChipColor = $derived(
+    footwearCond < 25 ? 'var(--of-status-bad)' :
+    footwearCond < 50 ? 'var(--of-status-warn)' : 'var(--of-ink-soft)'
+  );
+
   const totalWeight = $derived(
     Math.round(groups.reduce((s, g) => s + g.entries.reduce((a, e) => a + e.weight, 0), 0))
   );
@@ -200,6 +213,13 @@
         <div class="group-head">
           <span class="group-icon">{CATEGORY_ICON[g.cat]}</span>
           <span class="group-label">{CATEGORY_LABEL[g.cat]}</span>
+          {#if g.cat === 'clothing'}
+            <span class="clothing-chips">
+              <span class="cond-chip" style="color: {clothingChipColor};">🧥{clothingCond}%</span>
+              <span class="cond-sep">·</span>
+              <span class="cond-chip" style="color: {footwearChipColor};">🥾{footwearCond}%</span>
+            </span>
+          {/if}
           <span class="group-count">{g.entries.length}</span>
         </div>
         <div class="group-rows">
@@ -371,6 +391,25 @@
     color: var(--of-rust);
     text-transform: uppercase;
   }
+  /* Clothing condition chips — inline in the group header; no wrap. */
+  .clothing-chips {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.2em;
+    font-size: 0.72em;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cond-chip {
+    font-style: normal;
+    letter-spacing: 0.02em;
+  }
+  .cond-sep {
+    color: var(--of-ink-soft);
+    font-style: normal;
+  }
+
   .group-count {
     margin-left: auto;
     font-size: 0.72em;

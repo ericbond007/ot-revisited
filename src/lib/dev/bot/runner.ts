@@ -39,7 +39,7 @@ import { abandonHeavyLoad } from '../../game/systems/item-loss';
 import { joinTrain } from '../../game/systems/wagon-train';
 import { pickHuntTarget } from '../../game/ai/hunt';
 import { defaultCompanions } from '../../game/ai/party';
-import { pickRestCampChain } from '../../game/ai/rest';
+import { pickRestCampChain, clothingMendWanted } from '../../game/ai/rest';
 import { bundleCampActions } from '../../game/ai/bundle';
 import { CAMP_ACTIONS_BY_ID, hourCostFor, type CampActionId } from '../../game/actions/camp-actions';
 import { score as computeArrivalScore } from '../../game/systems/scoring';
@@ -255,6 +255,18 @@ function addMoraleCampPiggyback(
   );
   let remaining = REST_BUDGET_HOURS - usedHours;
   const out: CampActionId[] = [...existing];
+  // #1072/#1193 — mend piggyback FIRST (it competes for hours with the
+  // morale picks; a torn wardrobe outranks a fiddle tune). The #927
+  // bundle system is opt-in and the default cohort carries zero weights,
+  // so without this the bots never mend (probe: garments 0 by d150).
+  if (clothingMendWanted(state) && !out.includes('mend_clothes')) {
+    const mend = CAMP_ACTIONS_BY_ID['mend_clothes'];
+    const cost = hourCostFor(mend, state);
+    if (cost <= remaining && mend.availability(state).available) {
+      out.push('mend_clothes');
+      remaining -= cost;
+    }
+  }
   for (const id of ['read_bible', 'sing_along'] as const) {
     if (out.includes(id)) continue;
     const action = CAMP_ACTIONS_BY_ID[id];
@@ -360,7 +372,9 @@ function buildBotShoppingList(state: GameState, here: Landmark, persona: Persona
   // attribution shows the same dehydration pattern.
   const equipmentOpts = {
     ...persona.pickEquipmentRestockOpts(state),
-    waterBagTarget: gapAwareWaterBagTarget(state)
+    waterBagTarget: gapAwareWaterBagTarget(state),
+    // #1072 — thread footwear condition so the equipment slice can restock boots/moccasins.
+    footwearCondition: state.resources.footwearCondition ?? 100
   };
   const list = composeShoppingList(
     { wagon: state, stock },

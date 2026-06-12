@@ -43,7 +43,11 @@ describe('#1266 — daily-steps spine order is locked', () => {
     expect(PRE_TRAVEL_STEPS.map((s) => s.id)).toEqual(['applyDailyRecovery', 'applyTrainShare', 'applySabbathTravelDebit']);
   });
   it('POST_EVENT_TAIL_STEPS exact order', () => {
-    expect(POST_EVENT_TAIL_STEPS.map((s) => s.id)).toEqual(['attemptFire', 'applyDehydration', 'reapDead']);
+    // #1072 — applyClothingWear appended LAST (scope='all', NPC parity,
+    // must follow reapDead so the HP nick reads only alive members).
+    expect(POST_EVENT_TAIL_STEPS.map((s) => s.id)).toEqual([
+      'attemptFire', 'applyDehydration', 'reapDead', 'applyClothingWear'
+    ]);
   });
 });
 
