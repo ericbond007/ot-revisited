@@ -14,9 +14,9 @@
 // SO model (Standard Operating, 2026-06-11): pass --model so to run the
 // 14-archetype SO_MODEL catalog instead of the legacy single-fixture loop.
 // The SO model is the project's standard gate fixture going forward.
-// The default (--model legacy or no --model flag) remains the old single
-// 4-adult+2-child fixture for historical comparability — flip the default
-// once Dave confirms the SO baseline.
+// #1384 — the SO model is the DEFAULT (calibrated 2026-06-12: two-axis
+// bands locked, 13/14 PASS on the honest engine). --model legacy keeps
+// the old single 4-adult+2-child fixture for historical comparability.
 //
 // SO mode: --runs N applies per archetype (N × 14 total runs, default 150
 // per archetype = 2,100 total, within the ~1k–2k sweep budget).
@@ -38,7 +38,7 @@ const RUNS = argRuns !== -1 ? parseInt(process.argv[argRuns + 1], 10) : 250;
 const argOut = process.argv.indexOf('--out');
 const OUT = argOut !== -1 ? process.argv[argOut + 1] : '/tmp/arrival-timing.md';
 const argModel = process.argv.indexOf('--model');
-const MODEL = argModel !== -1 ? process.argv[argModel + 1] : 'legacy';
+const MODEL = argModel !== -1 ? process.argv[argModel + 1] : 'so';
 
 function dateOf(day: number): string {
   const d = new Date(1849, 3, 15);
@@ -110,8 +110,8 @@ if (MODEL === 'so') {
   out(`# SO model baseline — ${SO_RUNS} runs × ${SO_MODEL.length} archetypes = ${totalRuns} total (start Apr 15, 1849)`);
   out('## Standard Operating (SO) test model — project gate fixture since 2026-06-11');
   out();
-  out('| # | Archetype | Tier | Arrived | Target | PASS/MISS | Snowed in | Wiped | Median arrival |');
-  out('|---|---|---|---|---|---|---|---|---|');
+  out('| # | Archetype | Tier | Arrived | Target | PASS/MISS | Deaths/run | Death band | PASS/MISS | Snowed in | Wiped | Median arrival |');
+  out('|---|---|---|---|---|---|---|---|---|---|---|---|');
 
   // Per-tier rollup accumulators
   const tierStats: Record<string, { arrived: number; total: number; target: [number, number] }> = {};
@@ -122,6 +122,7 @@ if (MODEL === 'so') {
     let arrivedCount = 0;
     let snowedIn = 0;
     let wiped = 0;
+    let totalDeaths = 0;
     const arrivalDays: number[] = [];
 
     for (let i = 0; i < SO_RUNS; i++) {
@@ -136,6 +137,9 @@ if (MODEL === 'so') {
       if (r.outcome === 'arrived') { arrivedCount++; arrivalDays.push(r.daysElapsed); }
       else if (r.outcome === 'snowed_in') snowedIn++;
       else if (r.outcome === 'wiped') wiped++;
+      // Count actual dead members — size arithmetic goes NEGATIVE when the
+      // party grows mid-run (stray-child adoption events).
+      totalDeaths += r.finalState.party.filter((m) => m.dead).length;
     }
 
     const arrPct = arrivedCount / SO_RUNS;
@@ -143,8 +147,17 @@ if (MODEL === 'so') {
     const pass = arrPct >= lo && arrPct <= hi ? 'PASS' : (arrPct < lo ? 'LOW' : 'HIGH');
     const medDay = arrivalDays.length > 0 ? median(arrivalDays) : null;
     const medStr = medDay != null ? `${medDay} (${dateOf(medDay)})` : '—';
+    // #1384 — the second axis: deaths per run vs the archetype's death band.
+    // A strong outfit that arrives at 95% but buries crew en route still
+    // reads as a hard EXPERIENCE; arrival-binary hid that.
+    const deathsPerRun = totalDeaths / SO_RUNS;
+    const db = arch.targetDeaths;
+    const deathBandStr = db ? `${db[0].toFixed(1)}–${db[1].toFixed(1)}` : '—';
+    const deathPass = db
+      ? (deathsPerRun >= db[0] && deathsPerRun <= db[1] ? 'PASS' : (deathsPerRun < db[0] ? 'LOW' : 'HIGH'))
+      : '—';
 
-    out(`| ${idx + 1} | ${arch.name} | ${arch.tier} | ${arrivedCount} (${Math.round(arrPct * 100)}%) | ${Math.round(lo * 100)}–${Math.round(hi * 100)}% | ${pass} | ${snowedIn} | ${wiped} | ${medStr} |`);
+    out(`| ${idx + 1} | ${arch.name} | ${arch.tier} | ${arrivedCount} (${Math.round(arrPct * 100)}%) | ${Math.round(lo * 100)}–${Math.round(hi * 100)}% | ${pass} | ${deathsPerRun.toFixed(2)} | ${deathBandStr} | ${deathPass} | ${snowedIn} | ${wiped} | ${medStr} |`);
 
     // Accumulate tier rollup
     if (!tierStats[arch.tier]) tierStats[arch.tier] = { arrived: 0, total: 0, target: arch.targetArrival };
