@@ -84,54 +84,54 @@
   .page {
     max-width: 1200px;
     margin: 0 auto;
-    padding: var(--s-6) var(--s-4);
+    padding: var(--of-s-6) var(--of-s-4);
   }
-  header { margin-bottom: var(--s-6); }
+  header { margin-bottom: var(--of-s-6); }
   .brand-title {
-    font-family: var(--f-display);
-    font-size: var(--fs-3xl);
+    font-family: var(--of-display);
+    font-size: 44px;
     color: var(--of-rust);
-    letter-spacing: var(--ls-medium);
-    margin: 0 0 var(--s-2) 0;
+    letter-spacing: 0.10em;
+    margin: 0 0 var(--of-s-2) 0;
   }
   .subtitle {
     color: var(--of-ink);
-    font-family: var(--f-body);
-    margin: 0 0 var(--s-3) 0;
+    font-family: var(--of-body);
+    margin: 0 0 var(--of-s-3) 0;
   }
   .toggle {
     display: inline-flex;
     align-items: center;
-    gap: var(--s-2);
+    gap: var(--of-s-2);
     color: var(--of-ink);
-    font-family: var(--f-mono);
-    font-size: var(--fs-sm);
+    font-family: var(--of-mono);
+    font-size: 13px;
     cursor: pointer;
   }
 
   .grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--s-4);
+    gap: var(--of-s-4);
   }
 
   .card {
     background: var(--of-paper-soft);
-    border: var(--bw-2) solid var(--of-ink-soft);
-    border-radius: var(--r-sm);
-    padding: var(--s-3);
+    border: 2px solid var(--of-ink-soft);
+    border-radius: var(--of-r-sm);
+    padding: var(--of-s-3);
   }
   .eyebrow {
     color: var(--of-ink-soft);
-    font-size: var(--fs-xs);
-    letter-spacing: var(--ls-loose);
+    font-size: 12px;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    margin-bottom: var(--s-2);
+    margin-bottom: var(--of-s-2);
   }
   .stage {
     background: linear-gradient(180deg, #b3d4e8 0%, #d8e4ee 60%, #b8a05a 100%);
-    border: var(--bw-1) solid var(--of-ink);
-    border-radius: var(--r-xs);
+    border: 1px solid var(--of-ink);
+    border-radius: var(--of-r-xs);
     overflow: hidden;
     aspect-ratio: 400 / 110;
   }

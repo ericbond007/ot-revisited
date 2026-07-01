@@ -49,29 +49,29 @@
   .page {
     max-width: 1200px;
     margin: 0 auto;
-    padding: var(--s-6) var(--s-4);
+    padding: var(--of-s-6) var(--of-s-4);
   }
   .brand-title {
-    font-family: var(--f-display);
-    font-size: var(--fs-3xl);
+    font-family: var(--of-display);
+    font-size: 44px;
     color: var(--of-rust);
-    letter-spacing: var(--ls-medium);
-    margin: 0 0 var(--s-2) 0;
+    letter-spacing: 0.10em;
+    margin: 0 0 var(--of-s-2) 0;
   }
-  .subtitle { color: var(--of-ink); font-family: var(--f-body); margin: 0 0 var(--s-4) 0; }
+  .subtitle { color: var(--of-ink); font-family: var(--of-body); margin: 0 0 var(--of-s-4) 0; }
   code { background: var(--of-paper); padding: 0 .25em; border-radius: 2px; }
   .row {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--s-2);
+    gap: var(--of-s-2);
     align-items: center;
-    margin-bottom: var(--s-4);
+    margin-bottom: var(--of-s-4);
   }
   .row.stack { flex-direction: column; align-items: stretch; max-width: 480px; }
   .eyebrow {
     color: var(--of-ink-soft);
-    font-size: var(--fs-xs);
-    letter-spacing: var(--ls-loose);
+    font-size: 12px;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     width: 100%;
   }
@@ -87,8 +87,8 @@
     padding: 0.8em 1em;
     background: var(--of-paper);
     color: var(--of-ink);
-    border: var(--bw-2) solid var(--of-ink-soft);
-    border-radius: var(--r-sm);
+    border: 2px solid var(--of-ink-soft);
+    border-radius: var(--of-r-sm);
     font-weight: 700;
     text-transform: none;
     letter-spacing: 0.02em;
