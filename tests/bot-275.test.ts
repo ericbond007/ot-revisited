@@ -95,7 +95,10 @@ describe('#275 chaos persona — seeded random "dumbass tourist"', () => {
     expect(same).toBe(false);
   });
 
-  it('chaos makes more diverse decisions than balanced (across 5 runs)', () => {
+  // 10 full bot games in one test (~850ms warm, isolated). Under cold-cache
+  // full-suite worker contention that exceeded vitest's 5s default and flaked
+  // (2026-07-01, #1632) — the explicit timeout covers the contention worst case.
+  it('chaos makes more diverse decisions than balanced (across 5 runs)', { timeout: 30_000 }, () => {
     // Heuristic test: chaos should sample from the full event-choice
     // space, while balanced sticks to defaults. Over multiple runs
     // chaos's unique-event count should usually be at least as high
