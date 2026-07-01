@@ -55,7 +55,7 @@
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(20, 12, 6, 0.55);
+    background: rgba(42, 29, 12, 0.80);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,24 +65,24 @@
   .paper-shell {
     width: min(560px, 100%);
     max-height: 92vh;
-    border: 1px solid #3a1a08;
+    border: 1px solid var(--of-ink-soft);
     box-shadow:
       0 18px 40px rgba(0, 0, 0, 0.45),
-      0 0 0 6px rgba(58, 26, 8, 0.08);
+      0 0 0 6px var(--of-rule-soft);
     overflow: hidden;
   }
   .letter {
     position: relative;
     padding: 26px clamp(20px, 5vw, 36px) 22px;
-    color: #2a160a;
+    color: var(--of-ink);
     overflow-y: auto;
     max-height: 92vh;
-    font-family: 'IM Fell English', Georgia, serif;
+    font-family: var(--of-body);
   }
   .head {
     text-align: center;
     margin-bottom: 18px;
-    border-bottom: 1px solid rgba(58, 26, 8, 0.35);
+    border-bottom: 1px solid var(--of-rule);
     padding-bottom: 10px;
   }
   .caught {
@@ -95,7 +95,7 @@
     font-variant: small-caps;
     font-size: 13px;
     letter-spacing: 0.06em;
-    color: #5a3a1a;
+    color: var(--of-ink-soft);
   }
   .body-text {
     line-height: 1.55;
@@ -112,7 +112,7 @@
   .footnote {
     margin-top: 10px;
     text-align: center;
-    border-top: 1px dashed rgba(58, 26, 8, 0.35);
+    border-top: 1px dashed var(--of-rule);
     padding-top: 8px;
   }
   .morale {
@@ -120,24 +120,24 @@
     font-variant: small-caps;
     letter-spacing: 0.08em;
   }
-  .morale.tone-good { color: #2f6b2f; }
-  .morale.tone-bad { color: #8a2020; }
-  .morale.tone-neutral { color: #5a3a1a; }
+  .morale.tone-good { color: var(--of-good); }
+  .morale.tone-bad { color: var(--of-bad); }
+  .morale.tone-neutral { color: var(--of-ink-soft); }
   .actions {
     margin-top: 14px;
     display: flex;
     justify-content: center;
   }
   .continue {
-    background: #3a1a08;
-    color: #f0e3c4;
-    border: 1px solid #3a1a08;
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
+    border: 1px solid var(--of-rust-dark);
     padding: 8px 22px;
     font-family: inherit;
     font-size: 15px;
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: var(--of-r-xs);
     letter-spacing: 0.03em;
   }
-  .continue:hover { background: #5a3a1a; }
+  .continue:hover { filter: brightness(1.15); }
 </style>

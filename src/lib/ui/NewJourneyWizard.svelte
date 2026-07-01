@@ -320,7 +320,7 @@
     color: var(--of-ink);
     border: 2px solid var(--of-ink);
     border-radius: 4px;
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
     font-size: 1em;
     font-weight: 700;
     letter-spacing: 0.03em;

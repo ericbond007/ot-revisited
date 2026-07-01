@@ -260,7 +260,7 @@
     border-radius: 3px;
     cursor: pointer;
     text-align: left;
-    font-family: var(--f-body);
+    font-family: var(--of-body);
     color: var(--of-ink);
     letter-spacing: normal;
     text-transform: none;
@@ -287,7 +287,7 @@
     margin: 0;
     font-size: 10px;
     letter-spacing: 0.18em;
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
     font-weight: 700;
   }
   .sparkline { opacity: 0.85; }
@@ -331,13 +331,13 @@
   .ill-tag {
     color: var(--of-bad);
     font-size: 10px;
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
     letter-spacing: 0.08em;
     margin-left: 4px;
   }
   .death-line {
     font-size: 10px;
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
     letter-spacing: 0.05em;
     margin-top: 2px;
     color: var(--of-ink-soft);
@@ -388,7 +388,7 @@
   }
   .hp-num {
     font-size: 10px;
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
     font-weight: 700;
     min-width: 22px;
     text-align: right;
@@ -414,7 +414,7 @@
   }
   .morale-label {
     color: var(--of-ink-soft);
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
     letter-spacing: 0.1em;
   }
   .morale-bar {
@@ -443,7 +443,7 @@
   .morale-num {
     color: var(--of-warn);
     font-weight: 700;
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
   }
   .trend { font-size: 10px; }
   .trend-down { color: var(--of-bad); }
@@ -456,7 +456,7 @@
     grid-template-columns: 1fr 1fr 1fr;
     gap: 6px;
     font-size: 10px;
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
     letter-spacing: 0.06em;
     color: var(--of-ink-soft);
     text-align: center;

@@ -48,7 +48,7 @@
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(20, 12, 6, 0.55);
+    background: rgba(42, 29, 12, 0.80);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -58,19 +58,19 @@
   .paper-shell {
     width: min(640px, 100%);
     max-height: 92vh;
-    border: 1px solid #3a1a08;
+    border: 1px solid var(--of-ink-soft);
     box-shadow:
       0 18px 40px rgba(0, 0, 0, 0.45),
-      0 0 0 6px rgba(58, 26, 8, 0.08);
+      0 0 0 6px var(--of-rule-soft);
     overflow: hidden;
   }
   .paper {
     position: relative;
     padding: 24px clamp(16px, 4vw, 32px) 20px;
-    color: #2a160a;
+    color: var(--of-ink);
     overflow-y: auto;
     max-height: 92vh;
-    font-family: 'IM Fell English', Georgia, serif;
+    font-family: var(--of-body);
   }
   .masthead {
     text-align: center;
@@ -78,17 +78,18 @@
   }
   .rule {
     height: 0;
-    border-top: 1px solid #3a1a08;
+    border-top: 1px solid var(--of-ink);
     margin: 6px auto;
   }
   .rule.top { border-top-width: 3px; }
   .rule.bottom { border-top-width: 1px; }
   .title {
     margin: 0;
-    font-size: clamp(24px, 5vw, 34px);
-    letter-spacing: 0.02em;
-    font-variant: small-caps;
-    font-weight: 700;
+    /* Rye woodtype masthead per the design card — single weight, no faux-bold */
+    font-family: var(--of-display);
+    font-size: clamp(22px, 4.6vw, 30px);
+    letter-spacing: 0.08em;
+    font-weight: 400;
   }
   .dateline {
     font-style: italic;
@@ -106,7 +107,7 @@
   }
   .story {
     padding-bottom: 12px;
-    border-bottom: 1px dashed rgba(58, 26, 8, 0.35);
+    border-bottom: 1px dashed var(--of-rule);
   }
   .story:last-child { border-bottom: none; }
   .head {
@@ -119,7 +120,7 @@
     margin: 0;
     font-style: italic;
     font-size: 12px;
-    color: #5a3a1a;
+    color: var(--of-ink-soft);
   }
   .actions {
     margin-top: 18px;
@@ -127,15 +128,15 @@
     justify-content: center;
   }
   .continue {
-    background: #3a1a08;
-    color: #f0e3c4;
-    border: 1px solid #3a1a08;
+    background: var(--of-rust);
+    color: var(--of-paper-soft);
+    border: 1px solid var(--of-rust-dark);
     padding: 8px 22px;
     font-family: inherit;
     font-size: 15px;
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: var(--of-r-xs);
     letter-spacing: 0.03em;
   }
-  .continue:hover { background: #5a3a1a; }
+  .continue:hover { filter: brightness(1.15); }
 </style>

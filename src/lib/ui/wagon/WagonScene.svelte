@@ -394,8 +394,8 @@
     display: flex;
     flex-direction: column;
     padding: 0.4em 0.5em;
-    border: var(--bw-2) solid var(--of-ink-soft);
-    border-radius: var(--r-sm);
+    border: 2px solid var(--of-ink-soft);
+    border-radius: var(--of-r-sm);
     background: var(--of-paper-soft);
     gap: 0.35em;
   }
@@ -410,7 +410,7 @@
     width: 100%;
     aspect-ratio: 1280 / 400;
     overflow: hidden;
-    border-radius: var(--r-xs);
+    border-radius: var(--of-r-xs);
     border: 1px solid rgba(0, 0, 0, 0.35);
   }
   .landscape svg { width: 100%; height: 100%; display: block; }
