@@ -49,22 +49,22 @@
   .page {
     max-width: 1200px;
     margin: 0 auto;
-    padding: var(--s-6) var(--s-4);
+    padding: var(--of-s-6) var(--of-s-4);
   }
   .brand-title {
-    font-family: var(--f-display);
-    font-size: var(--fs-3xl);
+    font-family: var(--of-display);
+    font-size: 44px;
     color: var(--of-rust);
-    letter-spacing: var(--ls-medium);
-    margin: 0 0 var(--s-2) 0;
+    letter-spacing: 0.10em;
+    margin: 0 0 var(--of-s-2) 0;
   }
-  .subtitle { color: var(--of-ink); font-family: var(--f-body); margin: 0 0 var(--s-4) 0; }
+  .subtitle { color: var(--of-ink); font-family: var(--of-body); margin: 0 0 var(--of-s-4) 0; }
   code { background: var(--of-paper); padding: 0 .25em; border-radius: 2px; }
 
   .card {
     background: var(--of-paper-soft);
-    border: var(--bw-2) solid var(--of-ink-soft);
-    border-radius: var(--r-sm);
+    border: 2px solid var(--of-ink-soft);
+    border-radius: var(--of-r-sm);
     padding: 8px 12px;
   }
 
@@ -87,7 +87,7 @@
     letter-spacing: 0.12em;
     color: var(--of-ink-soft);
     font-weight: 700;
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
   }
   .day-num, .val {
     color: var(--of-ink);

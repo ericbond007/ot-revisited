@@ -47,11 +47,6 @@
 }
 
 :root {
-  /* ---------- TYPOGRAPHY FAMILIES (legacy) ---------- */
-  --f-mono:    'Special Elite', 'Courier Prime', 'Courier New', ui-monospace, monospace;
-  --f-body:    'IM Fell English', 'Georgia', 'Times New Roman', serif;
-  --f-display: 'Rye', 'IM Fell English SC', 'Georgia', serif;
-  --f-pixel:   'VT323', 'Courier New', monospace;
 
   /* ---------- DESIGN-SYSTEM TOKENS (--of-*) ---------- */
 
@@ -158,60 +153,14 @@
   --of-s-6:  24px;
   --of-s-8:  32px;
 
-  /* ---------- TYPE SCALE (legacy) ---------- */
-  --fs-xs:   12px;
-  --fs-sm:   13px;
-  --fs-md:   15px;
-  --fs-lg:   18px;
-  --fs-xl:   22px;
-  --fs-2xl:  30px;
-  --fs-3xl:  44px;
-  --fs-4xl:  64px;
 
-  --lh-tight: 1.18;
-  --lh-body:  1.55;
 
-  --ls-loose:  0.18em;
-  --ls-medium: 0.10em;
-  --ls-tight:  0.04em;
 
-  /* ---------- SPACING (4px base, legacy) ---------- */
-  --s-1:  4px;
-  --s-2:  8px;
-  --s-3:  12px;
-  --s-4:  16px;
-  --s-5:  20px;
-  --s-6:  24px;
-  --s-8:  32px;
-  --s-10: 40px;
 
-  /* ---------- RADII (legacy) ---------- */
-  --r-xs:   2px;
-  --r-sm:   3px;
-  --r-md:   4px;
-  --r-pill: 999px;
 
-  /* ---------- BORDERS ---------- */
-  --bw-1: 1px;
-  --bw-2: 2px;
-  --bw-3: 3px;
 
-  /* ---------- SHADOWS ---------- */
-  --sh-dot:        0 1px 3px rgba(0, 0, 0, 0.25);
-  --sh-card:       0 4px 14px rgba(0, 0, 0, 0.45);
-  --sh-modal:      0 12px 40px rgba(0, 0, 0, 0.7);
-  --sh-glow-rust:  0 0 14px rgba(201, 106, 42, 0.45);
-  --sh-glow-fire:  0 0 12px rgba(255, 180, 60, 0.55);
-  --sh-inset-lit:  inset 0 0 0 1px rgba(255, 180, 60, 0.5);
 
-  /* ---------- TIMINGS ---------- */
-  --t-fast:    0.12s;
-  --t-base:    0.20s;
-  --t-medium:  0.40s;
-  --t-wagon:   2.50s;
 
-  --e-default: cubic-bezier(0.4, 0.0, 0.2, 1);
-  --e-pop:     cubic-bezier(0.2, 0.9, 0.3, 1.1);
 
 }
 
@@ -224,7 +173,7 @@ html, body {
   color: var(--of-ink);
   font-family: var(--of-body);
   font-size: var(--of-fs-body);
-  line-height: var(--lh-body);
+  line-height: 1.55;
   min-height: 100vh;
 }
 
@@ -234,16 +183,16 @@ h1, h2, h3, h4 {
   font-weight: 400;
   letter-spacing: 0.02em;
   margin: 0 0 0.5em 0;
-  line-height: var(--lh-tight);
+  line-height: 1.18;
 }
 h1 { font-size: var(--of-fs-h1); }
 h2 { font-size: var(--of-fs-h2); }
 h3 { font-size: var(--of-fs-h3); }
 h4 { font-size: var(--of-fs-sub); letter-spacing: 0.08em; color: var(--of-rust); }
 
-p { line-height: var(--lh-body); margin: 0 0 1em 0; }
+p { line-height: 1.55; margin: 0 0 1em 0; }
 
-code, pre, kbd { font-family: var(--f-mono); }
+code, pre, kbd { font-family: var(--of-mono); }
 
 a { color: var(--of-rust); text-decoration: none; }
 a:hover { color: var(--of-rust-dark); text-decoration: underline; }
@@ -281,7 +230,7 @@ button {
   font-weight: 400;
   text-transform: uppercase;
   box-shadow: var(--of-btn-emboss);
-  transition: background var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+  transition: background 0.12s, box-shadow 0.12s, border-color 0.12s, transform 0.12s;
 }
 button:hover:not(:disabled) { background: var(--of-paper); border-color: var(--of-ink); }
 button:active:not(:disabled) { box-shadow: var(--of-btn-emboss-active); transform: translateY(1px); }
@@ -364,18 +313,18 @@ select option { background: var(--of-paper-soft); color: var(--of-ink); }
   margin: 0;
 }
 
-.container { max-width: 900px; margin: 0 auto; padding: var(--s-8) var(--s-4); }
+.container { max-width: 900px; margin: 0 auto; padding: var(--of-s-8) var(--of-s-4); }
 
 /* Responsive — Z Fold 4 unfolded is ~884px; breakpoint at 900px */
 @media (max-width: 900px) {
-  .container { padding: var(--s-4) var(--s-3); }
-  h1 { font-size: var(--fs-2xl); }
-  h2 { font-size: var(--fs-xl); }
+  .container { padding: var(--of-s-4) var(--of-s-3); }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
   button { padding: 0.6em 1em; font-size: 0.95em; }
 }
 
 @media (max-width: 640px) {
-  .container { padding: var(--s-3) var(--s-2); }
+  .container { padding: var(--of-s-3) var(--of-s-2); }
   button { min-height: 44px; }
 }
 

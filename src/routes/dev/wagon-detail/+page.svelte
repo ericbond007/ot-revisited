@@ -350,7 +350,7 @@
     padding: 0.6em 1em;
     background: var(--of-paper-soft, #2a1a08);
     color: var(--of-ink, #eeedeb);
-    font-family: var(--f-body, sans-serif);
+    font-family: var(--of-body, sans-serif);
   }
   header h1 {
     margin: 0 0 0.2em 0;

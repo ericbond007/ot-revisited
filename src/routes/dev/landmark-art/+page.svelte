@@ -169,7 +169,7 @@
   }
   h1 {
     color: #c96a2a;
-    font-family: var(--f-display, Georgia, serif);
+    font-family: var(--of-display, Georgia, serif);
     margin: 0 0 8px 0;
   }
   .subtitle {
