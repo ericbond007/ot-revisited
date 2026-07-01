@@ -199,10 +199,13 @@
 </div>
 
 <style>
+  /* Paper chrome per the §0 "light paper everywhere" correction — the old
+     dark-wood + rust chrome pre-dated the broadsheet rollout. Map painting
+     (ParchmentBg / TrailMapPaint) is locked art and stays untouched. */
   .map-modal {
     position: fixed;
     inset: 0;
-    background: rgba(26, 15, 8, 0.85);
+    background: rgba(42, 29, 12, 0.80);
     z-index: 9999;
     display: flex;
     align-items: stretch;
@@ -213,44 +216,44 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #1a0f08;
-    border: 2px solid #c96a2a;
-    border-radius: 3px;
+    background: var(--of-paper-soft);
+    border: 3px double var(--of-ink-soft);
+    border-radius: var(--of-r-sm);
     overflow: hidden;
     position: relative;
   }
   .modal-titlebar {
-    background: #1a0f08;
-    color: #f5e6c8;
-    border-bottom: 1px solid #5a3a1a;
+    background: var(--of-paper-soft);
+    color: var(--of-ink);
+    border-bottom: 1px solid var(--of-rule);
     padding: 10px 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-family: 'Special Elite', monospace;
+    font-family: var(--of-mono);
     font-size: 12px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
-  .modal-titlebar .title { color: #c96a2a; }
+  .modal-titlebar .title { color: var(--of-rust); }
   .modal-close {
     background: transparent;
-    color: #f5e6c8;
-    border: 1px solid #c96a2a;
+    color: var(--of-ink);
+    border: 1px solid var(--of-rust);
     padding: 4px 10px;
     font-family: inherit;
     font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: var(--of-r-xs);
   }
-  .modal-close:hover { background: #c96a2a; color: #1a0f08; }
+  .modal-close:hover { background: var(--of-rust); color: var(--of-paper-soft); }
   .modal-body {
     flex: 1;
     position: relative;
     overflow: hidden;
-    background: #2a1a0c;
+    background: var(--of-paper-deep);
   }
   .modal-map-wrap {
     width: 100%;
@@ -291,19 +294,20 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    background: rgba(26, 15, 8, 0.9);
-    border: 1px solid #c96a2a;
-    border-radius: 2px;
+    background: var(--of-paper-soft);
+    border: 1px solid var(--of-ink-soft);
+    border-radius: var(--of-r-xs);
     overflow: hidden;
+    box-shadow: var(--of-btn-emboss);
   }
   .zoom-ctrls button {
     background: transparent;
-    color: #f5e6c8;
+    color: var(--of-ink);
     border: none;
-    border-bottom: 1px solid rgba(201, 106, 42, 0.4);
+    border-bottom: 1px solid var(--of-rule);
     width: 36px;
     height: 36px;
-    font-family: 'Special Elite', monospace;
+    font-family: var(--of-mono);
     font-size: 18px;
     cursor: pointer;
     display: flex;
@@ -311,18 +315,18 @@
     justify-content: center;
   }
   .zoom-ctrls button:last-child { border-bottom: none; }
-  .zoom-ctrls button:hover { background: #c96a2a; color: #1a0f08; }
+  .zoom-ctrls button:hover { background: var(--of-rust); color: var(--of-paper-soft); }
   .zoom-readout {
     position: absolute;
     right: 14px;
     top: 130px;
     z-index: 20;
-    background: rgba(26, 15, 8, 0.9);
-    color: #e8c89a;
-    border: 1px solid #c96a2a;
-    border-radius: 2px;
+    background: var(--of-paper-soft);
+    color: var(--of-ink-soft);
+    border: 1px solid var(--of-rule);
+    border-radius: var(--of-r-xs);
     padding: 4px 8px;
-    font-family: 'Special Elite', monospace;
+    font-family: var(--of-mono);
     font-size: 10px;
     letter-spacing: 0.08em;
   }
@@ -331,12 +335,12 @@
     left: 14px;
     bottom: 14px;
     z-index: 20;
-    background: rgba(26, 15, 8, 0.85);
-    color: #e8c89a;
-    border: 1px solid #5a3a1a;
+    background: var(--of-paper-soft);
+    color: var(--of-ink-soft);
+    border: 1px solid var(--of-rule);
     padding: 4px 9px;
-    border-radius: 2px;
-    font-family: 'Special Elite', monospace;
+    border-radius: var(--of-r-xs);
+    font-family: var(--of-mono);
     font-size: 10px;
     letter-spacing: 0.08em;
     pointer-events: none;

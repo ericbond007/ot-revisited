@@ -180,14 +180,14 @@
   .event-title {
     color: var(--of-rust);
     margin: 0;
-    font-family: var(--f-display);
+    font-family: var(--of-display);
     font-size: 24px;
     line-height: 1.2;
     letter-spacing: 0.04em;
   }
 
   .event-body {
-    font-family: var(--f-body);
+    font-family: var(--of-body);
     line-height: 1.55;
     margin: 12px 0 16px 0;
     color: var(--of-ink);

@@ -328,7 +328,7 @@
   }
   .tombstone-wrap .head {
     color: var(--of-ink);
-    font-family: var(--f-mono, 'Georgia', serif);
+    font-family: var(--of-mono, 'Georgia', serif);
     font-weight: 900;
   }
 
@@ -423,7 +423,7 @@
     border-radius: 4px;
   }
   .score-head {
-    font-family: var(--f-mono);
+    font-family: var(--of-mono);
     font-size: 0.7em;
     letter-spacing: 0.18em;
     color: var(--of-ink-soft);
@@ -431,7 +431,7 @@
     text-align: center;
   }
   .score-total {
-    font-family: var(--f-display);
+    font-family: var(--of-display);
     font-size: 2.2em;
     color: var(--of-rust);
     text-align: center;

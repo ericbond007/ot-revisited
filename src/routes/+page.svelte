@@ -80,12 +80,12 @@
   .tagline {
     color: var(--of-ink-soft);
     font-size: 1.1em;
-    margin: 0 0 var(--s-5) 0;
+    margin: 0 0 var(--of-s-5) 0;
   }
   .cta-stack {
     display: flex;
     flex-direction: column;
-    gap: var(--s-3);
+    gap: var(--of-s-3);
     max-width: 400px;
   }
   .cta {
