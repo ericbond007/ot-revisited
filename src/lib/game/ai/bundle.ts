@@ -21,6 +21,7 @@ import { pickHuntTarget } from './hunt';
 import { isSunday } from '../utils/calendar';
 import { canBoilWater } from '../systems/water-purity';
 import { getClothingCondition } from '../systems/clothing-wear';
+import { hasLiveGunsmith } from '../professions/predicates';
 
 /** Mirror of rest.ts's TIME_BUDGET_HOURS. Single source of truth lives
  *  here so callers don't bypass the cap. */
@@ -162,8 +163,12 @@ export function urgency(state: GameState, id: BundleableActionId): number {
     case 'big_meal':
       return state.morale < 50 ? 6 : 3;
     case 'patch_wagon': {
-      const c = state.wagon.condition;
-      return c < 60 ? 10 : c < 80 ? 6 : 2;
+      // #1640 — keyed on CANVAS (the action repairs canvas, not condition;
+      // the old condition read was a mismatch) and zero floor so
+      // maintenance-weighted personas don't burn a raw hide every rest
+      // day topping off sound canvas.
+      const cv = state.wagon.canvas;
+      return cv < 60 ? 10 : cv < 85 ? 5 : 0;
     }
     case 'replace_canvas':
       return state.wagon.canvas < 60 ? 10 : 0;
@@ -184,12 +189,23 @@ export function urgency(state: GameState, id: BundleableActionId): number {
     }
     case 'cast_balls': {
       const balls = state.inventory.lead_balls ?? 0;
-      const hasMats = (state.inventory.lead ?? 0) > 0
-        && (state.inventory.gunpowder ?? 0) > 0;
-      return hasMats && balls < 20 ? 8 : hasMats ? 3 : 0;
+      // #1640 — materials check mirrors the action's own availability gate
+      // (lead_pig + mold-or-gunsmith). The old check read inventory.lead —
+      // a key that doesn't exist in the item catalog — so hasMats was
+      // always false and cast_balls could never bundle (latent while all
+      // personas carried maintenance:0). Also tapers to zero when stocked;
+      // the old materials floor of 3 would melt a lead pig every rest day
+      // regardless of ball count.
+      const hasMats = (state.inventory.lead_pig ?? 0) > 0
+        && ((state.inventory.bullet_mold ?? 0) > 0 || hasLiveGunsmith(state));
+      return hasMats && balls < 20 ? 8 : hasMats && balls < 60 ? 3 : 0;
     }
     case 'service_train':
-      return 5;
+      // #1640 — the whore's income action (availability-gated to whore
+      // parties in a train). Need-gate the old constant 5 so maintenance-
+      // weighted personas work the train when cash or spirits are low
+      // rather than on every rest day.
+      return state.cash < 40 || state.morale < 50 ? 5 : 0;
     case 'wash_clothes':
       return state.location.terrain === 'river' ? 6 : 0;
     case 'make_soap':

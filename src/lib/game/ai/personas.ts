@@ -1131,12 +1131,13 @@ export const cautiousPersona: Persona = {
     // the push_on branch in thresholdWheelBreakResponse never fires.
     return thresholdWheelBreakResponse(state, -1);
   },
-  // #1154 — NPC bundle activation, hypothesis 2: light survival-only
-  // weight. The tight urgency gates in bundle.ts (water<5 gal, dirty>0,
-  // firewood<5) mean this only fires when genuinely needed, so rest-day
-  // cadence and the company-rest aggregate barely move. Applies to both
-  // the player-bot rest bundle (slice 2) and NPC wagons (slice 3 gate).
-  bundleWeights: { survival: 1, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
+  // #1154 (survival) + #1640 (maintenance) — NPC bundle activation.
+  // Tight urgency gates in bundle.ts (water<5 gal, dirty>0, firewood<5;
+  // canvas<85, condition<50, balls<60) mean bundles only fire when
+  // genuinely needed, so rest-day cadence and the company-rest aggregate
+  // barely move. Applies to both the player-bot rest bundle (slice 2)
+  // and NPC wagons (slice 3 gate).
+  bundleWeights: { survival: 1, food: 0, maintenance: 1, hygiene: 0, morale: 0 }
 };
 
 export const balancedPersona: Persona = {
@@ -1388,12 +1389,13 @@ export const balancedPersona: Persona = {
     // Default policy: spare > rebuild > push_on (only when cond < 25, no smith).
     return defaultWheelBreakResponse(state);
   },
-  // #1154 — NPC bundle activation, hypothesis 2: light survival-only
-  // weight. The tight urgency gates in bundle.ts (water<5 gal, dirty>0,
-  // firewood<5) mean this only fires when genuinely needed, so rest-day
-  // cadence and the company-rest aggregate barely move. Applies to both
-  // the player-bot rest bundle (slice 2) and NPC wagons (slice 3 gate).
-  bundleWeights: { survival: 1, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
+  // #1154 (survival) + #1640 (maintenance) — NPC bundle activation.
+  // Tight urgency gates in bundle.ts (water<5 gal, dirty>0, firewood<5;
+  // canvas<85, condition<50, balls<60) mean bundles only fire when
+  // genuinely needed, so rest-day cadence and the company-rest aggregate
+  // barely move. Applies to both the player-bot rest bundle (slice 2)
+  // and NPC wagons (slice 3 gate).
+  bundleWeights: { survival: 1, food: 0, maintenance: 1, hygiene: 0, morale: 0 }
 };
 
 export const aggressivePersona: Persona = {
@@ -1892,7 +1894,11 @@ export const sundayResterPersona: Persona = {
     }
     return 'abide';
   },
-  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
+  // #1640 — maintenance-only weight: the diligent temperaments reach
+  // field repairs (patch/canvas/planks/moccasins/cast_balls) on rest
+  // days between posts. Urgency need-gates keep it from firing when
+  // nothing is broken. aggressive/pace_pusher/chaos stay 0 by design.
+  bundleWeights: { survival: 0, food: 0, maintenance: 1, hygiene: 0, morale: 0 }
 };
 
 /** pace_pusher — grueling when healthy. Period: James Reed pushed for
@@ -2069,7 +2075,11 @@ export const hoarderPersona: Persona = {
       'tongue', 'canvas', 'flour', 'beans', 'cornmeal'
     ];
   },
-  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
+  // #1640 — maintenance-only weight: the diligent temperaments reach
+  // field repairs (patch/canvas/planks/moccasins/cast_balls) on rest
+  // days between posts. Urgency need-gates keep it from firing when
+  // nothing is broken. aggressive/pace_pusher/chaos stay 0 by design.
+  bundleWeights: { survival: 0, food: 0, maintenance: 1, hygiene: 0, morale: 0 }
 };
 
 /** generous — invests in the team and the wagon. Period: George Donner,
