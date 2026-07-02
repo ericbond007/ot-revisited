@@ -1,3 +1,4 @@
+import { foodLb } from '../content/items';
 import type { GameState } from '../types';
 import type { Rng } from '../rng';
 import { hasLivePreacher, hasLiveWhore, hasLiveGunsmith, hasLiveHunter, hasLiveTeacher } from '../professions/predicates';
@@ -88,9 +89,12 @@ function aliveAdults(s: GameState): number {
   return s.party.filter((m) => !m.dead && m.kind === 'adult').length;
 }
 
-function totalFoodLb(s: GameState): number {
-  // Sum of the primary food items (excludes coffee/tea, which aren't
-  // "meals"). Used only for the big-meal gating.
+function bigMealIngredientLb(s: GameState): number {
+  // Sum of what a big meal can actually cook — this list mirrors
+  // bigMeal's own consumption order EXACTLY, so availability never
+  // passes on food the apply step can't draw. Deliberately NOT the
+  // canonical foodLb (#1642): sugar/cheese/salt_pork etc. are engine-
+  // edible rations but not big-meal ingredients.
   const ids = ['game_meat', 'berries', 'flour', 'beans', 'bacon', 'jerky', 'hardtack', 'dried_fruit', 'pemmican'];
   return ids.reduce((sum, id) => sum + (s.inventory[id] ?? 0), 0);
 }
@@ -132,7 +136,7 @@ const bigMeal: CampAction = {
   icon: '🍲',
   hourCost: 2,
   availability: (s) =>
-    totalFoodLb(s) >= 8
+    bigMealIngredientLb(s) >= 8
       ? { available: true }
       : { available: false, reason: 'Need at least 8 lb of food' },
   apply: (s) => {
@@ -1133,9 +1137,13 @@ const boilWater: CampAction = {
 
 // --- Cannibalism (desperation) ---
 
-/** True if the party has nothing left to eat. */
+/** True if the party has nothing left to eat. #1642: gates on the
+ *  CANONICAL engine-edible sum, not the big-meal ingredient list — the
+ *  old check let a party carrying only sugar / cheese / salt pork /
+ *  dried salmon read as starving and unlock cannibalism while hauling
+ *  edible stores. */
 function hasNoFood(state: GameState): boolean {
-  return totalFoodLb(state) === 0;
+  return foodLb(state.inventory) === 0;
 }
 
 /** Recently-deceased adult still with the party — eligible to be eaten.

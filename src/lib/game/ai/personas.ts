@@ -32,6 +32,7 @@ import { isSunday } from '../utils/calendar';
 import type { FordMethod, Persona, PersonaForesight, PersonaId } from './types';
 import type { FoodRestockOpts } from './shopping';
 import { faithfulBundle } from './bundle';
+import { shelfStableFoodLb } from '../content/items';
 import { gapBufferDays, nextSupplyDistance, effectiveGapMiles, desertWaterFloor, mountainMilesInNextGap } from './foresight';
 import { warmthFor } from '../systems/warmth';
 import { waterConsumedToday } from '../systems/consumption';
@@ -393,11 +394,11 @@ function postStocksMissingMedicine(state: GameState, here: Landmark): boolean {
 
 /** Total food on hand (lb). Used by hunt + trade decisions. */
 function foodOnHand(state: GameState): number {
-  const inv = state.inventory;
-  return (inv.flour ?? 0) + (inv.beans ?? 0) + (inv.bacon ?? 0)
-    + (inv.salt_pork ?? 0) + (inv.hardtack ?? 0) + (inv.jerky ?? 0)
-    + (inv.pemmican ?? 0) + (inv.dried_fruit ?? 0) + (inv.cornmeal ?? 0)
-    + (inv.dried_salmon ?? 0); // #1284 — shelf-stable protein supplement
+  // #1642 — catalog-derived shelf-stable sum (foodDrawOrder >= 1). Keeps
+  // the #1284 intent — hunts are planned against durable stores, not the
+  // spoils-fast shelf — but the list now tracks the item catalog instead
+  // of a hand-typed subset (old list missed butter/cheese/tallow/sugar).
+  return shelfStableFoodLb(state.inventory);
 }
 
 /** #1284 T4 — Estimated days of food remaining at current rations.

@@ -367,3 +367,27 @@ export function foodItemIds(): string[] {
     .sort((a, b) => (a.foodDrawOrder! - b.foodDrawOrder!))
     .map((i) => i.id);
 }
+
+/** #1642 — canonical food accounting. Everything the daily consumption
+ *  engine will eat (= items carrying foodDrawOrder), summed in pounds.
+ *  The AI layer previously kept two hand-typed subsets of this list
+ *  (bundle.ts totalFoodLb, personas.ts foodOnHand) that had drifted
+ *  from the catalog and from each other. */
+export function foodLb(inventory: Record<string, number | undefined>): number {
+  return foodItemIds().reduce((sum, id) => sum + (inventory[id] ?? 0), 0);
+}
+
+/** Shelf-stable subset: foodDrawOrder >= 1. Tier 0 is the spoils-fast
+ *  shelf (berries / egg / game_meat / milk / prize_cut — the engine eats
+ *  them first for exactly that reason), so planning horizons like the
+ *  bot's hunt scheduling exclude them. */
+export function shelfStableFoodIds(): string[] {
+  return Object.values(ITEMS)
+    .filter((i) => i.category === 'food' && (i.foodDrawOrder ?? -1) >= 1)
+    .sort((a, b) => (a.foodDrawOrder! - b.foodDrawOrder!))
+    .map((i) => i.id);
+}
+
+export function shelfStableFoodLb(inventory: Record<string, number | undefined>): number {
+  return shelfStableFoodIds().reduce((sum, id) => sum + (inventory[id] ?? 0), 0);
+}

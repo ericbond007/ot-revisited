@@ -123,7 +123,7 @@ describe('#1284 Task 1 — day-1 wagon load', () => {
 // Task 2 — dried_salmon item, fishery posts, attitude gate
 // ---------------------------------------------------------------------------
 
-import { ITEMS } from '../src/lib/game/content/items';
+import { foodItemIds, ITEMS } from '../src/lib/game/content/items';
 import { PRICES } from '../src/lib/game/content/prices';
 import { getLandmark, LANDMARKS } from '../src/lib/game/content/landmarks';
 import { SPOIL_RULES } from '../src/lib/game/systems/spoilage';
@@ -997,12 +997,12 @@ describe('#1284 Task 4 — shouldSlaughterOx persona surface', () => {
       startDate: { year: 1848, month: 4, day: 1 },
       wagonModel: 'prairie_schooner' as const
     });
-    // Zero all food items, then set only foodLb of flour so the total is predictable
-    const FOOD_KEYS_P = ['flour', 'bacon', 'beans', 'cornmeal', 'hardtack', 'jerky', 'pemmican',
-      'salt_pork', 'game_meat', 'berries', 'egg', 'milk', 'dried_fruit', 'cheese', 'butter',
-      'dried_salmon'] as const;
+    // Zero all food items, then set only foodLb of flour so the total is
+    // predictable. #1642: zero via the canonical catalog list — the old
+    // hand-typed list here missed sugar (starter kit ships 60 lb), the
+    // exact drift class the canonical helpers eliminate.
     const inv: Record<string, number> = { ...s.inventory };
-    for (const k of FOOD_KEYS_P) inv[k] = 0;
+    for (const k of foodItemIds()) inv[k] = 0;
     inv['flour'] = foodLb;
     const oxen = Array.from({ length: oxCount }, (_, i) => ({
       id: `ox-${i}`, health: 80 - i * 5, fatigue: 10 + i * 5, shod: true
