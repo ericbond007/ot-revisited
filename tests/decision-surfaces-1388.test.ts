@@ -746,11 +746,22 @@ describe('#1388 T2 — dead-ox panic bump (+1 want when ≥ 2 dead, recency-gate
     expect(hoarderPersona.pickOxSwapCount(state, OX_SWAP_POST, RNG_STUB)).toBe(0);
   });
 
-  it('chaos pickOxSwapCount is unaffected by dead-ox count (rng-only)', () => {
-    // chaos.pickOxSwapCount uses rng.int(0, 3) and doesn't call pickOxSwapCountFor.
+  it('chaos pickOxSwapCount is rng-driven above minTeam (#1385: floor only below minTeam)', () => {
+    // chaos rolls rng.int(0, 3) rather than pickOxSwapCountFor; since
+    // #1385 a desperation floor of 1 applies only when the live team is
+    // below the wagon's minTeam (exercised in the next test).
     const rng = { chance: () => false, int: () => 1 } as unknown as Parameters<typeof chaosPersona.pickOxSwapCount>[2];
     const state = stateWithDeadOxen(2, 4, 5);
     expect(chaosPersona.pickOxSwapCount(state, OX_SWAP_POST, rng)).toBe(1); // rng.int always 1
+  });
+
+  it('chaos pickOxSwapCount desperation floor: below minTeam buys at least one (#1385)', () => {
+    // heavy freighter minTeam=4; 3 alive → floor 1 even when the rng
+    // rolls 0. The pre-#1385 persona could roll 0 forever and crawl.
+    const zeroRng = { chance: () => false, int: () => 0 } as unknown as Parameters<typeof chaosPersona.pickOxSwapCount>[2];
+    const base = stateWithDeadOxen(3, 3, 5);
+    const state = { ...base, wagon: { ...base.wagon, model: 'heavy' as const } };
+    expect(chaosPersona.pickOxSwapCount(state, OX_SWAP_POST, zeroRng)).toBe(1);
   });
 
   it('engine (tickOxen) stamps _lastOxDeathDay when an ox dies of overwork this tick', () => {
