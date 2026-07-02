@@ -1727,8 +1727,16 @@ export const chaosPersona: Persona = {
     const pool = visible.length > 0 ? visible : event.choices;
     return pool[rng.int(0, pool.length - 1)].id;
   },
-  pickPace(_state, rng) {
-    const paces: GameState['pace'][] = ['slow', 'moderate', 'fast', 'grueling'];
+  pickPace(state, rng) {
+    // #1385 — random pace stays (tourist flavor), but even a dumbass
+    // tourist stops whipping a staggering team: with the team worn out,
+    // grueling/fast leave the roll. Pre-fix chaos ended runs with 0.4
+    // live oxen on average and crawled ~11 mi per travel day behind a
+    // single exhausted animal. Same cap-don't-sanitize approach as the
+    // #1153 chaos-bundle fix.
+    const paces: GameState['pace'][] = oxenWornOut(state)
+      ? ['slow', 'moderate']
+      : ['slow', 'moderate', 'fast', 'grueling'];
     return paces[rng.int(0, paces.length - 1)];
   },
   pickRations(_state, rng) {
@@ -1739,11 +1747,22 @@ export const chaosPersona: Persona = {
     // Chaos ignores the clock entirely — consistent with null schedule doctrine.
     return 'normal';
   },
-  shouldRest(_state, rng) {
+  shouldRest(state, rng) {
+    // #1385 — the final layer of the crawl: a bare 15% coin never rests
+    // a worn team, so oxen ground from fatigue 100 into their graves
+    // (runs ended at 0.4-0.6 live oxen and ~10 mi/travel day). Even the
+    // tourist parks the wagon when the animals stagger; still a coin —
+    // chaos rests badly, just not never.
+    if (oxenWornOut(state)) return rng.chance(0.6);
     return rng.chance(0.15);
   },
   shouldHunt(state, rng) {
-    return canHunt(state) && rng.chance(0.20);
+    // #1385 — same disease as shouldFindWater: a bare 20% coin burned
+    // ~17 travel days per run on hunts with a full larder. Need-gated
+    // with a small trigger-happy floor (the '49er tourist shoots at
+    // things occasionally regardless).
+    if (!canHunt(state)) return false;
+    return rng.chance(foodOnHand(state) < 100 ? 0.35 : 0.05);
   },
   pickFordMethod(state, here, rng) {
     // Build the universe of methods this river actually allows. All
@@ -1764,9 +1783,18 @@ export const chaosPersona: Persona = {
   shouldStayAtInn(state, here, rng) {
     return (here.services ?? []).includes('inn') && state.cash >= 5 && rng.chance(0.4);
   },
-  shouldFindWater(_state, rng) {
+  shouldFindWater(state, rng) {
     // #1022 — desert exclusion removed; runner falls back to dig_well.
-    return rng.chance(0.25);
+    // #1385 — the bare 25% daily coin was the persona's real killer:
+    // ~60 of 260 days burned as pointless find-water camp days (vs 2
+    // for balanced), starving the travel budget — 0/120 arrivals with
+    // most runs timing out mid-trail rather than dying. Chaos stays
+    // chaotic: near-random about water when the keg is actually low,
+    // plus a small pointless-wander floor for tourist flavor.
+    // Scarcity via the shared waterRatio helper (clean + dirty — a
+    // full-but-dirty keg is a boil problem, not a find-water problem).
+    if (waterRatio(state) < 0.4) return rng.chance(0.5);
+    return rng.chance(0.03);
   },
   shouldPan(state, rng) {
     // Chaos pans 30% of eligible days regardless of cooldown — gates
@@ -1793,11 +1821,16 @@ export const chaosPersona: Persona = {
     }
     return rng.chance(0.03);
   },
-  pickOxSwapCount(_state, here, rng) {
+  pickOxSwapCount(state, here, rng) {
     if (!(here.services ?? []).includes('ox_swap')) return 0;
-    // Chaos randomly buys 0-3 fresh oxen each visit. Doesn't care if
-    // the team is fresh — fuzz coverage of the swap action.
-    return rng.int(0, 3);
+    // Chaos randomly buys 0-3 fresh oxen each visit — fuzz coverage of
+    // the swap action. #1385 desperation floor: when the team is below
+    // the wagon's minimum, even the tourist buys at least one animal
+    // (a walking wagon beats a parked one; pre-fix chaos ended runs
+    // with 0.4 live oxen and crawled the last third of the trail).
+    const alive = state.oxen.filter((o) => o.health > 0).length;
+    const floor = alive < getWagon(state.wagon.model).minTeam ? 1 : 0;
+    return Math.max(floor, rng.int(0, 3));
   },
   pickRepairBudget(state, here) {
     // Chaos: random budget 0-50 regardless of condition.
