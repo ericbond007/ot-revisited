@@ -1131,7 +1131,12 @@ export const cautiousPersona: Persona = {
     // the push_on branch in thresholdWheelBreakResponse never fires.
     return thresholdWheelBreakResponse(state, -1);
   },
-  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
+  // #1154 — NPC bundle activation, hypothesis 2: light survival-only
+  // weight. The tight urgency gates in bundle.ts (water<5 gal, dirty>0,
+  // firewood<5) mean this only fires when genuinely needed, so rest-day
+  // cadence and the company-rest aggregate barely move. Applies to both
+  // the player-bot rest bundle (slice 2) and NPC wagons (slice 3 gate).
+  bundleWeights: { survival: 1, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 export const balancedPersona: Persona = {
@@ -1383,7 +1388,12 @@ export const balancedPersona: Persona = {
     // Default policy: spare > rebuild > push_on (only when cond < 25, no smith).
     return defaultWheelBreakResponse(state);
   },
-  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
+  // #1154 — NPC bundle activation, hypothesis 2: light survival-only
+  // weight. The tight urgency gates in bundle.ts (water<5 gal, dirty>0,
+  // firewood<5) mean this only fires when genuinely needed, so rest-day
+  // cadence and the company-rest aggregate barely move. Applies to both
+  // the player-bot rest bundle (slice 2) and NPC wagons (slice 3 gate).
+  bundleWeights: { survival: 1, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 export const aggressivePersona: Persona = {
@@ -2177,10 +2187,11 @@ export const faithfulPersona: Persona = {
       'tongue', 'canvas', 'flour', 'beans', 'cornmeal', 'bible'
     ];
   },
-  // #927 slice-3: persona.bundleWeights kept at zero so the NPC engine's
-  // weights-only opt-in gate skips faithful NPCs. The bundleCampActions
-  // override still drives player-bot behaviour (slice-2 gain intact);
-  // future #927c re-enables NPC opt-in by tuning weights here.
+  // Weights stay zero — the dispatcher routes faithful through the
+  // faithfulBundle override, so these are never read. NOTE (#1154): the
+  // NPC gate in npc-engine.ts opts in on `bundleCampActions` presence as
+  // well as weights, so faithful NPC wagons DO bundle (the older
+  // "weights-only gate skips faithful NPCs" note predated that review fix).
   bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 },
   bundleCampActions: faithfulBundle
 };

@@ -370,8 +370,9 @@ export function faithfulBundle(
   // survival (water/firewood) on weekdays with light morale/maintenance
   // accents, and survival+morale-only on Sundays. Sabbath still skips
   // maintenance entirely; weekdays allow it as a low-weight tier 1.
-  // npc-engine ignores overrides (weights-only opt-in, #927 slice-3) so
-  // these weights only affect the player-bot path.
+  // NOTE (#1154): the NPC gate opts in on bundleCampActions presence too
+  // (review fix), so this override drives BOTH the player-bot path and
+  // faithful NPC wagons.
   const weights: BundleWeights = isSunday(state.date)
     ? { survival: 2, food: 0, maintenance: 0, hygiene: 0, morale: 1 }
     : { survival: 2, food: 0, maintenance: 1, hygiene: 0, morale: 1 };
