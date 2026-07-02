@@ -3,7 +3,20 @@ import type { Terrain } from '../types';
 export interface RiverStats {
   depthFt: number;
   currentMph: number;
-  ferryPrice: number;
+  /** Commercial toll-ferry fee. ABSENT = no commercial ferry ever
+   *  operated at this crossing (#1143 — e.g. the first Sweetwater ford,
+   *  30-50 ft wide and ankle-deep, was simply waded year-round). */
+  ferryPrice?: number;
+  /** #1141/#1142 — first trail year a commercial ferry operated here.
+   *  Before this year the option is a ford/caulk-only crossing. */
+  ferryFromYear?: number;
+  /** #1141 — last year the ferry ran (Marshall's Ferry at the Big Blue
+   *  folded ~1853 when traffic shifted north to Marysville). */
+  ferryUntilYear?: number;
+  /** #1144 — ferry operates only during May–June snowmelt high water
+   *  (see river-season.isSpringHighWater). Attested for Bear River:
+   *  emigrants forded free in late summer; a toll ferry ran the melt. */
+  ferryHighWaterOnly?: boolean;
   // #238 Optional native-run ferry. If present and the named tribe is
   // friendly enough (attitude ≥ NATIVE_FERRY_MIN_ATTITUDE), the ford
   // modal offers a 5th method: bull-boat / raft across for `priceQty`
@@ -247,7 +260,10 @@ export const LANDMARKS: readonly Landmark[] = [
   // down from the spring to the river bank.
   { id: 'big_blue_river',      name: 'Big Blue River',      milesFromPrevious: 2,   terrain: 'river',     kind: 'river',
     waterCorridor: 'clean', // Big Blue valley
-    river: { depthFt: 2.5, currentMph: 1, ferryPrice: 2 } },
+    // #1141 — Marshall's Ferry at Independence Crossing: ~1849-1853 only
+    // (KHS Ferries in Kansas III); traffic shifted to Marysville 1851-52.
+    // Rates attested $3-$5; $2 was below any record.
+    river: { depthFt: 2.5, currentMph: 1, ferryPrice: 3, ferryFromYear: 1849, ferryUntilYear: 1853 } },
   { id: 'hollenberg_ranch',    name: 'Hollenberg Ranch',    milesFromPrevious: 30,  terrain: 'prairie',   kind: 'trading_post',
     waterCorridor: 'clean', // Cottonwood Creek / Little Blue valley road
     // Private road ranch built 1857 on Cottonwood Creek at the junction
@@ -455,7 +471,10 @@ export const LANDMARKS: readonly Landmark[] = [
     abandonedBeforeYear: 1856 },
   { id: 'sweetwater_1',        name: 'Sweetwater River ford', milesFromPrevious: 8, terrain: 'river',    kind: 'river',
     waterCorridor: 'clean', // Sweetwater crossing; "good grass on the banks… water actively pleasant"
-    river: { depthFt: 2.0, currentMph: 1, ferryPrice: 2 } },
+    // #1143 — no commercial ferry ever ran here: 30-50 ft wide, 1-3 ft
+    // deep, gentle current, waded year-round (Clayton 1847, Van Dorn
+    // 1849, Pusey Graves 1850). Ford/caulk crossing only.
+    river: { depthFt: 2.0, currentMph: 1 } },
   // Cheyenne summer camp on the Sweetwater plains (#202). Cheyenne
   // bands ranged the high country south of the Black Hills west to
   // the Powder and Wind River basins; summer camps near the Sweetwater
@@ -493,7 +512,10 @@ export const LANDMARKS: readonly Landmark[] = [
   { id: 'green_river',         name: 'Green River crossing', milesFromPrevious: 50, terrain: 'river',    kind: 'river',
     waterCorridor: 'clean', // Research table: "corridor at the Green"; note: spec §1 says "Big Sandy/Green stretch: unflagged" — TABLE wins
     river: {
-      depthFt: 4.5, currentMph: 4, ferryPrice: 8,
+      // #1142 — no commercial ferry before July 1847 (Mormon Robinson
+      // Ferry was the first; Lombard multi-operator era ~1850+). Fee $8
+      // sits inside the documented $3-$16 range.
+      depthFt: 4.5, currentMph: 4, ferryPrice: 8, ferryFromYear: 1847,
       // Shoshone bull-boat at the Green. Bead trade is the period
       // currency for native-run river assistance; six strings is the
       // game's chosen rate (the underlying sourcing for bull-boat
@@ -557,7 +579,10 @@ export const LANDMARKS: readonly Landmark[] = [
     excludeBuyCategories: ['wagon_part', 'tool'] },
   { id: 'bear_river',          name: 'Bear River crossing', milesFromPrevious: 10,  terrain: 'river',     kind: 'river',
     waterCorridor: 'clean', // Bear River ford; open mountain valley, clear water
-    river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4 } },
+    // #1144 — 60 ft wide, 2.5 ft at the standard ford; late-summer
+    // parties waded free (Woodruff/Snow 1847, Frémont 1843). A toll
+    // ferry ran only during spring snowmelt high water.
+    river: { depthFt: 3.0, currentMph: 2, ferryPrice: 4, ferryHighWaterOnly: true } },
   { id: 'soda_springs',        name: 'Soda Springs',        milesFromPrevious: 50,  terrain: 'prairie',   elevationFt: 5800, kind: 'landmark', waterCorridor: 'clean' }, // Bear River valley; effervescent springs on the Bear
   { id: 'ft_hall',             name: 'Fort Hall',           milesFromPrevious: 145,  terrain: 'prairie',   elevationFt: 4500, kind: 'trading_post',
     waterCorridor: 'clean', // Snake/Portneuf bottomland oasis; last easy-water landmark before the Snake canyon plateau
