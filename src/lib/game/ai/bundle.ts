@@ -151,8 +151,11 @@ export function urgency(state: GameState, id: BundleableActionId): number {
     }
     case 'fish':
     case 'set_traps': {
+      // #1639 — taper to zero on a full larder. These are free inflow
+      // (hours only), but an un-gated floor would stockpile meat every
+      // rest day forever, distorting weight + spoilage.
       const food = totalFoodLb(state);
-      return food < 50 ? 8 : 4;
+      return food < 50 ? 8 : food < 120 ? 4 : 0;
     }
     case 'cure_meat': {
       const meat = state.inventory.game_meat ?? 0;
@@ -161,7 +164,10 @@ export function urgency(state: GameState, id: BundleableActionId): number {
     case 'press_cheese':
       return (state.inventory.milk ?? 0) > 0 ? 8 : 0;
     case 'big_meal':
-      return state.morale < 50 ? 6 : 3;
+      // #1639 — morale-repair action that CONSUMES 4 lb of food on top of
+      // daily rations; the old floor of 3 would burn stores every rest
+      // day once any persona carried a food weight.
+      return state.morale < 50 ? 6 : 0;
     case 'patch_wagon': {
       // #1640 — keyed on CANVAS (the action repairs canvas, not condition;
       // the old condition read was a mismatch) and zero floor so
