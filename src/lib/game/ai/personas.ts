@@ -2079,7 +2079,11 @@ export const hoarderPersona: Persona = {
   // field repairs (patch/canvas/planks/moccasins/cast_balls) on rest
   // days between posts. Urgency need-gates keep it from firing when
   // nothing is broken. aggressive/pace_pusher/chaos stay 0 by design.
-  bundleWeights: { survival: 0, food: 0, maintenance: 1, hygiene: 0, morale: 0 }
+  // #1639 — food:1: the supply-stockpiler archetype cures meat, walks
+  // trap lines, presses cheese, and hunts from camp when the larder
+  // thins. Urgency need-gates keep it from burning stores (big_meal
+  // only under morale 50) or stockpiling forever (fish/traps taper).
+  bundleWeights: { survival: 0, food: 1, maintenance: 1, hygiene: 0, morale: 0 }
 };
 
 /** generous — invests in the team and the wagon. Period: George Donner,
@@ -2142,7 +2146,9 @@ export const generousPersona: Persona = {
     }
     return balancedPersona.pickEventChoice(state, event, rng);
   },
-  bundleWeights: { survival: 0, food: 0, maintenance: 0, hygiene: 0, morale: 0 }
+  // #1639 — food:1: the feeder archetype — big meals when spirits are
+  // low, camp hunts for the pot. Same urgency need-gates as hoarder.
+  bundleWeights: { survival: 0, food: 1, maintenance: 0, hygiene: 0, morale: 0 }
 };
 
 const SHARE_FLOUR_RESERVE = 60;

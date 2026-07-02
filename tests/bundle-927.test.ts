@@ -81,6 +81,21 @@ describe('#927 urgency — patch_wagon (#1640: keyed on canvas, zero floor)', ()
   });
 });
 
+describe('#1639 urgency need-gates — fish/set_traps larder taper', () => {
+  it('fish: food<50 → 8', () => {
+    const s = baseState({ inventory: { flour: 20 } });
+    expect(urgency(s, 'fish')).toBe(8);
+  });
+  it('fish: 50≤food<120 → 4', () => {
+    const s = baseState({ inventory: { flour: 80 } });
+    expect(urgency(s, 'fish')).toBe(4);
+  });
+  it('set_traps: food≥120 → 0 (full larder)', () => {
+    const s = baseState({ inventory: { flour: 200 } });
+    expect(urgency(s, 'set_traps')).toBe(0);
+  });
+});
+
 describe('#1640 urgency need-gates — cast_balls + service_train', () => {
   it('cast_balls tapers to 0 at ≥60 balls even with materials', () => {
     const s = baseState({ inventory: { lead_pig: 2, bullet_mold: 1, lead_balls: 80 } });
@@ -131,9 +146,9 @@ describe('#927 urgency — terrain-gated', () => {
 });
 
 describe('#927 urgency — morale-gated', () => {
-  it('big_meal: morale<50 → 6, else 3', () => {
+  it('big_meal: morale<50 → 6, else 0 (#1639: consumes 4 lb — no floor)', () => {
     expect(urgency(baseState({ morale: 40 }), 'big_meal')).toBe(6);
-    expect(urgency(baseState({ morale: 70 }), 'big_meal')).toBe(3);
+    expect(urgency(baseState({ morale: 70 }), 'big_meal')).toBe(0);
   });
   it('teach_kids: only when children present', () => {
     const sNoKids = baseState();
