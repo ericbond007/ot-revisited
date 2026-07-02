@@ -281,7 +281,7 @@
     {/if}
   {/each}
 {:else}
-<g transform="translate(0 {teamBob})" data-team-bob={teamBob.toFixed(4)}>
+<g transform="translate(0 {teamBob})">
   {#if showPole}
     <g transform="translate({frontPolePx} 0)">
       {@render oxPole(poleLength, -11.5)}

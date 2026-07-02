@@ -79,13 +79,21 @@
   // milesTraveled so the slot identity at any visible position is keyed
   // to absolute trail coord (mile X looks like mile X across remounts);
   // the scroll-time term adds parallax-locked within-leg drift.
+  //
+  // #271 perf: sprites are laid out in ABSOLUTE world coordinates and the
+  // whole field scrolls via ONE group translate. Per frame only worldStart
+  // changes; individual sprite attributes only change when the visible
+  // slot window shifts (a sprite enters/leaves at an edge). Keying the
+  // each-block by slot index keeps sprite identity stable across shifts —
+  // index-keying rewrote every sprite's href/x/y each slot advance.
+  const worldStart = $derived(computeWorldStart(milesTraveled, scrollX, DEBRIS_SCROLL));
   const debris = $derived.by(() => {
-    const worldStart = computeWorldStart(milesTraveled, scrollX, DEBRIS_SCROLL);
     // Guard of 1 is sufficient: max visible overhang =
     // (MAX_JITTER + MAX_SPRITE/2) / SLOT_PITCH ≈ 1.17 slots.
     const i0 = Math.floor(worldStart / SLOT_PITCH) - 1;
     const i1 = Math.ceil((worldStart + SCENE_W) / SLOT_PITCH) + 1;
     const out: {
+      slot: number;
       href: string;
       x: number;
       y: number;
@@ -96,16 +104,16 @@
     for (let i = i0; i <= i1; i++) {
       const d = debrisAt(i, weights);
       if (!d) continue;
-      const screenX = d.worldX - worldStart;
       const [y0, y1] = d.row === 'above' ? [ABOVE_Y0, ABOVE_Y1] : [BELOW_Y0, BELOW_Y1];
       const cy = y0 + d.rowT * (y1 - y0);
       out.push({
+        slot: i,
         href: `/wagon-bg/trail-debris/${d.sprite}.webp`,
-        x: screenX - d.size / 2,
+        x: d.worldX - d.size / 2,
         y: cy - d.size / 2,
         size: d.size,
         rot: d.rot,
-        cx: screenX,
+        cx: d.worldX,
       });
     }
     return out;
@@ -113,44 +121,48 @@
 </script>
 
 <g>
-  <!-- 1. Dirt BASE (native rut healed out) — 3 tile copies -->
-  {#each offsets as offset (offset)}
-    {@const tx = x + offset}
-    <image
-      href={url}
-      x={tx}
-      y={stripTop}
-      width={PAINT_W}
-      height={PAINT_H}
-      preserveAspectRatio="none"
-    />
-  {/each}
-
-  <!-- 2. Rut OVERLAY — the one painted groove composited at TWO y
-       positions, each tiled+scrolled in sync with the dirt base. -->
-  {#each rutCenters as cy (cy)}
+  <!-- 1+2. Dirt BASE + rut OVERLAY share the same scroll offset — one
+       group translate per frame instead of 9 per-image x writes (#271).
+       Tiles sit at static x=offset inside the moving group. -->
+  <g transform="translate({x} 0)">
     {#each offsets as offset (offset)}
       <image
-        href={rutUrl}
-        x={x + offset}
-        y={cy - RUT_H / 2}
+        href={url}
+        x={offset}
+        y={stripTop}
         width={PAINT_W}
-        height={RUT_H}
+        height={PAINT_H}
         preserveAspectRatio="none"
       />
     {/each}
-  {/each}
+    {#each rutCenters as cy (cy)}
+      {#each offsets as offset (offset)}
+        <image
+          href={rutUrl}
+          x={offset}
+          y={cy - RUT_H / 2}
+          width={PAINT_W}
+          height={RUT_H}
+          preserveAspectRatio="none"
+        />
+      {/each}
+    {/each}
+  </g>
 
-  <!-- 3. Debris OVERLAY — deterministic field over the visible world span -->
-  {#each debris as d, i (i)}
-    <image
-      href={d.href}
-      x={d.x}
-      y={d.y}
-      width={d.size}
-      height={d.size}
-      transform={d.rot ? `rotate(${d.rot} ${d.cx} ${d.y + d.size / 2})` : ''}
-      preserveAspectRatio="xMidYMid meet"
-    />
-  {/each}
+  <!-- 3. Debris OVERLAY — sprites at absolute world x inside one scrolled
+       group; keyed by slot so window shifts mount/unmount at the edges
+       instead of rewriting every sprite (#271). -->
+  <g transform="translate({-worldStart} 0)">
+    {#each debris as d (d.slot)}
+      <image
+        href={d.href}
+        x={d.x}
+        y={d.y}
+        width={d.size}
+        height={d.size}
+        transform={d.rot ? `rotate(${d.rot} ${d.cx} ${d.y + d.size / 2})` : ''}
+        preserveAspectRatio="xMidYMid meet"
+      />
+    {/each}
+  </g>
 </g>
