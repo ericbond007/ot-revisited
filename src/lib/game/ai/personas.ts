@@ -13,6 +13,7 @@
 // the decision layer is shared infrastructure for the player bot, NPC
 // companion wagons (#280b), and any future encountered-train wagon.
 
+import { ferryAvailable } from '../actions/ford';
 import type { GameState, ConditionId } from '../types';
 import type { GameEvent } from '../content/events';
 import type { Landmark } from '../content/landmarks';
@@ -958,6 +959,9 @@ export const cautiousPersona: Persona = {
 
     const nf = here.river?.nativeFerry;
     const ferryPrice = here.river?.ferryPrice ?? 5;
+    // #1560 — commercial ferry only when it historically operates
+    // (period years / snowmelt season); same gate the server enforces.
+    const ferryOk = !!here.river && ferryAvailable(here.river, state.date);
 
     if (shallowSafe) {
       // Shallow + healthy: ford is safe; skip the fee.
@@ -972,7 +976,7 @@ export const cautiousPersona: Persona = {
     if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
       return 'native_ferry';
     }
-    if (state.cash >= ferryPrice) return 'ferry';
+    if (ferryOk && state.cash >= ferryPrice) return 'ferry';
     if (deepDanger) {
       // Deep + no ferry option: caulk before a naked ford.
       return 'caulk';
@@ -1246,6 +1250,8 @@ export const balancedPersona: Persona = {
 
     const ferryPrice = here.river?.ferryPrice ?? 5;
     const nf = here.river?.nativeFerry;
+    // #1560 — same availability gate as the server + modal.
+    const ferryOk = !!here.river && ferryAvailable(here.river, state.date);
 
     // Shallow gate: ford is safe, skip the fee.
     if (effDepth <= 2.5 && !hpPenalized) {
@@ -1261,12 +1267,12 @@ export const balancedPersona: Persona = {
       if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
         return 'native_ferry';
       }
-      if (state.cash >= ferryPrice) return 'ferry';
-      return 'caulk'; // cash can't cover ferry; caulk before naked ford
+      if (ferryOk && state.cash >= ferryPrice) return 'ferry';
+      return 'caulk'; // no ferry (or cash short); caulk before naked ford
     }
 
     // Moderate depth: original balanced logic (ferry when cash comfortable).
-    if (state.cash >= ferryPrice * 3) return 'ferry';
+    if (ferryOk && state.cash >= ferryPrice * 3) return 'ferry';
     if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
       return 'native_ferry';
     }
@@ -1555,11 +1561,13 @@ export const aggressivePersona: Persona = {
     // Deep or HP-penalized: prefer ferry; caulk when cash can't cover it.
     const nf = here.river?.nativeFerry;
     const ferryPrice = here.river?.ferryPrice ?? 5;
+    // #1560 — same availability gate as the server + modal.
+    const ferryOk = !!here.river && ferryAvailable(here.river, state.date);
     if (nf && (state.inventory[nf.priceItem] ?? 0) >= nf.priceQty) {
       return 'native_ferry';
     }
-    if (state.cash >= ferryPrice) return 'ferry';
-    return 'caulk'; // cash can't cover ferry → caulk before naked deep ford
+    if (ferryOk && state.cash >= ferryPrice) return 'ferry';
+    return 'caulk'; // no ferry (or cash short) → caulk before naked deep ford
   },
   shouldTradeAtPost(state, here) {
     // #916 — recalibrated. Period reality: Bidwell 1841 / Reed 1846
@@ -1743,7 +1751,10 @@ export const chaosPersona: Persona = {
     // has the config AND attitude+inventory line up — but chaos rolls
     // without checking, the runner's tryFordWithFallback catches the
     // throw and degrades to plain ford.
-    const methods: FordMethod[] = ['ford', 'caulk', 'ferry', 'wait'];
+    const methods: FordMethod[] = ['ford', 'caulk', 'wait'];
+    // #1560 — even chaos can't hire a ferry that doesn't exist; the
+    // runner's fallback would just eat the throw and mask the signal.
+    if (here.river && ferryAvailable(here.river, state.date)) methods.push('ferry');
     if (here.river?.nativeFerry) methods.push('native_ferry');
     return methods[rng.int(0, methods.length - 1)];
   },

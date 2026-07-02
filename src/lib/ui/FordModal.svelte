@@ -2,7 +2,7 @@
   import type { GameState } from '$lib/game/types';
   import { getLandmark } from '$lib/game/content/landmarks';
   import { getTribeAttitude } from '$lib/game/systems/tribe-relations';
-  import { NATIVE_FERRY_MIN_ATTITUDE } from '$lib/game/actions/ford';
+  import { NATIVE_FERRY_MIN_ATTITUDE, ferryAvailable } from '$lib/game/actions/ford';
   import CardRadio from './CardRadio.svelte';
   import NumberStepper from './NumberStepper.svelte';
   import LandmarkIcon, { hasLandmarkIcon } from '$lib/ui/landmark-icons/LandmarkIcon.svelte';
@@ -21,6 +21,10 @@
   const here = $derived(hereId ? getLandmark(hereId) : null);
   // Safe defaults mirror what the server uses if the landmark has no river stats.
   const river = $derived(here?.river ?? { depthFt: 3, currentMph: 3, ferryPrice: 5 });
+  // #1560 — one availability signal for the option list AND the header
+  // stats: a gated ferry (wrong year / off-season) neither appears as an
+  // option nor advertises a price.
+  const ferryOk = $derived(!!here?.river && ferryAvailable(here.river, gameState.date));
   const riverName = $derived(here?.name ?? 'River');
 
   // #238 Native ferry — show the 5th option when the landmark is wired
@@ -49,18 +53,22 @@
         icon: ICON.ford_methods.caulk
       },
       {
-        value: 'ferry',
-        label: 'Hire Ferry',
-        sublabel: `$${river.ferryPrice} — the safe (if expensive) way`,
-        icon: ICON.ford_methods.ferry
-      },
-      {
         value: 'wait',
         label: 'Wait it Out',
         sublabel: 'Camp nearby, hope the river drops',
         icon: ICON.ford_methods.wait
       }
     ];
+    // #1560 — the commercial ferry appears only when it historically
+    // operates here today (period years / snowmelt season).
+    if (ferryOk && here?.river) {
+      base.splice(2, 0, {
+        value: 'ferry',
+        label: 'Hire Ferry',
+        sublabel: `$${here.river.ferryPrice} — the safe (if expensive) way`,
+        icon: ICON.ford_methods.ferry
+      });
+    }
     if (nativeFerryAvailable() && river.nativeFerry) {
       base.splice(3, 0, {
         value: 'native_ferry',
@@ -82,7 +90,8 @@
       <h2 class="modal-title river-title">{riverName}</h2>
     </div>
     <p style="color: var(--of-ink-soft);">
-      Depth {river.depthFt.toFixed(1)} ft · Current {river.currentMph} mph · Ferry ${river.ferryPrice}
+      Depth {river.depthFt.toFixed(1)} ft · Current {river.currentMph} mph{#if ferryOk}
+        · Ferry ${river.ferryPrice}{/if}
     </p>
 
     <form method="POST" action="?/ford&slot={qp}">

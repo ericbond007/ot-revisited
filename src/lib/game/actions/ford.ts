@@ -1,4 +1,5 @@
-import type { GameState } from '../types';
+import type { GameDate, GameState } from '../types';
+import { isSpringHighWater } from '../systems/river-season';
 import { makeRng, type Rng } from '../rng';
 import { upgradeState } from '../upgrade';
 import { applyDailyConsumption, applyDirtyWaterRisk } from '../systems/consumption';
@@ -28,7 +29,13 @@ export const LAWYER_FEE_DISCOUNT = 0.80;
 export interface RiverState {
   depthFt: number;
   currentMph: number;
-  ferryPrice: number;
+  /** Absent = no commercial ferry ever operated here (#1143). */
+  ferryPrice?: number;
+  /** #1141/#1142 — commercial ferry first/last operating years. */
+  ferryFromYear?: number;
+  ferryUntilYear?: number;
+  /** #1144 — ferry runs only during May–June snowmelt high water. */
+  ferryHighWaterOnly?: boolean;
   // #238 Native ferry parameters (mirrors RiverStats.nativeFerry — see
   // landmarks.ts). Plumbed through the server action so the ford() can
   // verify gating + apply the trade.
@@ -46,6 +53,19 @@ export interface FordOptions {
   method: FordMethod;
   river: RiverState;
   waitDays?: number;
+}
+
+/** #1560 — is the commercial ferry operating at this crossing today?
+ *  Single source of truth for the server action, the FordModal option
+ *  list, and every persona's pickFordMethod, so the AI can never pick a
+ *  ferry the player couldn't buy. Period gates per crossing live in
+ *  landmarks.ts (ferryFromYear / ferryUntilYear / ferryHighWaterOnly). */
+export function ferryAvailable(river: RiverState, date: GameDate): boolean {
+  if (river.ferryPrice === undefined) return false;
+  if (river.ferryFromYear !== undefined && date.year < river.ferryFromYear) return false;
+  if (river.ferryUntilYear !== undefined && date.year > river.ferryUntilYear) return false;
+  if (river.ferryHighWaterOnly && !isSpringHighWater(date)) return false;
+  return true;
 }
 
 /** #238 minimum tribe attitude to be offered the native-ferry option. */
@@ -193,16 +213,22 @@ export function ford(state: GameState, opts: FordOptions): GameState {
 
   switch (opts.method) {
     case 'ferry': {
+      // #1560 — period/season gate. The modal + personas filter on the
+      // same helper; this server-side check is the backstop.
+      if (!ferryAvailable(opts.river, s.date)) {
+        throw new Error('ford: no ferry operates at this crossing today');
+      }
+      const price = opts.river.ferryPrice!;
       const lawyerDiscount = hasLiveLawyer(s);
       const fee = lawyerDiscount
-        ? Math.round(opts.river.ferryPrice * LAWYER_FEE_DISCOUNT)
-        : opts.river.ferryPrice;
+        ? Math.round(price * LAWYER_FEE_DISCOUNT)
+        : price;
       if (s.cash < fee) {
         throw new Error(`ford: not enough cash for ferry ($${s.cash} < $${fee})`);
       }
       s = { ...s, cash: s.cash - fee };
       const line = lawyerDiscount
-        ? `Paid $${fee} for ferry across the river. The lawyer argued it down from $${opts.river.ferryPrice}.`
+        ? `Paid $${fee} for ferry across the river. The lawyer argued it down from $${price}.`
         : `Paid $${fee} for ferry across the river.`;
       events.push(line);
       s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: line }] };

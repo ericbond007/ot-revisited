@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { GameState } from '$lib/game/types';
+  import { ferryAvailable } from '$lib/game/actions/ford';
   import type { Landmark } from '$lib/game/content/landmarks';
   import { isLandmarkAbandoned } from '$lib/game/content/landmarks';
   import LandmarkArt, { hasLandmarkArt } from '$lib/ui/landmark-art/LandmarkArt.svelte';
@@ -106,11 +107,14 @@
           <span class="river-label">CURRENT</span>
           <span class="river-val">{landmark.river.currentMph} mph</span>
         </div>
-        <div class="river-stat">
-          <span class="river-icon">⛵</span>
-          <span class="river-label">FERRY</span>
-          <span class="river-val">${landmark.river.ferryPrice}</span>
-        </div>
+        <!-- #1560 — only advertise a ferry that operates here today -->
+        {#if ferryAvailable(landmark.river, state.date)}
+          <div class="river-stat">
+            <span class="river-icon">⛵</span>
+            <span class="river-label">FERRY</span>
+            <span class="river-val">${landmark.river.ferryPrice}</span>
+          </div>
+        {/if}
       </div>
       <p class="river-hint">
         {landmark.river.depthFt >= 4 ? 'Deep — fording risks soaking supplies or losing livestock.'

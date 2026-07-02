@@ -108,3 +108,12 @@ export function effectiveRiverDepth(
 
   return river.depthFt * seasonMult * rainMult;
 }
+
+/** #1144 — spring high water: the May–June snowmelt window. The Bear
+ *  River toll ferry (and services like it) operated only while the
+ *  melt made the standard fords treacherous; by July the crossings are
+ *  "ordinary" and nobody pays. Whole-June by design — Bryant (22 June
+ *  1846, Green River): "still high, but the ferry managed it." */
+export function isSpringHighWater(date: GameDate): boolean {
+  return date.month === 5 || date.month === 6;
+}
