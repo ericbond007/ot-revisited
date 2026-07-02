@@ -3,6 +3,7 @@
 // cannibalism_corpse camp action, and tickNpcWagon maybeCannibalize
 // all share.
 
+import { foodItemIds } from '../src/lib/game/content/items';
 import { describe, it, expect } from 'vitest';
 import {
   applyCannibalize,
@@ -19,14 +20,11 @@ import { makeRng } from '../src/lib/game/rng';
 import type { GameState } from '../src/lib/game/types';
 
 function emptyFood<T extends Record<string, number>>(inv: T): T {
+  // #1643 — zero via the canonical catalog list; the old hand-typed list
+  // missed sugar (starter kit ships 60 lb) / tallow / prize_cut, so
+  // "empty-food" fixtures secretly carried edible stores.
   const out: Record<string, number> = { ...inv };
-  for (const k of [
-    'flour', 'bacon', 'beans', 'hardtack', 'jerky', 'pemmican', 'salt_pork',
-    'game_meat', 'berries', 'egg', 'milk', 'dried_fruit', 'cheese', 'butter',
-    'cornmeal'
-  ]) {
-    delete out[k];
-  }
+  for (const k of foodItemIds()) out[k] = 0;
   return out as T;
 }
 

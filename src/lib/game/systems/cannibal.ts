@@ -10,6 +10,7 @@
 
 import type { GameState, PartyMember } from '../types';
 import type { Rng } from '../rng';
+import { foodLb } from '../content/items';
 
 export const CANNIBAL_ADULT_MEAT_LB = 50;
 export const CANNIBAL_ADULT_MORALE_HIT = 18;
@@ -17,20 +18,15 @@ export const CANNIBAL_CHILD_MEAT_LB = 25;
 export const CANNIBAL_CHILD_MORALE_HIT = 25;
 export const CANNIBAL_FRESHNESS_DAYS = 5;
 
-const FOOD_ITEMS = [
-  'flour', 'bacon', 'beans', 'hardtack', 'jerky', 'pemmican', 'salt_pork',
-  'game_meat', 'berries', 'egg', 'milk', 'dried_fruit', 'cheese', 'butter',
-  'cornmeal', 'dried_salmon'
-] as const;
-
 /** True iff the party has any food item with quantity > 0. The gate
  *  every cannibal surface checks before becoming visible — last-resort
- *  framing means no surface appears while food remains. */
+ *  framing means no surface appears while food remains. #1643: uses the
+ *  canonical catalog sum (everything the consumption engine eats) — the
+ *  old hand-typed 16-key list missed prize_cut / tallow / sugar, so a
+ *  party hauling only those could see cannibal surfaces while carrying
+ *  edible stores. */
 export function hasFoodOnHand(state: GameState): boolean {
-  for (const id of FOOD_ITEMS) {
-    if ((state.inventory[id] ?? 0) > 0) return true;
-  }
-  return false;
+  return foodLb(state.inventory) > 0;
 }
 
 /** Most-recently-dead-and-unconsumed corpse the survivors could
