@@ -57,9 +57,18 @@
     // desert has no weather-fitting variants — falls through to random.
   };
 
+  // #274: prairie v0 has a visible wrap seam — sky tone + horizon jump at
+  // the tile junction (verified by edge-composite inspection 2026-07-01;
+  // v1-4 and the other biomes wrap clean). Excluded from the random pool;
+  // the file stays on disk so the dev viewer's explicit variant=0 still
+  // renders it for comparison / an eventual regen.
+  const SEAM_EXCLUDED: Partial<Record<Terrain, readonly number[]>> = {
+    prairie: [0],
+  };
+
   // Stable per-mount random pick when no explicit variant is passed —
   // re-evaluated only when the component remounts (e.g., dev Restart).
-  const fallbackVariant = Math.floor(Math.random() * N_VARIANTS);
+  const fallbackRoll = Math.random();
 
   // Resolution order: explicit `variant` prop > weather-driven > random.
   const v = $derived.by(() => {
@@ -68,7 +77,11 @@
       const mapped = WEATHER_VARIANT_MAP[terrain]?.[weather];
       if (mapped !== undefined) return mapped;
     }
-    return fallbackVariant;
+    const base = terrain === 'river' ? 'prairie' : terrain;
+    const excluded = SEAM_EXCLUDED[base] ?? [];
+    const pool = Array.from({ length: N_VARIANTS }, (_, i) => i)
+      .filter((i) => !excluded.includes(i));
+    return pool[Math.floor(fallbackRoll * pool.length)];
   });
 
   // SVG render dimensions for the painting. Source webp is 3072×768
@@ -120,12 +133,13 @@
   const paintTop = VIEWBOX_TOP_Y;
 </script>
 
-<g>
+<!-- #271 perf: one group translate per frame instead of 3 per-image
+     x writes — tiles sit at static x=offset inside the moving group. -->
+<g transform="translate({x} 0)">
   {#each offsets as offset (offset)}
-    {@const tx = x + offset}
     <image
       href={url}
-      x={tx}
+      x={offset}
       y={paintTop}
       width={PAINT_W}
       height={PAINT_H}

@@ -413,7 +413,10 @@
     border-radius: var(--of-r-xs);
     border: 1px solid rgba(0, 0, 0, 0.35);
   }
-  .landscape svg { width: 100%; height: 100%; display: block; }
+  /* #273: the scene is pure display — nothing in the tree handles pointer
+     input. Without this, elements animating under a stationary cursor force
+     re-hit-testing + synthetic pointermove dispatch every frame. */
+  .landscape svg { width: 100%; height: 100%; display: block; pointer-events: none; }
 
   @media (prefers-reduced-motion: reduce) {
     /* All motion is JS-driven (rAF). For users with reduced-motion
