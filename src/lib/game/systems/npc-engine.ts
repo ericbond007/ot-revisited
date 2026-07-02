@@ -388,12 +388,17 @@ export function tickNpcWagon(
       || w.survival > 0 || w.food > 0 || w.maintenance > 0
       || w.hygiene > 0 || w.morale > 0;
     // #1072/#1193 — mend piggyback parity with the player-bot driver:
-    // default personas carry zero weights, so without this NPC wagons
-    // never mend and their warmth silently degrades. Runs ONLY for
-    // non-bundling personas — bundlers reach mend_clothes through their
-    // own urgency scoring (review fix: both paths firing would double-
-    // mend +36/rest-day the moment any persona gains a weight).
-    if (!optsIn && clothingMendWanted(synthesizeWagonState(next, env))) {
+    // without this, NPC wagons whose bundle can't reach mend_clothes
+    // never mend and their warmth silently degrades. #1154: the guard is
+    // "can this wagon's bundle mend?" — NOT plain optsIn — because a
+    // survival-only bundler (cautious/balanced) opts in yet its weight
+    // filter excludes the maintenance category, so mend is unreachable
+    // through urgency scoring. Double-mend stays impossible: the bundle
+    // contains mend only when canBundleMend is true, and then the
+    // piggyback is skipped (custom overrides like faithfulBundle carry
+    // their own maintenance tier, so they count as can-mend).
+    const canBundleMend = !!persona.bundleCampActions || w.maintenance > 0;
+    if (!canBundleMend && clothingMendWanted(synthesizeWagonState(next, env))) {
       const mendRng = makeRng(`mend:${env.day}:${next.name}`);
       const synthM = synthesizeWagonState(next, env);
       const mend = CAMP_ACTIONS_BY_ID['mend_clothes'];
