@@ -96,8 +96,11 @@ export function applyAxleGrease(state: GameState, miles: number): GameState {
 // impl didn't have. `applyNpcStormDamage` retained — player has no
 // engine-level storm-damage tick (player storm hits via events.ts).
 
-/** Storm-day wagon damage for NPCs. Mirrors the player's
- *  `weather.ts` storm branch (1-3 condition damage per storm day).
+/** Storm-day wagon damage for NPCs. Fills the role tickWeather
+ *  previously filled for the player (auto 1-3 condition per storm day);
+ *  since #928 the PLAYER's storm damage lives on the weather_storm
+ *  event's press-on choice (fixed -2) — this NPC path is the implicit
+ *  press-on for wagons that don't run the event system.
  *  Returns the updated wagon plus an optional player-log string. */
 export function applyNpcStormDamage(
   wagon: NpcWagonState,

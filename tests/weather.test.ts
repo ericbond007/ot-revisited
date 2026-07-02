@@ -85,20 +85,21 @@ describe('tickWeather side effects', () => {
     expect(sawRefill).toBe(true);
   });
 
-  it('storm chips wagon condition and morale', () => {
+  it('#928 — storm no longer auto-chips the player wagon (damage lives on the weather_storm event choices)', () => {
     const s = newGame({ weather: 'storm' });
-    let sawDamage = false;
-    for (let day = 1; day <= 50; day++) {
-      const test = { ...s, day };
+    for (let day = 1; day <= 40; day++) {
+      const test = { ...s, day, seed: `storm-probe-${day}` };
       const after = tickWeather(test, makeRng(`probe:${day}`));
       if (after.weather === 'storm') {
-        expect(after.wagon.condition).toBeLessThan(s.wagon.condition);
-        expect(after.morale).toBeLessThan(s.morale);
-        sawDamage = true;
-        break;
+        // Frame + morale untouched by the tick — press-on/shelter on the
+        // event surface owns that now. Canvas supply-soak (condition-gated)
+        // may still fire, which never touches wagon.condition or morale.
+        expect(after.wagon.condition).toBe(test.wagon.condition);
+        expect(after.morale).toBe(test.morale);
+        return;
       }
     }
-    expect(sawDamage).toBe(true);
+    expect.unreachable('no storm day found in 40 probes');
   });
 
   it('uses an isolated rng sub-stream — does not perturb the passed rng', () => {
