@@ -54,21 +54,53 @@ describe('#927 urgency — cure_meat', () => {
   });
 });
 
-describe('#927 urgency — patch_wagon', () => {
-  it('condition<60 → 10', () => {
+describe('#927 urgency — patch_wagon (#1640: keyed on canvas, zero floor)', () => {
+  // The action repairs CANVAS (rawhide patch, +8 canvas); #1640 fixed the
+  // urgency to read canvas instead of wagon.condition and dropped the
+  // constant floor so maintenance-weighted personas don't burn a raw hide
+  // on sound canvas every rest day.
+  it('canvas<60 → 10', () => {
     const s = baseState();
-    s.wagon = { ...s.wagon, condition: 50 };
+    s.wagon = { ...s.wagon, canvas: 50 };
     expect(urgency(s, 'patch_wagon')).toBe(10);
   });
-  it('60≤condition<80 → 6', () => {
+  it('60≤canvas<85 → 5', () => {
     const s = baseState();
-    s.wagon = { ...s.wagon, condition: 70 };
-    expect(urgency(s, 'patch_wagon')).toBe(6);
+    s.wagon = { ...s.wagon, canvas: 70 };
+    expect(urgency(s, 'patch_wagon')).toBe(5);
   });
-  it('condition≥80 → 2', () => {
+  it('canvas≥85 → 0 (no floor)', () => {
     const s = baseState();
-    s.wagon = { ...s.wagon, condition: 95 };
-    expect(urgency(s, 'patch_wagon')).toBe(2);
+    s.wagon = { ...s.wagon, canvas: 95 };
+    expect(urgency(s, 'patch_wagon')).toBe(0);
+  });
+  it('condition does not drive it: battered wagon + sound canvas → 0', () => {
+    const s = baseState();
+    s.wagon = { ...s.wagon, condition: 30, canvas: 95 };
+    expect(urgency(s, 'patch_wagon')).toBe(0);
+  });
+});
+
+describe('#1640 urgency need-gates — cast_balls + service_train', () => {
+  it('cast_balls tapers to 0 at ≥60 balls even with materials', () => {
+    const s = baseState({ inventory: { lead_pig: 2, bullet_mold: 1, lead_balls: 80 } });
+    expect(urgency(s, 'cast_balls')).toBe(0);
+  });
+  it('cast_balls mid-band 3 with materials and 20≤balls<60', () => {
+    const s = baseState({ inventory: { lead_pig: 2, bullet_mold: 1, lead_balls: 30 } });
+    expect(urgency(s, 'cast_balls')).toBe(3);
+  });
+  it('service_train 0 when cash and morale are healthy', () => {
+    const s = baseState();
+    s.cash = 200;
+    s.morale = 80;
+    expect(urgency(s, 'service_train')).toBe(0);
+  });
+  it('service_train 5 when cash is low', () => {
+    const s = baseState();
+    s.cash = 20;
+    s.morale = 80;
+    expect(urgency(s, 'service_train')).toBe(5);
   });
 });
 
