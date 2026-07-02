@@ -22,6 +22,7 @@ import { isSunday } from '../utils/calendar';
 import { canBoilWater } from '../systems/water-purity';
 import { getClothingCondition } from '../systems/clothing-wear';
 import { hasLiveGunsmith } from '../professions/predicates';
+import { foodLb } from '../content/items';
 
 /** Mirror of rest.ts's TIME_BUDGET_HOURS. Single source of truth lives
  *  here so callers don't bypass the cap. */
@@ -110,12 +111,12 @@ export function pickHunters(state: GameState): 1 | 2 {
   return aliveAdults >= 2 ? 2 : 1;
 }
 
-/** Total food inventory in pounds — sums all known food item ids. */
+/** Total food inventory in pounds. #1642 — delegates to the canonical
+ *  catalog-derived sum (everything the consumption engine eats); the old
+ *  hand-typed 12-key list here had drifted (missing salt_pork,
+ *  dried_salmon, egg, milk, prize_cut, tallow, sugar). */
 function totalFoodLb(state: GameState): number {
-  const i = state.inventory;
-  return (i.flour ?? 0) + (i.beans ?? 0) + (i.bacon ?? 0) + (i.hardtack ?? 0)
-    + (i.jerky ?? 0) + (i.pemmican ?? 0) + (i.game_meat ?? 0) + (i.cornmeal ?? 0)
-    + (i.cheese ?? 0) + (i.butter ?? 0) + (i.dried_fruit ?? 0) + (i.berries ?? 0);
+  return foodLb(state.inventory);
 }
 
 /** Per-action urgency score in [0..10]. Multiplied by weights[category]
