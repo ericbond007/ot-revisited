@@ -59,7 +59,7 @@ GitHub still works normally — `jj git push` / `jj git fetch` round-trip to `or
 
 ### Caveats specific to this project
 
-- **Single-folder layout (consolidated 2026-05-23).** All work happens in this one repo path. A `hoosierTrail-wagon-bg/` sibling worktree was retired because its stale fork-point hid semantic conflicts at merge time (the `WagonAddons` drift post-mortem). The LoRA training data that used to justify the sibling now lives at `~/datasets/ot-revisited/lora-train/` (~2.5 GB, gitignored-by-virtue-of-being-outside-the-repo; needed only when retraining the `ht_landscape` LoRA — see the `hoosiertrail-render-pipeline` skill).
+- **One canonical repo (consolidated 2026-05-23) + per-task jj workspaces.** The repo lives at this path; day-to-day edits happen in per-task `jj workspace` checkouts (`~/projects/hoosierTrail-<task>/` siblings — see the workspace-discipline section below), which share this repo's store and are NOT forks. The old `hoosierTrail-wagon-bg/` sibling was a true pre-jj FORK, retired because its stale fork-point hid semantic conflicts at merge time (the `WagonAddons` drift post-mortem); its leftover directory was removed 2026-07-02 (images archived at `~/datasets/ot-revisited/wagon-bg-images-2026-07-02/`). LoRA training data lives at `~/datasets/ot-revisited/lora-train/` (~2.5 GB, outside the repo; needed only when retraining `ht_landscape` — the `hoosiertrail-render-pipeline` skill has the kohya retraining recipe incl. the fp16 VRAM patch).
 - **Vite dev server**: `npm run dev` defaults to port 5173 from this repo.
 
 ### Common workflows
@@ -134,12 +134,14 @@ workspaces, plan files, and memory files pass). Override (you really mean to edi
 ### Existing long-lived workspaces — do not disturb
 
 - `hoosierTrail-research/` — landmark research corpus, anchored to bookmark
-  `research-stable-2026-05-25`. Stores ~7 MB of gitignored CDL excerpts under
+  `research-stable-2026-05-25`. Stores ~7 MB of in-copyright CDL excerpts under
   `docs/historical-pass/sources/` that can NOT be restored from git history if
-  swapped out.
-- `hoosierTrail-wagon-bg/` — git-only sibling worktree (NOT a jj workspace,
-  no `.jj/`). Holds the large blender models + LoRA training data outside the
-  jj snapshot ceiling.
+  swapped out. Backup (2026-07-02): `~/datasets/ot-revisited/cdl-excerpts-backup-2026-07-02/`.
+  The excerpt-ignore rules now live in the repo-root `.gitignore` so no checkout
+  can accidentally commit them.
+- (RETIRED 2026-07-02: the `hoosierTrail-wagon-bg/` sibling no longer exists —
+  see the consolidation note in "Caveats". Models live in `tools/blender/models/`,
+  LoRA data in `~/datasets/ot-revisited/lora-train/`.)
 
 ## FLUX landmark backdrops — no SVG decorative overlay
 
