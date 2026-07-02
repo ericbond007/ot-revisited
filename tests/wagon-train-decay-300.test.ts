@@ -64,7 +64,7 @@ describe('#300 — applyNpcStormDamage', () => {
     expect(applyNpcStormDamage(w, 'frost', rng).wagon.wagon.condition).toBe(100);
   });
 
-  it('takes 1-3 damage on storm days (matches player weather.ts)', () => {
+  it('takes 1-3 damage on storm days (NPC auto-damage; player damage moved to the event surface, #928)', () => {
     const w = fakeWagon({ id: 'a' });
     for (let i = 0; i < 50; i++) {
       const result = applyNpcStormDamage(w, 'storm', makeRng(`s${i}`));

@@ -1,4 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Every test here runs 1-10 FULL bot games. #1632 gave the 10-game test an
+// explicit timeout after a cold-cache contention flake; #928 (storms no
+// longer auto-damage the player) lengthened average runs enough that the
+// 2-game tests (~400ms isolated) also breached the 5s default under full-
+// suite worker contention. File-level ceiling; the runner's DEFAULT_MAX_DAYS
+// hard cap means nothing here can hang unbounded.
+vi.setConfig({ testTimeout: 30_000 });
 import { runBot } from '../src/lib/dev/bot/runner';
 import { computeFunScore } from '../src/lib/dev/bot/scoring';
 import { PERSONAS } from '../src/lib/game/ai';

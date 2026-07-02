@@ -11,7 +11,8 @@ import { inZoneSnowFloor } from './winter';
 // Daily weather (#153) — Markov-ish picker driven by terrain × season,
 // with a stickiness bias toward yesterday's pattern (weather doesn't
 // flip-flop daily). Same tick also applies the day's side-effects:
-// rain refills clean water a bit, storms damage the wagon, frost
+// rain refills clean water a bit, storms soak poorly-covered supplies
+// (frame damage moved to the weather_storm event choices, #928), frost
 // nips morale, etc.
 //
 // Pipeline placement: tickWeather runs FIRST in each daily tick, so
@@ -190,14 +191,23 @@ export function tickWeather(state: GameState, _rng: Rng): GameState {
       break;
     }
     case 'storm': {
-      // Storm: wagon frame takes 1-3, morale -2, supply damage roll.
-      const dmg = wRng.int(1, 3);
-      s = {
-        ...s,
-        wagon: { ...s.wagon, condition: Math.max(0, s.wagon.condition - dmg) },
-        morale: Math.max(0, s.morale - 2),
-        eventLog: [...s.eventLog, { day: s.day, text: `Thunderstorm — wagon -${dmg}, morale -2.` }]
-      };
+      // #928 — the automatic frame/morale hit is GONE. tickWeather runs
+      // only in the player drivers (engine-pausable + rest), and the
+      // player's storm damage now lives exclusively on the weather_storm
+      // event's choice surface: press on (wagon -2, morale -2, ~20%
+      // wind-loss roll) vs shelter (morale -1, lose the day). Uniform
+      // with the #306-phase-2 RNG philosophy — bad things shouldn't be
+      // guaranteed; decisions drive outcome. Previously the tick damage
+      // ALSO stacked on top of the event choice on event days.
+      //
+      // NPC wagons never ran this path — they take applyNpcStormDamage
+      // in the npc-engine 5b tail, which is their press-on equivalent
+      // and is unchanged.
+      //
+      // Kept here: the canvas-condition-gated supply-soak roll below —
+      // that's a consequence of neglected canvas maintenance (player
+      // agency already), not an unavoidable act of god.
+      s = { ...s, eventLog: [...s.eventLog, { day: s.day, text: 'A thunderstorm builds over the trail.' }] };
       const damage = rollCanvasSupplyDamage(s, next, wRng);
       const applied = applyCanvasSupplyDamage(s, damage);
       s = applied.state;
